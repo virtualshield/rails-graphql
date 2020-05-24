@@ -1,0 +1,19 @@
+= Torque PostgreSQL
+
+
+== Download and installation
+
+The latest version of Rails GraphQL can be installed with RubyGems:
+
+  $ gem install rails-graphql
+
+Source code can be downloaded direct from the GitHub repository:
+
+* https://github.com/virtualshield/rails-graphql
+
+
+== License
+
+Rails GraphQL is released under the MIT license:
+
+* http://www.opensource.org/licenses/MIT
