@@ -26,19 +26,19 @@ Gem::Specification.new do |s|
   s.require_paths = ['lib']
 
   s.files        = Dir['MIT-LICENSE', 'README.rdoc', 'lib/**/*', 'ext/**/*', 'Rakefile']
-  s.executables  = Dir['bin/**/*']
   s.test_files   = Dir['test/**/*']
+  s.extensions   = ['ext/extconf.rb']
   s.rdoc_options = ['--title', 'GraphQL server for Rails']
 
   s.add_dependency 'rails', '>= 5.0'
   s.add_dependency 'ffi', '~> 1.12'
 
-  s.add_development_dependency 'appraisal'
-  s.add_development_dependency 'benchmark-ips'
+  s.add_development_dependency 'appraisal', '~> 2.2.0'
+  s.add_development_dependency 'benchmark-ips', '~> 2.8.2'
   s.add_development_dependency 'minitest', '~> 5.14.0'
-  s.add_development_dependency 'minitest-reporters'
-  s.add_development_dependency 'rake-compiler'
-  s.add_development_dependency 'rake-compiler-dock'
-  s.add_development_dependency 'rdoc'
-  s.add_development_dependency 'rubocop'
+  s.add_development_dependency 'minitest-reporters', '~> 1.4.2'
+  s.add_development_dependency 'rake-compiler', '~> 1.1.0'
+  s.add_development_dependency 'rake-compiler-dock', '~> 1.0.1'
+  s.add_development_dependency 'rdoc', '~> 6.2.1'
+  s.add_development_dependency 'rubocop', '~> 0.84.0'
 end

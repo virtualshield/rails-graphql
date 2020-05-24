@@ -1,9 +1,7 @@
 # frozen_string_literal: true
 
 require 'active_support'
-
 require 'rails/graphql/version'
-require 'rails/graphql/railtie'
 
 module Rails # :nodoc:
   module GraphQL
@@ -44,3 +42,5 @@ module Rails # :nodoc:
     end
   end
 end
+
+require 'rails/graphql/railtie'
