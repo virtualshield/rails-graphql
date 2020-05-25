@@ -1,2 +1,2 @@
-require 'graphqlparser'
+# require 'graphqlparser'
 require 'rails/graphql'

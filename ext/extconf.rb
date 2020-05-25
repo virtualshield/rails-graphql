@@ -12,8 +12,13 @@ require 'mkmf'
 version = File.read(File.join(precomp_dir, 'VERSION'))
 $defs << "-DGRAPHQLPARSER_VERSION=\\\"#{version}\\\""
 
-# Set necessary flags and includes
-$CXXFLAGS << ' -std=c++11' << ' -g' << ' -Wall'
+# # Set necessary flags and includes
+$CXXFLAGS << ' -std=gnu++11' << ' -g' << ' -Wall'
+
+# Set to true when building binary gems
+if enable_config('static-stdlib', false)
+  $LDFLAGS << ' -static-libgcc -static-libstdc++'
+end
 
 # Enable maintainer mode for better log
 if ENV['MAINTAINER_MODE']
@@ -38,10 +43,14 @@ $INCFLAGS << " -I$(srcdir)/graphqlparser/parsergen/"
 $srcs = [
   File.join(precomp_dir, 'Ast.cpp'),
   File.join(precomp_dir, 'JsonVisitor.cpp'),
-  File.join(precomp_dir, 'GraphQLParser.cpp'),
   File.join(precomp_dir, 'parsergen', 'parser.tab.cpp'),
   File.join(precomp_dir, 'parsergen', 'lexer.cpp'),
+  File.join(precomp_dir, 'c', 'GraphQLAst.cpp'),
+  File.join(precomp_dir, 'c', 'GraphQLAstNode.cpp'),
   File.join(precomp_dir, 'c', 'GraphQLAstToJSON.cpp'),
+  File.join(precomp_dir, 'c', 'GraphQLAstVisitor.cpp'),
+  File.join(precomp_dir, 'GraphQLParser.cpp'),
+  File.join(gem_root, 'ext', 'graphqlparser.cpp'),
 ]
 
 create_header

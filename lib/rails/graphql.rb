@@ -3,11 +3,17 @@
 require 'active_support'
 require 'rails/graphql/version'
 
+ActiveSupport::Inflector.inflections(:en) do |inflect|
+  inflect.acronym 'GraphQL'
+  inflect.acronym 'GQLAst'
+end
+
 module Rails # :nodoc:
   module GraphQL
     extend ActiveSupport::Autoload
 
     autoload :Core
+    autoload :Native
 
     autoload :GraphiQL
 
