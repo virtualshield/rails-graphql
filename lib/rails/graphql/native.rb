@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'ffi'
-require 'graphqlparser' unless Object.const_defined?('GQLAst')
 
 module Rails # :nodoc:
   module GraphQL # :nodoc:
@@ -10,18 +9,28 @@ module Rails # :nodoc:
 
       VERSION = GQLAst::VERSION
 
-      dl_ext = (RbConfig::CONFIG['host_os'] =~ /darwin/ ? 'bundle' : 'so')
+      dl_ext = FFI::Platform.mac? ? 'bundle' : 'so'
+      dl_name = "graphqlparser.#{dl_ext}"
+      dl_path = Pathname.new(__dir__)
+
       begin
-        ffi_lib File.expand_path("graphqlparser.#{dl_ext}", "#{__dir__}/../")
-      rescue LoadError # Some non-rvm environments don't copy a shared object over to lib/sassc
-        ffi_lib File.expand_path("graphqlparser.#{dl_ext}", "#{__dir__}/../../../ext")
+        ffi_lib(dl_path.join("../../#{dl_name}").to_s)
+      rescue LoadError
+        ffi_lib(dl_path.join("../../../../ext/#{dl_name}").to_s)
       end
 
-      typedef :pointer, :unique_ptr
-      require_relative 'native/ast'
+      require_relative 'native/location'
 
-      attach_function :parse, :graphqlparser_parse, [:string], :pointer
-      attach_function :get_location, :graphql_node_get_location, [:pointer, GraphQLAstLocation], :void
+      attach_function :parse, :graphql_parse_string, [:string, :pointer], :pointer
+
+      attach_function :to_json, :graphql_ast_to_json, [:pointer], :string
+
+      attach_function :free_node, :graphql_node_free, [:pointer], :void
+
+      attach_function :free_error, :graphql_error_free, [:pointer], :void
+
+      attach_function :node_location, :graphql_node_get_location, [:pointer, Location], :void
+
     end
   end
 end

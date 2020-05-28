@@ -8,7 +8,6 @@ require 'irb'
 require 'rails'
 require 'irb/completion'
 
-require_relative '../lib/rails/graphqlparser'
 require 'rails-graphql'
 
 ARGV.clear

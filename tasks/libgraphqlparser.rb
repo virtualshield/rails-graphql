@@ -10,7 +10,7 @@ gem_spec = Gem::Specification.load('rails-graphql.gemspec')
 Rake::ExtensionTask.new(:graphqlparser, gem_spec) do |ext|
   ext.name = 'graphqlparser'
   ext.ext_dir = 'ext'
-  ext.lib_dir = 'lib/rails'
+  ext.lib_dir = 'lib'
   ext.cross_compile = true
   ext.cross_platform = %w[x86-mingw32 x64-mingw32]
 
