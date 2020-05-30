@@ -9,8 +9,7 @@ module Rails # :nodoc:
 
       VERSION = GQLAst::VERSION
 
-      dl_ext = FFI::Platform.mac? ? 'bundle' : 'so'
-      dl_name = "graphqlparser.#{dl_ext}"
+      dl_name = "graphqlparser.#{FFI::Platform::LIBSUFFIX}"
       dl_path = Pathname.new(__dir__)
 
       begin

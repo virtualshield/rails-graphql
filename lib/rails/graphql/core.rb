@@ -5,11 +5,27 @@ module Rails # :nodoc:
     module Core
       ##
       # :singleton-method:
-      #
       # Accepts a logger conforming to the interface of Log4r which is then
       # passed on to any graphql operation which can be retrieved on both a class
       # and instance level by calling +logger+.
       mattr_accessor :logger, instance_writer: false
+
+      ##
+      # :singleton-method:
+      # Marks if the JSON serialization of an ActiveRecord object can happen
+      # during the query, which has better performance. It will only be used
+      # whenever is possible
+      mattr_accessor :allow_query_serialization, instance_writer: false, default: true
+
+      ##
+      # :singleton-method:
+      # A list of ActiveRecord adapters and their specific internal naming used
+      # to compound the accessors for direct query serialization
+      mattr_accessor :ar_adapters, instance_writer: false, default: {
+        'Mysql2'     => :mysql,
+        'PostgreSQL' => :pg,
+        'SQLite'     => :sqlite,
+      }
 
       ##
       # :singleton-method:

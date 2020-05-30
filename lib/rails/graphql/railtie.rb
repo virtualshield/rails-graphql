@@ -32,9 +32,9 @@ module Rails # :nodoc:
         require 'rails/graphql/schema'
       end
 
-      # initializer 'active_record.logger' do
-      #   ActiveSupport.on_load(:active_record) { self.logger ||= ::Rails.logger }
-      # end
+      initializer 'graphql.logger' do
+        ActiveSupport.on_load(:graphql) { self.logger ||= ::Rails.logger }
+      end
 
       initializer 'graphql.set_configs' do |app|
         ActiveSupport.on_load(:graphql) do

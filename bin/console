@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 require 'pathname'
 
-$LOAD_PATH.unshift Pathname.pwd.join('lib')
+$LOAD_PATH.unshift Pathname.new(__dir__).join('../lib')
 
 require 'pry'
 require 'irb'

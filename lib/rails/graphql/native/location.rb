@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Rails # :nodoc:
   module GraphQL # :nodoc:
     module Native # :nodoc:
