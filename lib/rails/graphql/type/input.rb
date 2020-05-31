@@ -9,10 +9,12 @@ module Rails # :nodoc:
       # scalars, enums, or other input objects.
       # See http://spec.graphql.org/June2018/#InputObjectTypeDefinition
       class Input < Type
+        redefine_singleton_method(:kind_enum) { 'INPUT_OBJECT' }
         redefine_singleton_method(:output_type?) { false }
         redefine_singleton_method(:input?) { true }
         define_singleton_method(:kind) { :input }
         self.directive_location = :input_object
+        self.spec_object = true
         self.abstract = true
       end
     end

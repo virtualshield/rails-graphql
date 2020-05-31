@@ -9,10 +9,10 @@ module Rails # :nodoc:
       #
       # See http://spec.graphql.org/June2018/#sec-ID
       class Scalar::IdScalar < Scalar
-        define_singleton_method(:ar_type) { :string }
+        redefine_singleton_method(:gql_name) { 'ID' }
+        self.spec_object = true
 
-        self.spec_scalar = true
-        self.description = <<~DESC.squish
+        desc <<~DESC
           The ID scalar type represents a unique identifier and it is serialized in the same
           way as a String.
         DESC

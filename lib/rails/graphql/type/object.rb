@@ -13,6 +13,7 @@ module Rails # :nodoc:
         redefine_singleton_method(:object?) { true }
         define_singleton_method(:kind) { :object }
         self.directive_location = :object
+        self.spec_object = true
         self.abstract = true
       end
     end

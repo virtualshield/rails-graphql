@@ -8,10 +8,9 @@ module Rails # :nodoc:
       #
       # See http://spec.graphql.org/June2018/#sec-String
       class Scalar::StringScalar < Scalar
-        define_singleton_method(:ar_type) { :string }
+        self.spec_object = true
 
-        self.spec_scalar = true
-        self.description = <<~DESC.squish
+        desc <<~DESC
           The String scalar type represents textual data, represented as UTF‐8 character
           sequences.
         DESC

@@ -8,18 +8,21 @@ module Rails # :nodoc:
       #
       # See http://spec.graphql.org/June2018/#sec-Int
       class Scalar::IntScalar < Scalar
-        define_singleton_method(:ar_type) { :integer }
+        redefine_singleton_method(:ar_type) { :integer }
 
-        self.spec_scalar = true
-        self.description = <<~DESC
-          The Int scalar type represents a signed 32‐bit numeric non‐fractional value.
-        DESC
+        self.spec_object = true
+
+        desc 'The Int scalar type represents a signed 32‐bit numeric non‐fractional value.'
 
         max_value = (1 << 31)
         RANGE = (-max_value)...(max_value)
 
         class << self
-          def valid?(value)
+          def valid_input?(value)
+            value.is_a?(Integer) && RANGE.cover?(value)
+          end
+
+          def valid_output?(value)
             value.respond_to?(:to_i) && RANGE.cover?(value.to_i)
           end
 

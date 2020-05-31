@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
+require 'active_model'
 require 'active_support'
+require 'active_support/core_ext/class/subclasses'
+
 require 'rails/graphql/version'
 
 ActiveSupport::Inflector.inflections(:en) do |inflect|
@@ -17,12 +20,13 @@ module Rails # :nodoc:
   # to check which spec is being sued.
   #
   # Using ActiveSupport, define all the needed objects but doesn't load them
-  # since it's better to trust on eager_load in order to proper load the objects
+  # since it's better to trust on eager_load in order to proper load the objects.
   #
   # A very important concept is that Singleton definitions are a direct
   # connection to a {GraphQL Introspection}[http://spec.graphql.org/June2018/#sec-Introspection],
   # meaning that to query the introspection is to query everything defined and
-  # associated with the GraphQL objects
+  # associated with the GraphQL objects, the only exception are arguments and
+  # directives.
   #
   # TODO: In order to have a multi-introspection result on the same application,
   # whe should implement a *namespace* concept
@@ -32,16 +36,22 @@ module Rails # :nodoc:
     # Stores the version of the GraphQL spec used for this implementation
     SPEC_VERSION = 'June 2018'
 
-    autoload :Core
-    autoload :Native
-    autoload :NamedDefinition
-    autoload :WithDirectives
+    autoload :ToGQL
+    autoload :Helpers
 
-    autoload :Schema
-    autoload :Type
-    autoload :Directive
+    eager_autoload do
+      autoload :Core
+      autoload :Native
+      autoload :NamedDefinition
+      autoload :WithDirectives
 
-    autoload :GraphiQL
+      autoload :Argument
+      autoload :Directive
+      autoload :Schema
+      autoload :Type
+
+      autoload :GraphiQL
+    end
 
     class << self
       ##
@@ -68,9 +78,24 @@ module Rails # :nodoc:
         config.each { |k, v| Core.send "#{k}=", v }
       end
 
-      # def eager_load!
-      #   super
-      # end
+      # See {ToGQL}[rdoc-ref:Rails::GraphQL::Type] class.
+      def find_input_type(thing)
+        GraphQL::Type.find_input(thing)
+      end
+
+      # See {ToGQL}[rdoc-ref:Rails::GraphQL::Type] class.
+      def find_output_type(thing)
+        GraphQL::Type.find_output(thing)
+      end
+
+      ##
+      # Turn the given object into its string representation as GraphQl
+      # See {ToGQL}[rdoc-ref:Rails::GraphQL::ToGQL] class.
+      def to_gql(object, **xargs)
+        ToGQL.compile(object, **xargs)
+      end
+
+      alias to_graphql to_gql
     end
   end
 end

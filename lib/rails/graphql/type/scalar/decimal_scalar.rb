@@ -7,16 +7,13 @@ module Rails # :nodoc:
       # decimal-point numbers are kept. As Bigint, it uses a string so it won't
       # go against the spec.
       class Scalar::DecimalScalar < Scalar
-        define_singleton_method(:ar_type) { :string }
-
-        self.spec_scalar = true
-        self.description = <<~DESC
+        desc <<~DESC
           The Decimal scalar type represents signed fractional values with extra precision.
           The values are exchange as string.
         DESC
 
         class << self
-          def valid?(value)
+          def valid_output?(value)
             value.respond_to?(:to_d)
           end
 

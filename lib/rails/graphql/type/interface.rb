@@ -11,6 +11,7 @@ module Rails # :nodoc:
         redefine_singleton_method(:input_type?) { false }
         redefine_singleton_method(:interface?) { true }
         define_singleton_method(:kind) { :interface }
+        self.spec_object = true
         self.abstract = true
       end
     end

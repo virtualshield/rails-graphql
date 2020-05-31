@@ -9,15 +9,17 @@ module Rails # :nodoc:
       #
       # See http://spec.graphql.org/June2018/#sec-Float
       class Scalar::FloatScalar < Scalar
-        define_singleton_method(:ar_type) { :float }
+        redefine_singleton_method(:ar_type) { :float }
+        self.spec_object = true
 
-        self.spec_scalar = true
-        self.description = <<~DESC
-          The Float scalar type represents signed double‐precision fractional values.
-        DESC
+        desc 'The Float scalar type represents signed double‐precision fractional values.'
 
         class << self
-          def valid?(value)
+          def valid_input?(value)
+            value.is_a?(Float)
+          end
+
+          def valid_output?(value)
             value.respond_to?(:to_f)
           end
 

@@ -6,15 +6,13 @@ module Rails # :nodoc:
       # Bigint basically removes the limit of the value, but it serializes as
       # a string so it won't go aginst the spec
       class Scalar::BigintScalar < Scalar
-        define_singleton_method(:ar_type) { :string }
-
-        self.description = <<~DESC.squish
+        desc <<~DESC
           The Bigint scalar type represents a signed numeric non‐fractional value.
           It can go beyond the Int 32‐bit limit, but it's exchanged as a string.
         DESC
 
         class << self
-          def valid?(value)
+          def valid_output?(value)
             value.respond_to?(:to_i)
           end
 

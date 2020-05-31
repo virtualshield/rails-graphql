@@ -5,8 +5,12 @@ module Rails # :nodoc:
     # A shared module for Types and Directives that enables retriving the
     # GraphQL name of an object
     module NamedDefinition
+      delegate :gql_name, to: :class
+
+      EXP = /GraphQL::(?:Type::\w+::|Directive::)?([:\w]+)[A-Z][a-z]+\z/.freeze
+
       def gql_name
-        name.match(/GraphQL::(?:Type::\w+::)?([:\w]+)[A-Z][a-z]+\z/)[1].tr(':', '')
+        name.match(EXP)[1].tr(':', '')
       end
 
       def to_sym

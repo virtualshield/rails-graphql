@@ -8,10 +8,7 @@ module Rails # :nodoc:
       #
       # It also rely on ActiveModel so it can easily share the same Data object.
       class Scalar::BinaryScalar < Scalar
-        define_singleton_method(:ar_type) { :base64 } # Forces casting
-
-        self.spec_scalar = true
-        self.description = <<~DESC.squish
+        desc <<~DESC
           The Binary scalar type represents a Base64 string.
           Normally used to share files and uploads.
         DESC
