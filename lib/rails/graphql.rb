@@ -26,7 +26,15 @@ module Rails # :nodoc:
   # connection to a {GraphQL Introspection}[http://spec.graphql.org/June2018/#sec-Introspection],
   # meaning that to query the introspection is to query everything defined and
   # associated with the GraphQL objects, the only exception are arguments and
-  # directives.
+  # sometimes directives and fields:
+  #
+  # * <tt>Arguments:</tt> They are strictly associated with the object that
+  #   defined it, also arugments with the same name doesn't mean they have the
+  #   same behavior or configuration.
+  # * <tt>Directives:</tt> A directive definition belongs to the introspection
+  #   and is handled in the Singleton extent. They are handled as instance
+  #   whenever a definition or an execution uses them.
+  # * <tt>Fields:</tt> TODO: Finish explaining
   #
   # TODO: In order to have a multi-introspection result on the same application,
   # whe should implement a *namespace* concept
@@ -47,6 +55,7 @@ module Rails # :nodoc:
 
       autoload :Argument
       autoload :Directive
+      autoload :Field
       autoload :Schema
       autoload :Type
 
@@ -95,9 +104,38 @@ module Rails # :nodoc:
         ToGQL.compile(object, **xargs)
       end
 
+      ##
+      # Returns a set instance with uniq directives from the given list.
+      # If the same directive class is given twice, it will raise an exception,
+      # since they must be uniq within a list of directives.
+      #
+      # Use the others argument to provide a list of already defined directives
+      # so the check can be performed using a +inherited_collection+.
+      def directives_to_set(list, others = [], location = nil)
+        others = others.dup
+        Array.wrap(list).inject(Set.new) do |result, item|
+          raise ArgumentError, <<~MSG.squish unless item.kind_of?(GraphQL::Directive)
+            The "#{item.class}" is not a valid directive.
+          MSG
+
+          raise ArgumentError, <<~MSG.squish if (others.any? { |k| k.class.eql?(item.class) })
+            A @#{item.gql_name} directive have already been provided.
+          MSG
+
+          invalid_location = location.present? && !item.locations.include?(location)
+          raise ArgumentError, <<~MSG.squish if invalid_location
+            You cannot use @#{item.gql_name} directive due to location restriction.
+          MSG
+
+          others << item
+          result << item
+        end
+      end
+
       alias to_graphql to_gql
     end
   end
 end
 
+require 'rails/graphql/shortcuts'
 require 'rails/graphql/railtie'

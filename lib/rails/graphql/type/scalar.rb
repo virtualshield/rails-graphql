@@ -19,7 +19,7 @@ module Rails # :nodoc:
 
         redefine_singleton_method(:leaf_type?) { true }
         redefine_singleton_method(:scalar?) { true }
-        define_singleton_method(:kind) { :scalar }
+
         self.directive_location = :scalar
         self.spec_object = true
         self.abstract = true

@@ -11,7 +11,7 @@ module Rails # :nodoc:
       class Union < Type
         redefine_singleton_method(:input_type?) { false }
         redefine_singleton_method(:union?) { true }
-        define_singleton_method(:kind) { :union }
+
         self.directive_location = :union
         self.spec_object = true
         self.abstract = true
@@ -23,7 +23,7 @@ module Rails # :nodoc:
         inherited_collection :members
 
         class << self
-          def kind
+          def of_kind
             members.first.base_type if valid?
           end
 
@@ -34,15 +34,15 @@ module Rails # :nodoc:
           def append(*others)
             return if others.blank?
 
-            # TODO: Change to a better exception type
             checker = others.flatten.map(&:base_type).uniq
-            raise 'All the union members must be of the same base type' \
-              if checker.size != 1
+            raise ArgumentError, <<~MSG unless checker.size === 1
+              All the union members must be of the same base type.
+            MSG
 
-            # TODO: Change to a better exception type
             check_types = members? ? @members.first.base_type : VALID_MEMBER_TYPES
-            raise 'The given base type cannot be assigned to this union' \
-              if (check_types & checker).size != 1
+            raise ArgumentError, <<~MSG unless (check_types & checker).size === 1
+              A union cannot contain members of different base types.
+            MSG
 
             self.members.merge(others)
           end

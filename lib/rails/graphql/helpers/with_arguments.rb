@@ -10,6 +10,11 @@ module Rails # :nodoc:
           other.inherited_collection(:arguments, default: {})
         end
 
+        def self.included(other)
+          other.define_method(:arguments) { @arguments ||= {} }
+        end
+
+        # See {Argument}[rdoc-ref:Rails::GraphQL::Argument] class.
         def argument(name, base_type, **xargs)
           object = GraphQL::Argument.new(name, base_type, **xargs)
 
@@ -18,12 +23,9 @@ module Rails # :nodoc:
           MSG
 
           object.validate!
-          self.arguments[name] = object
+          arguments[object.name] = object
         rescue ArgumentError => e
-          defined_at = caller(2)[0]
-          raise ArgumentError, e.message + "  " + <<~MSG
-            Defined at: #{defined_at}
-          MSG
+          raise ArgumentError, e.message + "\n  Defined at: #{caller(2)[0]}"
         end
       end
     end

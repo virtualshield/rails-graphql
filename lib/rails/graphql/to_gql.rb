@@ -31,6 +31,12 @@ module Rails # :nodoc:
           collector.eol
         end
 
+        def visit_Rails_GraphQL_Field(o, collector)
+          visit_description(o, collector)
+          collector << o.gql_name
+          collector << ': '
+        end
+
         def visit_Rails_GraphQL_Schema(o, collector)
           visit_description(o, collector)
           collector << 'schema'
@@ -39,6 +45,11 @@ module Rails # :nodoc:
           end
 
           collector.eol
+        end
+
+        def visit_Rails_GraphQL_Field_InputField(o, collector)
+          visit_Rails_GraphQL_Field(o, collector)
+          visit_typed_object(o, collector)
         end
 
         def visit_Rails_GraphQL_Type_Enum(o, collector)
@@ -51,6 +62,23 @@ module Rails # :nodoc:
           collector.indented(' {', '}') do
             o.values.each { |x| visit_enum_value(o, x, collector) }
           end if o.values.present?
+
+          collector.eol
+        end
+
+        def visit_Rails_GraphQL_Type_Input(o, collector)
+          visit_description(o, collector)
+          collector << 'extend ' if o.extension?
+          collector << 'input '
+          collector << o.gql_name
+          visit_directives(o.directives, collector)
+
+          collector.indented(' {', '}') do
+            o.fields.each_value.with_index do |x, i|
+              collector.eol if i > 0
+              visit(x, collector)
+            end
+          end if o.fields.present?
 
           collector.eol
         end
@@ -79,21 +107,13 @@ module Rails # :nodoc:
 
         def visit_Rails_GraphQL_Directive_Instance(o, collector)
           collector << '@' << o.gql_name
-          # visit_arguments(o.args, collector)
+          visit_arguments(o.arguments, collector)
         end
 
         def visit_Rails_GraphQL_Argument_Instance(o, collector)
           visit_description(o, collector)
           collector << o.gql_name << ': '
-          collector << '[' if o.array?
-          collector << o.type.gql_name
-          collector << '!' if o.array? && !o.nullable?
-          collector << ']' if o.array?
-          collector << '!' unless o.null?
-
-          if o.default_value?
-            collector << ' = ' << o.default_to_json
-          end
+          visit_typed_object(o, collector)
         end
 
         def visit_arguments(list, collector)
@@ -104,7 +124,7 @@ module Rails # :nodoc:
           collector << '('
           collector.eol.indent if indented
 
-          list.each_with_index do |(_, x), i|
+          list.each_value.with_index do |x, i|
             if i > 0
               collector.eol if indented
               collector << ', '
@@ -142,6 +162,22 @@ module Rails # :nodoc:
           collector << value
           visit_directives(directives, collector)
           collector.eol
+        end
+
+        def visit_typed_object(o, collector)
+          collector << '[' if o.array?
+          collector << o.type.gql_name
+
+          if o.array?
+            collector << '!' unless o.nullable?
+            collector << ']'
+          end
+
+          collector << '!' unless o.null?
+
+          if o.try(:default_value?)
+            collector << ' = ' << o.default_to_json
+          end
         end
 
         def visit(object, collector = nil) # :nodoc:

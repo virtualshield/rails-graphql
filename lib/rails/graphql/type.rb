@@ -49,8 +49,11 @@ module Rails # :nodoc:
           subclass.abstract = false
 
           if subclass.superclass.eql?(GraphQL::Type)
+            subclass.delegate(:base_type, :kind, to: :class)
             subclass.define_singleton_method(:base_type) { subclass }
-            subclass.delegate(:base_type, to: :class)
+            subclass.define_singleton_method(:kind) do
+              subclass.name.demodulize.underscore.to_sym
+            end
           end
         end
 

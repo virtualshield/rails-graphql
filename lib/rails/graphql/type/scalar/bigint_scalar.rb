@@ -12,6 +12,10 @@ module Rails # :nodoc:
         DESC
 
         class << self
+          def valid_input?(value)
+            super && value.match?(/\A[+-]?\d+\z/)
+          end
+
           def valid_output?(value)
             value.respond_to?(:to_i)
           end

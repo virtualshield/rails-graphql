@@ -11,7 +11,7 @@ module Rails # :nodoc:
       class Object < Type
         redefine_singleton_method(:input_type?) { false }
         redefine_singleton_method(:object?) { true }
-        define_singleton_method(:kind) { :object }
+
         self.directive_location = :object
         self.spec_object = true
         self.abstract = true

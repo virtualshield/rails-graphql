@@ -15,7 +15,7 @@ module Rails # :nodoc:
         redefine_singleton_method(:leaf_type?) { true }
         redefine_singleton_method(:ar_type) { :enum }
         redefine_singleton_method(:enum?) { true }
-        define_singleton_method(:kind) { :enum }
+
         self.directive_location = :enum
         self.spec_object = true
         self.abstract = true
@@ -61,6 +61,17 @@ module Rails # :nodoc:
           end
 
           # Use this method to add values to the enum type
+          #
+          # ==== Options
+          #
+          # * <tt>:desc</tt> - The description of the enum value (defaults to nil).
+          # * <tt>:directives</tt> - The list of directives associated with the value
+          #   (defaults to nil).
+          # * <tt>:deprecated</tt> - A shortcut that auto-attach a @deprecated
+          #   directive to the value. A +true+ value simple attaches the directive,
+          #   but provide a string so it can be used as the reason of the deprecation.
+          #   See {DeprecatedDirective}[rdoc-ref:Rails::GraphQL::Directive::DeprecatedDirective]
+          #   (defaults to nil).
           def add(value, desc: nil, directives: nil, deprecated: nil)
             value = to_hash(value)
             raise ArgumentError, <<~MSG if all_values.include?(value)
@@ -72,14 +83,14 @@ module Rails # :nodoc:
               One or more directives provided for "#{value}" can't be used on enum values.
             MSG
 
-            directives = Array.wrap(directives).to_set
+            directives = GraphQL.directives_to_set(directives)
             directives << Directive::DeprecatedDirective.new(
               reason: (deprecated.is_a?(String) ? deprecated : nil)
-            ) if deprecated.present?
+            ) unless deprecated.nil?
 
             self.values << value
             self.value_description[value] = desc unless desc.nil?
-            self.value_directives[value] = Array.wrap(directives).to_set unless directives.nil?
+            self.value_directives[value] = directives
           end
         end
       end

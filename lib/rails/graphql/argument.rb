@@ -20,16 +20,12 @@ module Rails # :nodoc:
     # * <tt>:array</tt> - Marks if the type should be wrapped as an array (defaults to false).
     # * <tt>:nullable</tt> - Marks if the internal values of an array can be null
     #   (defaults to true).
+    # * <tt>:directives</tt> - The list of directives associated with the value
+    #   (defaults to nil).
     # * <tt>:default</tt> - Sets a default value for the argument (defaults to nil).
     # * <tt>:desc</tt> - The description of the argument (defaults to nil).
     class Argument
-      attr_reader :name, :gql_name, :type, :null, :array, :nullable, :default, :desc,
-        :directives
-
-      alias null? null
-      alias array? array
-      alias nullable? nullable
-      alias description desc
+      attr_reader :name, :gql_name, :type, :default, :directives
 
       def initialize(
         name,
@@ -44,13 +40,34 @@ module Rails # :nodoc:
         @name = name.to_s.underscore.to_sym
         @gql_name = @name.to_s.camelize(:lower)
         @type = GraphQL.find_input_type(type) || type
-        @directives = Array.wrap(directives)
+
+        @directives = GraphQL.directives_to_set(directives, [], :argument_definition)
 
         @null = null
         @array = array
         @nullable = nullable
         @default = default
         @desc = desc&.squish
+      end
+
+      # Checks if the argument can be null
+      def null?
+        @null
+      end
+
+      # Checks if the argument can be an array
+      def array?
+        @array
+      end
+
+      # Checks if the argument can have null elements in the array
+      def nullable?
+        @nullable
+      end
+
+      # Return the description of the argument
+      def description
+        @desc
       end
 
       # Checks if a description was provided
@@ -86,15 +103,16 @@ module Rails # :nodoc:
 
       # Checks if the definition of the argument is valid
       def validate!
-        raise ArgumentError, <<~MSG unless type.is_a?(Module)
+        raise ArgumentError, <<~MSG.squish unless type.is_a?(Module)
           Unable to find the "#{type.inspect}" input type on GraphQL context.
         MSG
 
-        raise ArgumentError, <<~MSG unless type.try(:input_type?)
-          "#{type.gql_name}" is not a valid input type.
+        valid_type = type.try(:input_type?) && type < GraphQL::Type
+        raise ArgumentError, <<~MSG.squish unless valid_type
+          The "#{type.gql_name}" is not a valid input type.
         MSG
 
-        raise ArgumentError, <<~MSG unless default.nil? || valid?(default)
+        raise ArgumentError, <<~MSG.squish unless default.nil? || valid?(default)
           The given default value "#{default.inspect}" is not valid for this argument.
         MSG
       end

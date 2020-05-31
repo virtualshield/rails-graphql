@@ -3,7 +3,7 @@
 module Rails # :nodoc:
   module GraphQL # :nodoc:
     module Helpers # :nodoc:
-      # Helper module that allows other objects to hold directives during the=
+      # Helper module that allows other objects to hold directives during the
       # defition process
       module WithDirectives
         def self.extended(other)
@@ -21,20 +21,17 @@ module Rails # :nodoc:
 
         # Use this once to define the directive location
         def directive_location=(value)
-          # TODO: Change to a better exception type
-          raise 'Directive location is already defined' unless directive_location.nil?
+          raise ArgumentError, 'Directive location is already defined' \
+            unless directive_location.nil?
+
           @directive_location = value
         end
 
         # Use this method to assign directives to the given definition
         def use(*list)
-          self.directives.merge list.each do |directive|
-            # TODO: Replace this exception with a specific object
-            raise <<~MSG.squish unless directive.locations.include?(directive_location)
-              You cannot use @#{directive.gql_name} directive on #{gql_name} due to
-              locations restriction.
-            MSG
-          end
+          directives.merge(GraphQL.directives_to_set(list, all_directives, directive_location))
+        rescue ArgumentError => e
+          raise ArgumentError, e.message + "\n  Defined at: #{caller(2)[0]}"
         end
       end
     end
