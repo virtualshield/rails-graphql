@@ -12,13 +12,8 @@ module Rails # :nodoc:
         extend ActiveSupport::Autoload
         extend Helpers::LeafFromAr
 
-        redefine_singleton_method(:leaf_type?) { true }
-        redefine_singleton_method(:ar_type) { :enum }
-        redefine_singleton_method(:enum?) { true }
-
-        self.directive_location = :enum
-        self.spec_object = true
-        self.abstract = true
+        setup! leaf: true, input: true, output: true
+        set_ar_type! :enum
 
         eager_autoload do
           autoload :DirectiveLocationEnum
@@ -91,6 +86,14 @@ module Rails # :nodoc:
             self.values << value
             self.value_description[value] = desc unless desc.nil?
             self.value_directives[value] = directives
+          end
+
+          def inspect # :nodoc:
+            <<~INFO.squish + '>'
+              #<GraphQL::Enum #{gql_name}
+              (#{all_values.size})
+              {#{all_values.to_a.join(' | ')}}
+            INFO
           end
         end
       end

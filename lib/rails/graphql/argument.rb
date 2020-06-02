@@ -25,11 +25,14 @@ module Rails # :nodoc:
     # * <tt>:default</tt> - Sets a default value for the argument (defaults to nil).
     # * <tt>:desc</tt> - The description of the argument (defaults to nil).
     class Argument
-      attr_reader :name, :gql_name, :type, :default, :directives
+      attr_reader :name, :gql_name, :type, :owner, :default, :directives
+
+      delegate :namespaces, to: :owner
 
       def initialize(
         name,
         type,
+        owner: ,
         null: true,
         array: false,
         nullable: true,
@@ -37,9 +40,10 @@ module Rails # :nodoc:
         desc: nil,
         directives: nil
       )
+        @owner = owner
         @name = name.to_s.underscore.to_sym
+        @type = type.to_s.underscore.to_sym
         @gql_name = @name.to_s.camelize(:lower)
-        @type = GraphQL.find_input_type(type) || type
 
         @directives = GraphQL.directives_to_set(directives, [], :argument_definition)
 
@@ -48,6 +52,18 @@ module Rails # :nodoc:
         @nullable = nullable
         @default = default
         @desc = desc&.squish
+      end
+
+      def initialize_copy(*)
+        super
+
+        @owner = nil
+        @type_klass = nil
+      end
+
+      # Return the class of the type object
+      def type_klass
+        @type_klass ||= GraphQL.type_map.fetch!(type, namespaces: namespaces)
       end
 
       # Checks if the argument can be null
@@ -88,9 +104,9 @@ module Rails # :nodoc:
       # Turn the given value into a JSON string representation
       def to_json(value)
         return nil if value.nil?
-        return type.to_json(value) unless array?
+        return type_klass.to_json(value) unless array?
 
-        entries = value.map { |part| type.to_json(part) }
+        entries = value.map { |part| type_klass.to_json(part) }
         "[#{entries.join(', ')}]"
       end
 
@@ -98,18 +114,19 @@ module Rails # :nodoc:
       def valid?(value)
         return null? if value.nil?
         return valid_array?(value) if array?
-        type.valid_input?(value)
+        type_klass.valid_input?(value)
       end
 
       # Checks if the definition of the argument is valid
       def validate!
-        raise ArgumentError, <<~MSG.squish unless type.is_a?(Module)
+        super if defined? super
+
+        raise ArgumentError, <<~MSG.squish unless type_klass.is_a?(Module)
           Unable to find the "#{type.inspect}" input type on GraphQL context.
         MSG
 
-        valid_type = type.try(:input_type?) && type < GraphQL::Type
-        raise ArgumentError, <<~MSG.squish unless valid_type
-          The "#{type.gql_name}" is not a valid input type.
+        raise ArgumentError, <<~MSG.squish unless type_klass.input_type?
+          The "#{type_klass.gql_name}" is not a valid input type.
         MSG
 
         raise ArgumentError, <<~MSG.squish unless default.nil? || valid?(default)
@@ -117,11 +134,21 @@ module Rails # :nodoc:
         MSG
       end
 
+      def inspect # :nodoc:
+        result = "#{name}: "
+        result += '[' if array?
+        result += type_klass.gql_name
+        result += '!' if array? && !nullable?
+        result += ']' if array?
+        result += '!' unless null?
+        result
+      end
+
       private
 
         def valid_array?(value)
           return false unless value.is_a?(Enumerable)
-          value.all? { |val| (val.nil? && nullable?) || type.valid_input?(val) }
+          value.all? { |val| (val.nil? && nullable?) || type_klass.valid_input?(val) }
         end
     end
   end

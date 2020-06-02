@@ -12,13 +12,6 @@ module Rails # :nodoc:
 
       ##
       # :singleton-method:
-      # Marks if the JSON serialization of an ActiveRecord object can happen
-      # during the query, which has better performance. It will only be used
-      # whenever is possible
-      mattr_accessor :allow_query_serialization, instance_writer: false, default: true
-
-      ##
-      # :singleton-method:
       # A list of ActiveRecord adapters and their specific internal naming used
       # to compound the accessors for direct query serialization
       mattr_accessor :ar_adapters, instance_writer: false, default: {
@@ -29,9 +22,21 @@ module Rails # :nodoc:
 
       ##
       # :singleton-method:
+      # Initialize the class responsible for registering and keeping all the
+      # types and objects correctly registered.
+      mattr_accessor :type_map, instance_writer: false, default: GraphQL::TypeMap.new
+
+      ##
+      # :singleton-method:
+      # Marks if the JSON serialization of an ActiveRecord object can happen
+      # during the query, which has better performance. It will only be used
+      # whenever is possible.
+      mattr_accessor :allow_query_serialization, instance_writer: false, default: true
+
+      ##
+      # :singleton-method:
       # Specifies if the results of operations should be encoded with
-      # +ActiveSupport::JSON.encode+ instead of the default +JSON.generate+.
-      #
+      # +ActiveSupport::JSON#encode+ instead of the default +JSON#generate+.
       # See also https://github.com/rails/rails/blob/master/activesupport/lib/active_support/json/encoding.rb
       mattr_accessor :encode_with_active_support, instance_writer: false, default: false
 

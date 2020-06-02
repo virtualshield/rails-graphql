@@ -11,20 +11,14 @@ module Rails # :nodoc:
       class Input < Type
         extend Helpers::WithFields
 
-        redefine_singleton_method(:kind_enum) { 'INPUT_OBJECT' }
-        redefine_singleton_method(:output_type?) { false }
-        redefine_singleton_method(:input?) { true }
-
-        self.directive_location = :input_object
-        self.spec_object = true
-        self.abstract = true
+        setup! kind: :input_object, input: true
 
         self.valid_field_types = [Type::Enum, Type::Input, Type::Scalar].freeze
         self.field_types = [Field::InputField].freeze
 
         class << self
           # Check if a given value is a valid non-deserialized input
-          def valid_input?(value, fields = all_fields)
+          def valid_input?(value)
             return false unless value.is_a?(Hash)
 
             value = build_defaults(fields).merge(value.transform_keys(&:underscore))
@@ -36,9 +30,15 @@ module Rails # :nodoc:
           end
 
           # Build a hash with the default values for each of the given fields
-          def build_defaults(fields = all_fields)
+          def build_defaults
             values = fields.values.map(&:default)
             fields.keys.zip(values).to_h.stringify_keys
+          end
+
+          def inspect # :nodoc:
+            args = fields.each_value.map(&:inspect)
+            args = args.presence && "(#{args.join(', ')})"
+            "#<GraphQL::Input #{gql_name}#{args}>"
           end
         end
       end

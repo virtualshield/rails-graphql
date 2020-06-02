@@ -13,8 +13,21 @@ module GraphQL
     Union:     '::Rails::GraphQL::Type::Union',
   }.freeze
 
+  # List of directive shortcuts, which are basically the shjortcut of another
+  # shortcut to instantiate a directive.
+  #
+  # ==== Examples
+  #
+  #   GraphQL::DeprecatedDirective(...)
+  #   # => Rails::GraphQL::Directive::DeprecatedDirective(...)
+  #
+  #   Rails::GraphQL::Directive::DeprecatedDirective(...)
+  #   # => Rails::GraphQL::Directive::DeprecatedDirective.new(...)
+  DIRECTIVE_SHORTCUTS = %i[DeprecatedDirective IncludeDirective SkipDirective]
+
   class << self
-    delegate :to_gql, :to_graphql, to: ::Rails::GraphQL
+    delegate :to_gql, :to_graphql, :type_map, to: 'Rails::GraphQL'
+    delegate *DIRECTIVE_SHORTCUTS, to: 'Rails::GraphQL::Directive'
 
     def const_missing(name) # :nodoc:
       COSNT_SHORTCUTS[name]&.constantize || super

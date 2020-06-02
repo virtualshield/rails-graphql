@@ -19,34 +19,26 @@ module Rails # :nodoc:
     #
     # It also accepts a block for furthere configurations
     class Field
+      include Helpers::WithDirectives
       include Helpers::WithArguments
 
-      # Keep the symbol that represents the location that the directives must
-      # have in order to be added to the list
-      class_attribute :directive_location, instance_writer: false, default: :field_definition
+      attr_reader :name, :gql_name, :owner
 
-      attr_reader :name, :gql_name
-
-      delegate :input_type?, :output_type?, :leaf_type?, :directive_location, to: :class
+      delegate :input_type?, :output_type?, :leaf_type?, to: :class
+      delegate :namespaces, to: :owner
       delegate :[], to: :arguments
 
       # Load all the subtype of fields
+      require_relative 'field/typed_field'
+
       require_relative 'field/input_field'
       require_relative 'field/output_field'
 
       class ScopedConfig < Struct.new(:field) # :nodoc: all
-        delegate :argument, :directive_location, to: :field
+        delegate :argument, :use, to: :field
 
         def desc(value)
           field.instance_variable_set(:@desc, value.squish)
-        end
-
-        def directives(*list)
-          current = field.instance_variable_get(:@directives)
-          return if current.nil?
-
-          list = GraphQL.directives_to_set(directives, current, directive_location)
-          current.merge(list) unless current.nil?
         end
       end
 
@@ -67,9 +59,20 @@ module Rails # :nodoc:
         end
       end
 
-      def initialize(name, null: true, array: false, nullable: true, desc: nil, &block)
+      def initialize(
+        name,
+        owner: ,
+        null: true,
+        array: false,
+        nullable: true,
+        directives: nil,
+        desc: nil,
+        &block
+      )
+        @owner = owner
         @name = name.to_s.underscore.to_sym
         @gql_name = @name.to_s.camelize(:lower)
+        @directives = GraphQL.directives_to_set(directives, [], directive_location)
 
         @null = null
         @array = array
@@ -79,19 +82,15 @@ module Rails # :nodoc:
         configure(&block) if block.present?
       end
 
+      def initialize_copy(*)
+        super
+
+        @owner = nil
+      end
+
       # Allow extra configurations to be performed using a block
       def configure(&block)
         ScopedConfig.new(self).instance_exec(&block)
-      end
-
-      # Whenever a field supports directives, call this method to initiate it
-      def assign_directives(directives, deprecated: nil)
-        directives = GraphQL.directives_to_set(directives, [], directive_location)
-        directives << Directive::DeprecatedDirective.new(
-          reason: (deprecated.is_a?(String) ? deprecated : nil)
-        ) unless deprecated.nil?
-
-        @directives = directives
       end
 
       # Checks if the argument can be null
@@ -119,10 +118,29 @@ module Rails # :nodoc:
         !!@desc
       end
 
+      # This method must be overridden by children classes
+      def valid_input?(*)
+        false
+      end
+
+      # This method must be overridden by children classes
+      def valid_output?(*)
+        false
+      end
+
       # Check if the given value is valid using +valid_input?+ or
       # +valid_output?+ depending of the type of the field
       def valid?(value)
         input_type? ? valid_input?(value) : valid_output?(value)
+      end
+
+      # Checks if the definition of the field is valid.
+      def validate!
+        super if defined? super
+      end
+
+      def inspect # :nodoc:
+        "#{name}: "
       end
     end
   end

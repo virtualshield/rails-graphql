@@ -54,7 +54,6 @@ module Rails # :nodoc:
 
         def visit_Rails_GraphQL_Type_Enum(o, collector)
           visit_description(o, collector)
-          collector << 'extend ' if o.extension?
           collector << 'enum '
           collector << o.gql_name
           visit_directives(o.directives, collector)
@@ -68,7 +67,6 @@ module Rails # :nodoc:
 
         def visit_Rails_GraphQL_Type_Input(o, collector)
           visit_description(o, collector)
-          collector << 'extend ' if o.extension?
           collector << 'input '
           collector << o.gql_name
           visit_directives(o.directives, collector)
@@ -85,7 +83,6 @@ module Rails # :nodoc:
 
         def visit_Rails_GraphQL_Type_Scalar(o, collector)
           visit_description(o, collector)
-          collector << 'extend ' if o.extension?
           collector << 'scalar '
           collector << o.gql_name
           visit_directives(o.directives, collector)
@@ -95,7 +92,6 @@ module Rails # :nodoc:
 
         def visit_Rails_GraphQL_Type_Union(o, collector)
           visit_description(o, collector)
-          collector << 'extend ' if o.extension?
           collector << 'union '
           collector << o.gql_name
           visit_directives(o.directives, collector)
@@ -166,7 +162,7 @@ module Rails # :nodoc:
 
         def visit_typed_object(o, collector)
           collector << '[' if o.array?
-          collector << o.type.gql_name
+          collector << o.type_klass.gql_name
 
           if o.array?
             collector << '!' unless o.nullable?
@@ -188,12 +184,12 @@ module Rails # :nodoc:
           else
             send dispatch_method, object
           end
-        rescue NoMethodError => e
+        rescue ::NoMethodError => e
           raise e if respond_to?(dispatch_method, true)
           superklass = object_class.ancestors.find { |klass|
             respond_to?(dispatch[klass], true)
           }
-          raise(TypeError, "Cannot visit #{object_class}") unless superklass
+          raise(::TypeError, "Cannot visit #{object_class}") unless superklass
           dispatch[object_class] = dispatch[superklass]
           retry
         end

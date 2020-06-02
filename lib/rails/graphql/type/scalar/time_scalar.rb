@@ -6,14 +6,14 @@ module Rails # :nodoc:
       # Uses as a float extension in order to transmit times (hours, minutes,
       # and seconds) as a numeric representation of seconds and miliseconds.
       class Scalar::TimeScalar < Scalar::FloatScalar
-        redefine_singleton_method(:ar_type) { :time }
+        EPOCH = Time.utc(2000, 1, 1)
+
+        set_ar_type! :time
 
         desc <<~MSG
           The Time scalar type represents a number of seconds and miliseconds.
           A distance in time since regardless of the day and the timezone.
         MSG
-
-        EPOCH = Time.utc(2000, 1, 1)
 
         class << self
           def valid_output?(value)

@@ -2,11 +2,11 @@
 
 require 'active_model'
 require 'active_support'
-require 'active_support/core_ext/class/subclasses'
 
 require 'rails/graphql/version'
 
 ActiveSupport::Inflector.inflections(:en) do |inflect|
+  inflect.acronym 'GraphiQL'
   inflect.acronym 'GraphQL'
   inflect.acronym 'GQLAst'
 end
@@ -35,9 +35,6 @@ module Rails # :nodoc:
   #   and is handled in the Singleton extent. They are handled as instance
   #   whenever a definition or an execution uses them.
   # * <tt>Fields:</tt> TODO: Finish explaining
-  #
-  # TODO: In order to have a multi-introspection result on the same application,
-  # whe should implement a *namespace* concept
   module GraphQL
     extend ActiveSupport::Autoload
 
@@ -50,8 +47,7 @@ module Rails # :nodoc:
     eager_autoload do
       autoload :Core
       autoload :Native
-      autoload :NamedDefinition
-      autoload :WithDirectives
+      autoload :TypeMap
 
       autoload :Argument
       autoload :Directive
@@ -63,6 +59,8 @@ module Rails # :nodoc:
     end
 
     class << self
+      delegate :type_map, to: 'Rails::GraphQL::Core'
+
       ##
       # Initiate a simple config object. It also supports a block which
       # simplifies bulk configuration.
@@ -87,22 +85,14 @@ module Rails # :nodoc:
         config.each { |k, v| Core.send "#{k}=", v }
       end
 
-      # See {ToGQL}[rdoc-ref:Rails::GraphQL::Type] class.
-      def find_input_type(thing)
-        GraphQL::Type.find_input(thing)
-      end
-
-      # See {ToGQL}[rdoc-ref:Rails::GraphQL::Type] class.
-      def find_output_type(thing)
-        GraphQL::Type.find_output(thing)
-      end
-
       ##
       # Turn the given object into its string representation as GraphQl
       # See {ToGQL}[rdoc-ref:Rails::GraphQL::ToGQL] class.
       def to_gql(object, **xargs)
         ToGQL.compile(object, **xargs)
       end
+
+      alias to_graphql to_gql
 
       ##
       # Returns a set instance with uniq directives from the given list.
@@ -132,10 +122,16 @@ module Rails # :nodoc:
         end
       end
 
-      alias to_graphql to_gql
+      def eager_load! # :nodoc:
+        super
+
+        GraphQL::Directive.eager_load!
+        GraphQL::Type.eager_load!
+      end
     end
   end
 end
 
+require 'rails/graphql/errors'
 require 'rails/graphql/shortcuts'
 require 'rails/graphql/railtie'

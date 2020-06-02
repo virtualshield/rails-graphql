@@ -9,8 +9,8 @@ module Rails # :nodoc:
       #
       # See http://spec.graphql.org/June2018/#sec-Float
       class Scalar::FloatScalar < Scalar
-        redefine_singleton_method(:ar_type) { :float }
         self.spec_object = true
+        set_ar_type! :float
 
         desc 'The Float scalar type represents signed double‐precision fractional values.'
 

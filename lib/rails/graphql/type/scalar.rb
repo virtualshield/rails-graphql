@@ -17,12 +17,7 @@ module Rails # :nodoc:
         extend ActiveSupport::Autoload
         extend Helpers::LeafFromAr
 
-        redefine_singleton_method(:leaf_type?) { true }
-        redefine_singleton_method(:scalar?) { true }
-
-        self.directive_location = :scalar
-        self.spec_object = true
-        self.abstract = true
+        setup! leaf: true, input: true, output: true
 
         eager_autoload do
           # Load all the default scalar types
@@ -65,6 +60,10 @@ module Rails # :nodoc:
           # Turn a user input of this given type into an ruby object
           def deserialize(value)
             to_hash(value)
+          end
+
+          def inspect # :nodoc:
+            "#<GraphQL::Scalar #{gql_name}>"
           end
         end
       end

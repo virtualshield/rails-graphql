@@ -9,12 +9,7 @@ module Rails # :nodoc:
       # Object types.
       # See http://spec.graphql.org/June2018/#UnionTypeDefinition
       class Union < Type
-        redefine_singleton_method(:input_type?) { false }
-        redefine_singleton_method(:union?) { true }
-
-        self.directive_location = :union
-        self.spec_object = true
-        self.abstract = true
+        setup! output: true
 
         # The list of accepted classes for members
         VALID_MEMBER_TYPES = [Type::Enum, Type::Input, Type::Object].freeze
@@ -39,12 +34,12 @@ module Rails # :nodoc:
               All the union members must be of the same base type.
             MSG
 
-            check_types = members? ? @members.first.base_type : VALID_MEMBER_TYPES
+            check_types = members? ? members.first.base_type : VALID_MEMBER_TYPES
             raise ArgumentError, <<~MSG unless (check_types & checker).size === 1
               A union cannot contain members of different base types.
             MSG
 
-            self.members.merge(others)
+            members.merge(others)
           end
         end
       end

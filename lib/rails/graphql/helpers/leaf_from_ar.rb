@@ -103,6 +103,11 @@ module Rails # :nodoc:
             ar_object.arel_attribute(attribute)
           end
 
+          # Change the ActiveRecord type of the given object
+          def set_ar_type!(type)
+            redefine_singleton_method(:ar_type) { type }
+          end
+
         private
 
           # Return the list of defined ActiveRecord Adapters

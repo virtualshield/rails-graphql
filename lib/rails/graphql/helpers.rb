@@ -7,10 +7,12 @@ module Rails # :nodoc:
 
       autoload :InheritedCollection
       autoload :LeafFromAr
+      autoload :Registerable
 
       autoload :WithArguments
       autoload :WithDirectives
       autoload :WithFields
+      autoload :WithNamespace
 
     end
   end

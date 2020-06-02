@@ -6,8 +6,9 @@ module Rails # :nodoc:
       # Bigint basically removes the limit of the value, but it serializes as
       # a string so it won't go aginst the spec
       class Enum::DirectiveLocationEnum < Enum
-        redefine_singleton_method(:gql_name) { '__DirectiveLocation' }
         self.spec_object = true
+
+        rename! '__DirectiveLocation'
 
         desc 'The valid locations that a directive may be placed.'
 

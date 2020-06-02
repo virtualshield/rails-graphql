@@ -7,8 +7,8 @@ module Rails # :nodoc:
       #
       # See http://spec.graphql.org/June2018/#sec-Boolean
       class Scalar::BooleanScalar < Scalar
-        redefine_singleton_method(:ar_type) { :boolean }
         self.spec_object = true
+        set_ar_type! :boolean
 
         desc 'The Boolean scalar type represents true or false.'
 

@@ -6,8 +6,9 @@ module Rails # :nodoc:
       # Bigint basically removes the limit of the value, but it serializes as
       # a string so it won't go aginst the spec
       class Enum::TypeKindEnum < Enum
-        redefine_singleton_method(:gql_name) { '__TypeKind' }
         self.spec_object = true
+
+        rename! '__TypeKind'
 
         desc <<~DESC
           The fundamental unit of any GraphQL Schema is the type.

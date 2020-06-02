@@ -5,7 +5,7 @@ module Rails # :nodoc:
     class Type # :nodoc:
       # DateTime uses a ISO 8601 string to excahnge the value.
       class Scalar::DateTimeScalar < Scalar
-        redefine_singleton_method(:ar_type) { :datetime }
+        set_ar_type! :datetime
 
         desc 'The DateTime scalar type represents a ISO 8601 string value.'
 

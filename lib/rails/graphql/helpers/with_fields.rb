@@ -13,24 +13,43 @@ module Rails # :nodoc:
       # used to handle them.
       module WithFields
         def self.extended(other)
-          other.extend(Helpers::InheritedCollection)
-          other.inherited_collection(:fields, default: {})
+          other.extend(WithFields::ClassMethods)
+          other.define_singleton_method(:fields) { @fields ||= {} }
           other.class_attribute(:field_types, instance_writer: false, default: [])
           other.class_attribute(:valid_field_types, instance_writer: false, default: [])
         end
 
+        module ClassMethods # :nodoc: all
+          def inherited(subclass)
+            super if defined? super
+            return if fields.empty?
+
+            new_fields = fields.transform_values do |item|
+              item.dup.tap { |x| x.instance_variable_set(:@owner, subclass) }
+            end
+
+            subclass.instance_variable_set(:@fields, new_fields)
+          end
+        end
+
+        # Validate all the fields to make sure the definition is valid
+        def validate!
+          super if defined? super
+          fields.each_value(&:validate!)
+        end
+
         # See {Field}[rdoc-ref:Rails::GraphQL::Field] class.
         def field(name, *args, **xargs, &block)
+          xargs[:owner] = self
           object = field_builder.call(name, *args, **xargs, &block)
 
           raise ArgumentError, <<~MSG.squish if fields.key?(object.name)
             The #{name.inspect} field is already defined and can't be redifined.
           MSG
 
-          object.validate!(valid_field_types)
           fields[object.name] = object
-        rescue ArgumentError => e
-          raise ArgumentError, e.message + "\n  Defined at: #{caller(2)[0]}"
+        rescue DefinitionError => e
+          raise e.class, e.message + "\n  Defined at: #{caller(2)[0]}"
         end
 
         private

@@ -9,12 +9,7 @@ module Rails # :nodoc:
       # a specific type.
       # See http://spec.graphql.org/June2018/#ObjectTypeDefinition
       class Object < Type
-        redefine_singleton_method(:input_type?) { false }
-        redefine_singleton_method(:object?) { true }
-
-        self.directive_location = :object
-        self.spec_object = true
-        self.abstract = true
+        setup! output: true
       end
     end
   end

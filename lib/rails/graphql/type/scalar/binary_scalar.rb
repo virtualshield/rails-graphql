@@ -8,6 +8,8 @@ module Rails # :nodoc:
       #
       # It also rely on ActiveModel so it can easily share the same Data object.
       class Scalar::BinaryScalar < Scalar
+        aliases :file
+
         desc <<~DESC
           The Binary scalar type represents a Base64 string.
           Normally used to share files and uploads.

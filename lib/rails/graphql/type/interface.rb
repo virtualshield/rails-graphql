@@ -8,11 +8,7 @@ module Rails # :nodoc:
       # Interfaces represent a list of named fields and their types.
       # See http://spec.graphql.org/June2018/#InterfaceTypeDefinition
       class Interface < Type
-        redefine_singleton_method(:input_type?) { false }
-        redefine_singleton_method(:interface?) { true }
-
-        self.spec_object = true
-        self.abstract = true
+        setup! output: true
       end
     end
   end
