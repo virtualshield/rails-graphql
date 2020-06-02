@@ -18,8 +18,15 @@ module Rails # :nodoc:
     class Field::InputField < Field
       include Field::TypedField
 
+      attr_reader :default
+
       redefine_singleton_method(:input_type?) { true }
       self.directive_location = :input_field_definition
+
+      def initialize(*args, default: nil, **xargs, &block)
+        super(*args, **xargs, &block)
+        @default = default
+      end
 
       # Override with exception
       def configure
@@ -31,6 +38,16 @@ module Rails # :nodoc:
         raise ArgumentError, 'Input fields doesn\'t support arguments'
       end
 
+      # Checks if a default value was provided
+      def default_value?
+        !default.nil?
+      end
+
+      # Turn the default value into a JSON string representation
+      def default_to_json
+        to_json(default)
+      end
+
       # This checks if a given serialized value is valid for this field
       def valid_input?(value)
         return null? if value.nil?
@@ -38,29 +55,30 @@ module Rails # :nodoc:
         type_klass.valid_input?(value)
       end
 
-      # Turn the given value into a JSON string representation
-      def to_json(value)
-        return nil if value.nil?
-        return type_klass.to_json(value) unless array?
+      # Turn the given value into an ruby representation of it
+      def deserialize(value)
+        value.nil? ? default : super
+      end
 
-        entries = value.map { |part| type_klass.to_json(part) }
-        "[#{entries.join(', ')}]"
+      # Checks if the default value of the field is valid
+      def validate!
+        super if defined? super
+
+        raise ArgumentError, <<~MSG.squish unless default.nil? || valid?(default)
+          The given default value "#{default.inspect}" is not valid for this field.
+        MSG
       end
 
       def inspect # :nodoc:
         result = super
-        result += '[' if array?
-        result += type_klass.gql_name
-        result += '!' if array? && !nullable?
-        result += ']' if array?
-        result += '!' unless null?
+        result += " = #{default_to_json}" if default?
         result
       end
 
       protected
 
         def valid_input_array?(value)
-          return false unless value.is_a?(Enumerable)
+          return false unless value.is_a?(Array)
           value.all? { |val| (val.nil? && nullable?) || type_klass.valid_input?(val) }
         end
     end

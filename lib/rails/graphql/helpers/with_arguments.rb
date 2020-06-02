@@ -8,6 +8,7 @@ module Rails # :nodoc:
         def self.extended(other)
           other.extend(WithArguments::ClassMethods)
           other.define_singleton_method(:arguments) { @arguments ||= {} }
+          other.delegate(:arguments, to: :class)
         end
 
         def self.included(other)

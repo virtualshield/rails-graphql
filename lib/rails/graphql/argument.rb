@@ -97,25 +97,30 @@ module Rails # :nodoc:
       end
 
       # Turn the default value into a JSON string representation
-      def default_to_json
-        to_json(@default)
+      def default_to_hash
+        to_hash(@default)
+      end
+
+      # Transforms the given value to its representation in a JSON string
+      def to_json(value)
+        to_hash(value).inspect
       end
 
       # Turn the given value into a JSON string representation
-      def to_json(value)
-        return nil if value.nil?
-        return type_klass.to_json(value) unless array?
-
-        entries = value.map { |part| type_klass.to_json(part) }
-        "[#{entries.join(', ')}]"
+      def to_hash(value)
+        return @default if value.nil?
+        return type_klass.to_hash(value) unless array?
+        value.map { |part| type_klass.to_hash(part) }
       end
 
-      # This checks if a given serialized value is valid for this argument
-      def valid?(value)
+      # This checks if a given serialized value is valid for this field
+      def valid_input?(value)
         return null? if value.nil?
-        return valid_array?(value) if array?
+        return valid_input_array?(value) if array?
         type_klass.valid_input?(value)
       end
+
+      alias valid? valid_input?
 
       # Checks if the definition of the argument is valid
       def validate!
@@ -146,7 +151,7 @@ module Rails # :nodoc:
 
       private
 
-        def valid_array?(value)
+        def valid_input_array?(value)
           return false unless value.is_a?(Enumerable)
           value.all? { |val| (val.nil? && nullable?) || type_klass.valid_input?(val) }
         end

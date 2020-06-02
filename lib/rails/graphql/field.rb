@@ -24,7 +24,7 @@ module Rails # :nodoc:
 
       attr_reader :name, :gql_name, :owner
 
-      delegate :input_type?, :output_type?, :leaf_type?, to: :class
+      delegate :input_type?, :output_type?, :leaf_type?, :from_ar?, :from_ar, to: :class
       delegate :namespaces, to: :owner
       delegate :[], to: :arguments
 
@@ -56,6 +56,17 @@ module Rails # :nodoc:
         # Defines if the current field is considered a leaf output
         def leaf_type?
           false
+        end
+
+        # Normally extended fields cannot be serialized during a query. But, by
+        # having this and the +from_ar+ methods, other classes can override them
+        # and provide a valid fetcher.
+        def from_ar?(*)
+          false
+        end
+
+        # Just to ensure the compatibility with other outputs.
+        def from_ar(*)
         end
       end
 
@@ -128,6 +139,25 @@ module Rails # :nodoc:
         false
       end
 
+      # Transforms the given value to its representation in a JSON string
+      def to_json(value)
+        to_hash(value).inspect
+      end
+
+      # Turn the given value into a JSON string representation
+      def to_hash(value)
+        return nil if value.nil?
+        return type_klass.to_hash(value) unless array?
+        value.map { |part| type_klass.to_hash(part) }
+      end
+
+      # Turn a user input of this given type into an ruby object
+      def deserialize(value)
+        return if value.nil?
+        return type_klass.deserialize(value) unless array?
+        value.map { |val| type_klass.deserialize(val) unless val.nil? }
+      end
+
       # Check if the given value is valid using +valid_input?+ or
       # +valid_output?+ depending of the type of the field
       def valid?(value)
@@ -140,7 +170,9 @@ module Rails # :nodoc:
       end
 
       def inspect # :nodoc:
-        "#{name}: "
+        args = arguments.each_value.map(&:inspect)
+        args = args.presence && "(#{args.join(', ')})"
+        "#{name}#{args}: "
       end
     end
   end

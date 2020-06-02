@@ -66,8 +66,8 @@ module Rails # :nodoc:
           #   directive to the value. A +true+ value simple attaches the directive,
           #   but provide a string so it can be used as the reason of the deprecation.
           #   See {DeprecatedDirective}[rdoc-ref:Rails::GraphQL::Directive::DeprecatedDirective]
-          #   (defaults to nil).
-          def add(value, desc: nil, directives: nil, deprecated: nil)
+          #   (defaults to false).
+          def add(value, desc: nil, directives: nil, deprecated: false)
             value = to_hash(value)
             raise ArgumentError, <<~MSG if all_values.include?(value)
               The "#{value}" is already defined for #{gql_name} enum.
@@ -81,7 +81,7 @@ module Rails # :nodoc:
             directives = GraphQL.directives_to_set(directives)
             directives << Directive::DeprecatedDirective.new(
               reason: (deprecated.is_a?(String) ? deprecated : nil)
-            ) unless deprecated.nil?
+            ) if !!deprecated
 
             self.values << value
             self.value_description[value] = desc unless desc.nil?

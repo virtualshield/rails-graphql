@@ -34,6 +34,8 @@ module Rails # :nodoc:
         def visit_Rails_GraphQL_Field(o, collector)
           visit_description(o, collector)
           collector << o.gql_name
+
+          visit_arguments(o.arguments, collector)
           collector << ': '
         end
 
@@ -41,15 +43,25 @@ module Rails # :nodoc:
           visit_description(o, collector)
           collector << 'schema'
           visit_directives(o.directives, collector)
+
           collector.indented(' {', '}') do
           end
 
           collector.eol
         end
 
+        def visit_Rails_GraphQL_Field_OutputField(o, collector)
+          visit_Rails_GraphQL_Field(o, collector)
+          visit_typed_object(o, collector)
+          visit_directives(o.directives, collector)
+          collector.eol
+        end
+
         def visit_Rails_GraphQL_Field_InputField(o, collector)
           visit_Rails_GraphQL_Field(o, collector)
           visit_typed_object(o, collector)
+          visit_directives(o.directives, collector)
+          collector.eol
         end
 
         def visit_Rails_GraphQL_Type_Enum(o, collector)
@@ -72,10 +84,20 @@ module Rails # :nodoc:
           visit_directives(o.directives, collector)
 
           collector.indented(' {', '}') do
-            o.fields.each_value.with_index do |x, i|
-              collector.eol if i > 0
-              visit(x, collector)
-            end
+            o.fields.each_value.with_index { |x, i| visit(x, collector) }
+          end if o.fields.present?
+
+          collector.eol
+        end
+
+        def visit_Rails_GraphQL_Type_Interface(o, collector)
+          visit_description(o, collector)
+          collector << 'interface '
+          collector << o.gql_name
+          visit_directives(o.directives, collector)
+
+          collector.indented(' {', '}') do
+            o.fields.each_value.with_index { |x, i| visit(x, collector) }
           end if o.fields.present?
 
           collector.eol
@@ -103,7 +125,20 @@ module Rails # :nodoc:
 
         def visit_Rails_GraphQL_Directive_Instance(o, collector)
           collector << '@' << o.gql_name
-          visit_arguments(o.arguments, collector)
+          return unless o.args.to_h.values.any?
+
+          collector << '('
+          o.arguments.values.each_with_index do |x, i|
+            value = o.args[x.gql_name]
+            value = o.args[x.name] if value.nil?
+            next if value.nil?
+
+            collector << ', ' if i > 0
+            collector << x.gql_name
+            collector << ': '
+            collector << x.to_hash(value).inspect
+          end
+          collector << ')'
         end
 
         def visit_Rails_GraphQL_Argument_Instance(o, collector)
@@ -172,7 +207,7 @@ module Rails # :nodoc:
           collector << '!' unless o.null?
 
           if o.try(:default_value?)
-            collector << ' = ' << o.default_to_json
+            collector << ' = ' << o.default_to_hash.inspect
           end
         end
 

@@ -47,6 +47,12 @@ module Rails # :nodoc:
               definition is by using extensions.
             MSG
 
+            invalid_internal = !spec_object && gql_name.start_with?('__')
+            raise NameError, <<~MSG.squish if invalid_internal
+              The name "#{gql_name}" is invalid. Only internal objects from the
+              spec can have a name starting with "__".
+            MSG
+
             type_map.register(self).try(:validate!)
           end
         end

@@ -119,6 +119,7 @@ module Rails # :nodoc:
 
       attr_reader :args
 
+      delegate :locations, :gql_name, to: :class
       delegate_missing_to :@scope
 
       def initialize(**xargs)
@@ -145,8 +146,9 @@ module Rails # :nodoc:
           Invalid value "#{@args[name].inspect}" for #{name} argument.
         MSG
 
-        # TODO: Create a exception class and send the invalid as details
-        raise "Invalid usage of @#{gql_name} directive: #{invalid.to_sentence}"
+        raise ArgumentError, <<~MSG.squish
+          Invalid usage of @#{gql_name} directive: #{invalid.to_sentence}
+        MSG
       end
     end
   end

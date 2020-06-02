@@ -24,9 +24,14 @@ module Rails # :nodoc:
             value = build_defaults(fields).merge(value.transform_keys(&:underscore))
             return false unless value.size.eql?(fields.size)
 
-            # It's okay to symbolize user input here because we already checked
-            # that the keys are the same as the ones defined on fields
-            value.all? { |key, val| fields[key.to_sym].valid_input?(val) }
+            fields.values.all? { |item| item.valid_input?(value[item.gql_name]) }
+          end
+
+          # Turn the given value into an ruby representation of it
+          def deserialize(value)
+            fields.transform_values do |field|
+              field.deserialize(value[field.gql_name])
+            end
           end
 
           # Build a hash with the default values for each of the given fields

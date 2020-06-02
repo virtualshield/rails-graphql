@@ -25,6 +25,12 @@ module Rails # :nodoc:
           :string
         end
 
+        # If a class extend this module, we assume that it can serialize
+        # attributes direct from the query point of view
+        def from_ar?(*)
+          true
+        end
+
         # Returns an Arel object that represents how this object is serialized
         # direct from the query
         #

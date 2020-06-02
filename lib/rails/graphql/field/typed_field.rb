@@ -5,15 +5,13 @@ module Rails # :nodoc:
     # This is a helper module that basically works with fields that have an
     # assigned type value
     module Field::TypedField
-      attr_reader :type, :default
+      attr_reader :type
 
       delegate :valid_field_types, to: :owner
 
-      def initialize(name, type, *args, default: nil, **xargs, &block)
+      def initialize(name, type, *args, **xargs, &block)
         super(name, *args, **xargs, &block)
-
         @type = type.to_s.underscore.to_sym
-        @default = default
       end
 
       def initialize_copy(*)
@@ -27,17 +25,7 @@ module Rails # :nodoc:
         @type_klass ||= GraphQL.type_map.fetch!(type, namespaces: namespaces)
       end
 
-      # Checks if a given default value was provided
-      def default_value?
-        !@default.nil?
-      end
-
-      # Turn the default value into a JSON string representation
-      def default_to_json
-        to_json(@default)
-      end
-
-      # Checks if the type and the default value of the field are valid
+      # Checks if the type of the field is valid
       def validate!
         super if defined? super
 
@@ -56,10 +44,16 @@ module Rails # :nodoc:
         raise ArgumentError, <<~MSG.squish unless valid_type
           The "#{type_klass.base_type}" is not accepted in this context.
         MSG
+      end
 
-        raise ArgumentError, <<~MSG.squish unless default.nil? || valid?(default)
-          The given default value "#{default.inspect}" is not valid for this field.
-        MSG
+      def inspect # :nodoc:
+        result = super
+        result += '[' if array?
+        result += type_klass.gql_name
+        result += '!' if array? && !nullable?
+        result += ']' if array?
+        result += '!' unless null?
+        result
       end
     end
   end

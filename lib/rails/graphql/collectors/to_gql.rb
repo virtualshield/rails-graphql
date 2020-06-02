@@ -12,7 +12,7 @@ module Rails # :nodoc:
 
           eol.indent
           yield
-          eol.unindent
+          unindent
 
           self << finish unless finish.nil?
           self
