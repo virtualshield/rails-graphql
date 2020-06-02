@@ -44,6 +44,10 @@ module Rails # :nodoc:
         end
 
         # Use this method to assign directives to the given definition
+        # TODO: Check if the first argument is an instance of a directive,
+        # otherwise allow +key, **xargs+ as an overload, where the key is the
+        # name of the directive (and found using +GraphQL.type_map+) and the
+        # +**xargs+ used to initialize the directive
         def use(*list)
           current = try(:all_directives) || directives
           directives.merge(GraphQL.directives_to_set(list, current, directive_location))
