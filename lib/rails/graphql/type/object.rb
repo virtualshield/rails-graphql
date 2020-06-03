@@ -9,6 +9,7 @@ module Rails # :nodoc:
       # a specific type.
       # See http://spec.graphql.org/June2018/#ObjectTypeDefinition
       class Object < Type
+        extend ActiveSupport::Autoload
         extend Helpers::WithFields
 
         setup! output: true
@@ -21,6 +22,15 @@ module Rails # :nodoc:
           Type::Scalar,
           Type::Union,
         ].freeze
+
+        eager_autoload do
+          autoload :DirectiveObject
+          autoload :EnumValueObject
+          autoload :FieldObject
+          autoload :InputValueObject
+          autoload :SchemaObject
+          autoload :TypeObject
+        end
 
         # Define the methods for accessing the interfaces of the object
         inherited_collection :interfaces
