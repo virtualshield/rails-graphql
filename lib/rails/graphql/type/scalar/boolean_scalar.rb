@@ -9,6 +9,7 @@ module Rails # :nodoc:
       class Scalar::BooleanScalar < Scalar
         self.spec_object = true
         set_ar_type! :boolean
+        aliases :bool
 
         desc 'The Boolean scalar type represents true or false.'
 

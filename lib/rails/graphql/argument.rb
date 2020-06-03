@@ -20,6 +20,8 @@ module Rails # :nodoc:
     # * <tt>:array</tt> - Marks if the type should be wrapped as an array (defaults to false).
     # * <tt>:nullable</tt> - Marks if the internal values of an array can be null
     #   (defaults to true).
+    # * <tt>:full</tt> - Shortcut for +null: false, nullable: false, array: true+
+    #   (defaults to false).
     # * <tt>:directives</tt> - The list of directives associated with the value
     #   (defaults to nil).
     # * <tt>:default</tt> - Sets a default value for the argument (defaults to nil).
@@ -34,6 +36,7 @@ module Rails # :nodoc:
         type,
         owner: ,
         null: true,
+        full: false,
         array: false,
         nullable: true,
         default: nil,
@@ -47,9 +50,10 @@ module Rails # :nodoc:
 
         @directives = GraphQL.directives_to_set(directives, [], :argument_definition)
 
-        @null = null
-        @array = array
-        @nullable = nullable
+        @null     = full ? false : null
+        @array    = full ? true  : array
+        @nullable = full ? false : nullable
+
         @default = default
         @desc = desc&.squish
       end

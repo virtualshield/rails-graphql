@@ -28,3 +28,23 @@ class GraphQL::UserObject < GraphQL::Object
   field :age, :integer, null: false, desc: "The user's age"
   field :birthdate, :date, null: false, desc: "The user's birthdate"
 end
+
+class GraphQL::SampleClass < GraphQL::Object
+  desc 'Test for use with symbol'
+
+  field :old_ids, :id, full: true do
+    desc 'The old list of ids'
+
+    use :deprecated, reason: 'Use the +newIds+ instead, it is faster'
+
+    argument :odd_only, :bool, default: false
+    argument :even_only, :bool, default: false
+  end
+
+  field :new_ids, :id, full: true do
+    desc 'The new list of ids'
+
+    argument :odd_only, :bool, default: false
+    argument :even_only, :bool, default: false
+  end
+end

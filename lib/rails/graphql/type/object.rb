@@ -71,7 +71,7 @@ module Rails # :nodoc:
             others.flatten!
             others.map! do |item|
               next item unless item.is_a?(Symbol)
-              GraphQL.type_map.fetch(item, namespaces: namespaces)
+              GraphQL.type_map.fetch!(item, namespaces: namespaces)
             end
 
             raise ArgumentError, <<~MSG unless others.all?(&:interface?)
@@ -83,7 +83,7 @@ module Rails # :nodoc:
 
           # Check if a object implements the given interface
           def implements?(interface)
-            interface = GraphQL.type_map.fetch(interface, namespaces: namespaces) \
+            interface = GraphQL.type_map.fetch!(interface, namespaces: namespaces) \
               if interface.is_a?(Symbol)
 
             all_interfaces.any? { |item| item <= interface }

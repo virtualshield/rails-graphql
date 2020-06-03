@@ -15,6 +15,8 @@ module Rails # :nodoc:
     # * <tt>:array</tt> - Marks if the type should be wrapped as an array (defaults to false).
     # * <tt>:nullable</tt> - Marks if the internal values of an array can be null
     #   (defaults to true).
+    # * <tt>:full</tt> - Shortcut for +null: false, nullable: false, array: true+
+    #   (defaults to false).
     # * <tt>:desc</tt> - The description of the argument (defaults to nil).
     #
     # It also accepts a block for furthere configurations
@@ -74,6 +76,7 @@ module Rails # :nodoc:
         name,
         owner: ,
         null: true,
+        full: false,
         array: false,
         nullable: true,
         directives: nil,
@@ -85,9 +88,10 @@ module Rails # :nodoc:
         @gql_name = @name.to_s.camelize(:lower)
         @directives = GraphQL.directives_to_set(directives, [], directive_location)
 
-        @null = null
-        @array = array
-        @nullable = nullable
+        @null     = full ? false : null
+        @array    = full ? true  : array
+        @nullable = full ? false : nullable
+
         @desc = desc&.squish
 
         configure(&block) if block.present?

@@ -43,12 +43,26 @@ module Rails # :nodoc:
           end
         end
 
-        # Use this method to assign directives to the given definition
-        # TODO: Check if the first argument is an instance of a directive,
-        # otherwise allow +key, **xargs+ as an overload, where the key is the
-        # name of the directive (and found using +GraphQL.type_map+) and the
-        # +**xargs+ used to initialize the directive
-        def use(*list)
+        # Use this method to assign directives to the given definition. You can
+        # also provide a symbol as a first argument and extra named-arguments
+        # to auto initialize a new instance of that directive.
+        def use(item_or_symbol, *list, **xargs)
+          if item_or_symbol.is_a?(Symbol)
+            directive = GraphQL.type_map.fetch!(
+              item_or_symbol,
+              base_class: :Directive,
+              namespaces: namespaces,
+            )
+
+            raise ArgumentError, <<~MSG.squish unless directive < GraphQL::Directive
+              Unable to find the #{item_or_symbol.inspect} directive.
+            MSG
+
+            list = [directive.new(**xargs)]
+          else
+            list << item_or_symbol
+          end
+
           current = try(:all_directives) || directives
           directives.merge(GraphQL.directives_to_set(list, current, directive_location))
         rescue DefinitionError => e

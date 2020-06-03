@@ -28,9 +28,7 @@ module Rails # :nodoc:
 
           def to_hash(value)
             value = value.to_i
-            return value if RANGE.cover?(value)
-            # TODO: Replace this exception to a specific type
-            raise 'Invalid integer value'
+            value if RANGE.cover?(value)
           end
         end
       end

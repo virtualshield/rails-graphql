@@ -28,6 +28,20 @@ module Rails # :nodoc:
 
       ##
       # :singleton-method:
+      # Set this to true in order to enable the descriptions of anything be
+      # defined on locale files form I18n, which also provides support for
+      # language translations.
+      mattr_accessor :enable_i18n_descriptions, instance_writer: false, default: true
+
+      ##
+      # :singleton-method:
+      # Set this to true in order to enable the automatic generation of
+      # description for fields that the description is missing. This has the
+      # lowest priority.
+      mattr_accessor :enable_auto_descriptions, instance_writer: false, default: true
+
+      ##
+      # :singleton-method:
       # Marks if the JSON serialization of an ActiveRecord object can happen
       # during the query, which has better performance. It will only be used
       # whenever is possible.
