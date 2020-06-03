@@ -35,7 +35,7 @@ module Rails # :nodoc:
       require_relative 'field/output_field'
 
       class ScopedConfig < Struct.new(:field) # :nodoc: all
-        delegate :argument, :use, to: :field
+        delegate :argument, :use, :internal!, to: :field
 
         def desc(value)
           field.instance_variable_set(:@desc, value.squish)
@@ -104,6 +104,15 @@ module Rails # :nodoc:
         ScopedConfig.new(self).instance_exec(&block)
       end
 
+      # Check if the other field is equivalent
+      def ==(other)
+        other.gql_name == gql_name &&
+          (other.null? == null? || other.null? && !null?) &&
+          other.array? == array? &&
+          other.nullable? == nullable? &&
+          match_arguments?(other)
+      end
+
       # Checks if the argument can be null
       def null?
         @null
@@ -127,6 +136,17 @@ module Rails # :nodoc:
       # Checks if a description was provided
       def description?
         !!@desc
+      end
+
+      # Check if the field is an internal one
+      def internal?
+        @internal
+      end
+
+      # Mark the field as an internal one, which comes from the spec and then
+      # can contain a name starting with "__"
+      def internal!
+        @internal = true
       end
 
       # This method must be overridden by children classes
@@ -165,8 +185,15 @@ module Rails # :nodoc:
       end
 
       # Checks if the definition of the field is valid.
-      def validate!
+      def validate!(*)
         super if defined? super
+
+        raise NameError, <<~MSG.squish if !internal? && gql_name.start_with?('__')
+          The name "#{gql_name}" is invalid. Only internal fields from the
+          spec can have a name starting with "__".
+        MSG
+
+        nil # No exception already means valid
       end
 
       def inspect # :nodoc:
@@ -174,6 +201,13 @@ module Rails # :nodoc:
         args = args.presence && "(#{args.join(', ')})"
         "#{name}#{args}: "
       end
+
+      private
+
+        def match_arguments?(other)
+          other.arguments.size == arguments.size &&
+            other.arguments.all? { |key, arg| arg == arguments[key] }
+        end
     end
   end
 end

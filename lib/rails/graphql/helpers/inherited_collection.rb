@@ -73,8 +73,9 @@ module Rails # :nodoc:
                 : instance_variable_set(ivar, default.dup)
             end
 
-            define_singleton_method("#{name}?") do |value|
-              instance_variable_get(ivar).present?
+            define_singleton_method("#{name}?") do
+              instance_variable_get(ivar).present? ||
+                superclass.try(name).present?
             end if instance_predicate
 
             define_singleton_method("#{name}=") do |value|

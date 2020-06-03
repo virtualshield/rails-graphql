@@ -138,7 +138,7 @@ module Rails # :nodoc:
       end
 
       # Checks if all the arguments provided to the directive instance are valid
-      def validate!
+      def validate!(*)
         invalid = arguments.reject { |name, arg| arg.valid?(@args[name]) }
         return if invalid.empty?
 
@@ -149,6 +149,8 @@ module Rails # :nodoc:
         raise ArgumentError, <<~MSG.squish
           Invalid usage of @#{gql_name} directive: #{invalid.to_sentence}
         MSG
+
+        nil # No exception already means valid
       end
     end
   end

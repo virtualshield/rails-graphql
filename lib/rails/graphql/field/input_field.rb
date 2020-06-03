@@ -61,12 +61,18 @@ module Rails # :nodoc:
       end
 
       # Checks if the default value of the field is valid
-      def validate!
+      def validate!(*)
         super if defined? super
+
+        raise ArgumentError, <<~MSG.squish unless type_klass.input_type?
+          The "#{type_klass.gql_name}" is not a valid input type.
+        MSG
 
         raise ArgumentError, <<~MSG.squish unless default.nil? || valid?(default)
           The given default value "#{default.inspect}" is not valid for this field.
         MSG
+
+        nil # No exception already means valid
       end
 
       def inspect # :nodoc:

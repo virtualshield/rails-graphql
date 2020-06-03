@@ -28,6 +28,11 @@ module Rails # :nodoc:
           nil
         end
 
+        # Check if the other type is equivalent
+        def ==(other)
+          other.class <= self.class
+        end
+
         # Return the base type in a symbolized way
         def kind
           base_type.name.demodulize.underscore.to_sym

@@ -17,14 +17,48 @@ module Rails # :nodoc:
 
         setup! output: true
 
-        self.valid_field_types = [Type::Enum, Type::Object, Type::Scalar].freeze
         self.field_types = [Field::OutputField].freeze
+        self.valid_field_types = [
+          Type::Enum,
+          Type::Interface,
+          Type::Object,
+          Type::Scalar,
+          Type::Union,
+        ].freeze
 
         class << self
+          # Check if the other type is equivalent, by checking if the other is
+          # an object and the object implements this interface
+          def ==(other)
+            super || (other.object? && other.implements?(self))
+          end
+
           def inspect # :nodoc:
             parts = fields.each_value.map(&:inspect)
             parts = parts.presence && "{#{parts.join(', ')}}"
             "#<GraphQL::Interface #{gql_name} #{parts}>"
+          end
+
+          # Check if the given object is properly implementing this interface
+          def validate!(object = nil)
+            super if defined? super
+            return if object.nil?
+
+            missing_keys = fields.keys - object.fields.keys
+            raise ArgumentError, <<~MSG.squish if missing_keys.present?
+              The "#{object.gql_name}" doesn't correctly implements "#{gql_name}", becuase
+              the #{missing_keys.map { |key| fields[key].gql_name.inspect }.to_sentence}
+              #{'field'.pluralize(missing_keys.size)} are missing.
+            MSG
+
+            fields.each do |key, item|
+              raise ArgumentError, <<~MSG.squish unless object.fields[key] == item
+                The "#{object.gql_name}" doesn't correctly implements "#{gql_name}",
+                beucase the "#{item.gql_name}" field has different definition.
+              MSG
+            end
+
+            nil # No exception already means valid
           end
         end
       end

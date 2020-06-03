@@ -26,6 +26,17 @@ module Rails # :nodoc:
         type_klass.valid_output?(value)
       end
 
+      # Checks if the default value of the field is valid
+      def validate!(*)
+        super if defined? super
+
+        raise ArgumentError, <<~MSG.squish unless type_klass.output_type?
+          The "#{type_klass.gql_name}" is not a valid output type.
+        MSG
+
+        nil # No exception already means valid
+      end
+
       protected
 
         def valid_output_array?(value)

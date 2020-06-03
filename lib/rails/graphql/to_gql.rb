@@ -84,7 +84,7 @@ module Rails # :nodoc:
           visit_directives(o.directives, collector)
 
           collector.indented(' {', '}') do
-            o.fields.each_value.with_index { |x, i| visit(x, collector) }
+            o.fields.each_value { |x| visit(x, collector) }
           end if o.fields.present?
 
           collector.eol
@@ -97,7 +97,27 @@ module Rails # :nodoc:
           visit_directives(o.directives, collector)
 
           collector.indented(' {', '}') do
-            o.fields.each_value.with_index { |x, i| visit(x, collector) }
+            o.fields.each_value { |x| visit(x, collector) }
+          end if o.fields.present?
+
+          collector.eol
+        end
+
+        def visit_Rails_GraphQL_Type_Object(o, collector)
+          visit_description(o, collector)
+          collector << 'type '
+          collector << o.gql_name
+
+          collector << ' implements ' if o.interfaces?
+          o.all_interfaces.each_with_index do |x, i|
+            collector << ' & ' if i > 0
+            collector << x.gql_name
+          end
+
+          visit_directives(o.directives, collector)
+
+          collector.indented(' {', '}') do
+            o.fields.each_value { |x| visit(x, collector) }
           end if o.fields.present?
 
           collector.eol

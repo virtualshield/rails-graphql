@@ -33,9 +33,10 @@ module Rails # :nodoc:
         end
 
         # Validate all the fields to make sure the definition is valid
-        def validate!
+        def validate!(*)
           super if defined? super
           fields.each_value(&:validate!)
+          nil # No exception already means valid
         end
 
         # See {Field}[rdoc-ref:Rails::GraphQL::Field] class.

@@ -37,9 +37,10 @@ module Rails # :nodoc:
         end
 
         # Validate all the arguments to make sure the definition is valid
-        def validate!
+        def validate!(*)
           super if defined? super
           arguments.each_value(&:validate!)
+          nil # No exception already means valid
         end
 
         # See {Argument}[rdoc-ref:Rails::GraphQL::Argument] class.

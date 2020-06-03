@@ -22,6 +22,12 @@ module Rails # :nodoc:
             members.first.base_type
           end
 
+          # Check if the other type is equivalent by checking if the type is
+          # member of any of this union members
+          def ==(other)
+            super || all_members.any? { |item| other <= item }
+          end
+
           # Unions cannot be serialized on queries
           def from_ar?(*)
             false
@@ -53,12 +59,18 @@ module Rails # :nodoc:
           def append(*others)
             return if others.blank?
 
-            checker = others.flatten.map(&:base_type).uniq
+            others.flatten!
+            others.map! do |item|
+              next item unless item.is_a?(Symbol)
+              GraphQL.type_map.fetch(item, namespaces: namespaces)
+            end
+
+            checker = others.lazy.map { |item| item.try(:base_type) }.uniq.force
             raise ArgumentError, <<~MSG unless checker.size === 1
               All the union members must be of the same base class.
             MSG
 
-            check_types = members? ? members.first.base_type : VALID_MEMBER_TYPES
+            check_types = members? ? [members.first.base_type] : VALID_MEMBER_TYPES
             raise ArgumentError, <<~MSG unless (check_types & checker).size === 1
               A union cannot contain members of different base classes.
             MSG
@@ -67,11 +79,15 @@ module Rails # :nodoc:
           end
 
           # Check if the union definition is valid
-          def validate!
+          def validate!(*)
+            super if defined? super
+
             size = members.lazy.map(&:base_type).uniq.force.size
             raise ArgumentError, <<~MSG unless size.eql?(1)
               All the members of the union must contain the same base class.
             MSG
+
+            nil # No exception already means valid
           end
 
           def inspect # :nodoc:

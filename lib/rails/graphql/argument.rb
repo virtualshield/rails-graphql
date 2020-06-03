@@ -61,6 +61,14 @@ module Rails # :nodoc:
         @type_klass = nil
       end
 
+      # Check if the other argument is equivalent
+      def ==(other)
+        other.gql_name == gql_name &&
+          other.null? == null? &&
+          other.array? == array? &&
+          other.nullable? == nullable?
+      end
+
       # Return the class of the type object
       def type_klass
         @type_klass ||= GraphQL.type_map.fetch!(type, namespaces: namespaces)
@@ -123,8 +131,12 @@ module Rails # :nodoc:
       alias valid? valid_input?
 
       # Checks if the definition of the argument is valid
-      def validate!
+      def validate!(*)
         super if defined? super
+
+        raise NameError, <<~MSG.squish if gql_name.start_with?('__')
+          The name "#{gql_name}" is invalid. Arugments name cannot start with "__".
+        MSG
 
         raise ArgumentError, <<~MSG.squish unless type_klass.is_a?(Module)
           Unable to find the "#{type.inspect}" input type on GraphQL context.
@@ -137,6 +149,8 @@ module Rails # :nodoc:
         raise ArgumentError, <<~MSG.squish unless default.nil? || valid?(default)
           The given default value "#{default.inspect}" is not valid for this argument.
         MSG
+
+        nil # No exception already means valid
       end
 
       def inspect # :nodoc:
