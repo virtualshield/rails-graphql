@@ -105,6 +105,14 @@ module Rails # :nodoc:
             all_interfaces.all? { |item| item.validate!(self) }
             nil # No exception already means valid
           end
+
+          protected
+
+            # A little helper to define arguments using the :arguments key
+            def arg(*args, **xargs, &block)
+              xargs[:owner] = self
+              GraphQL::Argument.new(*args, **xargs, &block)
+            end
         end
       end
     end

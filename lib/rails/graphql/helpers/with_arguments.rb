@@ -28,6 +28,18 @@ module Rails # :nodoc:
           end
         end
 
+        def initialize(*, arguments: nil, **)
+          return if arguments.nil?
+
+          arguments = Array.wrap(arguments)
+          checker = arguments.all? { |item| item.is_a?(Argument) }
+          raise ArgumentError, <<~MSG.squish unless checker
+            One or more items provided to the :arguments key are not valid Argument objects.
+          MSG
+
+          @arguments = arguments.map(&:name).zip(arguments).to_h
+        end
+
         def initialize_copy(orig)
           super
 

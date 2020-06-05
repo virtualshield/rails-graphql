@@ -157,6 +157,13 @@ module Rails # :nodoc:
         nil # No exception already means valid
       end
 
+      # This allows combining arguments
+      def +(other)
+        [self, other].flatten
+      end
+
+      alias_method :&, :+
+
       def inspect # :nodoc:
         result = "#{name}: "
         result += '[' if array?

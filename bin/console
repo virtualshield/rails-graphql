@@ -10,5 +10,6 @@ require 'irb/completion'
 
 require 'rails-graphql'
 
+
 ARGV.clear
 IRB.start

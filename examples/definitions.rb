@@ -48,3 +48,13 @@ class GraphQL::SampleClass < GraphQL::Object
     argument :even_only, :bool, default: false
   end
 end
+
+class GraphQL::SimpleArgsClass < GraphQL::Object
+  desc 'An object that uses the simple definition of arguments'
+
+  field :items_plus, :string, array: true,
+    arguments: arg(:odd, :boolean) + arg(:even, :boolean, default: false)
+
+  field :items_e, :string, array: true,
+    arguments: arg(:odd, :boolean) & arg(:even, :boolean, default: false)
+end

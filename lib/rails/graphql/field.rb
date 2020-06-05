@@ -81,6 +81,7 @@ module Rails # :nodoc:
         nullable: true,
         directives: nil,
         desc: nil,
+        **xargs,
         &block
       )
         @owner = owner
@@ -94,6 +95,7 @@ module Rails # :nodoc:
 
         @desc = desc&.squish
 
+        super(**xargs) if defined? super
         configure(&block) if block.present?
       end
 
