@@ -68,6 +68,12 @@ module Rails # :nodoc:
         rescue DefinitionError => e
           raise e.class, e.message + "\n  Defined at: #{caller(2)[0]}"
         end
+
+        # A short cute for arguments named and typed as id
+        def id_argument(*args, **xargs, &block)
+          xargs[:null] = false unless xargs.key?(:null)
+          argument(:id, :id, *args, **xargs, &block)
+        end
       end
     end
   end

@@ -62,6 +62,8 @@ module Rails # :nodoc:
           @gql_name ||= name.match(NAME_EXP)[1].tr(':', '')
         end
 
+        alias graphql_name gql_name
+
         # Return the name of the object as a symbol
         def to_sym
           @gql_key ||= gql_name.underscore.to_sym

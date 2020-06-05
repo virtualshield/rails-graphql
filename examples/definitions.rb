@@ -58,3 +58,15 @@ class GraphQL::SimpleArgsClass < GraphQL::Object
   field :items_e, :string, array: true,
     arguments: arg(:odd, :boolean) & arg(:even, :boolean, default: false)
 end
+
+class GraphQL::DeletePostMutation < GraphQL::Mutation
+  desc 'Removes a post record based on its id'
+
+  id_argument
+
+  returns :boolean, null: false
+
+  def perform
+    true
+  end
+end

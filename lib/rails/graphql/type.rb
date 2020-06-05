@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'concurrent/map'
-
 module Rails # :nodoc:
   module GraphQL # :nodoc:
     # = GraphQL Type
@@ -69,8 +67,7 @@ module Rails # :nodoc:
             Type::Object.eager_load!
             Type::Scalar.eager_load!
             Type::Enum.eager_load!
-
-            TypeMap::BASE_CLASSES[:Type] = true
+            TypeMap.loaded! :Type
           end
         end
 
@@ -83,8 +80,8 @@ module Rails # :nodoc:
             redefine_singleton_method(:kind) { options[:kind] } if options.key?(:kind)
             self.directive_location = kind
 
-            redefine_singleton_method(:leaf_type?) { true } if options[:leaf]
-            redefine_singleton_method(:input_type?) { true } if options[:input]
+            redefine_singleton_method(:leaf_type?)   { true } if options[:leaf]
+            redefine_singleton_method(:input_type?)  { true } if options[:input]
             redefine_singleton_method(:output_type?) { true } if options[:output]
           end
 

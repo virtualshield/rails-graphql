@@ -39,6 +39,17 @@ module Rails # :nodoc:
           collector << ': '
         end
 
+        def visit_Rails_GraphQL_Mutation(o, collector)
+          visit_description(o, collector)
+          collector << o.gql_name
+
+          visit_arguments(o.arguments, collector)
+          collector << ': '
+
+          visit_typed_object(o, collector)
+          collector.eol
+        end
+
         def visit_Rails_GraphQL_Schema(o, collector)
           visit_description(o, collector)
           collector << 'schema'

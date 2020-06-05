@@ -16,16 +16,21 @@ module Rails # :nodoc:
     #
     # ==== Options
     #
-    # * <tt>:null</tt> - Marks if the overal type can be nuull (defaults to true).
-    # * <tt>:array</tt> - Marks if the type should be wrapped as an array (defaults to false).
+    # * <tt>:owner</tt> - The may object that this argument belongs to.
+    # * <tt>:null</tt> - Marks if the overal type can be nuull
+    #   (defaults to true).
+    # * <tt>:array</tt> - Marks if the type should be wrapped as an array
+    #   (defaults to false).
     # * <tt>:nullable</tt> - Marks if the internal values of an array can be null
     #   (defaults to true).
     # * <tt>:full</tt> - Shortcut for +null: false, nullable: false, array: true+
     #   (defaults to false).
     # * <tt>:directives</tt> - The list of directives associated with the value
     #   (defaults to nil).
-    # * <tt>:default</tt> - Sets a default value for the argument (defaults to nil).
-    # * <tt>:desc</tt> - The description of the argument (defaults to nil).
+    # * <tt>:default</tt> - Sets a default value for the argument
+    #   (defaults to nil).
+    # * <tt>:desc</tt> - The description of the argument
+    #   (defaults to nil).
     class Argument
       attr_reader :name, :gql_name, :type, :owner, :default, :directives
 

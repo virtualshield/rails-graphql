@@ -17,7 +17,15 @@ module Rails # :nodoc:
     # Namespace -> BaseClass -> ItemKey -> Item
     class TypeMap
       # Store all the base classes and if they were eager loaded by the type map
-      BASE_CLASSES = { Directive: false, Type: false }
+      mattr_accessor :base_classes, instance_writer: false, default: {
+        Directive: false,
+        Mutation:  false,
+        Type:      false,
+      }
+
+      def self.loaded!(base_class)
+        base_classes[base_class] = true
+      end
 
       def initialize
         @objects = 0  # Number of types and directives defined
@@ -69,7 +77,7 @@ module Rails # :nodoc:
         result = fetch(*args, **xargs)
         return result unless result.nil?
 
-        raise ArgumentError, <<~MSG.squish if BASE_CLASSES[base_class]
+        raise ArgumentError, <<~MSG.squish if base_classes[base_class]
           Unable to find #{args.first.inspect} #{base_class} object.
         MSG
 
@@ -155,7 +163,7 @@ module Rails # :nodoc:
         <<~INFO.squish + '>'
           #<Rails::GraphQL::TypeMap [index]
             @namespaces=#{@index.size}
-            @base_classes=#{BASE_CLASSES.size}
+            @base_classes=#{base_classes.size}
             @objects=#{@objects}
             @aliases=#{@aliases}
             @pending=#{@pending.size}
@@ -192,7 +200,7 @@ module Rails # :nodoc:
 
         # Make sure that the given key is a valid base class key
         def ensue_base_class!(key)
-          raise ArgumentError, <<~MSG.squish unless BASE_CLASSES.keys.include?(key)
+          raise ArgumentError, <<~MSG.squish unless base_classes.keys.include?(key)
             Unsupported base class "#{key.inspect}".
           MSG
         end

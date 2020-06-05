@@ -52,6 +52,7 @@ module Rails # :nodoc:
       autoload :Argument
       autoload :Directive
       autoload :Field
+      autoload :Mutation
       autoload :Schema
       autoload :Type
 
@@ -80,7 +81,7 @@ module Rails # :nodoc:
       ##
       # Simple import configurations defined using rails +config.graphql+ to
       # easy-to-use accessors on the
-      # {Schema}[rdoc-ref:Rails::GraphQL::Core] class.
+      # {Core}[rdoc-ref:Rails::GraphQL::Core] class.
       def set_configs!
         config.each { |k, v| Core.send "#{k}=", v }
       end

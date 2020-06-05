@@ -11,13 +11,21 @@ module Rails # :nodoc:
     #
     # ==== Options
     #
-    # * <tt>:null</tt> - Marks if the overal type can be nuull (defaults to true).
-    # * <tt>:array</tt> - Marks if the type should be wrapped as an array (defaults to false).
+    # * <tt>:owner</tt> - The may object that this field belongs to.
+    # * <tt>:null</tt> - Marks if the overal type can be nuull
+    #   (defaults to true).
+    # * <tt>:array</tt> - Marks if the type should be wrapped as an array
+    #   (defaults to false).
     # * <tt>:nullable</tt> - Marks if the internal values of an array can be null
     #   (defaults to true).
     # * <tt>:full</tt> - Shortcut for +null: false, nullable: false, array: true+
     #   (defaults to false).
-    # * <tt>:desc</tt> - The description of the argument (defaults to nil).
+    # * <tt>:method_name</tt> - The name of the method used to fetch the field data
+    #   (defaults to nil).
+    # * <tt>:directives</tt> - The list of directives associated with the value
+    #   (defaults to nil).
+    # * <tt>:desc</tt> - The description of the argument
+    #   (defaults to nil).
     #
     # It also accepts a block for furthere configurations
     class Field
@@ -80,6 +88,7 @@ module Rails # :nodoc:
         array: false,
         nullable: true,
         directives: nil,
+        method_name: nil,
         desc: nil,
         **xargs,
         &block
@@ -88,6 +97,7 @@ module Rails # :nodoc:
         @name = name.to_s.underscore.to_sym
         @gql_name = @name.to_s.camelize(:lower)
         @directives = GraphQL.directives_to_set(directives, [], directive_location)
+        @method_name = method_name.to_s.underscore.to_sym unless method_name.nil?
 
         @null     = full ? false : null
         @array    = full ? true  : array
@@ -108,6 +118,11 @@ module Rails # :nodoc:
       # Allow extra configurations to be performed using a block
       def configure(&block)
         ScopedConfig.new(self).instance_exec(&block)
+      end
+
+      # Returns the name of the method used to retribe the information
+      def method_name
+        defined?(@method_name) ? @method_name : @name
       end
 
       # Check if the other field is equivalent

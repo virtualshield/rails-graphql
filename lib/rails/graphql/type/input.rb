@@ -17,6 +17,18 @@ module Rails # :nodoc:
         self.valid_field_types = [Type::Enum, Type::Input, Type::Scalar].freeze
 
         class << self
+          # A little override on the name of the object due to the suffix config
+          def gql_name
+            return @gql_name if defined?(@gql_name)
+
+            suffix = GraphQL::Core.auto_suffix_input_ojects
+            return super if suffix.blank?
+
+            result = super
+            result += suffix unless result.end_with?(suffix)
+            @gql_name = result
+          end
+
           # Check if a given value is a valid non-deserialized input
           def valid_input?(value)
             return false unless value.is_a?(Hash)

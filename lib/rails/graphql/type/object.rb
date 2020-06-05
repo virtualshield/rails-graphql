@@ -55,7 +55,9 @@ module Rails # :nodoc:
 
           # Check if a given value is a valid non-serialized output
           def valid_output?(value)
-            fields.keys.all? { |key| value.respond_to?(key) || value.try(:key?, value) }
+            fields.values.all? do |field|
+              value.respond_to?(field.method_name) || value.try(:key?, field.method_name)
+            end
           end
 
           # Transforms the given value to its representation in a JSON string
@@ -66,9 +68,9 @@ module Rails # :nodoc:
           # Transforms the given valye to its representation in a Hash object
           def to_hash(value)
             fields.transform_values do |field|
-              val = value.respond_to?(field.name) \
-                ? value.public_send(field.name) \
-                : value.try(:[], field.name)
+              val = value.respond_to?(field.method_name) \
+                ? value.public_send(field.method_name) \
+                : value.try(:[], field.method_name)
 
               field.to_hash(val)
             end

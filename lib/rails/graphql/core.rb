@@ -28,6 +28,12 @@ module Rails # :nodoc:
 
       ##
       # :singleton-method:
+      # For all the input object type defined, auto add the following prefix to
+      # their name, so we don't have to define classes like +PointInputInput+.
+      mattr_accessor :auto_suffix_input_ojects, instance_writer: false, default: 'Input'
+
+      ##
+      # :singleton-method:
       # Set this to true in order to enable the descriptions of anything be
       # defined on locale files form I18n, which also provides support for
       # language translations.

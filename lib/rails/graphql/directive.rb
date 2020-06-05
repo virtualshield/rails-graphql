@@ -40,7 +40,8 @@ module Rails # :nodoc:
 
       class << self
         def gql_name # :nodoc:
-          super.camelize(:lower)
+          return @gql_name if defined?(@gql_name)
+          @gql_name = super.camelize(:lower)
         end
 
         # Get the list of locations of a the directive
@@ -72,7 +73,7 @@ module Rails # :nodoc:
         def eager_load! # :nodoc:
           super
 
-          TypeMap::BASE_CLASSES[:Directive] = true
+          TypeMap.loaded! :Directive
         end
 
         def inspect # :nodoc:
