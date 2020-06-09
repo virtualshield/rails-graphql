@@ -1,6 +1,5 @@
 *.o
 Makefile
-graphqlparser.cpp
 graphqlparser.so
 mkmf.log
 extconf.h
