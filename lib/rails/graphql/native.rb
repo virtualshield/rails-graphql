@@ -9,7 +9,7 @@ module Rails # :nodoc:
 
       VERSION = GQLAst::VERSION
 
-      dl_name = "graphqlparser.#{FFI::Platform::LIBSUFFIX}"
+      dl_name = "graphqlparser.#{RbConfig::MAKEFILE_CONFIG['DLEXT']}"
       dl_path = Pathname.new(__dir__)
 
       begin
