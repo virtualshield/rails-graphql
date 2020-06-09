@@ -50,7 +50,7 @@ $srcs = [
   File.join(precomp_dir, 'c', 'GraphQLAstToJSON.cpp'),
   File.join(precomp_dir, 'c', 'GraphQLAstVisitor.cpp'),
   File.join(precomp_dir, 'GraphQLParser.cpp'),
-  File.join(gem_root, 'ext', 'graphqlparser.cpp'),
+  File.join(gem_root, 'ext', 'version.cpp'),
 ]
 
 create_header

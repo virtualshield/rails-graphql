@@ -2,11 +2,13 @@
 *.gem
 *.rbc
 *.so
+*.bundle
 .bundle
 .config
 .yardoc
 .byebug_history
 .versions.conf
+.idea
 Gemfile.lock
 coverage
 doc/
