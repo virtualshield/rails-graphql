@@ -56,7 +56,7 @@ module Rails # :nodoc:
           false
         end
 
-        # Defines a serie of question methods based on the kind
+        # Defines a series of question methods based on the kind
         KINDS.each { |kind| define_method("#{kind.downcase}?") { false } }
 
         def eager_load! # :nodoc:

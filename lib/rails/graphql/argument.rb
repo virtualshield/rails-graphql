@@ -9,15 +9,15 @@ module Rails # :nodoc:
     # function arguments.
     # See http://spec.graphql.org/June2018/#ArgumentsDefinition
     #
-    # An aargument also works very similary as an ActiveRecord column. For this
+    # An argument also works very similar to an ActiveRecord column. For this
     # reason, multi dimensional arrays are not supported. You can define custom
-    # input types in order to accomplish something similar to a multi-demnsional
+    # input types in order to accomplish something similar to a multi-dimensional
     # array as input.
     #
     # ==== Options
     #
     # * <tt>:owner</tt> - The may object that this argument belongs to.
-    # * <tt>:null</tt> - Marks if the overal type can be nuull
+    # * <tt>:null</tt> - Marks if the overall type can be null
     #   (defaults to true).
     # * <tt>:array</tt> - Marks if the type should be wrapped as an array
     #   (defaults to false).
@@ -144,7 +144,7 @@ module Rails # :nodoc:
         super if defined? super
 
         raise NameError, <<~MSG.squish if gql_name.start_with?('__')
-          The name "#{gql_name}" is invalid. Arugments name cannot start with "__".
+          The name "#{gql_name}" is invalid. Argument names cannot start with "__".
         MSG
 
         raise ArgumentError, <<~MSG.squish unless type_klass.is_a?(Module)

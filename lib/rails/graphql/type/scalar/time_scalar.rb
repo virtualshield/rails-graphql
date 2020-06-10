@@ -4,14 +4,14 @@ module Rails # :nodoc:
   module GraphQL # :nodoc:
     class Type # :nodoc:
       # Uses as a float extension in order to transmit times (hours, minutes,
-      # and seconds) as a numeric representation of seconds and miliseconds.
+      # and seconds) as a numeric representation of seconds and milliseconds.
       class Scalar::TimeScalar < Scalar::FloatScalar
         EPOCH = Time.utc(2000, 1, 1)
 
         set_ar_type! :time
 
         desc <<~MSG
-          The Time scalar type represents a number of seconds and miliseconds.
+          The Time scalar type represents a number of seconds and milliseconds.
           A distance in time since regardless of the day and the timezone.
         MSG
 

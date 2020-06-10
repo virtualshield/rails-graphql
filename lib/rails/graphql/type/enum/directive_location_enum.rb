@@ -4,7 +4,7 @@ module Rails # :nodoc:
   module GraphQL # :nodoc:
     class Type # :nodoc:
       # Bigint basically removes the limit of the value, but it serializes as
-      # a string so it won't go aginst the spec
+      # a string so it won't go against the spec
       class Enum::DirectiveLocationEnum < Enum
         self.spec_object = true
 

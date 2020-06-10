@@ -17,7 +17,7 @@ module Rails # :nodoc:
           like a string or an integer.
 
           +Scalars+ and +Enums+ form the leaves in response trees; the intermediate
-          evels are +Object+ types, which define a set of fields.
+          levels are +Object+ types, which define a set of fields.
 
           An +Interface+ defines a list of fields; +Object+ types that implement
           that interface are guaranteed to implement those fields.

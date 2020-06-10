@@ -3,7 +3,7 @@
 module Rails # :nodoc:
   module GraphQL # :nodoc:
     class Type # :nodoc:
-      # Similar to float, but imples extra precision, making sure that all the
+      # Similar to float, but implies extra precision, making sure that all the
       # decimal-point numbers are kept. As Bigint, it uses a string so it won't
       # go against the spec.
       class Scalar::DecimalScalar < Scalar

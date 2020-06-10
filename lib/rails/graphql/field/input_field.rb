@@ -5,7 +5,7 @@ module Rails # :nodoc:
     # = GraphQL Input Field
     #
     # An input field works the same way as an argument, and they are pretty much
-    # equivalent. The main difference bvetween an argument and a field input is
+    # equivalent. The main difference between an argument and a field input is
     # that input fields holds object-like values and they can be inherited.
     # Arguments can hold object-like values only when their type is associated
     # with an InputField.
@@ -30,7 +30,7 @@ module Rails # :nodoc:
 
       # Override with exception
       def configure
-        raise ArgumentError, 'Input fields can\'t be furthere configured using blocks'
+        raise ArgumentError, 'Input fields can\'t be further configured using blocks'
       end
 
       # Override with exception

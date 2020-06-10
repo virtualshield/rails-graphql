@@ -53,7 +53,7 @@ namespace :precompile do
     version = %x[#{exe} -c '#{GET_PYTHON_VERSION}'].chomp.to_i
     raise 'At least a Python version 2 is necessary' if version < MIN_PYTHON_VERSION
 
-    print_ok "Found verison #{version}"
+    print_ok "Found version #{version}"
     exe
   end
 

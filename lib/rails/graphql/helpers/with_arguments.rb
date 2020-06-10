@@ -61,7 +61,7 @@ module Rails # :nodoc:
           object = GraphQL::Argument.new(name, base_type, **xargs)
 
           raise ArgumentError, <<~MSG.squish if arguments.key?(object.name)
-            The #{name.inspect} argument is already defined and can't be redifined.
+            The #{name.inspect} argument is already defined and can't be redefined.
           MSG
 
           arguments[object.name] = object

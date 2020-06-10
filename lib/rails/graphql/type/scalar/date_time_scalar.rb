@@ -3,7 +3,7 @@
 module Rails # :nodoc:
   module GraphQL # :nodoc:
     class Type # :nodoc:
-      # DateTime uses a ISO 8601 string to excahnge the value.
+      # DateTime uses a ISO 8601 string to exchange the value.
       class Scalar::DateTimeScalar < Scalar
         set_ar_type! :datetime
 

@@ -26,7 +26,7 @@ module Rails # :nodoc:
         #
         # ==== Options
         #
-        # * <tt>:null</tt> - Marks if the return type can be nuull
+        # * <tt>:null</tt> - Marks if the return type can be null
         #   (defaults to false).
         # * <tt>:array</tt> - Marks if the type should be wrapped as an array
         #   (defaults to false).

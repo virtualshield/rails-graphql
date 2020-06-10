@@ -12,7 +12,7 @@ module Rails # :nodoc:
         desc <<~DESC
           Alongside with scalars and enums, input value objects allow the user
           to provide values to arguments on fields and directives. Different
-          from those, input values accepts a list of keyd values, instead of
+          from those, input values accepts a list of keyed values, instead of
           a single value.
         DESC
 

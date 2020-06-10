@@ -29,7 +29,7 @@ module Rails # :nodoc:
   # sometimes directives and fields:
   #
   # * <tt>Arguments:</tt> They are strictly associated with the object that
-  #   defined it, also arugments with the same name doesn't mean they have the
+  #   defined it, also arguments with the same name doesn't mean they have the
   #   same behavior or configuration.
   # * <tt>Directives:</tt> A directive definition belongs to the introspection
   #   and is handled in the Singleton extent. They are handled as instance
