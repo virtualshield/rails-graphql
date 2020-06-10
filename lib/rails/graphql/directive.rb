@@ -10,7 +10,7 @@ module Rails # :nodoc:
     # Whenever you want to use a directive, you can use the ClassName(...)
     # shortcut (which is the same as ClassName.new(...)).
     #
-    # Directives works as event listner and trigger, which means that some
+    # Directives works as event listener and trigger, which means that some
     # actions will trigger directives events, and the directive can listen to
     # these events and perform an action
     #
@@ -105,7 +105,7 @@ module Rails # :nodoc:
             end
           end
 
-          # Allows checking value existance
+          # Allows checking value existence
           def respond_to_missing?(method_name, include_private = false)
             const_defined?(method_name) || autoload?(method_name) || super
           end

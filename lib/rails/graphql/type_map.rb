@@ -86,7 +86,7 @@ module Rails # :nodoc:
       end
 
       # Find the given key or name inside the base class either on the given
-      # namespace or in the base +:base+ namepsace
+      # namespace or in the base +:base+ namespace
       def fetch(key_or_name, base_class: :Type, namespaces: nil, exclusive: false)
         register_pending!
 
@@ -132,7 +132,7 @@ module Rails # :nodoc:
           @index[base_namespace][base_class][alias_name] = alias_proc
         end
 
-        # For each remaining namepsace, register a key and a name alias
+        # For each remaining namespace, register a key and a name alias
         namespaces.product([object_key, object_name]) do |(namespace, key_or_name)|
           @index[namespace][base_class][key_or_name] = alias_proc
         end
@@ -191,7 +191,7 @@ module Rails # :nodoc:
         end
 
         # Find the base class of an object, which is basically the class that
-        # doens't inherit any other class (superclass is equal Object)
+        # doesn't inherit any other class (superclass is equal Object)
         def find_base_class(object)
           base_class = object
           base_class = base_class.superclass until base_class.superclass === Object

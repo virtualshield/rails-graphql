@@ -17,7 +17,7 @@ module Rails # :nodoc:
             default: (Hash.new { |h, k| h[k] = Set.new })
         end
 
-        # Identifies the ActiveRecord type (actyually it uses the
+        # Identifies the ActiveRecord type (actually it uses the
         # ActiveModel::Type#type method, but ActiveRecord uses the same
         # reference) of this object. When mismatching, the query must cast the
         # value.
@@ -72,7 +72,7 @@ module Rails # :nodoc:
         end
 
         # Helper method that should be used for ActiveRecord adapters in order
-        # to provide the correct methods and settings for retriving the given
+        # to provide the correct methods and settings for retrieving the given
         # value direct from a query.
         #
         # ==== Options
@@ -121,7 +121,7 @@ module Rails # :nodoc:
             GraphQL::Core.ar_adapters
           end
 
-          # Given the ActiveRecord Object, find the key to compund the method
+          # Given the ActiveRecord Object, find the key to compound the method
           # name for the specific attribute accessor
           def adapter_key(ar_object)
             ar_adapters[ar_object.connection.adapter_name]

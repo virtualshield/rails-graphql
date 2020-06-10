@@ -19,7 +19,7 @@ class GraphQL::AgedInterface < GraphQL::Interface
 end
 
 class GraphQL::UserObject < GraphQL::Object
-  desc 'Simple informations about an user'
+  desc 'Simple information about an user'
 
   implements :named, :aged
 

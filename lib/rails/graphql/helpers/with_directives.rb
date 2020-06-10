@@ -4,7 +4,7 @@ module Rails # :nodoc:
   module GraphQL # :nodoc:
     module Helpers # :nodoc:
       # Helper module that allows other objects to hold directives during the
-      # defition process
+      # definition process
       module WithDirectives
         def self.extended(other)
           other.extend(Helpers::InheritedCollection)

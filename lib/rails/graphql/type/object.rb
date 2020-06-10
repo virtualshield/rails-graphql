@@ -37,7 +37,7 @@ module Rails # :nodoc:
 
         class << self
           # Check if the other type is equivalent, by checking if the other is
-          # an interface that the currect object implements
+          # an interface that the current object implements
           def ==(other)
             super || (other.interface? && implements?(other))
           end
@@ -65,7 +65,7 @@ module Rails # :nodoc:
             to_hash(value).inspect
           end
 
-          # Transforms the given valye to its representation in a Hash object
+          # Transforms the given value to its representation in a Hash object
           def to_hash(value)
             fields.transform_values do |field|
               val = value.respond_to?(field.method_name) \

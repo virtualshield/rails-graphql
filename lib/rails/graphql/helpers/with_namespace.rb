@@ -5,14 +5,14 @@ module Rails # :nodoc:
     module Helpers # :nodoc:
       # Helper module that allows other objects to hold namespaces. It can
       # either work as an extension of the superclass using +add_namespace+ or
-      # it can be reseted then set using +namespace+.
+      # it can be reset then set using +namespace+.
       module WithNamespace
         # Returns the list of defined namespaces
         def namespaces
           @namespaces || superclass.try(:namespaces) || (@namespaces = Set.new)
         end
 
-        # Set or overwrite the list of namepsaces
+        # Set or overwrite the list of namespaces
         def namespace(*list)
           @namespaces = normalize_namespaces(list).to_set
         end

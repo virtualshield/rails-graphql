@@ -14,7 +14,7 @@ module GraphQL
     Union:     '::Rails::GraphQL::Type::Union',
   }.freeze
 
-  # List of directive shortcuts, which are basically the shjortcut of another
+  # List of directive shortcuts, which are basically the shortcut of another
   # shortcut to instantiate a directive.
   #
   # ==== Examples

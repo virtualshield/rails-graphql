@@ -12,7 +12,7 @@ require 'mkmf'
 version = File.read(File.join(precomp_dir, 'VERSION'))
 $defs << "-DGRAPHQLPARSER_VERSION=\\\"#{version}\\\""
 
-# # Set necessary flags and includes
+# Set necessary flags and includes
 $CXXFLAGS << ' -std=gnu++11' << ' -g' << ' -Wall'
 
 # Set to true when building binary gems

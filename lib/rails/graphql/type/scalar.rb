@@ -52,7 +52,7 @@ module Rails # :nodoc:
             to_hash(value).inspect
           end
 
-          # Transforms the given valye to its representation in a Hash object
+          # Transforms the given value to its representation in a Hash object
           def to_hash(value)
             value.to_s
           end

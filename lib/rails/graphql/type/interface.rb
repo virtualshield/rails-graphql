@@ -11,7 +11,7 @@ module Rails # :nodoc:
       # This class doesn't implements +valid_output?+ nor any of the output like
       # methods because the Object class that uses interface already fetches
       # all the fields for its composition and does the validating and
-      # serealizing process.
+      # serializing process.
       class Interface < Type
         extend Helpers::WithFields
 
@@ -46,7 +46,7 @@ module Rails # :nodoc:
 
             missing_keys = fields.keys - object.fields.keys
             raise ArgumentError, <<~MSG.squish if missing_keys.present?
-              The "#{object.gql_name}" doesn't correctly implements "#{gql_name}", becuase
+              The "#{object.gql_name}" doesn't correctly implements "#{gql_name}", because
               the #{missing_keys.map { |key| fields[key].gql_name.inspect }.to_sentence}
               #{'field'.pluralize(missing_keys.size)} are missing.
             MSG
@@ -54,7 +54,7 @@ module Rails # :nodoc:
             fields.each do |key, item|
               raise ArgumentError, <<~MSG.squish unless object.fields[key] == item
                 The "#{object.gql_name}" doesn't correctly implements "#{gql_name}",
-                beucase the "#{item.gql_name}" field has different definition.
+                because the "#{item.gql_name}" field has different definition.
               MSG
             end
 

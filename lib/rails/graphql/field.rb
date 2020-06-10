@@ -6,13 +6,13 @@ module Rails # :nodoc:
     #
     # A field has multiple purposes, which is defined by the specific subclass
     # used. They are also, in various ways, similar to arguments, since they
-    # tend to have the same strcuture.
+    # tend to have the same structure.
     # array as input.
     #
     # ==== Options
     #
     # * <tt>:owner</tt> - The may object that this field belongs to.
-    # * <tt>:null</tt> - Marks if the overal type can be nuull
+    # * <tt>:null</tt> - Marks if the overall type can be null
     #   (defaults to true).
     # * <tt>:array</tt> - Marks if the type should be wrapped as an array
     #   (defaults to false).
@@ -27,7 +27,7 @@ module Rails # :nodoc:
     # * <tt>:desc</tt> - The description of the argument
     #   (defaults to nil).
     #
-    # It also accepts a block for furthere configurations
+    # It also accepts a block for further configurations
     class Field
       include Helpers::WithDirectives
       include Helpers::WithArguments
@@ -120,7 +120,7 @@ module Rails # :nodoc:
         ScopedConfig.new(self).instance_exec(&block)
       end
 
-      # Returns the name of the method used to retribe the information
+      # Returns the name of the method used to retrieve the information
       def method_name
         defined?(@method_name) ? @method_name : @name
       end

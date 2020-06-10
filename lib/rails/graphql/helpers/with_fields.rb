@@ -4,7 +4,7 @@ module Rails # :nodoc:
   module GraphQL # :nodoc:
     module Helpers # :nodoc:
       # Helper module that allows other objects to hold fields during the
-      # defition process. Works very similary to Arguments, but it's more
+      # definition process. Works very similar to Arguments, but it's more
       # flexible, since the type of the fields can be dynamic defined by the
       # class that extends this module.
       #
@@ -45,7 +45,7 @@ module Rails # :nodoc:
           object = field_builder.call(name, *args, **xargs, &block)
 
           raise ArgumentError, <<~MSG.squish if fields.key?(object.name)
-            The #{name.inspect} field is already defined and can't be redifined.
+            The #{name.inspect} field is already defined and can't be redefined.
           MSG
 
           fields[object.name] = object
