@@ -3,7 +3,7 @@
 # This exposed module allows some shortcuts while working outside of the gem
 module GraphQL
   # List of constant shortcuts, as string to not trigger autoload
-  COSNT_SHORTCUTS = {
+  CONST_SHORTCUTS = {
     Directive: '::Rails::GraphQL::Directive',
     Mutation:  '::Rails::GraphQL::Mutation',
     Enum:      '::Rails::GraphQL::Type::Enum',
@@ -31,7 +31,7 @@ module GraphQL
     delegate *DIRECTIVE_SHORTCUTS, to: 'Rails::GraphQL::Directive'
 
     def const_missing(name) # :nodoc:
-      COSNT_SHORTCUTS[name]&.constantize || super
+      CONST_SHORTCUTS[name]&.constantize || super
     end
   end
 end
