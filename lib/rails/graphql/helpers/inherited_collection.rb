@@ -83,7 +83,7 @@ module Rails # :nodoc:
             end if singleton_writer
 
             if instance_reader
-              delegate(name.to_sym, to: :class)
+              delegate(name.to_sym, :"all_#{name}", to: :class)
               delegate(:"#{name}?", to: :class) if instance_predicate
             end
           end

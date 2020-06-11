@@ -64,7 +64,8 @@ module Rails # :nodoc:
           end
 
           current = try(:all_directives) || directives
-          directives.merge(GraphQL.directives_to_set(list, current, directive_location))
+          items = GraphQL.directives_to_set(list, current, directive_location, self)
+          directives.merge(items)
         rescue DefinitionError => e
           raise e.class, e.message + "\n  Defined at: #{caller(2)[0]}"
         end

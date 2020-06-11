@@ -25,14 +25,12 @@ module Rails # :nodoc:
     #   (defaults to true).
     # * <tt>:full</tt> - Shortcut for +null: false, nullable: false, array: true+
     #   (defaults to false).
-    # * <tt>:directives</tt> - The list of directives associated with the value
-    #   (defaults to nil).
     # * <tt>:default</tt> - Sets a default value for the argument
     #   (defaults to nil).
     # * <tt>:desc</tt> - The description of the argument
     #   (defaults to nil).
     class Argument
-      attr_reader :name, :gql_name, :type, :owner, :default, :directives
+      attr_reader :name, :gql_name, :type, :owner, :default
 
       delegate :namespaces, to: :owner
 
@@ -45,15 +43,12 @@ module Rails # :nodoc:
         array: false,
         nullable: true,
         default: nil,
-        desc: nil,
-        directives: nil
+        desc: nil
       )
         @owner = owner
         @name = name.to_s.underscore.to_sym
         @type = type.to_s.underscore.to_sym
         @gql_name = @name.to_s.camelize(:lower)
-
-        @directives = GraphQL.directives_to_set(directives, [], :argument_definition)
 
         @null     = full ? false : null
         @array    = full ? true  : array
@@ -176,6 +171,7 @@ module Rails # :nodoc:
         result += '!' if array? && !nullable?
         result += ']' if array?
         result += '!' unless null?
+        result += " = #{default.inspect}" if default_value?
         result
       end
 

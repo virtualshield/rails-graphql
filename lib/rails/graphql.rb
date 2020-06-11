@@ -47,6 +47,7 @@ module Rails # :nodoc:
 
     eager_autoload do
       autoload :Core
+      autoload :Event
       autoload :Native
       autoload :Request
       autoload :TypeMap
@@ -104,8 +105,12 @@ module Rails # :nodoc:
       #
       # Use the others argument to provide a list of already defined directives
       # so the check can be performed using a +inherited_collection+.
-      def directives_to_set(list, others = [], location = nil)
+      #
+      # If a +source+ is provided, then an +:attach+ event will be triggered
+      # for each directive on the givem source element.
+      def directives_to_set(list, others = [], location = nil, source = nil)
         others = others.dup
+        event = GraphQL::Event.new(:attach, source, :definition) if source.present?
         Array.wrap(list).inject(Set.new) do |result, item|
           raise ArgumentError, <<~MSG.squish unless item.kind_of?(GraphQL::Directive)
             The "#{item.class}" is not a valid directive.
@@ -120,6 +125,7 @@ module Rails # :nodoc:
             You cannot use @#{item.gql_name} directive due to location restriction.
           MSG
 
+          event.trigger_for(item) unless event.nil?
           others << item
           result << item
         end

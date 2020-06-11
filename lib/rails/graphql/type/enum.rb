@@ -78,7 +78,7 @@ module Rails # :nodoc:
               One or more directives provided for "#{value}" can't be used on enum values.
             MSG
 
-            directives = GraphQL.directives_to_set(directives)
+            directives = GraphQL.directives_to_set(directives, [], :enum_value, self)
             directives << Directive::DeprecatedDirective.new(
               reason: (deprecated.is_a?(String) ? deprecated : nil)
             ) if !!deprecated

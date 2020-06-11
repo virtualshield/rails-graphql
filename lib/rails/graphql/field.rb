@@ -32,7 +32,7 @@ module Rails # :nodoc:
       include Helpers::WithDirectives
       include Helpers::WithArguments
 
-      attr_reader :name, :gql_name, :owner
+      attr_reader :name, :gql_name, :owner, :directives
 
       delegate :input_type?, :output_type?, :leaf_type?, :from_ar?, :from_ar, to: :class
       delegate :namespaces, to: :owner
@@ -96,7 +96,7 @@ module Rails # :nodoc:
         @owner = owner
         @name = name.to_s.underscore.to_sym
         @gql_name = @name.to_s.camelize(:lower)
-        @directives = GraphQL.directives_to_set(directives, [], directive_location)
+        @directives = GraphQL.directives_to_set(directives, [], directive_location, self)
         @method_name = method_name.to_s.underscore.to_sym unless method_name.nil?
 
         @null     = full ? false : null
@@ -217,10 +217,13 @@ module Rails # :nodoc:
         nil # No exception already means valid
       end
 
-      def inspect # :nodoc:
+      def inspect(extra = '') # :nodoc:
+        dirs = directives.map(&:inspect)
+        dirs = dirs.presence && " #{dirs.join(' ')}"
+
         args = arguments.each_value.map(&:inspect)
         args = args.presence && "(#{args.join(', ')})"
-        "#{name}#{args}: "
+        "#<GraphQL::Field @owner=\"#{owner.name}\" #{name}#{args}:#{extra}#{dirs}>"
       end
 
       private

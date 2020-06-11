@@ -35,6 +35,9 @@ module Rails # :nodoc:
       VALID_LOCATIONS = Rails::GraphQL::Type::Enum::DirectiveLocationEnum
         .values.to_a.map { |value| value.downcase.to_sym }.freeze
 
+      EXECUTION_LOCATIONS  = VALID_LOCATIONS[0..6].freeze
+      DEFINITION_LOCATIONS = VALID_LOCATIONS[7..17].freeze
+
       # The list of events listeners in order to process a directive
       inherited_collection :events, default: (Hash.new { |h, k| h[k] = [] })
 
@@ -66,8 +69,19 @@ module Rails # :nodoc:
 
         # Add an event listener to the directive
         def on(event_name, **options, &block)
-          method_name = options[:prepend] ? :unshift : :push
+          method_name = options.delete(:prepend) ? :unshift : :push
+          block = GraphQL::Event.prepare(event_name, block, **options)
           events[event_name].send(method_name, block)
+        end
+
+        # Since we have a hash of arrays, we need to properly merge them
+        def all_events
+          ancestors.inject({}) do |list, klass|
+            break list unless klass.respond_to?(:events)
+            (klass.events.keys - list.keys).each { |key| list[key] = [] }
+            klass.events.each { |key, arr| list[key].prepend(*arr) }
+            list
+          end
         end
 
         def eager_load! # :nodoc:
@@ -77,6 +91,8 @@ module Rails # :nodoc:
         end
 
         def inspect # :nodoc:
+          return "#<GraphQL::Directive>" if self.eql?(GraphQL::Directive)
+
           args = arguments.each_value.map(&:inspect)
           args = args.presence && "(#{args.join(', ')})"
           "#<GraphQL::Directive @#{gql_name}#{args}>"
@@ -121,21 +137,19 @@ module Rails # :nodoc:
       attr_reader :args
 
       delegate :locations, :gql_name, to: :class
-      delegate_missing_to :@scope
 
       def initialize(**xargs)
         xargs = xargs.transform_keys { |key| key.to_s.underscore }
-        @args = OpenStruct.new(xargs)
+        @args = OpenStruct.new(xargs).freeze
         validate!
       end
 
-      # Triggers a specific event under the given scope. You can use
-      # +throw :done, optional_result+ as a way to early return from the events
-      def trigger(event_name, scope)
-        @scope = scope
-        catch(:done) { all_events[event_name].each { |block| instance_exec(&block) } }
-      ensure
-        @scope = nil
+      # Triggers a specific +event_name+.
+      def trigger(event_name, *args, **xargs)
+        all_events[event_name]&.each do |block|
+          send_args = block.prepare(*args, **xargs)
+          instance_exec(*send_args, &block) unless send_args.nil?
+        end
       end
 
       # Checks if all the arguments provided to the directive instance are valid
@@ -153,7 +167,22 @@ module Rails # :nodoc:
 
         nil # No exception already means valid
       end
+
+      def inspect # :nodoc:
+        args = arguments.map do |name, arg|
+          "#{arg.gql_name}: #{@args[name].inspect}" unless @args[name].nil?
+        end.compact
+
+        args = args.presence && "(#{args.join(', ')})"
+        "@#{gql_name}#{args}"
+      end
+
+      protected
+
+        # Cache the list of events for this specific instance
+        def all_events
+          @all_events ||= self.class.all_events
+        end
     end
   end
 end
-

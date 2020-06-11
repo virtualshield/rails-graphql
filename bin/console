@@ -13,5 +13,13 @@ require 'rails-graphql'
 class ApplicationSchema < GraphQL::Schema
 end
 
+class GraphQL::SampleObject < GraphQL::Object
+  desc 'Test of an object with a directive'
+
+  field :old_name, :string, null: false do
+    use :deprecated, reason: 'Testing directive events'
+  end
+end
+
 ARGV.clear
 IRB.start

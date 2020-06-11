@@ -29,7 +29,7 @@ class GraphQL::UserObject < GraphQL::Object
   field :birthdate, :date, null: false, desc: "The user's birthdate"
 end
 
-class GraphQL::SampleClass < GraphQL::Object
+class GraphQL::SampleObject < GraphQL::Object
   desc 'Test for use with symbol'
 
   field :old_ids, :id, full: true do

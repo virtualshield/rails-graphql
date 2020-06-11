@@ -10,8 +10,8 @@ module Rails # :nodoc:
       delegate :valid_field_types, to: :owner
 
       def initialize(name, type, *args, **xargs, &block)
-        super(name, *args, **xargs, &block)
         @type = type.to_s.underscore.to_sym
+        super(name, *args, **xargs, &block)
       end
 
       def initialize_copy(*)
@@ -55,13 +55,13 @@ module Rails # :nodoc:
       end
 
       def inspect # :nodoc:
-        result = super
+        result = ' '
         result += '[' if array?
         result += type_klass.gql_name
         result += '!' if array? && !nullable?
         result += ']' if array?
         result += '!' unless null?
-        result
+        super(result)
       end
     end
   end
