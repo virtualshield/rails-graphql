@@ -1,10 +1,11 @@
 module Rails # :nodoc:
   module GraphQL # :nodoc:
-    module Collectors
-      class ToGQL
-        def initialize(indent_size = 2)
-          @indent_size = indent_size
-          @val = [[0, '']]
+    module Collectors # :nodoc:
+      # This collector helps building a indented string
+      class IdentedCollector
+        def initialize(initial = 0, size = 2)
+          @size = size
+          @val = [[initial, '']]
         end
 
         def indented(start = nil, finish = nil)
@@ -33,12 +34,12 @@ module Rails # :nodoc:
         end
 
         def indent
-          @val.last[0] += @indent_size
+          @val.last[0] += @size
           self
         end
 
         def unindent
-          @val.last[0] -= @indent_size
+          @val.last[0] -= @size
           self
         end
 

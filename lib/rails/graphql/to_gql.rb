@@ -4,14 +4,18 @@ require 'arel/visitors/visitor'
 
 module Rails # :nodoc:
   module GraphQL # :nodoc:
+    # = GraphQL ToGQL
+    #
+    # This class can turn any class related to GraphQL into its GraphQL string
+    # representation. It was developed more for testing purposes, but it can
+    # also used by describing purposes or generating API description pages.
     class ToGQL < Arel::Visitors::Visitor
-      require_relative 'collectors/to_gql'
-
       def self.compile(node, **xargs)
         new.compile(node, **xargs)
       end
 
-      def compile(node, collector = Collectors::ToGQL.new, with_descriptions: true) # :nodoc:
+      def compile(node, collector = nil, with_descriptions: true) # :nodoc:
+        collector ||= Collectors::IdentedCollector.new
         @with_descriptions = with_descriptions
         accept(node, collector).value
       end

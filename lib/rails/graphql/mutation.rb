@@ -10,7 +10,6 @@ module Rails # :nodoc:
       extend Helpers::WithDirectives
       extend Helpers::WithNamespace
       extend Helpers::WithArguments
-      extend Helpers::Registerable
 
       class << self
         delegate :valid_output?, :leaf_type?, :to_json, :to_hash, to: :type_klass

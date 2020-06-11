@@ -43,10 +43,12 @@ module Rails # :nodoc:
 
     autoload :ToGQL
     autoload :Helpers
+    autoload :Collectors
 
     eager_autoload do
       autoload :Core
       autoload :Native
+      autoload :Request
       autoload :TypeMap
 
       autoload :Argument

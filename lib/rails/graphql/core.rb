@@ -48,6 +48,14 @@ module Rails # :nodoc:
 
       ##
       # :singleton-method:
+      # For performance purposes, this gem implements a
+      # {JsonCollector}[rdoc-ref:Rails::GraphQL::Collectors::JsonCollector].
+      # If you prefer to use the normal hash to string serialization, you can
+      # disable this option.
+      mattr_accessor :enable_response_collector, instance_writer: false, default: true
+
+      ##
+      # :singleton-method:
       # Marks if the JSON serialization of an ActiveRecord object can happen
       # during the query, which has better performance. It will only be used
       # whenever is possible.

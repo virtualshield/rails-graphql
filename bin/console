@@ -10,5 +10,8 @@ require 'irb/completion'
 
 require 'rails-graphql'
 
+class ApplicationSchema < GraphQL::Schema
+end
+
 ARGV.clear
 IRB.start

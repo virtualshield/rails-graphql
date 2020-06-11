@@ -1,5 +1,4 @@
 *.o
 Makefile
-graphqlparser.so
 mkmf.log
 extconf.h

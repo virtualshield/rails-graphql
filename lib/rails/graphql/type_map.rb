@@ -100,7 +100,7 @@ module Rails # :nodoc:
 
       # Mark the given object to be registered later, when a fetch is triggered
       def postpone_registration(object)
-        source = caller(3).reject { |item| item.end_with?("`inherited'") }.first
+        source = caller(3).find { |item| !item.end_with?("`inherited'") }
         @pending << [object, source]
       end
 

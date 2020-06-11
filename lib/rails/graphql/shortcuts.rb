@@ -6,6 +6,9 @@ module GraphQL
   CONST_SHORTCUTS = {
     Directive: '::Rails::GraphQL::Directive',
     Mutation:  '::Rails::GraphQL::Mutation',
+    Request:   '::Rails::GraphQL::Request',
+    Schema:    '::Rails::GraphQL::Schema',
+
     Enum:      '::Rails::GraphQL::Type::Enum',
     Input:     '::Rails::GraphQL::Type::Input',
     Interface: '::Rails::GraphQL::Type::Interface',
@@ -29,6 +32,20 @@ module GraphQL
   class << self
     delegate :to_gql, :to_graphql, :type_map, to: 'Rails::GraphQL'
     delegate *DIRECTIVE_SHORTCUTS, to: 'Rails::GraphQL::Directive'
+
+    # See {Request}[rdoc-ref:Rails::GraphQL::Request]
+    def request(*args)
+      Rails::GraphQL::Request.new(*args)
+    end
+
+    # See {Request}[rdoc-ref:Rails::GraphQL::Request]
+    def execute(*args)
+      Rails::GraphQL::Request.execute(*args)
+    end
+
+    def const_defined?(name) # :nodoc:
+      COSNT_SHORTCUTS.key?(name) || super
+    end
 
     def const_missing(name) # :nodoc:
       CONST_SHORTCUTS[name]&.constantize || super
