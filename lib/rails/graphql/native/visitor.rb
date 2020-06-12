@@ -20,13 +20,46 @@ module Rails # :nodoc:
         end.flatten(1).to_h
         layout(macros)
 
-        def testing!
-          MACROS.each do |key|
-            self[    :"visit_#{key}"] = ->(_, _) { puts "visit_#{key}"; true }
-            self[:"end_visit_#{key}"] = ->(_, _) { puts "end_visit_#{key}" }
-          end
+        attr_reader :registered, :user_data, :stack
+
+        def initialize
+          @user_data = FFI::MemoryPointer.new(:bool)
+          @registered = []
+          @stack = []
         end
+
+        require_relative 'visitor/definitions'
+
+        private
+
+          # Register a function to the visitor
+          def register(key, &block)
+            registered << key
+            self[key] = block
+          end
+
+          # Unregister a list or all registered function visitors
+          def unregister!
+            registered.map { |key| self[key.to_sym] = nil }
+            registered.clear
+          end
+
+          # Return the last object on the stack being visited
+          def object
+            stack.last
+          end
+
+          # Run a given block then unregister all the visitors
+          def setup_for(method_name)
+            send("setup_for_#{method_name}")
+            yield
+
+            unregister!
+            nil
+          end
       end
     end
   end
 end
+
+

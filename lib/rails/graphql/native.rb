@@ -21,6 +21,7 @@ module Rails # :nodoc:
       require_relative 'native/location'
       require_relative 'native/visitor'
       require_relative 'native/pointers'
+      require_relative 'native/functions'
 
       attach_function :graphql_parse_string, [:string, :pointer], AstNode
 
