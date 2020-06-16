@@ -23,9 +23,6 @@ class GraphQL::UserObject < GraphQL::Object
 
   implements :named, :aged
 
-  field :first_name, :string, null: false, desc: "The user's first name"
-  field :last_name, :string, null: false, desc: "The user's last name"
-  field :age, :integer, null: false, desc: "The user's age"
   field :birthdate, :date, null: false, desc: "The user's birthdate"
 end
 

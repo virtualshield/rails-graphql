@@ -46,14 +46,14 @@ module Rails # :nodoc:
 
             missing_keys = fields.keys - object.fields.keys
             raise ArgumentError, <<~MSG.squish if missing_keys.present?
-              The "#{object.gql_name}" doesn't correctly implements "#{gql_name}", because
+              The "#{object.gql_name}" doesn't correctly implement "#{gql_name}", because
               the #{missing_keys.map { |key| fields[key].gql_name.inspect }.to_sentence}
               #{'field'.pluralize(missing_keys.size)} are missing.
             MSG
 
             fields.each do |key, item|
               raise ArgumentError, <<~MSG.squish unless object.fields[key] == item
-                The "#{object.gql_name}" doesn't correctly implements "#{gql_name}",
+                The "#{object.gql_name}" doesn't correctly implement "#{gql_name}",
                 because the "#{item.gql_name}" field has different definition.
               MSG
             end

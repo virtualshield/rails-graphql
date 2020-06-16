@@ -90,6 +90,7 @@ module Rails # :nodoc:
               One or more items are not valid interfaces.
             MSG
 
+            merge_fields(others)
             interfaces.merge(others)
           end
 
@@ -106,6 +107,16 @@ module Rails # :nodoc:
             super if defined? super
             all_interfaces.all? { |item| item.validate!(self) }
             nil # No exception already means valid
+          end
+
+          def merge_fields(others)
+            copy_fields = -> interface {
+              new_fields = interface.fields.transform_values do |item|
+                item.dup.tap { |x| x.instance_variable_set(:@owner, self) }
+              end
+              fields.merge!(new_fields)
+            }
+            others.each &copy_fields
           end
 
           protected
