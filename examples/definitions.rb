@@ -15,13 +15,14 @@ end
 class GraphQL::AgedInterface < GraphQL::Interface
   desc 'Any entity that has an age field'
 
-  field :age, :integer, null: false
+  field :age, :integer, null: true
 end
 
 class GraphQL::UserObject < GraphQL::Object
   desc 'Simple information about an user'
 
   implements :named, :aged
+  overwrite_field :age, null: false, desc: "The user's age"
 
   field :birthdate, :date, null: false, desc: "The user's birthdate"
 end

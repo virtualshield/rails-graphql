@@ -226,6 +226,21 @@ module Rails # :nodoc:
         "#<GraphQL::Field @owner=\"#{owner.name}\" #{name}#{args}:#{extra}#{dirs}>"
       end
 
+      # Update the null value if possible
+      def set_null(value)
+        return if @null == value || value.nil?
+
+        raise DefinitionError, <<~MSG.squish unless !!value == value
+          null value should be either true or false.
+        MSG
+
+        raise DefinitionError, <<~MSG.squish unless @null
+          Cannot overwrite a null field.
+        MSG
+
+        @null = value
+      end
+
       private
 
         def match_arguments?(other)

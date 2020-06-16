@@ -53,6 +53,21 @@ module Rails # :nodoc:
           raise e.class, e.message + "\n  Defined at: #{caller(2)[0]}"
         end
 
+        # Overwrite the :null and :desc attributes of field
+        def overwrite_field(name, *args, **xargs)
+          field = fields[name]
+          raise ArgumentError, <<~MSG.squish unless field
+            The #{name.inspect} field was not defined.
+          MSG
+
+          raise ArgumentError, <<~MSG.squish if args.any? || xargs.keys.sort != [:desc, :null]
+            Can only change null(from true to false) and description on field overwrite.
+          MSG
+
+          field.set_null(xargs[:null])
+          field.instance_variable_set(:@desc, xargs[:desc]&.squish)
+        end
+
         private
 
           def field_builder
