@@ -2,8 +2,11 @@
 
 module Rails # :nodoc:
   module GraphQL # :nodoc:
+    # Error class tha wrappes all the other error classes
+    StandardError = Class.new(::StandardError)
+
     # Error class related to problems during the definition process
-    DefinitionError = Class.new(::ArgumentError)
+    DefinitionError = Class.new(StandardError)
 
     # Errors that can happen related to the arguments given to a method
     ArgumentError = Class.new(DefinitionError)
@@ -12,7 +15,7 @@ module Rails # :nodoc:
     NameError = Class.new(DefinitionError)
 
     # Error class related to problems during the execution process
-    ExecutionError = Class.new(::StandardError)
+    ExecutionError = Class.new(StandardError)
 
     # Error related to the parsing process
     ParseError = Class.new(ExecutionError)

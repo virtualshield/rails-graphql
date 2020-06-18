@@ -41,6 +41,16 @@ module Rails # :nodoc:
           @current_value << %("#{key}":#{result},)
         end
 
+        # Mark the start of a new element on the array.
+        def next
+          if @current_array
+            @current_value.chomp!(',')
+            @current_value << '},{'
+          else
+            @current_array = true
+          end
+        end
+
         # Append to the responsa data all the errors that happened during the
         # request process.
         def append_errors(errors)
@@ -52,6 +62,11 @@ module Rails # :nodoc:
         # before calling this function.
         def add(key, value)
           @current_value << %("#{key}":#{value},)
+        end
+
+        # Same as +add+ but this always encode the +value+ beforehand.
+        def safe_add(key, value)
+          add(key, value.to_json)
         end
 
         # Get the final result.

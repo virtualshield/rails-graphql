@@ -17,6 +17,8 @@ module Rails # :nodoc:
     # namespace-based objects, since each schema is associated to a single
     # namespace.
     class Schema
+      extend Helpers::WithDirectives
+
       include ActiveSupport::Rescuable
       include GraphQL::Core
 
@@ -27,11 +29,20 @@ module Rails # :nodoc:
       class_attribute :description, instance_writer: false
 
       class << self
+        alias namespaces namespace
+
         # Mark the given class to be pending of registration
         def inherited(subclass)
           pending[subclass] ||= caller(1).find do |item|
             !item.end_with?("`inherited'")
           end
+        end
+
+        # :singleton-method:
+        # Find the schema associated to the given namespace
+        def find(namespace)
+          organize!
+          schemas[namespace.to_sym]
         end
 
         # A little helper for getting the list of fields of a given type
@@ -54,10 +65,10 @@ module Rails # :nodoc:
           @subscription_fields ||= {}
         end
 
-        # Find the schema associated to the given namespace
-        def find(namespace)
-          organize!
-          schemas[namespace.to_sym]
+        # Find a given +type+ associated with the schema. It will raise an
+        # exception if the +type+ could not be found
+        def find_type!(type)
+          type_map.fetch!(type, namespaces: namespaces)
         end
 
         private

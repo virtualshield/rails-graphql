@@ -18,38 +18,40 @@ module Rails # :nodoc:
         FRAGMENT_OBJECT = {
           name: nil,
           type: nil,
-          kind: 'fragment',
           directives: [],
           selection: nil,
         }.freeze
 
         # Collect all the definitions
-        def collect_definitions(node, &block)
+        def collect_definitions(*nodes, &block)
+          return if nodes.empty?
+
           setup_for(:definition) do
-            register(:end_visit_operation_definition) { |node| block.call(node, stack.pop) }
-            register(:end_visit_fragment_definition)  { |node| block.call(node, stack.pop) }
-            Native.visit(node, self, user_data)
+            register(:end_visit_operation_definition) do |node|
+              block.call(:operation, node, stack.pop)
+            end
+
+            register(:end_visit_fragment_definition)  do |node|
+              block.call(:fragment, node, stack.pop)
+            end
+
+            nodes.each { |node| visit(node, self, user_data) }
           end
         end
 
         private
 
           def setup_for_definition # :nodoc:
+            setup_with_name
+            setup_with_type
+
             register(:visit_operation_definition) do |node|
               stack << OPERATION_OBJECT.dup
-              (object[:kind] = Native.operation_type(node))                     && true
+              (object[:kind] = operation_type(node))                            && true
             end
 
             register(:visit_fragment_definition) do
               (stack << FRAGMENT_OBJECT.dup)                                    && true
-            end
-
-            register(:visit_name) do |node|
-              (object[:name] = Native.node_name(node))                          && true
-            end
-
-            register(:visit_named_type) do |node|
-              (object[:type] = Native.node_name(Native.fragment_name(node)))    && false
             end
 
             register(:visit_variable_definition) do |node|

@@ -25,19 +25,30 @@ module Rails # :nodoc:
 
       attach_function :graphql_parse_string, [:string, :pointer], AstNode
 
-      attach_function :to_json, :graphql_ast_to_json, [AstNode], :string
+      attach_function :to_json, :graphql_ast_to_json, [:pointer], :string
 
-      attach_function :free_node, :graphql_node_free, [AstNode], :void
+      attach_function :free_node, :graphql_node_free, [:pointer], :void
 
-      attach_function :node_location, :graphql_node_get_location, [AstNode, Location], :void
+      attach_function :graphql_node_get_location, [:pointer, Location], :void
 
-      attach_function :visit, :graphql_node_visit, [AstNode, Visitor, :pointer], :void
+      attach_function :visit, :graphql_node_visit, [:pointer, Visitor, :pointer], :void
 
+      # Parse the given GraphQL +content+ string returning the node pointer.
+      # The +dup+ here is important to be able to free the memory of the nodes
+      # partially. It will raise an exception if +content+ is invalid.
       def self.parse(content)
         error = Native::ParseError.new
-        result = graphql_parse_string(content, error)
+        result = graphql_parse_string(content.dup, error)
         return result if error.empty?
         raise GraphQL::ParseError, error.to_s
+      end
+
+      # Return a {+Location+}[rdoc-ref:Rails::GraphQL::Native::Location] class
+      # with the location information of the given +node+.
+      def self.get_location(node)
+        Native::Location.new.tap do |result|
+          graphql_node_get_location(node, result)
+        end
       end
     end
   end

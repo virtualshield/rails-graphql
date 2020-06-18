@@ -10,6 +10,44 @@ module Rails # :nodoc:
           @data = {}
         end
 
+        # Shortcut for starting and ending a stack while execute a block.
+        def with_stack(key, array: false)
+          return unless block_given?
+          start_stack(array)
+          yield
+          end_stack(key)
+        end
+
+        # Start a new part of the collector. When set +as_array+, the result of
+        # the stack will be an array.
+        def start_stack(as_array = false)
+          @stack << @data
+          @data = as_array ? [{}] : {}
+        end
+
+        # Finalize a stack and set the result on the given +key+.
+        def end_stack(key)
+          result = @data
+          @data = @stack.pop
+          @data[key] = result
+        end
+
+        # Add the given +value+ to the given +key+.
+        def add(key, value)
+          object[key] = value
+        end
+
+        alias safe_add add
+
+        # Mark the start of a new element on the array.
+        def next
+          if @data.is_a?(Array)
+            @data << {}
+          else
+            @data = [@data]
+          end
+        end
+
         # Append to the responsa data all the errors that happened during the
         # request process
         def append_errors(errors)
@@ -29,8 +67,8 @@ module Rails # :nodoc:
 
         private
 
-          def pointer
-            @stack.last || @data
+          def object
+            @data.is_a?(Array) ? @data.last : @data
           end
       end
     end

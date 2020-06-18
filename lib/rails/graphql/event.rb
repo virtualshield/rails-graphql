@@ -32,8 +32,9 @@ module Rails # :nodoc:
 
         # Trigger a given +event_name+ on a given +object+ providing the
         # +phase+ of the execution and any +extra+ information.
-        def trigger(object, event_name, source, phase, **extra)
-          new(event_name, source, phase, **extra).trigger_for(object)
+        def trigger(object, event_name, source, phase, all: false, **extra, &block)
+          method_name = all ? :trigger_all : :trigger_for
+          new(event_name, source, phase, **extra).public_send(method_name, object, &block)
         end
 
         private
@@ -87,17 +88,33 @@ module Rails # :nodoc:
         @name = name
       end
 
-      # Trigger the current event for the given directive. You can use
-      # +throw :done, optional_result+ or +event.stop(*result)+ as a way to
+      # Trigger the current event for all the given +objects+. Works very
+      # similar to +trigger_for+ with the addiotn of
+      # +throw :stack, *optional_result+ or +event.stop(*result, level: :stack)+
+      # to end the trigger for all the objects
+      def trigger_all(*objects, &block)
+        catch(:stack) do
+          objects.flatten.each do |item|
+            items = item.is_a?(GraphQL::Directive) ? [item] : item.directives
+            items.each do |directive|
+              result = trigger_for(directive)
+              block.call(*result) if block.present?
+            end
+          end
+        end
+      end
+
+      # Trigger the current event for the given +directive+. You can use
+      # +throw :item, *optional_result+ or +event.stop(*result)+ as a way to
       # early return from the events.
       def trigger_for(directive)
-        catch(:done) { directive.trigger(name, source, **extra) }
+        catch(:item) { directive.trigger(name, source, **extra) }
       end
 
       # Stop the propagation of the event by using a +throw+. Any extra argument
       # provided will be returned to the trigger of the event.
-      def stop(*result)
-        throw(:done, *result)
+      def stop(*result, level: :item)
+        throw(level, *result)
       end
     end
   end

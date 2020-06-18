@@ -20,7 +20,10 @@ module Rails # :nodoc:
 
       eager_autoload do
         autoload :Errors
-        # autoload :Strategy
+        autoload :Argument
+        autoload :Strategy
+        autoload :Fragment
+        autoload :Operation
       end
 
       ##
@@ -32,7 +35,8 @@ module Rails # :nodoc:
         'Rails::GraphQL::Request::Strategy::SequencedStrategy',
       ]
 
-      attr_reader :memo, :schema, :errors, :args
+      attr_reader :memo, :schema, :visitor, :stack, :operations, :fragments,
+        :errors, :args, :response
 
       # Shortcut for initialize and execute
       def self.execute(*args, namespace: :base, context: {}, **xargs)
@@ -59,17 +63,58 @@ module Rails # :nodoc:
       end
 
       # Execute a given document with the given arguments
-      def execute(*args, as: :string, **xargs)
-        to = xargs[:to] = RESPONSE_FORMATS[as]
+      def execute(document, args = {}, as: :string, **xargs)
+        to = RESPONSE_FORMATS[as]
 
-        execute!(*args, **xargs)
+        @memo     = OpenStruct.new
+        @args     = build_ostruct(args).freeze
+        @errors   = Request::Errors.new(self)
+        @visitor  = GraphQL::Native::Visitor.new
+        @response = initialize_response(as, to)
+
+        @stack      = [schema]
+        @fragments  = {}
+        @operations = {}
+
+        execute!(document)
         @response.public_send(to)
+      end
+
+      # Trigger an event using the +stack+ as the +objects+ for the
+      # {+trigger_all+}[rdoc-ref:Rails::GraphQL::Event#trigger_all].
+      def trigger_event(event_name, **xargs, &block)
+        xargs[:all] = true
+        xargs[:request] = self
+        Event.trigger(stack, event_name, stack.first, :execution, **xargs, &block)
+      end
+
+      # Add the given +object+ into the execution +stack+ and execute the given
+      # +block+ making sure to rescue exceptions using the +rescue_with_handler+
+      def stacked(object, &block)
+        stack.unshift(object)
+        block.call
+      rescue => exception
+        rescue_with_handler(exception) || raise
       ensure
-        @args = nil
-        @memo = nil
-        @errors = nil
-        @response = nil
-        @document = nil
+        stack.shift
+      end
+
+      # Add the given +exception+ to the errors using the +node+ location.
+      def exception_to_error(exception, node, **xargs)
+        location = GraphQL::Native.get_location(node)
+        xargs[:col] = location.begin_column
+        xargs[:line] = location.begin_line
+        xargs[:path] ||= stack_to_path
+
+        xargs[:exception] = exception.class.name
+        # TODO: Use rails stack filter to add the error stack
+
+        errors.add(exception.message, **xargs)
+      end
+
+      # Convert the current stack into a error path
+      def stack_to_path
+        stack[0..-2].map(&:name).compact
       end
 
       # Build a easy-to-access object representing the current information of
@@ -77,6 +122,7 @@ module Rails # :nodoc:
       def build_rescue_object(**extra)
         OpenStruct.new(extra.reverse_merge!(
           args: @args,
+          source: stack.first,
           request: self,
           response: @response,
           document: @document,
@@ -93,25 +139,46 @@ module Rails # :nodoc:
 
         # This executes the whole process capturing any exceptions and handling
         # them as defined by the schema.
-        def execute!(document, args = {}, to: :to_s)
-          @memo = OpenStruct.new
-          @args = build_ostruct(args).freeze
-          @errors = Request::Errors.new(self)
-          @response = initialize_response(to)
+        def execute!(document)
           @document = GraphQL::Native.parse(document)
+          trigger_event(:request)
+          collect_definitions!
+
+          @strategy = find_strategy!
+          @strategy.resolve!
         rescue ParseError => err
-          parts = err.message.match(/\A(\d+)\.(\d+): (.*)\z/)
+          parts = err.message.match(/\A(\d+)\.(\d+)(?:-\d+)?: (.*)\z/)
           errors.add(parts[3], line: parts[1], col: parts[2])
-        rescue => exception
-          rescue_with_handler(exception) || raise
         ensure
           @response.append_errors(errors)
         end
 
+        # Use the visitor to collect the operations and fragments.
+        def collect_definitions!
+          visitor.collect_definitions(@document) do |kind, node, data|
+            case kind
+            when :operation
+              klass = Request::Operation.const_get(data[:kind].classify)
+              operations[data[:name]] = klass.new(self, node, data)
+            when :fragment
+              fragments[data[:name]] = Request::Fragment.new(self, node, data)
+            end
+          end
+        end
+
+        # Find the best strategy to resolve the request.
+        def find_strategy!
+          strategies.lazy.map do |klass_name|
+            klass_name.constantize
+          end.select do |klass|
+            klass.can_resolve?(self)
+          end.max_by(&:priority).new(self)
+        end
+
         # Initialize the class that responsible for storaging the response
-        def initialize_response(to)
+        def initialize_response(as, to)
           raise ::ArgumentError, <<~MSG.squish if to.nil?
-            The given format :as is not a valid reponse format.
+            The given format #{as.inspect} is not a valid reponse format.
           MSG
 
           # TODO: Fix the +enable_response_collector+, because it must be a

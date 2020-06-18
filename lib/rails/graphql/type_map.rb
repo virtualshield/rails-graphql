@@ -90,7 +90,7 @@ module Rails # :nodoc:
       def fetch(key_or_name, base_class: :Type, namespaces: nil, exclusive: false)
         register_pending!
 
-        namespaces = namespaces.to_a
+        namespaces = Array.wrap(namespaces)
         namespaces += [:base] unless exclusive
         namespaces.find do |namespace|
           result = dig(namespace, base_class, key_or_name)
