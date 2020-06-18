@@ -54,18 +54,14 @@ module Rails # :nodoc:
         end
 
         # Overwrite the :null and :desc attributes of field
-        def overwrite_field(name, *args, **xargs)
-          field = fields[name]
-          raise ArgumentError, <<~MSG.squish unless field
+        def overwrite_field(name, null: true, desc: nil)
+          raise ArgumentError, <<~MSG.squish unless fields.key?(name)
             The #{name.inspect} field was not defined.
           MSG
 
-          raise ArgumentError, <<~MSG.squish if args.any? || xargs.keys.sort != [:desc, :null]
-            Can only change null(from true to false) and description on field overwrite.
-          MSG
-
-          field.set_null(xargs[:null])
-          field.instance_variable_set(:@desc, xargs[:desc]&.squish)
+          field = fields[name]
+          field.required! unless null
+          field.instance_variable_set(:@desc, desc.squish) if desc.present?
         end
 
         private

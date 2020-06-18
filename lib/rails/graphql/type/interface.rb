@@ -40,25 +40,9 @@ module Rails # :nodoc:
           end
 
           # Check if the given object is properly implementing this interface
-          def validate!(object = nil)
-            super if defined? super
-            return if object.nil?
-
-            missing_keys = fields.keys - object.fields.keys
-            raise ArgumentError, <<~MSG.squish if missing_keys.present?
-              The "#{object.gql_name}" doesn't correctly implement "#{gql_name}", because
-              the #{missing_keys.map { |key| fields[key].gql_name.inspect }.to_sentence}
-              #{'field'.pluralize(missing_keys.size)} are missing.
-            MSG
-
-            fields.each do |key, item|
-              raise ArgumentError, <<~MSG.squish unless object.fields[key] == item
-                The "#{object.gql_name}" doesn't correctly implement "#{gql_name}",
-                because the "#{item.gql_name}" field has different definition.
-              MSG
-            end
-
-            nil # No exception already means valid
+          def validate(*)
+            # Don't validate interfaces since the fields are copied and
+            # the interface might have broken field types
           end
         end
       end
