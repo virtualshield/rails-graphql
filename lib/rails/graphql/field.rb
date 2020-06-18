@@ -226,6 +226,11 @@ module Rails # :nodoc:
         "#<GraphQL::Field @owner=\"#{owner.name}\" #{name}#{args}:#{extra}#{dirs}>"
       end
 
+      # Update the null value
+      def required!
+        @null = false
+      end
+
       private
 
         def match_arguments?(other)

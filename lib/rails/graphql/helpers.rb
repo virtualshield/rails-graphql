@@ -13,7 +13,6 @@ module Rails # :nodoc:
       autoload :WithDirectives
       autoload :WithFields
       autoload :WithNamespace
-
     end
   end
 end

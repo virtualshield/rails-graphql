@@ -53,6 +53,17 @@ module Rails # :nodoc:
           raise e.class, e.message + "\n  Defined at: #{caller(2)[0]}"
         end
 
+        # Overwrite the :null and :desc attributes of field
+        def overwrite_field(name, null: true, desc: nil)
+          raise ArgumentError, <<~MSG.squish unless fields.key?(name)
+            The #{name.inspect} field was not defined.
+          MSG
+
+          field = fields[name]
+          field.required! unless null
+          field.instance_variable_set(:@desc, desc.squish) if desc.present?
+        end
+
         private
 
           def field_builder

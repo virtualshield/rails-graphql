@@ -90,6 +90,7 @@ module Rails # :nodoc:
               One or more items are not valid interfaces.
             MSG
 
+            merge_fields(*others)
             interfaces.merge(others)
           end
 
@@ -107,6 +108,25 @@ module Rails # :nodoc:
             all_interfaces.all? { |item| item.validate!(self) }
             nil # No exception already means valid
           end
+
+          private
+
+            # Merge interface fields into the Object's fields,
+            # ensuring that only unique fields are added
+            def merge_fields(*interfaces)
+              interfaces.each do |interface|
+                interface.fields.each do |name, field|
+                  if fields.key?(name)
+                    raise ArgumentError, <<~MSG.squish if fields[name] != field
+                      The "#{gql_name}" object already has a "#{field.gql_name}" field and it
+                      is not equivalent to the one defined on the "#{interface.gql_name}" interface.
+                    MSG
+                  else
+                    fields[name] = field.dup.tap { |x| x.instance_variable_set(:@owner, self) }
+                  end
+                end
+              end
+            end
 
           protected
 
