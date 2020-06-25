@@ -3,6 +3,8 @@
 require 'active_model'
 require 'active_support'
 
+require 'active_support/core_ext/string/strip'
+
 require 'rails/graphql/version'
 
 ActiveSupport::Inflector.inflections(:en) do |inflect|
@@ -56,6 +58,7 @@ module Rails # :nodoc:
       autoload :Directive
       autoload :Field
       autoload :Mutation
+      autoload :ProxyField
       autoload :Schema
       autoload :Type
 

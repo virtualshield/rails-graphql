@@ -48,7 +48,7 @@ module Rails # :nodoc:
         delegate :argument, :use, :internal!, to: :field
 
         def desc(value)
-          field.instance_variable_set(:@desc, value.squish)
+          field.instance_variable_set(:@desc, value.strip_heredoc.chomp)
         end
       end
 
@@ -103,7 +103,7 @@ module Rails # :nodoc:
         @array    = full ? true  : array
         @nullable = full ? false : nullable
 
-        @desc = desc&.squish
+        @desc = desc&.strip_heredoc&.chomp
 
         super(**xargs) if defined? super
         configure(&block) if block.present?

@@ -116,7 +116,7 @@ module Rails # :nodoc:
             def merge_fields(*interfaces)
               interfaces.each do |interface|
                 interface.fields.each do |name, field|
-                  if fields.key?(name)
+                  if field?(name)
                     raise ArgumentError, <<~MSG.squish if fields[name] != field
                       The "#{gql_name}" object already has a "#{field.gql_name}" field and it
                       is not equivalent to the one defined on the "#{interface.gql_name}" interface.

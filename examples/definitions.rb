@@ -47,6 +47,12 @@ class GraphQL::SampleObject < GraphQL::Object
   end
 end
 
+class GraphQL::OtherSampleObject < GraphQL::Object
+  desc 'Test proxy fields'
+
+  proxy_field GraphQL::SampleObject[:new_ids]
+end
+
 class GraphQL::SimpleArgsClass < GraphQL::Object
   desc 'An object that uses the simple definition of arguments'
 

@@ -205,7 +205,19 @@ module Rails # :nodoc:
 
         def visit_description(o, collector)
           return unless @with_descriptions && o.description?
-          collector << o.description.inspect
+
+          if o.description.lines.size === 1
+            collector << o.description.inspect
+          else
+            collector << '"""'
+            collector.eol
+
+            collector << o.description
+            collector.eol
+
+            collector << '"""'
+          end
+
           collector.eol
         end
 

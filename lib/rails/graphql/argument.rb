@@ -55,7 +55,7 @@ module Rails # :nodoc:
         @nullable = full ? false : nullable
 
         @default = default
-        @desc = desc&.squish
+        @desc = desc&.strip_heredoc&.chomp
       end
 
       def initialize_copy(*)

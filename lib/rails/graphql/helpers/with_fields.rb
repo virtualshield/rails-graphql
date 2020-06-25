@@ -44,7 +44,7 @@ module Rails # :nodoc:
           xargs[:owner] = self
           object = field_builder.call(name, *args, **xargs, &block)
 
-          raise ArgumentError, <<~MSG.squish if fields.key?(object.name)
+          raise ArgumentError, <<~MSG.squish if field?(object.name)
             The #{name.inspect} field is already defined and can't be redefined.
           MSG
 
@@ -53,15 +53,48 @@ module Rails # :nodoc:
           raise e.class, e.message + "\n  Defined at: #{caller(2)[0]}"
         end
 
-        # Overwrite the :null and :desc attributes of field
+        # Add a new field to the list but use a proxy instead of a hard copy of
+        # a given +field+
+        def proxy_field(field)
+          field = field.instance_variable_get(:@field) if field.is_a?(GraphQL::ProxyField)
+
+          raise ArgumentError, <<~MSG.squish unless field.is_a?(GraphQL::Field)
+            The #{field.class.name} is not a valid field.
+          MSG
+
+          raise ArgumentError, <<~MSG.squish if field?(field.name)
+            The #{field.name.inspect} field is already defined and can't be replaced.
+          MSG
+
+          field = GraphQL::ProxyField.new(field, self)
+          fields[field.name] = field
+        end
+
+        # Overwrite the +:null+ and +:desc+ attributes of a given field named as
+        # +name+
         def overwrite_field(name, null: true, desc: nil)
-          raise ArgumentError, <<~MSG.squish unless fields.key?(name)
+          raise ArgumentError, <<~MSG.squish unless field?(name)
             The #{name.inspect} field was not defined.
           MSG
 
           field = fields[name]
           field.required! unless null
-          field.instance_variable_set(:@desc, desc.squish) if desc.present?
+          field.instance_variable_set(:@desc, desc.strip_heredoc.chomp) if desc.present?
+        end
+
+        # Allow accessing fields using the hash notation
+        def [](key)
+          fields[key.is_a?(String) ? key.underscore.to_sym : key]
+        end
+
+        # Check wheter a given field +key+ is defined in the list of fields
+        def field?(key)
+          fields.key?(key.is_a?(String) ? key.underscore.to_sym : key)
+        end
+
+        # Get the list of GraphQL names of all the fields difined
+        def field_names
+          fields.map(&:gql_name)
         end
 
         private
