@@ -14,3 +14,11 @@
   puts if i > 0
   puts GraphQL.to_gql(klass, with_descriptions: false)
 end
+
+# This displays all the capabilities of the SampleSchema
+
+class SampleSchema < GraphQL::Schema
+end
+
+Rails::GraphQL.eager_load!
+puts SampleSchema.to_gql(with_descriptions: false)

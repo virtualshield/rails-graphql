@@ -9,9 +9,15 @@ module Rails # :nodoc:
       # scalars, enums, or other input objects.
       # See http://spec.graphql.org/June2018/#InputObjectTypeDefinition
       class Input < Type
+        extend ActiveSupport::Autoload
         extend Helpers::WithFields
 
         setup! kind: :input_object, input: true
+
+        eager_autoload do
+          autoload :ActiveRecordInput
+          autoload :AssignedInput
+        end
 
         self.field_types = [Field::InputField].freeze
         self.valid_field_types = [Type::Enum, Type::Input, Type::Scalar].freeze

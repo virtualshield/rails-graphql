@@ -18,7 +18,9 @@ module Rails # :nodoc:
         delegate :kind, :query?, :mutation?, :subscription?, to: :class
 
         attr_reader :name, :node, :data, :variables, :directives, :request
+
         alias vars variables
+        alias gql_name name
 
         class << self
           # Return the type of the operation
@@ -85,7 +87,7 @@ module Rails # :nodoc:
             @variables = OpenStruct.new
             return if data[:variables].empty?
 
-            checker = ArgumentChecker.new(self, args)
+            checker = Request::Argument.new(self, args)
             visitor.collect_variables(*data[:variables]) do |data|
               checker.resolve(data, variables)
             end

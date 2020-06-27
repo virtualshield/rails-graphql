@@ -5,12 +5,12 @@ module Rails # :nodoc:
     class Directive::DeprecatedDirective < Directive
       self.spec_object = true
 
+      placed_on :field_definition, :enum_value
+
       desc <<~DESC
         Indicate deprecated portions of a GraphQL service’s schema, such as deprecated
         fields on a type or deprecated enum values.
       DESC
-
-      placed_on :field_definition, :enum_value
 
       argument :reason, :string, desc: <<~DESC
         Explain why the underlying element was marked as deprecated. If possible,

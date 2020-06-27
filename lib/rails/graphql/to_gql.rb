@@ -10,8 +10,12 @@ module Rails # :nodoc:
     # representation. It was developed more for testing purposes, but it can
     # also used by describing purposes or generating API description pages.
     class ToGQL < Arel::Visitors::Visitor
-      def self.compile(node, **xargs)
+      def self.compile(node, **xargs) # :nodoc:
         new.compile(node, **xargs)
+      end
+
+      def self.describe(schema, **xargs) # :nodoc:
+        new.describe(schema, **xargs)
       end
 
       def compile(node, collector = nil, with_descriptions: true) # :nodoc:
@@ -20,8 +24,48 @@ module Rails # :nodoc:
         accept(node, collector).value
       end
 
+      # :nodoc:
+      def describe(schema, collector = nil, with_descriptions: true, with_spec: nil)
+        collector ||= Collectors::IdentedCollector.new
+        @with_descriptions = with_descriptions
+        @with_spec = with_spec.nil? ? schema.introspection? : with_spec
+
+        accept(schema, collector).eol
+
+        GraphQL.type_map.each_from(schema.namespace, base_class: :Type)
+          .group_by(&:kind).values_at(*%i[scalar object interface union enum input_object])
+          .each do |items|
+            items&.sort_by(&:gql_name)&.each do |item|
+              next if !@with_spec && item.gql_name.start_with?('__')
+              next visit_Rails_GraphQL_Type_Object(item, collector).eol if item.object?
+              accept(item, collector).eol
+            end
+          end
+
+        GraphQL.type_map.each_from(schema.namespace, base_class: :Directive)
+          .sort_by(&:gql_name).each do |item|
+            next if !@with_spec && item.gql_name.start_with?('__')
+            accept(item, collector).eol
+          end
+
+        collector.value
+      end
+
       # Keep visitors in an alphabetical order, but leave instances at the end
       protected
+
+        def visit_fake_schema_type(schema, type, name, collector)
+          return unless type.eql?(:query) || schema.fields_for(type).present?
+
+          collector << 'type '
+          collector << name
+
+          collector.indented(' {', '}') do
+            schema.fields_for(type).values.sort_by(&:gql_name).each do |x|
+              visit(x, collector) if @with_spec || !x.internal?
+            end
+          end
+        end
 
         def visit_Rails_GraphQL_Directive(o, collector)
           return visit_Rails_GraphQL_Directive_Instance(o, collector) \
@@ -60,9 +104,13 @@ module Rails # :nodoc:
           visit_directives(o.directives, collector)
 
           collector.indented(' {', '}') do
+            Helpers::WithSchemaFields::SCHEMA_FIELD_TYPES.each do |key, name|
+              collector << key.to_s
+              collector << ': '
+              collector << name
+              collector.eol
+            end
           end
-
-          collector.eol
         end
 
         def visit_Rails_GraphQL_Field_OutputField(o, collector)
@@ -87,9 +135,7 @@ module Rails # :nodoc:
 
           collector.indented(' {', '}') do
             o.values.each { |x| visit_enum_value(o, x, collector) }
-          end if o.values.present?
-
-          collector.eol
+          end
         end
 
         def visit_Rails_GraphQL_Type_Input(o, collector)
@@ -100,9 +146,7 @@ module Rails # :nodoc:
 
           collector.indented(' {', '}') do
             o.fields.each_value { |x| visit(x, collector) }
-          end if o.fields.present?
-
-          collector.eol
+          end
         end
 
         def visit_Rails_GraphQL_Type_Interface(o, collector)
@@ -113,9 +157,7 @@ module Rails # :nodoc:
 
           collector.indented(' {', '}') do
             o.fields.each_value { |x| visit(x, collector) }
-          end if o.fields.present?
-
-          collector.eol
+          end
         end
 
         def visit_Rails_GraphQL_Type_Object(o, collector)
@@ -123,19 +165,19 @@ module Rails # :nodoc:
           collector << 'type '
           collector << o.gql_name
 
-          collector << ' implements ' if o.interfaces?
-          o.all_interfaces.each_with_index do |x, i|
-            collector << ' & ' if i > 0
-            collector << x.gql_name
+          if o.interfaces?
+            collector << ' implements '
+            o.all_interfaces.each_with_index do |x, i|
+              collector << ' & ' if i > 0
+              collector << x.gql_name
+            end
           end
 
           visit_directives(o.directives, collector)
 
           collector.indented(' {', '}') do
             o.fields.each_value { |x| visit(x, collector) }
-          end if o.fields.present?
-
-          collector.eol
+          end
         end
 
         def visit_Rails_GraphQL_Type_Scalar(o, collector)

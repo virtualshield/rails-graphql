@@ -8,38 +8,47 @@ module Rails # :nodoc:
           @val = [[initial, '']]
         end
 
-        def indented(start = nil, finish = nil)
+        def indented(start = nil, finish = nil, auto_eol = true)
           self << start unless start.nil?
 
-          eol.indent
+          indent
           yield
           unindent
 
+          @val.pop(2) if @val[-2].size.eql?(2) && @val[-2].last.empty?
+
           self << finish unless finish.nil?
+          self.eol if auto_eol
           self
         end
 
         def value
-          @val.map { |(ident, str)| (' ' * ident) + str }.join("\n")
+          @val.map do |(ident, *content)|
+            next if content.size.eql?(1) && content.first.blank?
+            content.pop if content.last.empty?
+
+            ident = (' ' * ident)
+            ident + content.join("\n#{ident}")
+          end.compact.join("\n")
         end
 
         def <<(str)
-          @val.last[1] << str
+          @val.last.last << str
           self
         end
 
         def eol
-          @val << [last_ident, '']
+          @val.last << ''
           self
         end
 
         def indent
-          @val.last[0] += @size
+          @val << [last_ident + @size, '']
           self
         end
 
         def unindent
-          @val.last[0] -= @size
+          @val << [last_ident - @size, '']
           self
         end
 

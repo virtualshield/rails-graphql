@@ -4,7 +4,8 @@ module Rails # :nodoc:
   module GraphQL # :nodoc:
     class Type # :nodoc:
       # The introspection object for a schema object
-      class Object::SchemaObject < Object
+      class Object::SchemaObject < Object::AssignedObject
+        self.assigned_to = 'Rails::GraphQL::Schema'
         self.spec_object = true
 
         rename! '__Schema'

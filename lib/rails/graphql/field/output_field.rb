@@ -8,6 +8,8 @@ module Rails # :nodoc:
       redefine_singleton_method(:output_type?) { true }
       self.directive_location = :field_definition
 
+      delegate :from_ar?, to: :type_klass
+
       def initialize(*args, deprecated: false, **xargs, &block)
         if !!deprecated
           xargs[:directives] = xargs[:directives].to_a
@@ -17,6 +19,12 @@ module Rails # :nodoc:
         end
 
         super(*args, **xargs, &block)
+      end
+
+      # Add the attribute name using +method_name+ before calling +from_ar+ on
+      # the +type_klass+, then add the alias to the +name+ of the field
+      def from_ar(ar_object)
+        type_klass.from_ar(ar_object, method_name)&.as(name)
       end
 
       # This checks if a given unserialized value is valid for this field

@@ -22,6 +22,13 @@ module Rails # :nodoc:
 
       ##
       # :singleton-method:
+      # If a source being described has any dependency, then generate them as
+      # if the dependent source doesn't exist. It will use the same describer as
+      # the source that marked the dependecy.
+      mattr_accessor :source_generate_dependencies, instance_writer: false, default: true
+
+      ##
+      # :singleton-method:
       # Initialize the class responsible for registering and keeping all the
       # types and objects correctly registered.
       mattr_accessor :type_map, instance_writer: false, default: GraphQL::TypeMap.new
@@ -37,6 +44,7 @@ module Rails # :nodoc:
       # Set this to true in order to enable the descriptions of anything be
       # defined on locale files form I18n, which also provides support for
       # language translations.
+      # WIP
       mattr_accessor :enable_i18n_descriptions, instance_writer: false, default: true
 
       ##
@@ -44,6 +52,7 @@ module Rails # :nodoc:
       # Set this to true in order to enable the automatic generation of
       # description for fields that the description is missing. This has the
       # lowest priority.
+      # WIP
       mattr_accessor :enable_auto_descriptions, instance_writer: false, default: true
 
       ##

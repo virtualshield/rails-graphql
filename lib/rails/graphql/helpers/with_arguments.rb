@@ -71,8 +71,9 @@ module Rails # :nodoc:
 
         # A short cute for arguments named and typed as id
         def id_argument(*args, **xargs, &block)
+          name = args.size >= 1 ? args.shift : :id
           xargs[:null] = false unless xargs.key?(:null)
-          argument(:id, :id, *args, **xargs, &block)
+          argument(name, :id, *args, **xargs, &block)
         end
       end
     end

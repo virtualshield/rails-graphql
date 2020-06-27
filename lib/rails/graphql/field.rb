@@ -44,8 +44,9 @@ module Rails # :nodoc:
       require_relative 'field/input_field'
       require_relative 'field/output_field'
 
-      class ScopedConfig < Struct.new(:field) # :nodoc: all
-        delegate :argument, :use, :internal!, to: :field
+      class ScopedConfig < Struct.new(:field, :receiver) # :nodoc: all
+        delegate :argument, :id_argument, :use, :internal!, to: :field
+        delegate_missing_to :receiver
 
         def desc(value)
           field.instance_variable_set(:@desc, value.strip_heredoc.chomp)
@@ -95,9 +96,11 @@ module Rails # :nodoc:
       )
         @owner = owner
         @name = name.to_s.underscore.to_sym
-        @gql_name = @name.to_s.camelize(:lower)
         @directives = GraphQL.directives_to_set(directives, [], directive_location, self)
         @method_name = method_name.to_s.underscore.to_sym unless method_name.nil?
+
+        @gql_name = @name.to_s.camelize(:lower)
+        @gql_name = "__#{@gql_name.camelize(:lower)}" if internal?
 
         @null     = full ? false : null
         @array    = full ? true  : array
@@ -117,7 +120,7 @@ module Rails # :nodoc:
 
       # Allow extra configurations to be performed using a block
       def configure(&block)
-        ScopedConfig.new(self).instance_exec(&block)
+        ScopedConfig.new(self, block.binding.receiver).instance_exec(&block)
       end
 
       # Returns the name of the method used to retrieve the information
@@ -161,13 +164,7 @@ module Rails # :nodoc:
 
       # Check if the field is an internal one
       def internal?
-        @internal
-      end
-
-      # Mark the field as an internal one, which comes from the spec and then
-      # can contain a name starting with "__"
-      def internal!
-        @internal = true
+        name.start_with?('__')
       end
 
       # This method must be overridden by children classes

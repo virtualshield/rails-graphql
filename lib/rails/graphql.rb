@@ -52,6 +52,7 @@ module Rails # :nodoc:
       autoload :Event
       autoload :Native
       autoload :Request
+      autoload :Source
       autoload :TypeMap
 
       autoload :Argument
@@ -63,6 +64,7 @@ module Rails # :nodoc:
       autoload :Type
 
       autoload :GraphiQL
+      autoload :Introspection
     end
 
     class << self
@@ -136,6 +138,9 @@ module Rails # :nodoc:
 
       def eager_load! # :nodoc:
         super
+
+        GraphQL::Request.eager_load!
+        GraphQL::Source.eager_load!
 
         GraphQL::Directive.eager_load!
         GraphQL::Type.eager_load!

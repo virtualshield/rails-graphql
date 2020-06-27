@@ -4,17 +4,24 @@
 module GraphQL
   # List of constant shortcuts, as string to not trigger autoload
   CONST_SHORTCUTS = {
-    Directive: '::Rails::GraphQL::Directive',
-    Mutation:  '::Rails::GraphQL::Mutation',
-    Request:   '::Rails::GraphQL::Request',
-    Schema:    '::Rails::GraphQL::Schema',
+    Directive:          '::Rails::GraphQL::Directive',
+    Mutation:           '::Rails::GraphQL::Mutation',
+    Request:            '::Rails::GraphQL::Request',
+    Schema:             '::Rails::GraphQL::Schema',
+    Source:             '::Rails::GraphQL::Source',
 
-    Enum:      '::Rails::GraphQL::Type::Enum',
-    Input:     '::Rails::GraphQL::Type::Input',
-    Interface: '::Rails::GraphQL::Type::Interface',
-    Object:    '::Rails::GraphQL::Type::Object',
-    Scalar:    '::Rails::GraphQL::Type::Scalar',
-    Union:     '::Rails::GraphQL::Type::Union',
+    Enum:               '::Rails::GraphQL::Type::Enum',
+    Input:              '::Rails::GraphQL::Type::Input',
+    Interface:          '::Rails::GraphQL::Type::Interface',
+    Object:             '::Rails::GraphQL::Type::Object',
+    Scalar:             '::Rails::GraphQL::Type::Scalar',
+    Union:              '::Rails::GraphQL::Type::Union',
+
+    AssignedObject:     '::Rails::GraphQL::Type::Object::AssignedObject',
+
+    ActiveRecordSource: '::Rails::GraphQL::Source::ActiveRecordSource',
+    ActiveRecordInput:  '::Rails::GraphQL::Type::Input::ActiveRecordInput',
+    ActiveRecordObject: '::Rails::GraphQL::Type::Object::ActiveRecordObject',
   }.freeze
 
   # List of directive shortcuts, which are basically the shortcut of another
@@ -43,12 +50,25 @@ module GraphQL
       Rails::GraphQL::Request.execute(*args)
     end
 
+    # See {CONST_SHORTCUTS}[rdoc-ref:GraphQL::CONST_SHORTCUTS]
     def const_defined?(name) # :nodoc:
+      name = :"ActiveRecord#{name[2..-1]}" if name.start_with?('AR')
       COSNT_SHORTCUTS.key?(name) || super
     end
 
+    # See {CONST_SHORTCUTS}[rdoc-ref:GraphQL::CONST_SHORTCUTS]
     def const_missing(name) # :nodoc:
-      CONST_SHORTCUTS[name]&.constantize || super
+      name = :"ActiveRecord#{name[2..-1]}" if name.start_with?('AR')
+      return resolved[name] if resolved.key?(name)
+      return super unless CONST_SHORTCUTS.key?(name)
+      resolved[name] = CONST_SHORTCUTS[name].constantize
     end
+
+    private
+
+      # Stores resolved constants for increased performance
+      def resolved
+        @@resolved = {}
+      end
   end
 end

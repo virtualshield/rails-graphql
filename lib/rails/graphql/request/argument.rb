@@ -3,11 +3,11 @@
 module Rails # :nodoc:
   module GraphQL # :nodoc:
     class Request # :nodoc:
-      # = GraphQL Request Argument Checker
+      # = GraphQL Request Argument
       #
       # A little different from the normal argument, since the focus of this
-      # class is to validate and import request arquments.
-      class ArgumentChecker < GraphQL::Argument
+      # class is to validate and import arquments from the request.
+      class Argument < GraphQL::Argument
         alias import initialize
 
         attr_reader :args, :value

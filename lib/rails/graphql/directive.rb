@@ -111,7 +111,9 @@ module Rails # :nodoc:
             MSG
           end
 
-          # Provide a nice way to use a directive without calling +Directive.new+
+          # Provide a nice way to use a directive without calling
+          # +Directive.new+, like the +DeprecatedDirective+ can be initialized
+          # using +GraphQL::DeprecatedDirective(*args)+
           def inherited(subclass)
             super if defined? super
 

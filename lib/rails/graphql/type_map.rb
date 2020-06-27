@@ -159,6 +159,27 @@ module Rails # :nodoc:
         @aliases += 1
       end
 
+      # Iterate over the types of the given +base_class+ that are defined on the
+      # given +namespaces+.
+      def each_from(namespaces, base_class: :Type, &block)
+        register_pending!
+
+        namespaces = Array.wrap(namespaces)
+        namespaces += [:base] unless namespaces.include?(:base)
+
+        enumerator = Enumerator::Lazy.new(namespaces) do |yielder, *values|
+          next unless @index.key?(values.last)
+
+          # Only iterate over string based types
+          @index[values.last][base_class].each do |key, value|
+            next unless key.is_a?(String)
+            yielder << value.call
+          end
+        end
+
+        block.present? ? enumerator.each(&block) : enumerator
+      end
+
       def inspect # :nodoc:
         <<~INFO.squish + '>'
           #<Rails::GraphQL::TypeMap [index]

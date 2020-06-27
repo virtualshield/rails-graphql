@@ -4,7 +4,8 @@ module Rails # :nodoc:
   module GraphQL # :nodoc:
     class Type # :nodoc:
       # The introspection object for a input object
-      class Object::InputValueObject < Object
+      class Object::InputValueObject < Object::AssignedObject
+        self.assigned_to = 'Rails::GraphQL::Field::InputField'
         self.spec_object = true
 
         rename! '__InputValue'

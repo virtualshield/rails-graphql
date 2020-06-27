@@ -66,20 +66,33 @@ module Rails # :nodoc:
             The #{field.name.inspect} field is already defined and can't be replaced.
           MSG
 
-          field = GraphQL::ProxyField.new(field, self)
-          fields[field.name] = field
+          object = GraphQL::ProxyField.new(field, self)
+          fields[object.name] = object
         end
 
         # Overwrite the +:null+ and +:desc+ attributes of a given field named as
-        # +name+
-        def overwrite_field(name, null: true, desc: nil)
+        # +name+, it also allows a +block+ which will then further configure the
+        # field
+        def change_field(name, null: true, desc: nil, &block)
           raise ArgumentError, <<~MSG.squish unless field?(name)
-            The #{name.inspect} field was not defined.
+            The #{name.inspect} field is not yet defined.
           MSG
 
           field = fields[name]
           field.required! unless null
           field.instance_variable_set(:@desc, desc.strip_heredoc.chomp) if desc.present?
+          configure(name, &block) if block.present?
+        end
+
+        alias overwrite_field change_field
+
+        # Perform extra configurations on a given +field+
+        def configure_field(name, &block)
+          fields[name].configure(&block) if field?(name)
+
+          raise ArgumentError, <<~MSG.squish
+            The #{name.inspect} field is not yet defined.
+          MSG
         end
 
         # Allow accessing fields using the hash notation
@@ -99,6 +112,8 @@ module Rails # :nodoc:
 
         private
 
+          # TODO: Probably remove this since we don't have the build method and
+          # we probably won't need it anymore
           def field_builder
             field_types.one? ? field_types.first.method(:new) : GraphQL::Field.method(:build)
           end

@@ -30,6 +30,9 @@ module Rails # :nodoc:
     # * <tt>:desc</tt> - The description of the argument
     #   (defaults to nil).
     class Argument
+      # TODO: When arguments are attached to output fields they can have
+      # directives so add this possibility
+
       attr_reader :name, :gql_name, :type, :owner, :default
 
       delegate :namespaces, to: :owner
@@ -47,8 +50,14 @@ module Rails # :nodoc:
       )
         @owner = owner
         @name = name.to_s.underscore.to_sym
-        @type = type.to_s.underscore.to_sym
         @gql_name = @name.to_s.camelize(:lower)
+
+        if type.is_a?(Module) && type < GraphQL::Type
+          @type_klass = type
+          @type = type.name
+        else
+          @type = type.to_s.underscore.to_sym
+        end
 
         @null     = full ? false : null
         @array    = full ? true  : array

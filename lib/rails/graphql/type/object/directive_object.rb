@@ -4,7 +4,8 @@ module Rails # :nodoc:
   module GraphQL # :nodoc:
     class Type # :nodoc:
       # The introspection object for directives
-      class Object::DirectiveObject < Object
+      class Object::DirectiveObject < Object::AssignedObject
+        self.assigned_to = 'Rails::GraphQL::Directive'
         self.spec_object = true
 
         rename! '__Directive'
@@ -19,7 +20,7 @@ module Rails # :nodoc:
           additional information to the executor.
         DESC
 
-        field :name,        :string,               null: false
+        field :name,        :string,               null: false, method_name: :gql_name
         field :description, :string
         field :locations,   '__DirectiveLocation', full: true
         field :args,        '__InputValue',        full: true

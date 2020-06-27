@@ -24,6 +24,9 @@ module Rails # :nodoc:
         ].freeze
 
         eager_autoload do
+          autoload :ActiveRecordObject
+          autoload :AssignedObject
+
           autoload :DirectiveObject
           autoload :EnumValueObject
           autoload :FieldObject
@@ -54,25 +57,41 @@ module Rails # :nodoc:
           end
 
           # Check if a given value is a valid non-serialized output
-          def valid_output?(value)
-            fields.values.all? do |field|
+          def valid_output?(value, list = nil)
+            return false unless list.blank? || (list - field_names).eql?(0)
+            (list.presence || field_names).all? do |field_name|
+              # It's okay to use to_sym since we already check that all given
+              # names exist in the list of fields
+              field = self[field_name]
+
+              # TODO: Change this when we have the resolvers
               value.respond_to?(field.method_name) || value.try(:key?, field.method_name)
             end
           end
 
           # Transforms the given value to its representation in a JSON string
-          def to_json(value)
-            to_hash(value).inspect
+          # getting only the given +list+ of fields. This exists mainly for
+          # compatibility reasons, because requests will deal with objects in a
+          # different way
+          def to_json(value, list = nil)
+            to_hash(value, list).to_json
           end
 
           # Transforms the given value to its representation in a Hash object
-          def to_hash(value)
-            fields.transform_values do |field|
+          # getting only the given +list of fields+ This exists mainly for
+          # compatibility reasons, because requests will deal with objects in a
+          # different way
+          def to_hash(value, list = nil)
+            (list.presence || field_names).inject({}) do |result, field_name|
+              # We assume that +valid_output?+ was used against +value+
+              field = self[field_name]
+
+              # TODO: Change this when we have the resolvers
               val = value.respond_to?(field.method_name) \
                 ? value.public_send(field.method_name) \
                 : value.try(:[], field.method_name)
 
-              field.to_hash(val)
+              result.merge!(field_name => val)
             end
           end
 

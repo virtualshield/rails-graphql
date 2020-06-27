@@ -4,7 +4,8 @@ module Rails # :nodoc:
   module GraphQL # :nodoc:
     class Type # :nodoc:
       # The introspection object for any kind of type
-      class Object::TypeObject < Object
+      class Object::TypeObject < Object::AssignedObject
+        self.assigned_to = 'Rails::GraphQL::Type'
         self.spec_object = true
 
         rename! '__Type'

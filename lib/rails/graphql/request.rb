@@ -19,11 +19,11 @@ module Rails # :nodoc:
       RESPONSE_FORMATS = { string: :to_s, object: :to_h, hash: :to_h }.freeze
 
       eager_autoload do
-        autoload :Errors
         autoload :Argument
-        autoload :Strategy
+        autoload :Errors
         autoload :Fragment
         autoload :Operation
+        autoload :Strategy
       end
 
       ##
@@ -114,7 +114,7 @@ module Rails # :nodoc:
 
       # Convert the current stack into a error path
       def stack_to_path
-        stack[0..-2].map(&:name).compact
+        stack[0..-2].map(&:gql_name).compact
       end
 
       # Build a easy-to-access object representing the current information of

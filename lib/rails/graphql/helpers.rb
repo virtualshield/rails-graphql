@@ -10,9 +10,11 @@ module Rails # :nodoc:
       autoload :Registerable
 
       autoload :WithArguments
+      autoload :WithAssignment
       autoload :WithDirectives
       autoload :WithFields
       autoload :WithNamespace
+      autoload :WithSchemaFields
     end
   end
 end

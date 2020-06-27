@@ -6,15 +6,18 @@ module Rails # :nodoc:
       # Helper module responsible for name stuff and also responsible for
       # registering the objects to the type map, which also checks for the
       # uniqueness of the name of things.
+      #
+      # TODO: Maybe implement +validate!+ to make sure that we follow the spec
+      # validation of the names
       module Registerable
-        NAME_EXP = /GraphQL::(?:Type::\w+::|Directive::)?([:\w]+)[A-Z][a-z]+\z/.freeze
+        NAME_EXP = /GraphQL::(?:Type::\w+::|Directive::)?([:\w]+)[A-Z][A-Za-z]+\z/.freeze
 
         delegate :gql_name, to: :class
 
         # Here we define a couple of attributes used by registration
         def self.extended(other)
-          other.extend(Helpers::WithNamespace)
           other.extend(Registerable::ClassMethods)
+          other.extend(Helpers::WithNamespace)
 
           # If a type is marked as abstract, it's then used as a base and it
           # won't appear in the introspection

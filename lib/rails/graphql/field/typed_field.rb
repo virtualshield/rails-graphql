@@ -10,7 +10,13 @@ module Rails # :nodoc:
       delegate :valid_field_types, to: :owner
 
       def initialize(name, type, *args, **xargs, &block)
-        @type = type.to_s.underscore.to_sym
+        if type.is_a?(Module) && type < GraphQL::Type
+          @type_klass = type
+          @type = type.name
+        else
+          @type = type.to_s.underscore.to_sym
+        end
+
         super(name, *args, **xargs, &block)
       end
 

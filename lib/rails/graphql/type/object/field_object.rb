@@ -4,7 +4,8 @@ module Rails # :nodoc:
   module GraphQL # :nodoc:
     class Type # :nodoc:
       # The introspection object for a field on objects and interfaces
-      class Object::FieldObject < Object
+      class Object::FieldObject < Object::AssignedObject
+        self.assigned_to = 'Rails::GraphQL::Field::OutputField'
         self.spec_object = true
 
         rename! '__Field'

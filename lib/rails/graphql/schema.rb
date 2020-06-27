@@ -17,7 +17,9 @@ module Rails # :nodoc:
     # namespace-based objects, since each schema is associated to a single
     # namespace.
     class Schema
+      extend Helpers::WithSchemaFields
       extend Helpers::WithDirectives
+      extend GraphQL::Introspection
 
       include ActiveSupport::Rescuable
       include GraphQL::Core
@@ -28,11 +30,14 @@ module Rails # :nodoc:
       # The given description of the schema
       class_attribute :description, instance_writer: false
 
+      self.directive_location = :schema
+
       class << self
         alias namespaces namespace
 
         # Mark the given class to be pending of registration
         def inherited(subclass)
+          super if defined? super
           pending[subclass] ||= caller(1).find do |item|
             !item.end_with?("`inherited'")
           end
@@ -45,30 +50,15 @@ module Rails # :nodoc:
           schemas[namespace.to_sym]
         end
 
-        # A little helper for getting the list of fields of a given type
-        def fields_for(type)
-          public_send("#{type}_fields")
-        end
-
-        # Returns the list of query fields associated to this schema
-        def query_fields
-          @query_fields ||= {}
-        end
-
-        # Returns the list of mutation fields associated to this schema
-        def mutation_fields
-          @mutation_fields ||= {}
-        end
-
-        # Returns the list of subscription fields associated to this schema
-        def subscription_fields
-          @subscription_fields ||= {}
-        end
-
         # Find a given +type+ associated with the schema. It will raise an
         # exception if the +type+ could not be found
         def find_type!(type)
           type_map.fetch!(type, namespaces: namespaces)
+        end
+
+        # Describe a schema as a GraphQL string
+        def to_gql(**xargs)
+          ToGQL.describe(self, **xargs)
         end
 
         private

@@ -73,11 +73,6 @@ module Rails # :nodoc:
               The "#{value}" is already defined for #{gql_name} enum.
             MSG
 
-            invalid = directives.try(:any?) { |d| !d.locations.include?(:enum_value) }
-            raise ArgumentError, <<~MSG if invalid
-              One or more directives provided for "#{value}" can't be used on enum values.
-            MSG
-
             directives = GraphQL.directives_to_set(directives, [], :enum_value, self)
             directives << Directive::DeprecatedDirective.new(
               reason: (deprecated.is_a?(String) ? deprecated : nil)
