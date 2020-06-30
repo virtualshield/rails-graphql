@@ -44,6 +44,22 @@ class GraphQL::SampleObject < GraphQL::Object
 
     argument :odd_only, :bool, default: false
     argument :even_only, :bool, default: false
+
+    before_resolve do
+      puts 'Before resolve in block'
+    end
+
+    before_resolve :before_message
+
+    resolve do
+      puts 'Resolving'
+    end
+
+    after_resolve -> { puts 'After resolve' }
+
+    def before_message
+      puts 'Before resolve'
+    end
   end
 end
 
@@ -74,3 +90,5 @@ class GraphQL::DeletePostMutation < GraphQL::Mutation
     true
   end
 end
+
+

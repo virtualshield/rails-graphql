@@ -31,6 +31,7 @@ module Rails # :nodoc:
     class Field
       include Helpers::WithDirectives
       include Helpers::WithArguments
+      include Helpers::WithCallbacks
 
       attr_reader :name, :gql_name, :owner, :directives
 
@@ -45,7 +46,8 @@ module Rails # :nodoc:
       require_relative 'field/output_field'
 
       class ScopedConfig < Struct.new(:field, :receiver) # :nodoc: all
-        delegate :argument, :id_argument, :use, :internal!, to: :field
+        delegate :argument, :id_argument, :use, :internal!,
+                 :before_resolve, :resolve, :after_resolve, to: :field
         delegate_missing_to :receiver
 
         def desc(value)
@@ -110,6 +112,8 @@ module Rails # :nodoc:
 
         super(**xargs) if defined? super
         configure(&block) if block.present?
+
+        # resolve_callbacks!
       end
 
       def initialize_copy(*)
