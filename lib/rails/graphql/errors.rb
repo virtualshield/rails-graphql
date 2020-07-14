@@ -17,6 +17,9 @@ module Rails # :nodoc:
     # Error class related to problems during the execution process
     ExecutionError = Class.new(StandardError)
 
+    # Error class related to problems that happened during execution of fields
+    FieldError = Class.new(ExecutionError)
+
     # Error related to the parsing process
     ParseError = Class.new(ExecutionError)
   end

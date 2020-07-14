@@ -8,10 +8,12 @@ module Rails # :nodoc:
       def inherited(subclass)
         subclass.query_fields do
           field(:__schema, '__Schema', null: false) do
+            resolve { subclass }
           end
 
           field(:__type, '__Type') do
             argument(:name, :string, null: false)
+            resolve { subclass.find_type!(args.name) }
           end
         end
 

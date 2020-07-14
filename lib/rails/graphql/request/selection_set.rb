@@ -24,6 +24,7 @@ module Rails # :nodoc:
               fields[data[:name]] = Field.new(self, node, data)
             end unless data[:selection].nil? || data[:selection].null?
 
+            assing_fields!
             @fields.freeze
           end
 
@@ -34,6 +35,22 @@ module Rails # :nodoc:
                 field.debug_prepare!
               end
             end if fields.any?
+          end
+
+          # Using +fields_source+, find the needed ones to be assigned to the
+          # current requested fields. As shown by benchmark, since the index is
+          # based on Symbols, the best way to find +gql_name+ based fields is
+          # through interation and search. Complexity O(n)
+          def assing_fields!
+            pending = fields.size
+            return if pending.zero?
+
+            fields_source.each_value do |source_field|
+              next unless (field = fields[source_field.gql_name])
+
+              field.assing_field(source_field)
+              break if (pending -= 1) === 0
+            end
           end
       end
     end

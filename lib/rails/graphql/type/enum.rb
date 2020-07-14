@@ -42,7 +42,7 @@ module Rails # :nodoc:
 
           # Transforms the given value to its representation in a JSON string
           def to_json(value)
-            to_hash(value).inspect
+            to_hash(value)&.inspect
           end
 
           # Transforms the given value to its representation in a Hash object
@@ -74,7 +74,7 @@ module Rails # :nodoc:
             MSG
 
             directives = Array.wrap(directives)
-            directives << Directive::DeprecatedDirective.new(
+            directives << deprecated_klass.new(
               reason: (deprecated.is_a?(String) ? deprecated : nil)
             ) if deprecated.present?
 
@@ -88,6 +88,17 @@ module Rails # :nodoc:
             self.value_directives[value] = directives
           end
 
+          # Build a hash with deprecated values and their respective reason for
+          # logging and introspection purposes
+          def all_deprecated_values
+            @all_deprecated_values ||= begin
+              all_value_directives.inject({}) do |list, (value, dirs)|
+                next unless obj = dirs.find { |dir| dir.is_a?(deprecated_klass) }
+                list.merge(value => obj.args.reason)
+              end
+            end.freeze
+          end
+
           def inspect # :nodoc:
             <<~INFO.squish + '>'
               #<GraphQL::Enum #{gql_name}
@@ -95,6 +106,12 @@ module Rails # :nodoc:
               {#{all_values.to_a.join(' | ')}}
             INFO
           end
+
+          private
+
+            def deprecated_klass
+              Directive::DeprecatedDirective
+            end
         end
       end
     end

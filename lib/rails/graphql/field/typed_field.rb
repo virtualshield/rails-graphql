@@ -7,6 +7,7 @@ module Rails # :nodoc:
     module Field::TypedField
       attr_reader :type
 
+      delegate :input_type?, :output_type?, :leaf_type?, to: :type_klass
       delegate :valid_field_types, to: :owner
 
       def initialize(name, type, *args, **xargs, &block)

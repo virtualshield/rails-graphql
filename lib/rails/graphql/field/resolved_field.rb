@@ -94,7 +94,7 @@ module Rails # :nodoc:
         nil # No exception already means valid
       end
 
-      private
+      protected
 
         # Chedck if a given +method_name+ is callable from the owner perspective
         def callable?(method_name)

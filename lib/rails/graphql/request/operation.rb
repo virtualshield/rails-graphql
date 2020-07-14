@@ -25,6 +25,7 @@ module Rails # :nodoc:
 
         alias vars variables
         alias gql_name name
+        alias operation itself
 
         class << self
           # Helper method to initialize an operation given the data
@@ -106,6 +107,14 @@ module Rails # :nodoc:
         def resolved!
           @resolved = true
         end
+
+        protected
+
+          # The list of fields comes from the +fields_for+ of the same type as
+          # the kind of the operation
+          def fields_source
+            schema.fields_for(kind)
+          end
 
         private
 

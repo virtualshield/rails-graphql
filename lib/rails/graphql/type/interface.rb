@@ -27,10 +27,33 @@ module Rails # :nodoc:
         ].freeze
 
         class << self
+          # Stores the list of objects associated with the interface so it can
+          # be used during the execution step to find the right object type
+          def objects
+            @objects ||= defined? super ? super.dup : Set.new
+          end
+
           # Check if the other type is equivalent, by checking if the other is
           # an object and the object implements this interface
           def ==(other)
             super || (other.object? && other.implements?(self))
+          end
+
+          # When attaching an interface to an object, copy the fields and add to
+          # the list of objects. Pre-existing same-named fields with are not
+          # equivalent produces an exception.
+          def implemented(object)
+            fields.each do |name, field|
+              invalid = object.field?(name) && object.fields[name] != field
+              raise ArgumentError, <<~MSG.squish if invalid
+                The "#{object.gql_name}" object already has a "#{field.gql_name}" field and it
+                is not equivalent to the one defined on the "#{gql_name}" interface.
+              MSG
+
+              object.proxy_field(field)
+            end
+
+            objects << object
           end
 
           def inspect # :nodoc:

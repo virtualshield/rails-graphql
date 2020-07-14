@@ -49,7 +49,7 @@ module Rails # :nodoc:
 
           # Transforms the given value to its representation in a JSON string
           def to_json(value)
-            to_hash(value).inspect
+            to_hash(value)&.inspect
           end
 
           # Transforms the given value to its representation in a Hash object

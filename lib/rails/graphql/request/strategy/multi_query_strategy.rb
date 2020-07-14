@@ -18,12 +18,18 @@ module Rails # :nodoc:
 
         def resolve!
           response.with_stack(:data) do
-            operations.each_value(&:prepare!)
+            %i[organize! prepare! fetch! resolve!].each do |step|
+              operations.each_value(&step)
+            end
           end
         end
 
         def debug!
-          @debug = true
+          %w[organize! prepare! fetch! resolve!].each do |step|
+            response.indented("# #{step.chom('!').titlecase} phase") do
+              operations.each_value(&:"debug_#{step}")
+            end
+          end
         end
       end
     end

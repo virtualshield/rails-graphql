@@ -28,33 +28,6 @@ module Rails # :nodoc:
             super || all_members.any? { |item| other <= item }
           end
 
-          # Unions cannot be serialized on queries
-          def from_ar?(*)
-            false
-          end
-
-          # Just to ensure the compatibility with other outputs
-          def from_ar(*)
-          end
-
-          # Checks if the returned value is a member of the union
-          # TODO: We need a way to get the +__typename+ in order to do this
-          # checking. Maybe we will have a 2nd argument for all +valid_output?+
-          # (if so, add to the +valid_input?+ as well to keep the pattern)
-          def valid_output?(value)
-            # TODO: Implement!
-          end
-
-          # Since the object was already serialized, just return the result
-          def to_json(value)
-            value
-          end
-
-          # Since the object was already serialized, just return the result
-          def to_hash(value)
-            value
-          end
-
           # Use this method to add members to the union
           def append(*others)
             return if others.blank?
@@ -81,6 +54,11 @@ module Rails # :nodoc:
           # Check if the union definition is valid
           def validate!(*)
             super if defined? super
+
+            members = all_members
+            raise ArgumentError, <<~MSG.squish unless members.size >= 1
+              A union must contain at least one member
+            MSG
 
             size = members.lazy.map(&:base_type).uniq.force.size
             raise ArgumentError, <<~MSG.squish unless size.eql?(1)

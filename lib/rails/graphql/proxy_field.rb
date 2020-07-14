@@ -12,37 +12,71 @@ module Rails # :nodoc:
     #
     # Proxy field also supports aliases, which helps implementing independent
     # fields and then providing them as proxy to other objects
+    #
+    # ==== Options
+    #
+    # * <tt>:as</tt> - The actual name to be used on the field while assigning
+    #   the proxy (defaults to nil).
+    # * <tt>:method_name</tt> - Provides a diferent +method_name+ from where to
+    #   extract the data (defaults to nil).
     class ProxyField < ActiveSupport::ProxyObject
-      delegate_missing_to :@field
+      include Field::Core
+      include Field::ResolvedField
+      include Field::TypedOutputField
 
-      attr_reader :owner
+      alias self_dynamic_resolver? dynamic_resolver?
 
-      def initialize(field, owner, as: nil)
+      delegate :type, :group, :array?, :nullable?, :internal?, :arguments, :directives,
+        to: :field
+
+      redefine_singleton_method(:output_type?) { true }
+
+      def initialize(field, owner, as: nil, method_name: nil)
+        @field = field
+        @owner = owner
+
         if as.present?
           @name = as.to_s.underscore.to_sym
 
           @gql_name = @name.to_s.camelize(:lower)
-          @gql_name = "__#{@gql_name.camelize(:lower)}" if field.internal?
+          @gql_name = "__#{@gql_name.camelize(:lower)}" if internal?
         end
 
-        @field = field
-        @owner = owner
+        @method_name = method_name unless method_name.nil?
       end
 
-      def name
-        @name || field.name
+      %i[name gql_name method_name null?].each do |name|
+        ivar = name.to_s.delete_suffix('?')
+        instance_eval <<~RUBY, __FILE__, __LINE__ + 1
+          def #{name}
+            defined?(@#{ivar}) ? @#{ivar} : field.#{name}
+          end
+        RUBY
       end
 
-      def gql_name
-        @gql_name || field.gql_name
+      def dynamic_resolver? # :nodoc:
+        super || field.dynamic_resolver?
       end
 
-      def inspect
-        @field.inspect.gsub(
-          /^#<GraphQL::Field @owner="[^"]+"/,
-          "#<GraphQL::ProxyField @owner=\"#{owner.name}\"",
-        )
+      def inspect(extra = '')
+        <<~INSPECT.squish + '>'
+          #<GraphQL::ProxyField
+          @owner="#{owner.name}"
+          @source="#{field.owner.name}[:#{field.name}]"
+          #{gql_name}#{inspect_arguments}:#{extra}#{inspect_directives}
+        INSPECT
       end
+
+      protected
+
+        def run_resolver(context)
+          self_dynamic_resolver? ? super : field.run(:resolver, context)
+        end
+
+        def run_hooks(hook, context)
+          super
+          field.run(hook, context)
+        end
     end
   end
 end

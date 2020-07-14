@@ -64,7 +64,6 @@ module Rails # :nodoc:
               # names exist in the list of fields
               field = self[field_name]
 
-              # TODO: Change this when we have the resolvers
               value.respond_to?(field.method_name) || value.try(:key?, field.method_name)
             end
           end
@@ -109,7 +108,7 @@ module Rails # :nodoc:
               One or more items are not valid interfaces.
             MSG
 
-            merge_fields(*others)
+            interfaces.each { |o| o.implemented(self) }
             interfaces.merge(others)
           end
 
@@ -120,30 +119,6 @@ module Rails # :nodoc:
 
             all_interfaces.any? { |item| item <= interface }
           end
-
-          # Check if the object definition is valid
-          def validate!(*)
-            super if defined? super
-            all_interfaces.all? { |item| item.validate!(self) }
-            nil # No exception already means valid
-          end
-
-          private
-
-            # Merge interface fields into the Object's fields,
-            # ensuring that only unique fields are added
-            def merge_fields(*interfaces)
-              interfaces.each do |interface|
-                interface.fields.each do |name, field|
-                  raise ArgumentError, <<~MSG.squish if field?(name) && fields[name] != field
-                    The "#{gql_name}" object already has a "#{field.gql_name}" field and it
-                    is not equivalent to the one defined on the "#{interface.gql_name}" interface.
-                  MSG
-
-                  proxy_field(field)
-                end
-              end
-            end
 
           protected
 

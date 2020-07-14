@@ -13,8 +13,10 @@ module Rails # :nodoc:
 
         DATA_PARTS = %i[arguments]
 
-        delegate :variables, :request, to: :@operation
-        delegate :schema, :visitor, :response, to: :request
+        delegate :variables, :request, to: :operation
+        delegate :memo, :visitor, :response, to: :request
+        delegate :type_klass, to: :field
+        delegate :operation, to: :@parent
         delegate :kind, to: :class
 
         attr_reader :name, :alias_name, :node, :parent, :data, :field, :arguments
@@ -28,11 +30,20 @@ module Rails # :nodoc:
         def initialize(parent, node, data)
           @node = node
           @parent = parent
-          @operation = parent.try(:parent) || parent
 
           @name = data[:name]
           @alias_name = data[:alias]
           @data = data.slice(*data_parts)
+        end
+
+        # Assign a given +field+ to this class. The field must be an output
+        # field, which means that +output_type?+ must be true
+        def assing_field(field)
+          raise ArgumentError, <<~MSG.squish if assigned?
+            The "#{gql_name}" field is already assigned to #{@field.inspect}
+          MSG
+
+          @field = field
         end
 
         # List of necessary parts from data used for preparation step
@@ -43,6 +54,16 @@ module Rails # :nodoc:
         # Return the name of the field to be used on the response
         def gql_name
           alias_name || name
+        end
+
+        # Check if the real field was assigned
+        def assigned?
+          defined?(@assigned)
+        end
+
+        # Check if the field is in an invalid state
+        def invalid?
+          @invalid.present?
         end
 
         # Check if the field was already prepared
@@ -59,26 +80,35 @@ module Rails # :nodoc:
         def debug_prepare!
           return if prepared?
 
+          display_name = name
+          display_name += " as #{alias_name}" if alias_name.present?
+
           request.stacked(self) do
             do_prepare!
 
-            response.indented("Field #{gql_name}: Prepared!") do
+            response.indented("#{display_name}: Prepared!") do
+              response.puts("* Assigned: #{field.inspect}")
               response.indented("* Arguments(#{arguments.each_pair.size})") do
-                arguments.each_pair { |(k, v)| response << "#{k}: #{v.inspect}" }
+                arguments.each_pair.with_index do |(k, v), i|
+                  response.eol if i > 0
+                  response << "#{k}: #{v.inspect}"
+                end
               end if arguments.each_pair.any?
 
               debug_directives!
               debug_fields!
             end
           rescue StandardError => e
-            response << "Field #{gql_name}: Error! (#{e.message})"
+            response << "Field #{display_name}: Error! (#{e.message})"
           end
         end
 
-        # Check if the field is in an invalid state
-        def invalid?
-          @invalid.present?
-        end
+        protected
+
+          # Fields come from the type klass of the current assigned field
+          def fields_source
+            type_klass.fields
+          end
 
         private
 
@@ -91,6 +121,8 @@ module Rails # :nodoc:
           end
 
           def do_prepare!
+            check_assignment!
+
             parse_arguments!
             parse_directives!
             parse_selection!
@@ -114,6 +146,16 @@ module Rails # :nodoc:
             end unless data[:arguments].empty?
 
             @arguments.freeze
+          end
+
+          def check_assignment!
+            raise FieldError, <<~MSG.squish if field.nil?
+              Unable to find a field named "#{gql_name}"
+            MSG
+
+            raise FieldError, <<~MSG.squish unless field.output_type?
+              The "#{gql_name}" was assigned to a non-output type of field: #{field.inspect}
+            MSG
           end
       end
     end

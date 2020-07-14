@@ -32,8 +32,12 @@ module Rails # :nodoc:
           the schema to define exactly what data is expected.
         DESC
 
-        field :kind,           '__TypeKind',   null: false
-        field :name,           :string
+        field :kind,           '__TypeKind',   null: false,
+          method_name: :kind_enum
+
+        field :name,           :string,
+          method_name: :gql_name
+
         field :description,    :string
 
         field :fields,         '__Field',      array: true, nullable: false do
@@ -42,7 +46,7 @@ module Rails # :nodoc:
         end
 
         field :interfaces,     '__Type',       array: true, nullable: false,
-          desc: 'OBJECT only'
+          method_name: :all_interfaces, desc: 'OBJECT only'
 
         field :possible_types, '__Type',       array: true, nullable: false,
           desc: 'INTERFACE and UNION only'
@@ -57,6 +61,46 @@ module Rails # :nodoc:
 
         field :of_type,        '__Type',
           desc: 'NON_NULL and LIST only'
+
+        def fields
+          return unless object? || interface?
+
+          list = fields.each_value
+          list = list.reject { |field| field.using?(:deprecated) } \
+            unless args.include_deprecated
+
+          list
+        end
+
+        def enum_values
+          descs = all_value_description
+          deprecated = all_deprecated_values
+
+          list = all_values.lazy
+          list = list.reject { |value| deprecated.key?(value) } \
+            unless args.include_deprecated
+
+          list.map do |value|
+            OpenStruct.new(
+              name: value,
+              description: descs[value],
+              is_deprecated: deprecated.key?(value),
+              deprecation_reason: deprecated[value],
+            )
+          end
+        end
+
+        def possible_types
+          return objects if interface?
+          return all_members if union?
+        end
+
+        def input_fields
+          fields.each_value if input?
+        end
+
+        def of_type
+        end
       end
     end
   end
