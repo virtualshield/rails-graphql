@@ -32,18 +32,6 @@ module Rails # :nodoc:
       include Helpers::WithDirectives
       include Helpers::WithArguments
 
-      attr_reader :name, :gql_name, :owner, :directives
-
-      delegate :input_type?, :output_type?, :leaf_type?, :from_ar?, :from_ar, to: :class
-      delegate :namespaces, to: :owner
-      delegate :[], to: :arguments
-
-      # Load all the subtype of fields
-      require_relative 'field/typed_field'
-
-      require_relative 'field/input_field'
-      require_relative 'field/output_field'
-
       class ScopedConfig < Struct.new(:field, :receiver) # :nodoc: all
         delegate :argument, :id_argument, :use, :internal!, to: :field
         delegate_missing_to :receiver
@@ -53,7 +41,30 @@ module Rails # :nodoc:
         end
       end
 
+      attr_reader :name, :gql_name, :owner, :directives
+
+      delegate :input_type?, :output_type?, :leaf_type?, :from_ar?, :from_ar, to: :class
+      delegate :namespaces, to: :owner
+      delegate :[], to: :arguments
+
+      # Load all the subtype of fields
+      require_relative 'field/resolved_field'
+      require_relative 'field/typed_field'
+
+      require_relative 'field/input_field'
+      require_relative 'field/output_field'
+
       class << self
+        # Normally extended fields cannot be serialized during a query. But, by
+        # having this and the +from_ar+ methods, other classes can override them
+        # and provide a valid fetcher.
+        def from_ar?(*)
+        end
+
+        # Just to ensure the compatibility with other outputs.
+        def from_ar(*)
+        end
+
         # Defines if the current field is valid as an input type
         def input_type?
           false
@@ -67,17 +78,6 @@ module Rails # :nodoc:
         # Defines if the current field is considered a leaf output
         def leaf_type?
           false
-        end
-
-        # Normally extended fields cannot be serialized during a query. But, by
-        # having this and the +from_ar+ methods, other classes can override them
-        # and provide a valid fetcher.
-        def from_ar?(*)
-          false
-        end
-
-        # Just to ensure the compatibility with other outputs.
-        def from_ar(*)
         end
       end
 
@@ -96,7 +96,7 @@ module Rails # :nodoc:
       )
         @owner = owner
         @name = name.to_s.underscore.to_sym
-        @directives = GraphQL.directives_to_set(directives, [], directive_location, self)
+        @directives = GraphQL.directives_to_set(directives, source: self)
         @method_name = method_name.to_s.underscore.to_sym unless method_name.nil?
 
         @gql_name = @name.to_s.camelize(:lower)

@@ -46,12 +46,12 @@ module Rails # :nodoc:
             setup_with_type
 
             register(:visit_operation_definition) do |node|
-              stack << OPERATION_OBJECT.dup
+              stack << OPERATION_OBJECT.deep_dup
               (object[:kind] = operation_type(node))                            && true
             end
 
             register(:visit_fragment_definition) do
-              (stack << FRAGMENT_OBJECT.dup)                                    && true
+              (stack << FRAGMENT_OBJECT.deep_dup)                               && true
             end
 
             register(:visit_variable_definition) do |node|

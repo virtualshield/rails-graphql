@@ -55,7 +55,7 @@ module Rails # :nodoc:
 
         # Add a new field to the list but use a proxy instead of a hard copy of
         # a given +field+
-        def proxy_field(field)
+        def proxy_field(field, **xargs)
           field = field.instance_variable_get(:@field) if field.is_a?(GraphQL::ProxyField)
 
           raise ArgumentError, <<~MSG.squish unless field.is_a?(GraphQL::Field)
@@ -66,7 +66,7 @@ module Rails # :nodoc:
             The #{field.name.inspect} field is already defined and can't be replaced.
           MSG
 
-          object = GraphQL::ProxyField.new(field, self)
+          object = GraphQL::ProxyField.new(field, self, **xargs)
           fields[object.name] = object
         end
 

@@ -21,9 +21,13 @@ module Rails # :nodoc:
       eager_autoload do
         autoload :Argument
         autoload :Errors
+        autoload :Field
         autoload :Fragment
         autoload :Operation
         autoload :Strategy
+
+        autoload :Directives
+        autoload :SelectionSet
       end
 
       ##
@@ -38,11 +42,18 @@ module Rails # :nodoc:
       attr_reader :memo, :schema, :visitor, :stack, :operations, :fragments,
         :errors, :args, :response
 
-      # Shortcut for initialize and execute
+      # Shortcut for initialize, set context, and execute
       def self.execute(*args, namespace: :base, context: {}, **xargs)
         result = new(namespace: namespace)
         result.context = context if context.present?
         result.execute(*args, **xargs)
+      end
+
+      # Shortcut for initialize, set context, and debug
+      def self.debug(*args, namespace: :base, context: {}, **xargs)
+        result = new(namespace: namespace)
+        result.context = context if context.present?
+        result.debug(*args, **xargs)
       end
 
       def initialize(schema = nil, namespace: :base)
@@ -64,20 +75,23 @@ module Rails # :nodoc:
 
       # Execute a given document with the given arguments
       def execute(document, args = {}, as: :string, **xargs)
+        reset!(args)
+
         to = RESPONSE_FORMATS[as]
-
-        @memo     = OpenStruct.new
-        @args     = build_ostruct(args).freeze
-        @errors   = Request::Errors.new(self)
-        @visitor  = GraphQL::Native::Visitor.new
         @response = initialize_response(as, to)
-
-        @stack      = [schema]
-        @fragments  = {}
-        @operations = {}
 
         execute!(document)
         @response.public_send(to)
+      end
+
+      # Debug a given document to an IO
+      def debug(document, args = {}, to: $stdout)
+        reset!(args)
+
+        @response = Collectors::IdentedCollector.new(auto_eol: false)
+        execute!(document, mode: :debug!)
+
+        to.puts response.value
       end
 
       # Trigger an event using the +stack+ as the +objects+ for the
@@ -112,15 +126,15 @@ module Rails # :nodoc:
         errors.add(exception.message, **xargs)
       end
 
-      # Convert the current stack into a error path
+      # Convert the current stack into a error path ignoring the schema
       def stack_to_path
-        stack[0..-2].map(&:gql_name).compact
+        stack.map { |item| item.try(:gql_name) }.compact
       end
 
       # Build a easy-to-access object representing the current information of
       # the execution to be used on +rescue_with_handler+.
       def build_rescue_object(**extra)
-        OpenStruct.new(extra.reverse_merge!(
+        OpenStruct.new(extra.reverse_merge(
           args: @args,
           source: stack.first,
           request: self,
@@ -129,6 +143,7 @@ module Rails # :nodoc:
         )).freeze
       end
 
+      # Use schema handlers for exceptions caught during the execution process
       def rescue_with_handler(exception, **extra) # :nodoc:
         schema.rescue_with_handler(exception, object: build_rescue_object(**extra))
       end
@@ -137,20 +152,32 @@ module Rails # :nodoc:
 
       private
 
+        # Reset principal variables and set the given +args+
+        def reset!(args)
+          @memo    = OpenStruct.new
+          @args    = build_ostruct(args).freeze
+          @errors  = Request::Errors.new(self)
+          @visitor = GraphQL::Native::Visitor.new
+
+          @stack      = [schema]
+          @fragments  = {}
+          @operations = {}
+        end
+
         # This executes the whole process capturing any exceptions and handling
         # them as defined by the schema.
-        def execute!(document)
+        def execute!(document, mode: :resolve!)
           @document = GraphQL::Native.parse(document)
           trigger_event(:request)
           collect_definitions!
 
-          @strategy = find_strategy!
-          @strategy.resolve!
+          @strategy = find_strategy!(mode.eql?(:debug!))
+          @strategy.public_send(mode)
         rescue ParseError => err
           parts = err.message.match(/\A(\d+)\.(\d+)(?:-\d+)?: (.*)\z/)
           errors.add(parts[3], line: parts[1], col: parts[2])
         ensure
-          @response.append_errors(errors)
+          @response.try(:append_errors, errors)
         end
 
         # Use the visitor to collect the operations and fragments.
@@ -158,8 +185,7 @@ module Rails # :nodoc:
           visitor.collect_definitions(@document) do |kind, node, data|
             case kind
             when :operation
-              klass = Request::Operation.const_get(data[:kind].classify)
-              operations[data[:name]] = klass.new(self, node, data)
+              operations[data[:name]] = Request::Operation.build(self, node, data)
             when :fragment
               fragments[data[:name]] = Request::Fragment.new(self, node, data)
             end
@@ -167,12 +193,28 @@ module Rails # :nodoc:
         end
 
         # Find the best strategy to resolve the request.
-        def find_strategy!
-          strategies.lazy.map do |klass_name|
+        def find_strategy!(debug = false)
+          if debug
+            response.puts('Selecting strategy:')
+            response.indent
+          end
+
+          strategy = strategies.lazy.map do |klass_name|
             klass_name.constantize
           end.select do |klass|
-            klass.can_resolve?(self)
+            result = klass.can_resolve?(self)
+            next result unless debug
+
+            response.puts("#{klass.name}[#{klass.priority}] is #{result ? 'a' : 'no'} match!")
+            result
           end.max_by(&:priority).new(self)
+          return strategy unless debug
+
+          response.unindent
+          response.puts("Selected: #{strategy.class.name}")
+          response.eol
+
+          strategy
         end
 
         # Initialize the class that responsible for storaging the response

@@ -3,6 +3,7 @@
 module Rails # :nodoc:
   module GraphQL # :nodoc:
     class Field::OutputField < Field
+      include Field::ResolvedField
       include Field::TypedField
 
       redefine_singleton_method(:output_type?) { true }
@@ -11,8 +12,8 @@ module Rails # :nodoc:
       delegate :from_ar?, to: :type_klass
 
       def initialize(*args, deprecated: false, **xargs, &block)
-        if !!deprecated
-          xargs[:directives] = xargs[:directives].to_a
+        if deprecated.present?
+          xargs[:directives] = Array.wrap(xargs[:directives])
           xargs[:directives] << Directive::DeprecatedDirective.new(
             reason: (deprecated.is_a?(String) ? deprecated : nil)
           )
@@ -21,9 +22,18 @@ module Rails # :nodoc:
         super(*args, **xargs, &block)
       end
 
+      # Check if the field can be resolved from Active Record
+      def from_ar?(ar_object)
+        result = super
+        return result unless result.nil?
+        type_klass.from_ar?(ar_object, method_name)
+      end
+
       # Add the attribute name using +method_name+ before calling +from_ar+ on
       # the +type_klass+, then add the alias to the +name+ of the field
       def from_ar(ar_object)
+        result = super
+        return result unless result.nil?
         type_klass.from_ar(ar_object, method_name)&.as(name)
       end
 

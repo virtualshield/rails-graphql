@@ -159,7 +159,7 @@ module Rails # :nodoc:
         invalid = arguments.reject { |name, arg| arg.valid?(@args[name]) }
         return if invalid.empty?
 
-        invalid.map! { |name, arg| <<~MSG }
+        invalid = invalid.map { |name, arg| <<~MSG }
           Invalid value "#{@args[name].inspect}" for #{name} argument.
         MSG
 

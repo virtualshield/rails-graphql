@@ -81,6 +81,13 @@ module Rails # :nodoc:
           fields_for(type).key?(object.is_a?(String) ? object.underscore.to_sym : object)
         end
 
+        # Find a specific field on the given +type+ list. The +object+ can be
+        # the +gql_name+, +name+, or an actual field.
+        def find_field(type, object)
+          object = object.name if object.is_a?(GraphQL::Field)
+          fields_for(type).key?(object.is_a?(String) ? object.underscore.to_sym : object)
+        end
+
         # Run a configuration block for the given +type+
         def config(type, &block)
           schema_scoped_config(self, type).instance_exec(&block)

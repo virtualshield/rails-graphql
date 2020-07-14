@@ -41,13 +41,18 @@ module GraphQL
     delegate *DIRECTIVE_SHORTCUTS, to: 'Rails::GraphQL::Directive'
 
     # See {Request}[rdoc-ref:Rails::GraphQL::Request]
-    def request(*args)
-      Rails::GraphQL::Request.new(*args)
+    def request(*args, **xargs)
+      Rails::GraphQL::Request.new(*args, **xargs)
     end
 
     # See {Request}[rdoc-ref:Rails::GraphQL::Request]
-    def execute(*args)
-      Rails::GraphQL::Request.execute(*args)
+    def execute(*args, **xargs)
+      Rails::GraphQL::Request.execute(*args, **xargs)
+    end
+
+    # See {Request}[rdoc-ref:Rails::GraphQL::Request]
+    def debug(*args, **xargs)
+      Rails::GraphQL::Request.debug(*args, **xargs)
     end
 
     # See {CONST_SHORTCUTS}[rdoc-ref:GraphQL::CONST_SHORTCUTS]

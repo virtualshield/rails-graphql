@@ -18,10 +18,13 @@ module Rails # :nodoc:
 
         def resolve!
           response.with_stack(:data) do
-            operations.values.each(&:prepare!)
+            operations.each_value(&:prepare!)
           end
         end
 
+        def debug!
+          @debug = true
+        end
       end
     end
   end

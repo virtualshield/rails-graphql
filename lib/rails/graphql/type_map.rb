@@ -156,7 +156,7 @@ module Rails # :nodoc:
         end
 
         @index[namespace][base_class][name_or_key] = block
-        @aliases += 1
+        @aliases += 1 if name_or_key.is_a?(Symbol)
       end
 
       # Iterate over the types of the given +base_class+ that are defined on the

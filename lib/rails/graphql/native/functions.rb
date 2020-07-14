@@ -24,6 +24,8 @@ module Rails # :nodoc:
 
         attach_operation :ofield_name,  :GraphQLAstObjectField_get_name
         attach_operation :ofield_value, :GraphQLAstObjectField_get_value
+
+        attach_operation :variable_name, :GraphQLAstVariable_get_name
       end
 
       with_options(result: :int) do

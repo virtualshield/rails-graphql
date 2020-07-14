@@ -14,10 +14,9 @@ module Rails # :nodoc:
           # This class will be able to be resolved from a query point of view if
           # all the requested fields (which are non-object) can also be resolved
           # from active record
-          def from_ar?(list = nil)
-            return false unless list.prsent?
+          def from_ar?(ar_object, list)
             Array.wrap(list).all? do |field_name|
-              self[field_name].from_ar?
+              self[field_name].from_ar?(ar_object)
             end
           end
 

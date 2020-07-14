@@ -8,12 +8,12 @@ module Rails # :nodoc:
       # A little different from the normal argument, since the focus of this
       # class is to validate and import arquments from the request.
       class Argument < GraphQL::Argument
-        alias import initialize
+        alias reset initialize
 
         attr_reader :args, :value
 
-        def initialize(owner, args)
-          @owner = owner
+        def initialize(operation, args)
+          @owner = operation.schema
           @args = args
         end
 
@@ -30,7 +30,7 @@ module Rails # :nodoc:
           super if defined? super
 
           raise ArgumentError, <<~MSG.squish unless valid?(value)
-            The given value "#{default.inspect}" is not valid for this argument.
+            Invalid value "#{value.inspect}" for #{gql_name} argument.
           MSG
 
           nil # No exception already means valid
@@ -40,11 +40,14 @@ module Rails # :nodoc:
 
           # Import the data the current argument being validated
           def import(data)
-            name = data.delete(:name)
-            type = data.delete(:type)
-            super(name, type, owner: owner, **data)
+            reset(:checker, :string, owner: owner, **data.except(:name, :type))
 
-            @value = args[gql_name] || default
+            @type = data.fetch(:type)
+            @gql_name = @name = data.fetch(:name)
+            @type_klass = GraphQL.type_map.fetch!(@type, namespaces: owner.namespaces)
+
+            @value = args[gql_name]
+            @value = default if @value.nil?
           end
 
           # Export the argument value to the

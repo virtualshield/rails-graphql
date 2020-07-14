@@ -48,12 +48,7 @@ module Rails # :nodoc:
         # to auto initialize a new instance of that directive.
         def use(item_or_symbol, *list, **xargs)
           if item_or_symbol.is_a?(Symbol)
-            directive = GraphQL.type_map.fetch!(
-              item_or_symbol,
-              base_class: :Directive,
-              namespaces: namespaces,
-            )
-
+            directive = fetch!(item_or_symbol)
             raise ArgumentError, <<~MSG.squish unless directive < GraphQL::Directive
               Unable to find the #{item_or_symbol.inspect} directive.
             MSG
@@ -64,11 +59,30 @@ module Rails # :nodoc:
           end
 
           current = try(:all_directives) || directives
-          items = GraphQL.directives_to_set(list, current, directive_location, self)
+          items = GraphQL.directives_to_set(list, current, source: self)
           directives.merge(items)
         rescue DefinitionError => e
           raise e.class, e.message + "\n  Defined at: #{caller(2)[0]}"
         end
+
+        # Check wheter a given directive is being used
+        def using?(item_or_symbol)
+          directive = directive.is_a?(Symbol) ? fetch!(item_or_symbol) : item_or_symbol
+          raise ArgumentError, <<~MSG.squish unless directive < GraphQL::Directive
+            The provided #{item_or_symbol.inspect} is not a valid directive.
+          MSG
+
+          directives.any? { |item| item.is_a?(directive) }
+        end
+
+        alias has_directive? using?
+
+        private
+
+          # Find a directive for its symbolized name
+          def fetch!(name)
+            GraphQL.type_map.fetch!(name, base_class: :Directive, namespaces: namespaces)
+          end
       end
     end
   end

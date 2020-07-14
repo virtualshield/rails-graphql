@@ -69,14 +69,19 @@ module Rails # :nodoc:
           #   (defaults to false).
           def add(value, desc: nil, directives: nil, deprecated: false)
             value = to_hash(value)
-            raise ArgumentError, <<~MSG if all_values.include?(value)
+            raise ArgumentError, <<~MSG.squish if all_values.include?(value)
               The "#{value}" is already defined for #{gql_name} enum.
             MSG
 
-            directives = GraphQL.directives_to_set(directives, [], :enum_value, self)
+            directives = Array.wrap(directives)
             directives << Directive::DeprecatedDirective.new(
               reason: (deprecated.is_a?(String) ? deprecated : nil)
-            ) if !!deprecated
+            ) if deprecated.present?
+
+            directives = GraphQL.directives_to_set(directives,
+              location: :enum_value,
+              source:  self,
+            )
 
             self.values << value
             self.value_description[value] = desc unless desc.nil?

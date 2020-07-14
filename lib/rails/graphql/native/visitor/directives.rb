@@ -20,8 +20,6 @@ module Rails # :nodoc:
               block.call(stack.pop)
             end
 
-            # TODO: Ideally we could free the pointer, but a error happens when
-            # we do that and try to execute the same request again
             nodes.each { |node| visit(node, self, user_data) }
           end
         end
@@ -32,8 +30,12 @@ module Rails # :nodoc:
             setup_with_name
             setup_with_arguments
 
+            register(:visit_variable) do |node|
+              (stack << variable_name(node))                                    && false
+            end
+
             register(:visit_directive) do |node|
-              (stack << DIRECTIVE_OBJECT.dup)                                   && true
+              (stack << DIRECTIVE_OBJECT.deep_dup)                              && true
             end
           end
       end

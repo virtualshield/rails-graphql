@@ -66,12 +66,12 @@ module Rails # :nodoc:
             end
 
             checker = others.lazy.map { |item| item.try(:base_type) }.uniq.force
-            raise ArgumentError, <<~MSG unless checker.size === 1
+            raise ArgumentError, <<~MSG.squish unless checker.size === 1
               All the union members must be of the same base class.
             MSG
 
             check_types = members? ? [members.first.base_type] : VALID_MEMBER_TYPES
-            raise ArgumentError, <<~MSG unless (check_types & checker).size === 1
+            raise ArgumentError, <<~MSG.squish unless (check_types & checker).size === 1
               A union cannot contain members of different base classes.
             MSG
 
@@ -83,7 +83,7 @@ module Rails # :nodoc:
             super if defined? super
 
             size = members.lazy.map(&:base_type).uniq.force.size
-            raise ArgumentError, <<~MSG unless size.eql?(1)
+            raise ArgumentError, <<~MSG.squish unless size.eql?(1)
               All the members of the union must contain the same base class.
             MSG
 

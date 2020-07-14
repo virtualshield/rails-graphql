@@ -14,12 +14,22 @@ module Rails # :nodoc:
 
         def resolve!
           response.with_stack(:data) do
-            operations.values.each do |operation|
+            operations.each_value do |operation|
               operation.prepare!
             end
           end
         end
 
+        def debug!
+          @debug = true
+
+          response.indented('# Prepare phase') do
+            operations.each_value.with_index do |operation, i|
+              response.eol if i > 0
+              operation.debug_prepare!
+            end
+          end
+        end
       end
     end
   end

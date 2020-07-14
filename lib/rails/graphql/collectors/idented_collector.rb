@@ -3,12 +3,13 @@ module Rails # :nodoc:
     module Collectors # :nodoc:
       # This collector helps building a indented string
       class IdentedCollector
-        def initialize(initial = 0, size = 2)
+        def initialize(initial = 0, size = 2, auto_eol: true)
           @size = size
           @val = [[initial, '']]
+          @auto_eol = auto_eol
         end
 
-        def indented(start = nil, finish = nil, auto_eol = true)
+        def indented(start = nil, finish = nil, auto_eol = @auto_eol)
           self << start unless start.nil?
 
           indent
@@ -32,10 +33,17 @@ module Rails # :nodoc:
           end.compact.join("\n")
         end
 
+        def puts(str)
+          @val.last.last << str
+          eol
+        end
+
         def <<(str)
           @val.last.last << str
           self
         end
+
+        alias print <<
 
         def eol
           @val.last << ''

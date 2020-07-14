@@ -30,9 +30,11 @@ module Rails # :nodoc:
           @stack = []
         end
 
+        require_relative 'visitor/arguments'
         require_relative 'visitor/definitions'
         require_relative 'visitor/directives'
         require_relative 'visitor/variables'
+        require_relative 'visitor/fields'
         require_relative 'visitor/debug'
 
         private
@@ -82,8 +84,9 @@ module Rails # :nodoc:
             setup_with_value
 
             register(:visit_argument) do |node|
+              arg_name = node_name(argument_name(node))
               visit(argument_value(node), self, user_data)
-              (stack[-2][node_name(argument_name(node))] = stack.pop)           && false
+              (stack[-2][:arguments][arg_name] = stack.pop)                     && false
             end
           end
 
@@ -102,7 +105,7 @@ module Rails # :nodoc:
             end
 
             register(:visit_boolean_value) do |node|
-              (stack << get_boolean_value(node))                                && false
+              (stack << get_boolean_value(node).eql?(1))                        && false
             end
 
             register(:visit_null_value) do |node|

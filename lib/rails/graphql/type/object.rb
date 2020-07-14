@@ -105,7 +105,7 @@ module Rails # :nodoc:
               GraphQL.type_map.fetch!(item, namespaces: namespaces)
             end
 
-            raise ArgumentError, <<~MSG unless others.all?(&:interface?)
+            raise ArgumentError, <<~MSG.squish unless others.all?(&:interface?)
               One or more items are not valid interfaces.
             MSG
 
@@ -135,14 +135,12 @@ module Rails # :nodoc:
             def merge_fields(*interfaces)
               interfaces.each do |interface|
                 interface.fields.each do |name, field|
-                  if field?(name)
-                    raise ArgumentError, <<~MSG.squish if fields[name] != field
-                      The "#{gql_name}" object already has a "#{field.gql_name}" field and it
-                      is not equivalent to the one defined on the "#{interface.gql_name}" interface.
-                    MSG
-                  else
-                    fields[name] = field.dup.tap { |x| x.instance_variable_set(:@owner, self) }
-                  end
+                  raise ArgumentError, <<~MSG.squish if field?(name) && fields[name] != field
+                    The "#{gql_name}" object already has a "#{field.gql_name}" field and it
+                    is not equivalent to the one defined on the "#{interface.gql_name}" interface.
+                  MSG
+
+                  proxy_field(field)
                 end
               end
             end

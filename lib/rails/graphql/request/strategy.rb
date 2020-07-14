@@ -30,8 +30,16 @@ module Rails # :nodoc:
           @request = request
         end
 
-        def resolve!(&block)
+        def resolve!
           raise NotImplementedError
+        end
+
+        def debug!
+          raise NotImplementedError
+        end
+
+        def debugging?
+          @debug.present?
         end
       end
     end

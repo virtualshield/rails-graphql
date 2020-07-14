@@ -25,8 +25,6 @@ module Rails # :nodoc:
               block.call(stack.pop)
             end
 
-            # TODO: Ideally we could free the pointer, but a error happens when
-            # we do that and try to execute the same request again
             nodes.each { |node| visit(node, self, user_data) }
           end
         end
