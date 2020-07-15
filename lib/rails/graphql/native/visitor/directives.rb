@@ -5,7 +5,7 @@ module Rails # :nodoc:
     module Native # :nodoc:
       class Visitor < FFI::Struct # :nodoc:
 
-        # Strcuture for an operation info
+        # Strcuture for an directive info
         DIRECTIVE_OBJECT = {
           name: nil,
           arguments: {},

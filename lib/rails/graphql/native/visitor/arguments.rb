@@ -5,7 +5,7 @@ module Rails # :nodoc:
     module Native # :nodoc:
       class Visitor < FFI::Struct # :nodoc:
 
-        # Strcuture for an operation info
+        # Strcuture for an argument info
         ARGUMENT_OBJECT = {
           name: nil,
           value: nil,

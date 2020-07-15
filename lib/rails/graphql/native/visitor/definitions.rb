@@ -14,7 +14,7 @@ module Rails # :nodoc:
           selection: nil,
         }.freeze
 
-        # Strcuture for a fragment info
+        # Strcuture for a fragment definition info
         FRAGMENT_OBJECT = {
           name: nil,
           type: nil,

@@ -16,7 +16,7 @@ module Rails # :nodoc:
           yield
           unindent
 
-          @val.pop(2) if @val[-2].size.eql?(2) && @val[-2].last.empty?
+          @val.pop(2) if blank?(-2)
 
           self << finish unless finish.nil?
           self.eol if auto_eol
@@ -51,17 +51,23 @@ module Rails # :nodoc:
         end
 
         def indent
+          return @val.last[0] += @size if blank?
           @val << [last_ident + @size, '']
           self
         end
 
         def unindent
+          return @val.last[0] -= @size if blank?
           @val << [last_ident - @size, '']
           self
         end
 
         def last_ident
           @val.last.first
+        end
+
+        def blank?(pos = -1)
+          @val[pos].size.eql?(2) && @val[pos].last.empty?
         end
       end
     end

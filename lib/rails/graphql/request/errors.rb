@@ -11,7 +11,7 @@ module Rails # :nodoc:
       class Errors
         include Enumerable
 
-        delegate :empty?, :size, :each, :to_json, to: :@items
+        delegate :empty?, :size, :each, :to_json, :last, :first, to: :@items
 
         def initialize(request)
           @request = request

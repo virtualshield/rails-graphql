@@ -16,21 +16,45 @@ module Rails # :nodoc:
           # request.operations.values.all?(&:query?)
         end
 
+        # Executes the strategy in the normal mode
         def resolve!
           response.with_stack(:data) do
-            %i[organize! prepare! fetch! resolve!].each do |step|
-              operations.each_value(&step)
+            for_each_operation { |op| collect_listeners { op.organize! } }
+            for_each_operation(&:prepare!)
+            for_each_operation(&:fetch!)
+            for_each_operation(&:resolve!)
+          end
+        end
+
+        # Executes the strategy in the debug mode
+        def debug!
+          response.with_stack(:data) do
+            for_each_operation do |op|
+              logger.indented("# Organize phase") do
+                collect_listeners { op.debug_organize! }
+              end
+            end
+
+            for_each_operation do |op|
+              logger.indented("# Prepare phase") { op.debug_prepare! }
+            end
+
+            for_each_operation do |op|
+              logger.indented("# Fetch phase") { op.debug_fetch! }
+            end
+
+            for_each_operation do |op|
+              logger.indented("# Resolve phase") { op.debug_resolve! }
             end
           end
         end
 
-        def debug!
-          %w[organize! prepare! fetch! resolve!].each do |step|
-            response.indented("# #{step.chom('!').titlecase} phase") do
-              operations.each_value(&:"debug_#{step}")
-            end
+        private
+
+          # Execute a given block for each defined operation
+          def for_each_operation
+            operations.each_value { |op| yield op }
           end
-        end
       end
     end
   end

@@ -45,6 +45,7 @@ module Rails # :nodoc:
         @method_name = method_name unless method_name.nil?
       end
 
+      # Generate a set of methods that can be set or passed to the proxied field
       %i[name gql_name method_name null?].each do |name|
         ivar = name.to_s.delete_suffix('?')
         instance_eval <<~RUBY, __FILE__, __LINE__ + 1
@@ -54,11 +55,19 @@ module Rails # :nodoc:
         RUBY
       end
 
+      # Checks both self and proxied resolver hooks
+      def listeners
+        list = resolver_hooks.keys
+        list += field.listeners
+        list << :resolver if dynamic_resolver?
+        list
+      end
+
       def dynamic_resolver? # :nodoc:
         super || field.dynamic_resolver?
       end
 
-      def inspect(extra = '')
+      def inspect(extra = '') # :nodoc:
         <<~INSPECT.squish + '>'
           #<GraphQL::ProxyField
           @owner="#{owner.name}"
@@ -69,11 +78,11 @@ module Rails # :nodoc:
 
       protected
 
-        def run_resolver(context)
+        def run_resolver(context) # :nodoc:
           self_dynamic_resolver? ? super : field.run(:resolver, context)
         end
 
-        def run_hooks(hook, context)
+        def run_hooks(hook, context) # :nodoc:
           super
           field.run(hook, context)
         end

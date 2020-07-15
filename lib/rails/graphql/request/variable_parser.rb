@@ -3,11 +3,12 @@
 module Rails # :nodoc:
   module GraphQL # :nodoc:
     class Request # :nodoc:
-      # = GraphQL Request Argument
+      # = GraphQL Request Variable Parser
       #
-      # A little different from the normal argument, since the focus of this
-      # class is to validate and import arquments from the request.
-      class Argument < GraphQL::Argument
+      # A helper class that works similarly to an GraphQL argument. The process
+      # here is to collect provided request args and turn them into operation
+      # variables.
+      class VariableParser < GraphQL::Argument
         alias reset initialize
 
         attr_reader :args, :value

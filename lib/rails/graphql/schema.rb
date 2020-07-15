@@ -51,9 +51,15 @@ module Rails # :nodoc:
         end
 
         # Find a given +type+ associated with the schema. It will raise an
-        # exception if the +type+ could not be found
+        # exception if the +type+ can not be found
         def find_type!(type)
-          type_map.fetch!(type, namespaces: namespaces)
+          @@type_map.fetch!(type, namespaces: namespaces)
+        end
+
+        # Find a given +directive+ associated with the schema. It will raise an
+        # exception if the +directive+ can not be found
+        def find_directive!(directive)
+          @@type_map.fetch!(directive, base_class: :Directive, namespaces: namespaces)
         end
 
         # Describe a schema as a GraphQL string

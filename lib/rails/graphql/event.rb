@@ -9,8 +9,9 @@ module Rails # :nodoc:
     class Event
       attr_reader :source, :extra, :name
 
-      # The list of available events and to what
-      LIST = %i[attach].freeze
+      # The list of available events
+      LIST = %i[attach organize prepare resolve finalize
+        query mutation subscription request].freeze
 
       class << self
         # This helps to build a event callback, which validates and also

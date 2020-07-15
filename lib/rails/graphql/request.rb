@@ -19,15 +19,20 @@ module Rails # :nodoc:
       RESPONSE_FORMATS = { string: :to_s, object: :to_h, hash: :to_h }.freeze
 
       eager_autoload do
-        autoload :Argument
-        autoload :Errors
-        autoload :Field
-        autoload :Fragment
-        autoload :Operation
-        autoload :Strategy
+        autoload_under :steps do
+          autoload :Organizable
+        end
 
-        autoload :Directives
-        autoload :SelectionSet
+        autoload_under :helpers do
+          autoload :Directives
+          autoload :SelectionSet
+        end
+
+        autoload :Arguments
+        autoload :Component
+        autoload :Errors
+        autoload :Strategy
+        autoload :VariableParser
       end
 
       ##
@@ -39,8 +44,8 @@ module Rails # :nodoc:
         'Rails::GraphQL::Request::Strategy::SequencedStrategy',
       ]
 
-      attr_reader :memo, :schema, :visitor, :stack, :operations, :fragments,
-        :errors, :args, :response
+      attr_reader :schema, :visitor, :operations, :fragments, :errors, :args, :response,
+        :strategy, :logger, :stack
 
       # Shortcut for initialize, set context, and execute
       def self.execute(*args, namespace: :base, context: {}, **xargs)
@@ -81,25 +86,19 @@ module Rails # :nodoc:
         @response = initialize_response(as, to)
 
         execute!(document)
-        @response.public_send(to)
+        response.public_send(to)
       end
 
       # Debug a given document to an IO
       def debug(document, args = {}, to: $stdout)
         reset!(args)
 
-        @response = Collectors::IdentedCollector.new(auto_eol: false)
+        @response = Collectors::HashCollector.new(self)
+        @logger = Collectors::IdentedCollector.new(auto_eol: false)
         execute!(document, mode: :debug!)
 
-        to.puts response.value
-      end
-
-      # Trigger an event using the +stack+ as the +objects+ for the
-      # {+trigger_all+}[rdoc-ref:Rails::GraphQL::Event#trigger_all].
-      def trigger_event(event_name, **xargs, &block)
-        xargs[:all] = true
-        xargs[:request] = self
-        Event.trigger(stack, event_name, stack.first, :execution, **xargs, &block)
+        to.puts(logger.value)
+        response
       end
 
       # Add the given +object+ into the execution +stack+ and execute the given
@@ -154,7 +153,6 @@ module Rails # :nodoc:
 
         # Reset principal variables and set the given +args+
         def reset!(args)
-          @memo    = OpenStruct.new
           @args    = build_ostruct(args).freeze
           @errors  = Request::Errors.new(self)
           @visitor = GraphQL::Native::Visitor.new
@@ -168,10 +166,10 @@ module Rails # :nodoc:
         # them as defined by the schema.
         def execute!(document, mode: :resolve!)
           @document = GraphQL::Native.parse(document)
-          trigger_event(:request)
           collect_definitions!
 
           @strategy = find_strategy!(mode.eql?(:debug!))
+          @strategy.trigger_event(:request)
           @strategy.public_send(mode)
         rescue ParseError => err
           parts = err.message.match(/\A(\d+)\.(\d+)(?:-\d+)?: (.*)\z/)
@@ -185,9 +183,9 @@ module Rails # :nodoc:
           visitor.collect_definitions(@document) do |kind, node, data|
             case kind
             when :operation
-              operations[data[:name]] = Request::Operation.build(self, node, data)
+              operations[data[:name]] = Component::Operation.build(self, node, data)
             when :fragment
-              fragments[data[:name]] = Request::Fragment.new(self, node, data)
+              fragments[data[:name]] = Component::Fragment.new(self, node, data)
             end
           end
         end
@@ -195,8 +193,8 @@ module Rails # :nodoc:
         # Find the best strategy to resolve the request.
         def find_strategy!(debug = false)
           if debug
-            response.puts('Selecting strategy:')
-            response.indent
+            logger.puts('Selecting strategy:')
+            logger.indent
           end
 
           strategy = strategies.lazy.map do |klass_name|
@@ -205,14 +203,14 @@ module Rails # :nodoc:
             result = klass.can_resolve?(self)
             next result unless debug
 
-            response.puts("#{klass.name}[#{klass.priority}] is #{result ? 'a' : 'no'} match!")
+            logger.puts("#{klass.name}[#{klass.priority}] is #{result ? 'a' : 'no'} match!")
             result
           end.max_by(&:priority).new(self)
           return strategy unless debug
 
-          response.unindent
-          response.puts("Selected: #{strategy.class.name}")
-          response.eol
+          logger.unindent
+          logger.puts("Selected: #{strategy.class.name}")
+          logger.eol
 
           strategy
         end

@@ -76,12 +76,17 @@ module Rails # :nodoc:
 
         # Since we have a hash of arrays, we need to properly merge them
         def all_events
-          ancestors.inject({}) do |list, klass|
+          @all_events ||= ancestors.inject({}) do |list, klass|
             break list unless klass.respond_to?(:events)
             (klass.events.keys - list.keys).each { |key| list[key] = [] }
             klass.events.each { |key, arr| list[key].prepend(*arr) }
             list
           end
+        end
+
+        # Get all event names
+        def listeners
+          all_events.keys
         end
 
         def eager_load! # :nodoc:
@@ -140,9 +145,9 @@ module Rails # :nodoc:
 
       delegate :locations, :gql_name, to: :class
 
-      def initialize(**xargs)
-        xargs = xargs.transform_keys { |key| key.to_s.underscore }
-        @args = OpenStruct.new(xargs).freeze
+      def initialize(args = nil, **xargs)
+        @args = args || OpenStruct.new(xargs.transform_keys { |key| key.to_s.underscore })
+        @args.freeze
         validate!
       end
 

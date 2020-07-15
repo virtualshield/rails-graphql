@@ -18,6 +18,13 @@ module Rails # :nodoc:
         dynamic_resolver? ? false : super
       end
 
+      # Return the list of resolver hook keys plus a conditional resolver key
+      def listeners
+        list = resolver_hooks.keys
+        list << :resolver if dynamic_resolver?
+        list
+      end
+
       # Add a before resolve callback. Either provide a +method_name+ that will
       # be triggered on the +owner+ or a +block+ to be executed. Use +unshift+
       # to prepend the method in the order.

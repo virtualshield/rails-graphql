@@ -5,7 +5,7 @@ module Rails # :nodoc:
     module Native # :nodoc:
       class Visitor < FFI::Struct # :nodoc:
 
-        # Strcuture for an operation info
+        # Strcuture for an field info
         FIELD_OBJECT = {
           name: nil,
           alias: nil,
@@ -14,13 +14,30 @@ module Rails # :nodoc:
           selection: nil,
         }.freeze
 
+        # Strcuture for an spread info
+        SPREAD_OBJECT = {
+          name: nil,
+          type: nil,
+          inline: false,
+          directives: [],
+          selection: nil,
+        }
+
         # Collect all the fields
         def collect_fields(*nodes, &block)
           return if nodes.empty?
 
           setup_for(:fields) do
             register(:end_visit_field) do |node|
-              block.call(node, stack.pop)
+              block.call(:field, node, stack.pop)
+            end
+
+            register(:end_visit_fragment_spread) do |node|
+              block.call(:spread, node, stack.pop)
+            end
+
+            register(:end_visit_inline_fragment) do |node|
+              block.call(:spread, node, stack.pop.merge(inline: true))
             end
 
             nodes.each { |node| visit(node, self, user_data) }
@@ -30,6 +47,8 @@ module Rails # :nodoc:
         private
 
           def setup_for_fields # :nodoc:
+            setup_with_type
+
             register(:visit_name) do |node|
               object[:alias] = object[:name] unless object[:name].nil?
               (object[:name] = node_name(node))                                 && true
@@ -37,6 +56,14 @@ module Rails # :nodoc:
 
             register(:visit_field) do |node|
               (stack << FIELD_OBJECT.deep_dup)                                  && true
+            end
+
+            register(:visit_fragment_spread) do |node|
+              (stack << SPREAD_OBJECT.deep_dup)                                 && true
+            end
+
+            register(:visit_inline_fragment) do |node|
+              (stack << SPREAD_OBJECT.deep_dup)                                 && true
             end
 
             register(:visit_argument) do |node|

@@ -12,10 +12,12 @@ module Rails # :nodoc:
           true
         end
 
+        # Executes the strategy in the normal mode
         def resolve!
           response.with_stack(:data) do
             operations.each_value do |op|
-              op.organize!
+              collect_listeners { op.organize! }
+
               # op.prepare!
               # op.fetch!
               # op.resolve!
@@ -23,13 +25,19 @@ module Rails # :nodoc:
           end
         end
 
+        # Executes the strategy in the debug mode
         def debug!
-          operations.each_value.with_index do |op, i|
-            response.eol if i > 0
-            response.indented('# Organize phase') { op.debug_organize! }
-            # response.indented('# Prepare phase')  { op.debug_prepare! }
-            # response.indented('# Fetch phase')    { op.debug_fetch! }
-            # response.indented('# Resolve phase')  { op.debug_resolve! }
+          response.with_stack(:data) do
+            operations.each_value.with_index do |op, i|
+              logger.eol if i > 0
+              logger.indented('# Organize phase') do
+                collect_listeners { op.debug_organize! }
+              end
+
+              # logger.indented('# Prepare phase')  { op.debug_prepare! }
+              # logger.indented('# Fetch phase')    { op.debug_fetch! }
+              # logger.indented('# Resolve phase')  { op.debug_resolve! }
+            end
           end
         end
       end
