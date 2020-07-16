@@ -11,6 +11,7 @@ module Rails # :nodoc:
       extend ActiveSupport::Autoload
       extend Helpers::InheritedCollection
       extend Helpers::WithSchemaFields
+      extend Helpers::WithAssignment
       extend Helpers::WithNamespace
 
       DEFAULT_NAMESPACES = %i[base].freeze
@@ -67,18 +68,29 @@ module Rails # :nodoc:
 
         # Get the main name of the source
         def base_name
-          @base_name ||= name.demodulize[0..-7]
+          abstract ? name.demodulize[0..-7] : superclass.base_name
         end
 
         # Wait the end of the class in order to create the objects
         def inherited(subclass)
           subclass.abstract = false
-          TracePoint.trace(:end) do |tracer|
-            next unless tracer.self.eql?(subclass)
-
-            tracer.disable
-            subclass.send(:build!) unless subclass.abstract?
+          pending[subclass] ||= caller(1).find do |item|
+            !item.end_with?("`inherited'")
           end
+        end
+
+        # Find a source for a given object. If none is found, then raise an
+        # exception
+        def find_for!(object)
+          find_for(object) || raise(::ArgumentError, <<~MSG.squish)
+            Unable to find a source for "#{object.name}"
+          MSG
+        end
+
+        # Using the list of +base_sources+, find the first one that can handle
+        # the given +object+
+        def find_for(object)
+          base_sources.reverse_each.find { |source| object <= source.assigned_class }
         end
 
         # Get all merged hooks for a given +key+. It overrides the original
@@ -207,9 +219,37 @@ module Rails # :nodoc:
 
         private
 
+          # The list of pending sources to be built asscoaited to where they
+          # were defined
+          def pending
+            @@pending ||= {}
+          end
+
+          # Build the pending sources
+          def build_pending!
+            while (klass, _ = pending.shift)
+              klass.send(:build!) unless klass.abstract?
+            end
+          end
+
           # Return the module where the GraphQL types should be created at
           def gql_module
-            module_parents.include?(::GraphQL) ? module_parents.first : ::GraphQL
+            name.starts_with?('GraphQL::') ? name[9..-1].constantize : ::GraphQL
+          end
+
+          # Find all classes that inherits from this class that are abstract,
+          # meaning that they are a base source
+          def base_sources
+            @base_sources ||= begin
+              eager_load!
+
+              enum = ObjectSpace.each_object(singleton_class) \
+                rescue ObjectSpace.each_object(Class) # JRuby 9.0.4.0 and earlier
+
+              enum.inject(Set.new) do |list, klass|
+                klass < GraphQL::Source && klass.abstract? ? list << klass : list
+              end
+            end
           end
 
           # Build all the objects associated with this source

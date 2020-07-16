@@ -17,6 +17,7 @@ module Rails # :nodoc:
           other.define_method(:directives) { @directives ||= Set.new }
           other.class_attribute(:directive_location, instance_writer: false)
           other.delegate(:directive_location, to: :class)
+          other.alias_method(:all_directives, :directives)
         end
 
         def initialize_copy(orig)

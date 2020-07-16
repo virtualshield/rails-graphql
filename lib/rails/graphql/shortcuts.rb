@@ -58,7 +58,7 @@ module GraphQL
     # See {CONST_SHORTCUTS}[rdoc-ref:GraphQL::CONST_SHORTCUTS]
     def const_defined?(name) # :nodoc:
       name = :"ActiveRecord#{name[2..-1]}" if name.start_with?('AR')
-      COSNT_SHORTCUTS.key?(name) || super
+      CONST_SHORTCUTS.key?(name) || super
     end
 
     # See {CONST_SHORTCUTS}[rdoc-ref:GraphQL::CONST_SHORTCUTS]

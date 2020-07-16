@@ -39,93 +39,61 @@ module Rails # :nodoc:
         inherited_collection :interfaces
 
         class << self
+          # Make sure to add the newly registered object as valid object to all
+          # its interfaces
+          def register!
+            super
+
+            all_interfaces.each do |o|
+              o.implemented(self)
+            end unless abstract?
+          end
+
           # Check if the other type is equivalent, by checking if the other is
           # an interface that the current object implements
           def ==(other)
             super || (other.interface? && implements?(other))
           end
 
-          # Objects cannot be serialized on queries, since they are originally
-          # complex objects. This will be overridden whenever a object can in
-          # fact be serialized during a query process.
-          def from_ar?(*)
-            false
-          end
-
-          # Just to ensure the compatibility with other outputs
-          def from_ar(*)
-          end
-
-          # Check if a given value is a valid non-serialized output
-          def valid_output?(value, list = nil)
-            return false unless list.blank? || (list - field_names).eql?(0)
-            (list.presence || field_names).all? do |field_name|
-              # It's okay to use to_sym since we already check that all given
-              # names exist in the list of fields
-              field = self[field_name]
-
-              value.respond_to?(field.method_name) || value.try(:key?, field.method_name)
-            end
-          end
-
-          # Transforms the given value to its representation in a JSON string
-          # getting only the given +list+ of fields. This exists mainly for
-          # compatibility reasons, because requests will deal with objects in a
-          # different way
-          def to_json(value, list = nil)
-            to_hash(value, list).to_json
-          end
-
-          # Transforms the given value to its representation in a Hash object
-          # getting only the given +list of fields+ This exists mainly for
-          # compatibility reasons, because requests will deal with objects in a
-          # different way
-          def to_hash(value, list = nil)
-            (list.presence || field_names).inject({}) do |result, field_name|
-              # We assume that +valid_output?+ was used against +value+
-              field = self[field_name]
-
-              # TODO: Change this when we have the resolvers
-              val = value.respond_to?(field.method_name) \
-                ? value.public_send(field.method_name) \
-                : value.try(:[], field.method_name)
-
-              result.merge!(field_name => val)
-            end
-          end
-
           # Use this method to assign interfaces to the object
           def implements(*others)
             return if others.blank?
 
-            others.flatten!
-            others.map! do |item|
-              next item unless item.is_a?(Symbol)
-              GraphQL.type_map.fetch!(item, namespaces: namespaces)
+            cache = all_interfaces.dup
+            others.flat_map do |item|
+              item = GraphQL.type_map.fetch!(item, namespaces: namespaces) \
+                unless item.is_a?(Module) && item < Type::Interface
+
+              next if cache.include?(item)
+              item.implemented(self)
+              interfaces << item
+              cache << item
+            end
+          end
+
+          # Check if the object implements the given +interface+
+          def implements?(interface)
+            (object = find_interface(interface)).present? && all_interfaces.include?(object)
+          end
+
+          private
+
+            # Soft find an object as an +interface+
+            def find_interface(object)
+              find_interface!(object)
+            rescue ArgumentError
+              # The object was not found as an actual interface
             end
 
-            raise ArgumentError, <<~MSG.squish unless others.all?(&:interface?)
-              One or more items are not valid interfaces.
-            MSG
+            # Find a given +object+ and ensures it is an interface
+            def find_interface!(object)
+              object = GraphQL.type_map.fetch!(object, namespaces: namespaces) \
+                unless object.is_a?(Module) && object < Type::Interface
 
-            interfaces.each { |o| o.implemented(self) }
-            interfaces.merge(others)
-          end
-
-          # Check if a object implements the given interface
-          def implements?(interface)
-            interface = GraphQL.type_map.fetch!(interface, namespaces: namespaces) \
-              if interface.is_a?(Symbol)
-
-            all_interfaces.any? { |item| item <= interface }
-          end
-
-          protected
-
-            # A little helper to define arguments using the :arguments key
-            def arg(*args, **xargs, &block)
-              xargs[:owner] = self
-              GraphQL::Argument.new(*args, **xargs, &block)
+              return object if object.try(:interface?)
+              raise ArgumentError, <<~MSG.squish
+                The given "#{object}" is not a valid interface
+              MSG
             end
         end
       end

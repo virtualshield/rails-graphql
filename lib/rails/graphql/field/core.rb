@@ -5,10 +5,12 @@ module Rails # :nodoc:
     # Due to the flexibility of fields, this module implements the main features
     # of a filed, that later can be implemented in all sorts of classes
     module Field::Core
-      delegate :input_type?, :output_type?, :leaf_type?, :from_ar?, :from_ar, to: :class
+      delegate :input_type?, :output_type?, :leaf_type?, :proxy?,
+        :from_ar?, :from_ar, to: :class
+
       delegate :namespaces, to: :owner
 
-      attr_reader :name, :gql_name, :owner, :group
+      attr_reader :name, :gql_name, :owner
 
       def self.included(other)
         other.extend(ClassMethods)
@@ -39,6 +41,21 @@ module Rails # :nodoc:
         def leaf_type?
           false
         end
+
+        # Checks if the the field is a proxy kind of field
+        def proxy?
+          false
+        end
+      end
+
+      # Apply a controlled set of changes to the field
+      def apply_changes(**xargs, &block)
+        required! unless xargs.fetch(:null, true)
+        disable! if xargs.fetch(:disabled, false)
+        enable! if xargs.fetch(:enabled, false)
+
+        @desc = xargs[:desc].strip_heredoc.chomp if xargs.key?(:desc)
+        configure(&block) if block.present?
       end
 
       # Allow extra configurations to be performed using a block
@@ -74,6 +91,26 @@ module Rails # :nodoc:
       # Checks if the argument can have null elements in the array
       def nullable?
         @nullable
+      end
+
+      # Check if tre field is enabled
+      def enabled?
+        @enabled
+      end
+
+      # Check if tre field is disabled
+      def disabled?
+        !enabled?
+      end
+
+      # Mark the field as globally enabled
+      def enable!
+        @enabled = true
+      end
+
+      # Mark the field as globally disabled
+      def disable!
+        @enabled = false
       end
 
       # Return the description of the argument
@@ -145,18 +182,27 @@ module Rails # :nodoc:
 
       protected
 
+        def normalize_name(value)
+          return if value.blank?
+
+          @name = value.to_s.underscore.to_sym
+
+          @gql_name = @name.to_s.camelize(:lower)
+          @gql_name = "__#{@gql_name.camelize(:lower)}" if internal?
+        end
+
         def match_arguments?(other)
-          other.arguments.size == arguments.size &&
-            other.arguments.all? { |key, arg| arg == arguments[key] }
+          other.all_arguments.size == all_arguments.size &&
+            other.all_arguments.all? { |key, arg| arg == all_arguments[key] }
         end
 
         def inspect_directives
-          dirs = directives.map(&:inspect)
+          dirs = all_directives.map(&:inspect)
           dirs.presence && " #{dirs.join(' ')}"
         end
 
         def inspect_arguments
-          args = arguments.each_value.map(&:inspect)
+          args = all_arguments.each_value.map(&:inspect)
           args.presence && "(#{args.join(', ')})"
         end
     end

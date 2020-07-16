@@ -30,6 +30,16 @@ module Rails # :nodoc:
         inherited_collection :value_directives, default: {}
 
         class << self
+          # Mark the enum as indexed, allowing values being set by number
+          def indexed!
+            @indexed = true
+          end
+
+          # Checks if the enum was marked as indexed
+          def indexed?
+            @indexed.present?
+          end
+
           # Check if a given value is a valid non-deserialized input
           def valid_input?(value)
             value.is_a?(String) && all_values.include?(value)
@@ -47,12 +57,14 @@ module Rails # :nodoc:
 
           # Transforms the given value to its representation in a Hash object
           def to_hash(value)
-            value.to_s.underscore.upcase
+            indexed? && value.is_a?(Numeric) \
+              ? all_values[value] \
+              : value.to_s.underscore.upcase
           end
 
           # Turn a user input of this given type into an ruby object
           def deserialize(value)
-            value
+            indexed? ? all_values.index(value) : value.downcase
           end
 
           # Use this method to add values to the enum type
@@ -69,8 +81,13 @@ module Rails # :nodoc:
           #   (defaults to false).
           def add(value, desc: nil, directives: nil, deprecated: false)
             value = to_hash(value)
+
+            raise ArgumentError, <<~MSG.squish unless value.is_a?(String) && value.present?
+              The "#{value}" is invalid
+            MSG
+
             raise ArgumentError, <<~MSG.squish if all_values.include?(value)
-              The "#{value}" is already defined for #{gql_name} enum.
+              The "#{value}" is already defined for #{gql_name} enum
             MSG
 
             directives = Array.wrap(directives)

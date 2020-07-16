@@ -12,16 +12,39 @@ module Rails # :nodoc:
         end.to_h.freeze
 
         class ScopedConfig < Struct.new(:source, :type) # :nodoc: all
+          def arg(*args, **xargs, &block)
+            xargs[:owner] = source
+            GraphQL::Argument.new(*args, **xargs, &block)
+          end
+
           def fields
             source.fields_for(type)
           end
 
           def field(*args, **xargs, &block)
-            source.add(type, *args, **xargs, &block)
+            source.add_field(type, *args, **xargs, &block)
           end
 
           def proxy_field(field)
-            source.add_proxy(type, field)
+            source.add_proxy_field(type, field)
+          end
+
+          def change_field(field, **xargs, &block)
+            source.change_field(type, field, **xargs, &block)
+          end
+
+          alias overwrite_field change_field
+
+          def configure_field(field, &block)
+            source.find_field!(type, field).configure(&block)
+          end
+
+          def disable_fields(*list)
+            source.disable_fields(type, *list)
+          end
+
+          def enable_fields(*list)
+            source.enable_fields(type, *list)
           end
         end
 
@@ -37,12 +60,12 @@ module Rails # :nodoc:
 
         # Add a new field of the give +type+
         # See {OutputField}[rdoc-ref:Rails::GraphQL::OutputField] class.
-        def add(type, *args, **xargs, &block)
+        def add_field(type, *args, **xargs, &block)
           xargs[:owner] = self
           object = Field::OutputField.new(*args, **xargs, &block)
 
           raise ArgumentError, <<~MSG.squish if has_field?(type, object.name)
-            The #{name.inspect} field is already defined on #{type} fields and
+            The "#{object.name}" field is already defined on #{type} fields and
             cannot be redefined.
           MSG
 
@@ -51,14 +74,9 @@ module Rails # :nodoc:
           raise e.class, e.message + "\n  Defined at: #{caller(2)[0]}"
         end
 
-        # Remove the given list of +fields+ from the fields of the given +type+
-        def remove(type, *fields)
-          fields_for(type).except!(*fields)
-        end
-
         # Add a new field to the list but use a proxy instead of a hard copy of
         # a given +field+
-        def add_proxy(type, field)
+        def add_proxy_field(type, field)
           field = field.instance_variable_get(:@field) if field.is_a?(GraphQL::ProxyField)
 
           raise ArgumentError, <<~MSG.squish unless field.is_a?(GraphQL::Field)
@@ -85,11 +103,35 @@ module Rails # :nodoc:
         # the +gql_name+, +name+, or an actual field.
         def find_field(type, object)
           object = object.name if object.is_a?(GraphQL::Field)
-          fields_for(type).key?(object.is_a?(String) ? object.underscore.to_sym : object)
+          fields_for(type)[object.is_a?(String) ? object.underscore.to_sym : object]
+        end
+
+        # If the field is not found it will raise an exception
+        def find_field!(type, object)
+          find_field(type, object) || raise(::ArgumentError, <<~MSG.squish)
+            The #{object.inspect} field on #{type} is not defined yet.
+          MSG
+        end
+
+        # Find a field and then change some flexible attributes of it
+        def change_field(type, object, **xargs, &block)
+          find_field!(type, object).apply_changes(**xargs, &block)
+        end
+
+        alias overwrite_field change_field
+
+        # Disable a list of given +fields+ from a given +type+
+        def disable_fields(type, *list)
+          list.flatten.map { |item| find_field(type, item)&.disable! }
+        end
+
+        # Enable a list of given +fields+ from a given +type+
+        def enable_fields(type, *list)
+          list.flatten.map { |item| find_field(type, item)&.enable! }
         end
 
         # Run a configuration block for the given +type+
-        def config(type, &block)
+        def config_field(type, &block)
           schema_scoped_config(self, type).instance_exec(&block)
         end
 
@@ -101,7 +143,7 @@ module Rails # :nodoc:
 
             def #{kind}_fields(&block)
               return @#{kind}_fields ||= {} if block.nil?
-              config(:#{kind}, &block)
+              config_field(:#{kind}, &block)
               @#{kind}_fields
             end
 

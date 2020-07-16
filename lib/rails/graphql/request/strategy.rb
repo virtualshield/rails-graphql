@@ -102,8 +102,8 @@ module Rails # :nodoc:
           return if listeners.key?(object)
           list = Set.new
 
-          if object.respond_to?(:directives)
-            object.directives.each { |d| list += d.listeners }
+          if object.respond_to?(:all_directives)
+            object.all_directives.each { |d| list += d.listeners }
           end
 
           if object.is_a?(Component::Field)

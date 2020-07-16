@@ -27,10 +27,15 @@ module Rails # :nodoc:
         ].freeze
 
         class << self
-          # Stores the list of objects associated with the interface so it can
+          # Stores the list of types associated with the interface so it can
           # be used during the execution step to find the right object type
-          def objects
-            @objects ||= defined? super ? super.dup : Set.new
+          def types
+            @types ||= Set.new
+          end
+
+          # Get the list of all inherited-aware associated types
+          def all_types
+            (superclass.try(:all_types) || []) + (@types&.to_a || [])
           end
 
           # Check if the other type is equivalent, by checking if the other is
@@ -40,7 +45,7 @@ module Rails # :nodoc:
           end
 
           # When attaching an interface to an object, copy the fields and add to
-          # the list of objects. Pre-existing same-named fields with are not
+          # the list of types. Pre-existing same-named fields with are not
           # equivalent produces an exception.
           def implemented(object)
             fields.each do |name, field|
@@ -53,13 +58,13 @@ module Rails # :nodoc:
               object.proxy_field(field)
             end
 
-            objects << object
+            types << object
           end
 
           def inspect # :nodoc:
-            parts = fields.each_value.map(&:inspect)
-            parts = parts.presence && "{#{parts.join(', ')}}"
-            "#<GraphQL::Interface #{gql_name} #{parts}>"
+            fields = fields.each_value.map(&:inspect)
+            fields = fields.presence && "{#{fields.join(', ')}}"
+            "#<GraphQL::Interface #{gql_name} #{fields}>"
           end
 
           # Check if the given object is properly implementing this interface

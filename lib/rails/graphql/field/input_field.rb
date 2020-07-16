@@ -33,11 +33,6 @@ module Rails # :nodoc:
         raise ArgumentError, 'Input fields can\'t be further configured using blocks'
       end
 
-      # Override with exception
-      def argument(*)
-        raise ArgumentError, 'Input fields doesn\'t support arguments'
-      end
-
       # Checks if a default value was provided
       def default_value?
         !default.nil?
@@ -50,6 +45,7 @@ module Rails # :nodoc:
 
       # This checks if a given serialized value is valid for this field
       def valid_input?(value)
+        return false if disabled?
         return null? if value.nil?
         return valid_input_array?(value) if array?
         type_klass.valid_input?(value)

@@ -17,10 +17,16 @@ module Rails # :nodoc:
     # Error class related to problems during the execution process
     ExecutionError = Class.new(StandardError)
 
+    # Error related to the parsing process
+    ParseError = Class.new(ExecutionError)
+
     # Error class related to problems that happened during execution of fields
     FieldError = Class.new(ExecutionError)
 
-    # Error related to the parsing process
-    ParseError = Class.new(ExecutionError)
+    # Error class related to when a field was not found on the requested object
+    MissingFieldError = Class.new(FieldError)
+
+    # Error class related to when a field was found but is marked as disabled
+    DisabledFieldError = Class.new(FieldError)
   end
 end

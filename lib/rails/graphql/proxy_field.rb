@@ -17,38 +17,45 @@ module Rails # :nodoc:
     #
     # * <tt>:as</tt> - The actual name to be used on the field while assigning
     #   the proxy (defaults to nil).
+    # * <tt>:alias</tt> - Same as the +:as+ key (defaults to nil).
     # * <tt>:method_name</tt> - Provides a diferent +method_name+ from where to
     #   extract the data (defaults to nil).
-    class ProxyField < ActiveSupport::ProxyObject
+    class ProxyField
+      include Helpers::WithDirectives
+
       include Field::Core
       include Field::ResolvedField
       include Field::TypedOutputField
 
       alias self_dynamic_resolver? dynamic_resolver?
 
-      delegate :type, :group, :array?, :nullable?, :internal?, :arguments, :directives,
-        to: :field
+      delegate :type, :array?, :nullable?, :internal?, to: :field
 
       redefine_singleton_method(:output_type?) { true }
+      redefine_singleton_method(:proxy?) { true }
 
-      def initialize(field, owner, as: nil, method_name: nil)
+      def initialize(field, owner, **xargs, &block)
         @field = field
         @owner = owner
 
-        if as.present?
-          @name = as.to_s.underscore.to_sym
+        apply_changes(**xargs, &block)
 
-          @gql_name = @name.to_s.camelize(:lower)
-          @gql_name = "__#{@gql_name.camelize(:lower)}" if internal?
-        end
+        directives.freeze
+        arguments.freeze
+      end
 
-        @method_name = method_name unless method_name.nil?
+      # Allow chaging the name of a proxy field
+      def apply_changes(**xargs, &block)
+        @method_name = xargs[:method_name] unless xargs.key?(:method_name)
+        normalize_name(xargs.fetch(:alias, xargs[:as]))
+
+        super
       end
 
       # Generate a set of methods that can be set or passed to the proxied field
-      %i[name gql_name method_name null?].each do |name|
+      %i[name gql_name method_name null? enabled?].each do |name|
         ivar = name.to_s.delete_suffix('?')
-        instance_eval <<~RUBY, __FILE__, __LINE__ + 1
+        class_eval <<~RUBY, __FILE__, __LINE__ + 1
           def #{name}
             defined?(@#{ivar}) ? @#{ivar} : field.#{name}
           end
@@ -61,6 +68,26 @@ module Rails # :nodoc:
         list += field.listeners
         list << :resolver if dynamic_resolver?
         list
+      end
+
+      def disable! # :nodoc:
+        super unless non_interface_proxy!('disable')
+      end
+
+      def enable! # :nodoc:
+        super unless non_interface_proxy!('enable')
+      end
+
+      def all_directives # :nodoc:
+        field.directives + super
+      end
+
+      def all_arguments # :nodoc:
+        field.all_arguments.merge(super)
+      end
+
+      def has_argument?(name) # :nodoc:
+        field.has_argument?(name) || super
       end
 
       def dynamic_resolver? # :nodoc:
@@ -77,6 +104,11 @@ module Rails # :nodoc:
       end
 
       protected
+        attr_reader :field
+
+        def normalize_name(value) # :nodoc:
+          super unless value.blank? || non_interface_proxy!('rename')
+        end
 
         def run_resolver(context) # :nodoc:
           self_dynamic_resolver? ? super : field.run(:resolver, context)
@@ -85,6 +117,21 @@ module Rails # :nodoc:
         def run_hooks(hook, context) # :nodoc:
           super
           field.run(hook, context)
+        end
+
+      private
+
+        # Prohibits changes to proxy fields based on interfaces
+        def non_interface_proxy!(action)
+          raise ::ArgymentError, <<~MSG.squish if interface_proxy?
+            Unable to #{action} the "#{gql_name}" field because it is
+            associated to the #{field.owner.gql_name} interface.
+          MSG
+        end
+
+        # Checks if the proxy is based on an interface field
+        def interface_proxy?
+          field.owner.try(:interface?)
         end
     end
   end

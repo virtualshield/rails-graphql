@@ -4,6 +4,7 @@ module Rails # :nodoc:
   module GraphQL # :nodoc:
     # Shared methods for output fields that contains a specific given type
     module Field::TypedOutputField
+      include Helpers::WithArguments
       include Field::TypedField
 
       # Check if the field can be resolved from Active Record
@@ -23,6 +24,7 @@ module Rails # :nodoc:
 
       # This checks if a given unserialized value is valid for this field
       def valid_output?(value)
+        return false if disabled?
         return null? if value.nil?
         return valid_output_array?(value) if array?
         type_klass.valid_output?(value)

@@ -77,7 +77,7 @@ module Rails # :nodoc:
               parse_directives
               parse_selection
 
-              # check_assignment!
+              check_assignment!
             end
           end
 
@@ -85,7 +85,7 @@ module Rails # :nodoc:
 
           # Check if the field was assigned correctly to an output field
           def check_assignment!
-            raise FieldError, <<~MSG.squish if field.nil?
+            raise MissingFieldError, <<~MSG.squish if field.nil?
               Unable to find a field named "#{gql_name}"
             MSG
 
@@ -96,6 +96,10 @@ module Rails # :nodoc:
             raise FieldError, <<~MSG.squish if field.leaf_type? && selection.any?
               The "#{gql_name}" was assigned to the #{type_klass.gql_name} which
               is a leaf type and does not have nested fields
+            MSG
+
+            raise DisabledFieldError, <<~MSG.squish if field.disabled?
+              The "#{gql_name}" was found but it is marked as disabled
             MSG
           end
       end

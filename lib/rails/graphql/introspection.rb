@@ -19,7 +19,8 @@ module Rails # :nodoc:
 
         Helpers::WithSchemaFields::SCHEMA_FIELD_TYPES.each do |type, name|
           Core.type_map.register_alias(name, namespace: subclass.namespace) do
-            subclass.public_send("#{type}_type")
+            result = subclass.public_send("#{type}_type")
+            type.eql?(:query) || result.fields.present? ? result : nil
           end
         end
       end
@@ -32,7 +33,7 @@ module Rails # :nodoc:
       # Remove introspection fields and disable introspection
       def disable_introspection!
         redefine_singleton_method(:introspection?) { false }
-        remove(:query, :schema, :type)
+        disable_fields(:query, :__schema, :__type)
       end
     end
   end

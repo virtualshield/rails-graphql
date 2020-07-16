@@ -10,6 +10,8 @@ module Rails # :nodoc:
     # representation. It was developed more for testing purposes, but it can
     # also used by describing purposes or generating API description pages.
     class ToGQL < Arel::Visitors::Visitor
+      DESCRIBE_TYPES = %i[scalar enum input_object interface union object].freeze
+
       def self.compile(node, **xargs) # :nodoc:
         new.compile(node, **xargs)
       end
@@ -24,20 +26,25 @@ module Rails # :nodoc:
         accept(node, collector).value
       end
 
-      # :nodoc:
-      def describe(schema, collector = nil, with_descriptions: true, with_spec: nil)
+      def describe(schema, collector = nil, with_descriptions: true, with_spec: nil) # :nodoc:
         collector ||= Collectors::IdentedCollector.new
         @with_descriptions = with_descriptions
         @with_spec = with_spec.nil? ? schema.introspection? : with_spec
 
         accept(schema, collector).eol
 
+        describe_types = DESCRIBE_TYPES
+        describe_types -= %i[scalar] unless @with_spec
+
         GraphQL.type_map.each_from(schema.namespace, base_class: :Type)
-          .group_by(&:kind).values_at(*%i[scalar object interface union enum input_object])
+          .group_by(&:kind).values_at(*describe_types)
           .each do |items|
             items&.sort_by(&:gql_name)&.each do |item|
               next if !@with_spec && item.gql_name.start_with?('__')
-              next visit_Rails_GraphQL_Type_Object(item, collector).eol if item.object?
+
+              next visit_Rails_GraphQL_Type_Object(item, collector).eol \
+                if item.is_a?(::OpenStruct) && item.object?
+
               accept(item, collector).eol
             end
           end
@@ -53,19 +60,6 @@ module Rails # :nodoc:
 
       # Keep visitors in an alphabetical order, but leave instances at the end
       protected
-
-        def visit_fake_schema_type(schema, type, name, collector)
-          return unless type.eql?(:query) || schema.fields_for(type).present?
-
-          collector << 'type '
-          collector << name
-
-          collector.indented(' {', '}') do
-            schema.fields_for(type).values.sort_by(&:gql_name).each do |x|
-              visit(x, collector) if @with_spec || !x.internal?
-            end
-          end
-        end
 
         def visit_Rails_GraphQL_Directive(o, collector)
           return visit_Rails_GraphQL_Directive_Instance(o, collector) \
@@ -105,6 +99,8 @@ module Rails # :nodoc:
 
           collector.indented(' {', '}') do
             Helpers::WithSchemaFields::SCHEMA_FIELD_TYPES.each do |key, name|
+              next unless key.eql?(:query) || o.fields_for(key).present?
+
               collector << key.to_s
               collector << ': '
               collector << name
@@ -113,17 +109,38 @@ module Rails # :nodoc:
           end
         end
 
+        def visit_Rails_GraphQL_ProxyField(o, collector)
+          return if o.disabled?
+
+          if @with_descriptions
+            field = o.instance_variable_get(:@field)
+            collector << '# Proxy of '
+            collector << field.owner.gql_name
+            collector << '#'
+            collector << field.gql_name
+            collector.eol
+          end
+
+          visit_Rails_GraphQL_Field_OutputField(o, collector)
+        end
+
         def visit_Rails_GraphQL_Field_OutputField(o, collector)
+          return if o.disabled?
+
           visit_Rails_GraphQL_Field(o, collector)
           visit_typed_object(o, collector)
           visit_directives(o.directives, collector)
+          collector.eol if @with_descriptions
           collector.eol
         end
 
         def visit_Rails_GraphQL_Field_InputField(o, collector)
+          return if o.disabled?
+
           visit_Rails_GraphQL_Field(o, collector)
           visit_typed_object(o, collector)
           visit_directives(o.directives, collector)
+          collector.eol if @with_descriptions
           collector.eol
         end
 
@@ -200,6 +217,17 @@ module Rails # :nodoc:
           collector.eol
         end
 
+        def visit_Rails_GraphQL_Type_Object_AssignedObject(o, collector)
+          if @with_descriptions
+            collector << '# Assigned to '
+            collector << o.assigned_to
+            collector << ' class'
+            collector.eol
+          end
+
+          visit_Rails_GraphQL_Type_Object(o, collector)
+        end
+
         def visit_Rails_GraphQL_Directive_Instance(o, collector)
           collector << '@' << o.gql_name
           return unless o.args.to_h.values.any?
@@ -234,8 +262,9 @@ module Rails # :nodoc:
 
           list.each_value.with_index do |x, i|
             if i > 0
-              collector.eol if indented
               collector << ', '
+              collector.eol if indented
+              collector.eol if @with_descriptions
             end
 
             visit_Rails_GraphQL_Argument_Instance(x, collector)
@@ -281,6 +310,7 @@ module Rails # :nodoc:
 
           collector << value
           visit_directives(directives, collector)
+          collector.eol if @with_descriptions
           collector.eol
         end
 

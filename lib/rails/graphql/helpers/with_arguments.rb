@@ -13,6 +13,7 @@ module Rails # :nodoc:
 
         def self.included(other)
           other.define_method(:arguments) { @arguments ||= {} }
+          other.alias_method(:all_arguments, :arguments)
         end
 
         module ClassMethods # :nodoc: all
@@ -28,16 +29,17 @@ module Rails # :nodoc:
           end
         end
 
-        def initialize(*, arguments: nil, **)
+        def initialize(*args, arguments: nil, **xargs, &block)
+          super(*args, **xargs, &block)
           return if arguments.nil?
 
-          arguments = Array.wrap(arguments)
-          checker = arguments.all? { |item| item.is_a?(Argument) }
-          raise ArgumentError, <<~MSG.squish unless checker
-            One or more items provided to the :arguments key are not valid Argument objects.
-          MSG
+          @arguments = Array.wrap(arguments).map do |object|
+            raise ArgumentError, <<~MSG.squish unless object.is_a?(Argument)
+              The given "#{object.inspect}" is not a valid Argument object.
+            MSG
 
-          @arguments = arguments.map(&:name).zip(arguments).to_h
+            [object.name, object]
+          end.to_h
         end
 
         def initialize_copy(orig)
@@ -60,7 +62,7 @@ module Rails # :nodoc:
           xargs[:owner] = self
           object = GraphQL::Argument.new(name, base_type, **xargs)
 
-          raise ArgumentError, <<~MSG.squish if arguments.key?(object.name)
+          raise ArgumentError, <<~MSG.squish if has_argument?(object.name)
             The #{name.inspect} argument is already defined and can't be redefined.
           MSG
 
@@ -74,6 +76,11 @@ module Rails # :nodoc:
           name = args.size >= 1 ? args.shift : :id
           xargs[:null] = false unless xargs.key?(:null)
           argument(name, :id, *args, **xargs, &block)
+        end
+
+        # Check if a given +name+ is already defined on the list of arguments
+        def has_argument?(name)
+          arguments.key?(name)
         end
       end
     end

@@ -11,14 +11,14 @@ module Rails # :nodoc:
       delegate :valid_field_types, to: :owner
 
       def initialize(name, type, *args, **xargs, &block)
+        super(name, *args, **xargs, &block)
+
         if type.is_a?(Module) && type < GraphQL::Type
           @type_klass = type
           @type = type.name
         else
           @type = type.to_s.underscore.to_sym
         end
-
-        super(name, *args, **xargs, &block)
       end
 
       def initialize_copy(*)
@@ -43,11 +43,6 @@ module Rails # :nodoc:
 
         raise ArgumentError, <<~MSG.squish unless type_klass.is_a?(Module)
           Unable to find the "#{type.inspect}" input type on GraphQL context.
-        MSG
-
-        raise ArgumentError, <<~MSG.squish if owner.interface? && type_klass.eql?(owner)
-          The field "#{gql_name}" inside of "#{owner.gql_name}" cannot reference
-          its own interface.
         MSG
 
         valid_type = valid_field_types.empty? || valid_field_types.any? do |base_type|

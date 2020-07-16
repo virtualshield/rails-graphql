@@ -68,6 +68,10 @@ module Rails # :nodoc:
             Type::Input.eager_load!
             Type::Object.eager_load!
             Type::Scalar.eager_load!
+
+            # Source.eager_load!
+            # Source.build_pending!
+
             TypeMap.loaded! :Type
           end
         end

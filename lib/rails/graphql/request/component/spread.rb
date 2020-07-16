@@ -116,7 +116,7 @@ module Rails # :nodoc:
                   item.send(:debug_arguments)
                   item.send(:debug_directives)
 
-                  debug_fragment_fields(item.selection, &block) \
+                  debug_fragment_fields(item.selection, &self_block) \
                     if item.selection.any?
                 end
               end

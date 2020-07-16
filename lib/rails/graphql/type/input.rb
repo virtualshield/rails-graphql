@@ -42,7 +42,7 @@ module Rails # :nodoc:
             value = build_defaults(fields).merge(value)
             return false unless value.size.eql?(fields.size)
 
-            fields.values.all? { |item| item.valid_input?(value[item.gql_name]) }
+            fields.each_value.all? { |item| item.valid_input?(value[item.gql_name]) }
           end
 
           # Turn the given value into an ruby representation of it
@@ -54,7 +54,7 @@ module Rails # :nodoc:
 
           # Build a hash with the default values for each of the given fields
           def build_defaults
-            values = fields.values.map(&:default)
+            values = fields.each_value.map(&:default)
             fields.values.map(&:gql_name).zip(values).to_h
           end
 

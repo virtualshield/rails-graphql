@@ -172,8 +172,7 @@ module Rails # :nodoc:
 
           # Only iterate over string based types
           @index[values.last][base_class].each do |key, value|
-            next unless key.is_a?(String)
-            yielder << value.call
+            yielder << value if key.is_a?(String) && (value = value.call).present?
           end
         end
 

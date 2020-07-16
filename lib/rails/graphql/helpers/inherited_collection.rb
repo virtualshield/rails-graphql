@@ -64,7 +64,7 @@ module Rails # :nodoc:
             comb = default.is_a?(Hash) ? :merge : :+
 
             define_singleton_method("all_#{name}") do
-              (superclass.try(name) || []).send(comb, send(name))
+              (superclass.try(name) || default.dup).send(comb, send(name))
             end
 
             define_singleton_method(name) do

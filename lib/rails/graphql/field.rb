@@ -37,21 +37,18 @@ module Rails # :nodoc:
       require_relative 'field/typed_output_field'
 
       include Helpers::WithDirectives
-      include Helpers::WithArguments
       include Field::Core
 
       require_relative 'field/input_field'
       require_relative 'field/output_field'
 
-      def initialize(name, owner: , **xargs, &block)
+      def initialize(name, *args, owner: , **xargs, &block)
         @owner = owner
-        @name = name.to_s.underscore.to_sym
+        normalize_name(name)
+
         @directives = GraphQL.directives_to_set(xargs[:directives], source: self)
         @method_name = xargs[:method_name].to_s.underscore.to_sym \
           unless xargs[:method_name].nil?
-
-        @gql_name = @name.to_s.camelize(:lower)
-        @gql_name = "__#{@gql_name.camelize(:lower)}" if internal?
 
         full      = xargs.fetch(:full, false)
         @null     = full ? false : xargs.fetch(:null, true)
@@ -59,10 +56,11 @@ module Rails # :nodoc:
         @nullable = full ? false : xargs.fetch(:nullable, true)
 
         @desc = xargs[:desc]&.strip_heredoc&.chomp
-        @group = xargs[:group].to_sym unless xargs[:group].blank?
+        @enabled = xargs.fetch(:enabled, !xargs.fetch(:disabled, false))
 
-        super(**xargs) if defined? super
         configure(&block) if block.present?
+        directives.freeze
+        arguments.freeze
       end
 
       def initialize_copy(*)

@@ -56,9 +56,8 @@ module Rails # :nodoc:
         # Add a new field to the list but use a proxy instead of a hard copy of
         # a given +field+
         def proxy_field(field, **xargs)
-          field = field.instance_variable_get(:@field) if field.is_a?(GraphQL::ProxyField)
-
-          raise ArgumentError, <<~MSG.squish unless field.is_a?(GraphQL::Field)
+          valid = field.is_a?(GraphQL::Field) || field.is_a?(GraphQL::ProxyField)
+          raise ArgumentError, <<~MSG.squish unless valid
             The #{field.class.name} is not a valid field.
           MSG
 
@@ -70,45 +69,62 @@ module Rails # :nodoc:
           fields[object.name] = object
         end
 
-        # Overwrite the +:null+ and +:desc+ attributes of a given field named as
-        # +name+, it also allows a +block+ which will then further configure the
-        # field
-        def change_field(name, null: true, desc: nil, &block)
-          raise ArgumentError, <<~MSG.squish unless field?(name)
-            The #{name.inspect} field is not yet defined.
-          MSG
-
-          field = fields[name]
-          field.required! unless null
-          field.instance_variable_set(:@desc, desc.strip_heredoc.chomp) if desc.present?
-          configure(name, &block) if block.present?
+        # Overwrite attributes of a given field named as +name+, it also allows
+        # a +block+ which will then further configure the field
+        def change_field(object, **xargs, &block)
+          find_field!(object).apply_changes(**xargs, &block)
         end
 
         alias overwrite_field change_field
 
         # Perform extra configurations on a given +field+
-        def configure_field(name, &block)
-          fields[name].configure(&block) if field?(name)
+        def configure_field(object, &block)
+          find_field!(object).configure(&block)
+        end
 
-          raise ArgumentError, <<~MSG.squish
-            The #{name.inspect} field is not yet defined.
-          MSG
+        # Disable a list of given +fields+
+        def disable_fields(*list)
+          list.flatten.map { |item| self[item]&.disable! }
+        end
+
+        # Enable a list of given +fields+
+        def enable_fields(*list)
+          list.flatten.map { |item| self[item]&.enable! }
+        end
+
+        # Check wheter a given field +object+ is defined in the list of fields
+        def field?(object)
+          object = object.name if object.is_a?(GraphQL::Field)
+          fields.key?(object.is_a?(String) ? object.underscore.to_sym : object)
         end
 
         # Allow accessing fields using the hash notation
-        def [](key)
-          fields[key.is_a?(String) ? key.underscore.to_sym : key]
+        def [](object)
+          object = object.name if object.is_a?(GraphQL::Field)
+          fields[object.is_a?(String) ? object.underscore.to_sym : object]
         end
 
-        # Check wheter a given field +key+ is defined in the list of fields
-        def field?(key)
-          fields.key?(key.is_a?(String) ? key.underscore.to_sym : key)
+        alias find_field []
+
+        # If the field is not found it will raise an exception
+        def find_field!(object)
+          find_field(object) || raise(::ArgumentError, <<~MSG.squish)
+            The #{object.inspect} field is not defined yet.
+          MSG
         end
 
         # Get the list of GraphQL names of all the fields difined
         def field_names
           fields.map(&:gql_name)
         end
+
+        protected
+
+          # A little helper to define arguments using the :arguments key
+          def arg(*args, **xargs, &block)
+            xargs[:owner] = self
+            GraphQL::Argument.new(*args, **xargs, &block)
+          end
 
         private
 
