@@ -16,17 +16,17 @@ module Rails # :nodoc:
         def resolve!
           response.with_stack(:data) do
             operations.each_value do |op|
-              collect_listeners { op.organize! }
-
-              # op.prepare!
-              # op.fetch!
-              # op.resolve!
+              collect_listeners    { op.organize! }
+              collect_data         { op.prepare! }
+              collect_response(op) { op.resolve! }
             end
           end
         end
 
         # Executes the strategy in the debug mode
         def debug!
+          super
+
           response.with_stack(:data) do
             operations.each_value.with_index do |op, i|
               logger.eol if i > 0
@@ -34,9 +34,16 @@ module Rails # :nodoc:
                 collect_listeners { op.debug_organize! }
               end
 
-              # logger.indented('# Prepare phase')  { op.debug_prepare! }
-              # logger.indented('# Fetch phase')    { op.debug_fetch! }
-              # logger.indented('# Resolve phase')  { op.debug_resolve! }
+              logger.eol
+              logger.indented('# Prepare phase') do
+                performed = collect_data { op.prepare! }
+                logger << '* No prefetching data' if performed.eql?(false)
+              end
+
+              logger.eol
+              logger.indented('# Resolve phase') do
+                collect_response(op) { op.debug_resolve! }
+              end
             end
           end
         end

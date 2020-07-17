@@ -83,7 +83,7 @@ module Rails # :nodoc:
         # exception
         def find_for!(object)
           find_for(object) || raise(::ArgumentError, <<~MSG.squish)
-            Unable to find a source for "#{object.name}"
+            Unable to find a source for "#{object.name}".
           MSG
         end
 

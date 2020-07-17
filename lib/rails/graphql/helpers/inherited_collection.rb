@@ -63,6 +63,7 @@ module Rails # :nodoc:
             ivar = "@#{name}"
             comb = default.is_a?(Hash) ? :merge : :+
 
+            # TODO: Improve this method to be a lazy enumerator
             define_singleton_method("all_#{name}") do
               (superclass.try(name) || default.dup).send(comb, send(name))
             end

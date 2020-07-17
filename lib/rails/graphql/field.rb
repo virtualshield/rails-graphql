@@ -69,7 +69,8 @@ module Rails # :nodoc:
         @owner = nil
       end
 
-      def inspect(extra = '') # :nodoc:
+      def inspect # :nodoc:
+        extra = send(:inspect_type) rescue nil
         <<~INSPECT.squish + '>'
           #<GraphQL::Field @owner="#{owner.name}"
           #{gql_name}#{inspect_arguments}:#{extra}#{inspect_directives}

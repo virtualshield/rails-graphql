@@ -51,7 +51,7 @@ module Rails # :nodoc:
 
         GraphQL.type_map.each_from(schema.namespace, base_class: :Directive)
           .sort_by(&:gql_name).each do |item|
-            next if !@with_spec && item.gql_name.start_with?('__')
+            next if !@with_spec && item.spec_object
             accept(item, collector).eol
           end
 

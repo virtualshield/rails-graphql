@@ -21,6 +21,7 @@ module Rails # :nodoc:
       eager_autoload do
         autoload_under :steps do
           autoload :Organizable
+          autoload :Resolveable
         end
 
         autoload_under :helpers do
@@ -30,9 +31,10 @@ module Rails # :nodoc:
 
         autoload :Arguments
         autoload :Component
+        autoload :Context
         autoload :Errors
+        autoload :Event
         autoload :Strategy
-        autoload :VariableParser
       end
 
       ##
@@ -79,7 +81,7 @@ module Rails # :nodoc:
       end
 
       # Execute a given document with the given arguments
-      def execute(document, args = {}, as: :string, **xargs)
+      def execute(document, args: {}, as: :string, **xargs)
         reset!(args)
 
         to = RESPONSE_FORMATS[as]
@@ -90,15 +92,20 @@ module Rails # :nodoc:
       end
 
       # Debug a given document to an IO
-      def debug(document, args = {}, to: $stdout)
+      def debug(document, args: {}, as: :string, stdout: $stdout)
         reset!(args)
 
-        @response = Collectors::HashCollector.new(self)
+        to = RESPONSE_FORMATS[as]
+        @response = initialize_response(as, to)
         @logger = Collectors::IdentedCollector.new(auto_eol: false)
-        execute!(document, mode: :debug!)
 
-        to.puts(logger.value)
-        response
+        logger.puts('# Document')
+        logger.puts(document)
+
+        execute!(document, mode: :debug!)
+        response.public_send(to)
+      ensure
+        stdout.puts(logger.value)
       end
 
       # Add the given +object+ into the execution +stack+ and execute the given
@@ -127,7 +134,10 @@ module Rails # :nodoc:
 
       # Convert the current stack into a error path ignoring the schema
       def stack_to_path
-        stack.map { |item| item.try(:gql_name) }.compact
+        stack.map do |item|
+          next item if item.is_a?(Numeric)
+          item.try(:gql_name)
+        end.compact
       end
 
       # Build a easy-to-access object representing the current information of
@@ -193,7 +203,7 @@ module Rails # :nodoc:
         # Find the best strategy to resolve the request.
         def find_strategy!(debug = false)
           if debug
-            logger.puts('Selecting strategy:')
+            logger.puts('# Selecting strategy:')
             logger.indent
           end
 
@@ -208,8 +218,9 @@ module Rails # :nodoc:
           end.max_by(&:priority).new(self)
           return strategy unless debug
 
-          logger.unindent
+          logger.eol
           logger.puts("Selected: #{strategy.class.name}")
+          logger.unindent
           logger.eol
 
           strategy

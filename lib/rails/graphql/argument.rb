@@ -30,6 +30,8 @@ module Rails # :nodoc:
     # * <tt>:desc</tt> - The description of the argument
     #   (defaults to nil).
     class Argument
+      include Helpers::WithValidator
+
       # TODO: When arguments are attached to output fields they can have
       # directives so add this possibility
 
@@ -76,8 +78,12 @@ module Rails # :nodoc:
 
       # Check if the other argument is equivalent
       def ==(other)
-        other.gql_name == gql_name &&
-          other.null? == null? &&
+        other.gql_name == gql_name && self =~ other
+      end
+
+      # Check if the other argument is equivalent, regardless the name
+      def =~(other)
+        (other.null? == null? || other.null? && !null?) &&
           other.array? == array? &&
           other.nullable? == nullable?
       end
@@ -142,6 +148,11 @@ module Rails # :nodoc:
       end
 
       alias valid? valid_input?
+
+      # Trigger the exception based value validator
+      def validate_output!(value)
+        super(value, :argument)
+      end
 
       # Checks if the definition of the argument is valid
       def validate!(*)

@@ -13,6 +13,7 @@ module Rails # :nodoc:
         extend ActiveSupport::Autoload
 
         include Request::Organizable
+        include Request::Resolveable
 
         class << self
           # Return the kind of the component
@@ -20,14 +21,14 @@ module Rails # :nodoc:
             @kind ||= name.demodulize.underscore.to_sym
           end
 
-          # This helps to define functions related to the state of the component
-          def define_state(name, bang = nil)
-            define_method("#{name}?") { @states.include?(name.to_sym) }
-            protected :"#{name}?"
-
-            if bang.present?
-              define_method("#{bang}!") { @states << name.to_sym }
-              protected :"#{bang}!"
+          # Helper to memoize results from parent delegation
+          def parent_memoize(*methods)
+            methods.each do |method_name|
+              define_method(method_name) do
+                result = parent.public_send(method_name)
+                define_singleton_method(method_name) { result }
+                result
+              end
             end
           end
         end
@@ -36,21 +37,30 @@ module Rails # :nodoc:
 
         delegate :schema, :visitor, :errors, :response, :strategy, :logger, to: :request
         delegate :find_type!, :find_directive!, to: :schema
+        delegate :memo, to: :operation
         delegate :kind, to: :class
-
-        define_state :invalid, :invalidate
 
         eager_autoload do
           autoload :Field
           autoload :Fragment
           autoload :Operation
           autoload :Spread
+          autoload :Typename
         end
 
         def initialize(node, data)
           @node = node
           @data = data.slice(*data_parts)
-          @states = Set.new
+        end
+
+        # Check if the component is in a invalid state
+        def invalid?
+          defined?(@invalid) && @invalid
+        end
+
+        # Mark the component as invalid
+        def invalidate!
+          @invalid = true
         end
 
         protected
@@ -69,6 +79,17 @@ module Rails # :nodoc:
           # Trigger an event using the strategy, which has better performance
           def trigger_event(*args)
             strategy.trigger_event(*args)
+          end
+
+          # Run a given block and ensure to capture exceptions to set them as
+          # errors
+          def capture_exception(stage, invalidate = false, &block)
+            block.call
+          rescue StandardError => error
+            invalidate! if invalidate
+            stack_path = request.stack_to_path
+            stack_path << gql_name if respond_to?(:gql_name) && gql_name.present?
+            request.exception_to_error(error, @node, path: stack_path, stage: stage)
           end
 
           # List of necessary parts from data in order to process the component

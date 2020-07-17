@@ -23,14 +23,10 @@ module Rails # :nodoc:
             @selection = {}
 
             visitor.collect_fields(*data[:selection]) do |kind, node, data|
-              if kind === :spread
-                selection[selection.size] = Component::Spread.new(self, node, data)
-              else
-                selection[data[:name]] = Component::Field.new(self, node, data)
-              end
+              add_component(kind, node, data)
             end unless data[:selection].nil? || data[:selection].null?
 
-            # assing_fields!
+            assing_fields!
             @selection.freeze
           end
 
@@ -64,6 +60,37 @@ module Rails # :nodoc:
 
               item.assing_to(field)
               break if (pending -= 1) === 0
+            end
+          end
+
+          # Trigger the process of resolving the value of all the fields
+          def resolve_fields
+            return unless selection.any?
+
+            selection.each_value(&:resolve!) if selection.any?
+          end
+
+          # Debug mode of the resolving process
+          def debug_resolve_fields
+            return unless selection.any?
+
+            selection.each_value.with_index do |field, i|
+              logger.eol if i > 0
+              field.debug_resolve!
+            end
+          end
+
+        private
+
+          def add_component(kind, node, data)
+            item_name = data[:alias].presence || data[:name]
+
+            if kind === :spread
+              selection[selection.size] = Component::Spread.new(self, node, data)
+            elsif data[:name] === '__typename'
+              selection[item_name] ||= Component::Typename.new(self, node, data)
+            else
+              selection[item_name] ||= Component::Field.new(self, node, data)
             end
           end
       end

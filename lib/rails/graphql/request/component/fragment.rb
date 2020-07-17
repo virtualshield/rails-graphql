@@ -17,15 +17,20 @@ module Rails # :nodoc:
         attr_reader :name, :type_klass, :request
 
         def initialize(request, node, data)
-          super(node, data)
-
           @name = data[:name]
           @request = request
+
+          super(node, data)
         end
 
         # Return a lazy loaded variable proc
         def variables
           Request::Arguments.lazy
+        end
+
+        # Access the operation through the Request::Arguments
+        def operation
+          Request::Arguments.operation
         end
 
         protected

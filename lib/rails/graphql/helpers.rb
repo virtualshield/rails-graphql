@@ -15,6 +15,7 @@ module Rails # :nodoc:
       autoload :WithFields
       autoload :WithNamespace
       autoload :WithSchemaFields
+      autoload :WithValidator
     end
   end
 end

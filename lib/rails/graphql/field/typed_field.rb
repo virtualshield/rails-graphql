@@ -7,7 +7,7 @@ module Rails # :nodoc:
     module Field::TypedField
       attr_reader :type
 
-      delegate :input_type?, :output_type?, :leaf_type?, to: :type_klass
+      delegate :input_type?, :output_type?, :leaf_type?, :kind, to: :type_klass
       delegate :valid_field_types, to: :owner
 
       def initialize(name, type, *args, **xargs, &block)
@@ -56,15 +56,17 @@ module Rails # :nodoc:
         nil # No exception already means valid
       end
 
-      def inspect # :nodoc:
-        result = ' '
-        result += '[' if array?
-        result += type_klass.gql_name
-        result += '!' if array? && !nullable?
-        result += ']' if array?
-        result += '!' unless null?
-        super(result)
-      end
+      protected
+
+        def inspect_type # :nodoc:
+          result = ' '
+          result += '[' if array?
+          result += type_klass.gql_name
+          result += '!' if array? && !nullable?
+          result += ']' if array?
+          result += '!' unless null?
+          result
+        end
     end
   end
 end

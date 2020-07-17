@@ -70,7 +70,7 @@ module Rails # :nodoc:
           # Check if the given object is properly implementing this interface
           def validate(*)
             # Don't validate interfaces since the fields are copied and
-            # the interface might have broken field types
+            # the interface might have broken field types due to namespaces
           end
         end
       end

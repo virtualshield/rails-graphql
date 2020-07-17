@@ -19,6 +19,10 @@ module Rails # :nodoc:
       delegate :base_type, :kind, :kind_enum, :input_type?, :output_type?,
         :leaf_type?, :extension?, to: :class
 
+      # A +base_object+ helps to identify what methods are actually available
+      # to work as resolvers
+      class_attribute :base_object, instance_writer: false, default: false
+
       class << self
         # Returns the base type of the class. It will be one of the classes
         # defined on +Type::KINDS+
@@ -54,6 +58,13 @@ module Rails # :nodoc:
         # Defines if the current type is a leaf output type
         def leaf_type?
           false
+        end
+
+        # Checks if a given method can act as resolver
+        def gql_resolver?(method_name)
+          ref_object = self
+          ref_object = ref_object.superclass until ref_object.base_object
+          (instance_methods - ref_object.instance_methods).include?(method_name)
         end
 
         # Defines a series of question methods based on the kind
@@ -103,9 +114,11 @@ module Rails # :nodoc:
               subclass.redefine_singleton_method(question_method) { true }
 
               subclass.spec_object = true
+              subclass.base_object = true
               subclass.abstract = true
             else
               subclass.spec_object = false
+              subclass.base_object = false
               subclass.abstract = false
             end
           end

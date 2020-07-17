@@ -18,6 +18,7 @@ module Rails # :nodoc:
         inherited_collection :members
 
         class << self
+          # Return the base type of the objects on this union
           def of_kind
             members.first.base_type
           end
@@ -57,7 +58,7 @@ module Rails # :nodoc:
 
             members = all_members
             raise ArgumentError, <<~MSG.squish unless members.size >= 1
-              A union must contain at least one member
+              A union must contain at least one member.
             MSG
 
             size = members.lazy.map(&:base_type).uniq.force.size

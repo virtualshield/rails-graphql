@@ -10,8 +10,15 @@ module Rails # :nodoc:
       attr_reader :source, :extra, :name
 
       # The list of available events
-      LIST = %i[attach organize prepare resolve finalize
+      LIST = %i[attach organize prepare finalize
         query mutation subscription request].freeze
+
+      TRIGGER_TYPES = {
+        all?: :trigger_all,
+        stack?: :trigger_all,
+        object?: :trigger_object,
+        single?: :trigger,
+      }
 
       class << self
         # This helps to build a event callback, which validates and also
@@ -32,10 +39,11 @@ module Rails # :nodoc:
         end
 
         # Trigger a given +event_name+ on a given +object+ providing the
-        # +phase+ of the execution and any +extra+ information.
-        def trigger(object, event_name, source, phase, all: false, **extra, &block)
-          method_name = all ? :trigger_all : :trigger_for
-          new(event_name, source, phase, **extra).public_send(method_name, object, &block)
+        # +phase+ of the execution and any +xargs+ information.
+        def trigger(object, event_name, source, phase, **xargs, &block)
+          extra = xargs.slice!(*TRIGGER_TYPES.keys)
+          method_name = xargs.find { |k, v| break TRIGGER_TYPES[k] if v } || :trigger
+          new(event_name, source, phase, **extra, &block).public_send(method_name, *object)
         end
 
         private
@@ -68,47 +76,66 @@ module Rails # :nodoc:
             end.compact
           end
 
-          # Translate callback callback filters options into actual filters that
-          # skip the call of the callback.
+          # Translate callback filters options into actual filters that skip
+          # the call of the callback.
           def callback_filters(filters)
             filters.map do |type, value|
-              value = Array.wrap(value).inspect
+              value = Array.wrap(value)
               case type
               when :during
-                "return unless #{value}.include?(extra[:phase])"
+                "return unless #{value.inspect}.include?(extra[:phase])"
               when :for
-                "return unless #{value}.any? { |item| source_klass <= item }"
+                value.map! { |item| item.is_a?(Module) ? item.name : item }
+                "return unless #{value.inspect}.any? { |item| source_klass <= item }"
               end
             end.compact
           end
       end
 
-      def initialize(name, source, phase, **extra)
+      def initialize(name, source, phase, **extra, &block)
+        @contextualize = block
         @source = source
         @extra = extra.merge(phase: phase, owner: source, event: self)
         @name = name
       end
 
+      # Either run the +contextualize+ block or run from the +source+ POV
+      def instance_exec(*args, **xargs, &block)
+        context = super(&@contextualize) if @contextualize.present?
+        context ||= @source
+
+        args.unshift(self) if block.parameters.first&.last.eql?(:event) &&
+          args.first != self
+
+        context.instance_exec(*args, **xargs, &block)
+      end
+
       # Trigger the current event for all the given +objects+. Works very
-      # similar to +trigger_for+ with the addiotn of
-      # +throw :stack, *optional_result+ or +event.stop(*result, level: :stack)+
+      # similar to +trigger+ with the addition of
+      # +throw :stack, *optional_data+ or +event.stop(*result, level: :stack)+
       # to end the trigger for all the objects
-      def trigger_all(*objects, &block)
+      def trigger_all(*objects)
         catch(:stack) do
-          objects.flatten.each do |item|
-            items = item.is_a?(GraphQL::Directive) ? [item] : item.directives
-            items.each do |directive|
-              result = trigger_for(directive)
-              block.call(*result) if block.present?
-            end
-          end
+          objects.flatten.each { |object| trigger_object(object) }
+        end
+      end
+
+      # Trigger the current event for all directives of given +object+. Works
+      # very similar to +trigger+ with the addition of
+      # +throw :object, *optional_data+ or +event.stop(*result, level: :object)+
+      # to end the trigger for the current object
+      def trigger_object(object)
+        catch(:object) do
+          object.try(:trigger_event, self)
+          object = object.is_a?(GraphQL::Directive) ? [object] : object.try(:all_directives)
+          object&.each { |directive| trigger(directive) }
         end
       end
 
       # Trigger the current event for the given +directive+. You can use
-      # +throw :item, *optional_result+ or +event.stop(*result)+ as a way to
+      # +throw :item, *optional_data+ or +event.stop(*result)+ as a way to
       # early return from the events.
-      def trigger_for(directive)
+      def trigger(directive)
         catch(:item) { directive.trigger(name, source, **extra) }
       end
 

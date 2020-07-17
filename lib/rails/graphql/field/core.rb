@@ -17,6 +17,11 @@ module Rails # :nodoc:
       end
 
       module ClassMethods
+        # This returns the base type of the field. Normally is handled by a
+        # typed class, but further implementations are allowed
+        def kind
+        end
+
         # Normally extended fields cannot be serialized during a query. But, by
         # having this and the +from_ar+ methods, other classes can override them
         # and provide a valid fetcher.

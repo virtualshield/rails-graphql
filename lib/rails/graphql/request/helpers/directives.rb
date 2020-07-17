@@ -46,7 +46,7 @@ module Rails # :nodoc:
             return value unless value.is_a?(::FFI::Pointer)
 
             raise ArgumentError, <<~MSG.squish unless respond_to?(:variables)
-              Unable to use variable "$#{var_name}" in the current scope
+              Unable to use variable "$#{var_name}" in the current scope.
             MSG
 
             variables[visitor.node_name(value)]

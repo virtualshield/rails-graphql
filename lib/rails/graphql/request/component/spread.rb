@@ -13,17 +13,19 @@ module Rails # :nodoc:
 
         DATA_PARTS = %i[type]
 
-        delegate :operation, :fields_source, :request, to: :parent
+        delegate :operation, :fields_source, :typename, to: :parent
+
+        parent_memoize :request
 
         attr_reader :name, :parent, :fragment, :type_klass
 
         def initialize(parent, node, data)
-          super(node, data)
-
           @parent = parent
 
           @name = data[:name]
           @inline = data[:inline]
+
+          super(node, data)
         end
 
         # Check if the object is an inline spread

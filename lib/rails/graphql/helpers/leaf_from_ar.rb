@@ -87,7 +87,7 @@ module Rails # :nodoc:
           adapter = ar_adapters[adapter] if ar_adapters.key?(adapter)
           raise ArgumentError, <<~MSG.squish unless ar_adapters.values.include?(adapter)
             The given #{adapter.inspect} adapter is not a valid option.
-            The valid options are: #{ar_adapters.to_a.flatten.map(&:inspect).to_sentence}
+            The valid options are: #{ar_adapters.to_a.flatten.map(&:inspect).to_sentence}.
           MSG
 
           define_singleton_method("from_#{adapter}_adapter", &settings[:fetch]) \

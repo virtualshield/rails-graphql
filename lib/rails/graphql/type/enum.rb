@@ -64,7 +64,7 @@ module Rails # :nodoc:
 
           # Turn a user input of this given type into an ruby object
           def deserialize(value)
-            indexed? ? all_values.index(value) : value.downcase
+            value.downcase
           end
 
           # Use this method to add values to the enum type
@@ -83,11 +83,11 @@ module Rails # :nodoc:
             value = to_hash(value)
 
             raise ArgumentError, <<~MSG.squish unless value.is_a?(String) && value.present?
-              The "#{value}" is invalid
+              The "#{value}" is invalid.
             MSG
 
             raise ArgumentError, <<~MSG.squish if all_values.include?(value)
-              The "#{value}" is already defined for #{gql_name} enum
+              The "#{value}" is already defined for #{gql_name} enum.
             MSG
 
             directives = Array.wrap(directives)

@@ -28,6 +28,8 @@ module Rails # :nodoc:
 
         # Executes the strategy in the debug mode
         def debug!
+          super
+
           response.with_stack(:data) do
             for_each_operation do |op|
               logger.indented("# Organize phase") do

@@ -40,13 +40,16 @@ module Rails # :nodoc:
 
         apply_changes(**xargs, &block)
 
-        directives.freeze
-        arguments.freeze
+        # directives.freeze
+        # arguments.freeze
       end
 
       # Allow chaging the name of a proxy field
       def apply_changes(**xargs, &block)
-        @method_name = xargs[:method_name] unless xargs.key?(:method_name)
+        if xargs.key?(:method_name)
+          @method_name = xargs[:method_name]
+        end
+
         normalize_name(xargs.fetch(:alias, xargs[:as]))
 
         super
@@ -64,10 +67,12 @@ module Rails # :nodoc:
 
       # Checks both self and proxied resolver hooks
       def listeners
-        list = resolver_hooks.keys
-        list += field.listeners
-        list << :resolver if dynamic_resolver?
-        list
+        super + field.listeners
+      end
+
+      # Find all nested hooks, since proxy fields can proxy another proxy
+      def nested_hooks(hook)
+        super + field.nested_hooks(hook)
       end
 
       def disable! # :nodoc:
@@ -94,12 +99,12 @@ module Rails # :nodoc:
         super || field.dynamic_resolver?
       end
 
-      def inspect(extra = '') # :nodoc:
+      def inspect # :nodoc:
         <<~INSPECT.squish + '>'
           #<GraphQL::ProxyField
           @owner="#{owner.name}"
           @source="#{field.owner.name}[:#{field.name}]"
-          #{gql_name}#{inspect_arguments}:#{extra}#{inspect_directives}
+          #{gql_name}#{inspect_arguments}:#{inspect_type}#{inspect_directives}
         INSPECT
       end
 
@@ -112,11 +117,6 @@ module Rails # :nodoc:
 
         def run_resolver(context) # :nodoc:
           self_dynamic_resolver? ? super : field.run(:resolver, context)
-        end
-
-        def run_hooks(hook, context) # :nodoc:
-          super
-          field.run(hook, context)
         end
 
       private

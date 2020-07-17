@@ -17,7 +17,6 @@ module Rails # :nodoc:
           other.define_method(:directives) { @directives ||= Set.new }
           other.class_attribute(:directive_location, instance_writer: false)
           other.delegate(:directive_location, to: :class)
-          other.alias_method(:all_directives, :directives)
         end
 
         def initialize_copy(orig)
@@ -42,6 +41,11 @@ module Rails # :nodoc:
 
             @directive_location = value
           end
+        end
+
+        # This ensures that it works seamsly between module and class
+        def all_directives
+          directives
         end
 
         # Use this method to assign directives to the given definition. You can
@@ -77,6 +81,11 @@ module Rails # :nodoc:
         end
 
         alias has_directive? using?
+
+        # Get the list of listeners from all directives
+        def listeners
+          ((super if defined? super) || []) + directives.map(&:listeners)
+        end
 
         private
 

@@ -5,6 +5,7 @@ module Rails # :nodoc:
     # Shared methods for output fields that contains a specific given type
     module Field::TypedOutputField
       include Helpers::WithArguments
+      include Helpers::WithValidator
       include Field::TypedField
 
       # Check if the field can be resolved from Active Record
@@ -22,12 +23,25 @@ module Rails # :nodoc:
         type_klass.from_ar(ar_object, method_name)&.as(name)
       end
 
-      # This checks if a given unserialized value is valid for this field
-      def valid_output?(value)
+      # Checks if a given unserialized value is valid for this field
+      def valid_output?(value, deep: true)
         return false if disabled?
         return null? if value.nil?
-        return valid_output_array?(value) if array?
+        return valid_output_array?(value, deep) if array?
+
+        return true unless leaf_type? || deep
         type_klass.valid_output?(value)
+      end
+
+      # Trigger the exception based value validator
+      def validate_output!(value)
+        raise DisabledFieldError, <<~MSG.squish if disabled?
+          The "#{gql_name}" field is disabled.
+        MSG
+
+        super(value, :field)
+      rescue ValidationError => error
+        raise InvalidOutputError, error.message
       end
 
       # Checks if the default value of the field is valid
@@ -43,9 +57,13 @@ module Rails # :nodoc:
 
       protected
 
-        def valid_output_array?(value)
+        def valid_output_array?(value, deep)
           return false unless value.is_a?(Enumerable)
-          value.all? { |val| (val.nil? && nullable?) || type_klass.valid_output?(val) }
+
+          value.all? do |value|
+            (val.nil? && nullable?) || (leaf_type? || !deep) ||
+              type_klass.valid_output?(value)
+          end
         end
     end
   end

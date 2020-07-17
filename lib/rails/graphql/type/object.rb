@@ -38,7 +38,19 @@ module Rails # :nodoc:
         # Define the methods for accessing the interfaces of the object
         inherited_collection :interfaces
 
+        # The purpose of instantiating an object is to have access to its
+        # public methods. It then runs from the strategy perspective, pointing
+        # out to the current object, whenever possible
+        delegate_missing_to :@field
+
+        attr_reader :object
+
         class << self
+          # Plain objects cannot check if a given value is a valid member
+          def valid_member?(_)
+            return false
+          end
+
           # Make sure to add the newly registered object as valid object to all
           # its interfaces
           def register!
@@ -92,7 +104,7 @@ module Rails # :nodoc:
 
               return object if object.try(:interface?)
               raise ArgumentError, <<~MSG.squish
-                The given "#{object}" is not a valid interface
+                The given "#{object}" is not a valid interface.
               MSG
             end
         end

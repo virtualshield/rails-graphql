@@ -8,6 +8,9 @@ module Rails # :nodoc:
     # Error class related to problems during the definition process
     DefinitionError = Class.new(StandardError)
 
+    # Error class related to validation of a value
+    ValidationError = Class.new(StandardError)
+
     # Errors that can happen related to the arguments given to a method
     ArgumentError = Class.new(DefinitionError)
 
@@ -28,5 +31,9 @@ module Rails # :nodoc:
 
     # Error class related to when a field was found but is marked as disabled
     DisabledFieldError = Class.new(FieldError)
+
+    # Error class related to when the captured output value is invalid due to
+    # type checking
+    InvalidOutputError = Class.new(FieldError)
   end
 end

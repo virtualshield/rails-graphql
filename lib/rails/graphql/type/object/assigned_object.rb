@@ -11,12 +11,13 @@ module Rails # :nodoc:
       class Object::AssignedObject < Object
         extend Helpers::WithAssignment
 
+        self.base_object = true
         self.abstract = true
 
         class << self
           # Check if a given value is a valid non-serialized output
-          def valid_output?(value)
-            value.is_a?(assigned_class)
+          def valid_member?(value)
+            assigned_to.present? && value.is_a?(assigned_class)
           end
         end
       end

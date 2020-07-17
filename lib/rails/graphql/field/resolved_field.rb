@@ -6,6 +6,8 @@ module Rails # :nodoc:
     # and additional configurations in order to resolve a field value during a
     # request
     module Field::ResolvedField
+      ALIAS_KEYS = { before: :prepare, after: :finalize }.freeze
+
       # If the field has a resolver, then it can't be serialized from Active
       # Record
       def from_ar?(*)
@@ -20,9 +22,12 @@ module Rails # :nodoc:
 
       # Return the list of resolver hook keys plus a conditional resolver key
       def listeners
-        list = resolver_hooks.keys
-        list << :resolver if dynamic_resolver?
-        list
+        ((super if defined? super) || []) + resolver_hooks.keys
+      end
+
+      # Add support for event based trigger of hooks
+      def trigger_event(event)
+        run(event.name, event)
       end
 
       # Add a before resolve callback. Either provide a +method_name+ that will
@@ -42,7 +47,8 @@ module Rails # :nodoc:
           block = method_name
         end
 
-        resolver_hooks[:before].public_send(unshift ? :unshift : :push, [block, args, xargs])
+        method_name = unshift ? :unshift : :push
+        resolver_hooks[:prepare].public_send(method_name, [block, args, xargs])
       end
 
       alias prepare before_resolve
@@ -64,10 +70,16 @@ module Rails # :nodoc:
           block = method_name
         end
 
-        resolver_hooks[:after].public_send(unshift ? :unshift : :push, [block, args, xargs])
+        method_name = unshift ? :unshift : :push
+        resolver_hooks[:finalize].public_send(method_name, [block, args, xargs])
       end
 
       alias finalize after_resolve
+
+      # This is the lowest point in the call stack for nested hooks
+      def nested_hooks(hook)
+        resolver_hooks.key?(hook) ? resolver_hooks[hook] : []
+      end
 
       # Add a block that is performed while resolving a value of a field
       def resolve(*args, **xargs, &block)
@@ -95,7 +107,7 @@ module Rails # :nodoc:
 
         raise ArgumentError, <<~MSG.squish if invalid.present?
           The "#{owner.name}" class does not define the following methods needed
-          for performing hooks: #{invalid.map(&:first).to_sentence}
+          for performing hooks: #{invalid.map(&:first).to_sentence}.
         MSG
 
         nil # No exception already means valid
@@ -105,36 +117,47 @@ module Rails # :nodoc:
 
         # Chedck if a given +method_name+ is callable from the owner perspective
         def callable?(method_name)
-          owner.respond_to?(method_name) || owner.public_method_defined?(method_name)
+          owner.is_a?(Class) && owner.try(:gql_resolver?, method_name)
         end
 
         # Run the resolver and return the result value
         def run_resolver(context)
           return unless dynamic_resolver?
 
-          run_callback(@resolver || [method_name], context)
+          run_callbacks([@resolver || [method_name]], context)
         end
 
         # Run all the callbacks for the given +hook+
         def run_hooks(hook, context)
-          return unless resolver_hooks.key?(hook) && resolver_hooks[hook].present?
+          hook = ALIAS_KEYS[hook] || hook
+          list = nested_hooks(hook)
 
-          resolver_hooks[hook].each { |callback| run_callback(callback, context) }
+          run_callbacks(list, context) unless list.empty?
         end
 
         # Depending on the format of the callback, run it using the context
-        def run_callback(callback, context)
-          callback, args, xargs = callback
+        def run_callbacks(callbacks, context)
+          object = nil
+          callbacks.map do |(callback, args, xargs)|
+            xargs ||= {}
 
-          return context.instance_exec(*args, **xargs, &callback) \
             if callback.is_a?(Proc)
+              args = callback_args(callback, context, args)
+              context.try(:hit, context.instance_exec(*args, **xargs, &callback))
+              next
+            end
 
-          object = owner.is_a?(Class) ? context.instance_for(owner) : owner
+            object ||= owner.is_a?(Class) ? context.instance_for(owner) : owner
+            callback = object.method(callback)
 
-          parameters = object.method(callback).parameters
-          args.unshift(context) if parameters.first&.last.eql?(:resolver)
+            context.try(:hit, callback.call(*callback_args(callback, context, args), **xargs))
+          end
+        end
 
-          object.public_send(callback, *args, **xargs)
+        # A little extra configuration when actually triggering the callback
+        def callback_args(callback, context, args)
+          parameter = callback.parameters.first&.last
+          parameter.eql?(:event) ? [context] + args : args
         end
 
         # Stores the hooks for the resolve callbacks

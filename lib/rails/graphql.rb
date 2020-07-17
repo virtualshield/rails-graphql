@@ -135,7 +135,7 @@ module Rails # :nodoc:
             You cannot use @#{item.gql_name} directive due to location restriction.
           MSG
 
-          event.trigger_for(item) unless event.nil?
+          event.trigger(item) unless event.nil?
           others << item
           result << item
         end

@@ -30,6 +30,11 @@ module Rails # :nodoc:
       # The given description of the schema
       class_attribute :description, instance_writer: false
 
+      # The purpose of instantiating the schema is to have access to its
+      # public methods. It then runs from the strategy perspective, pointing
+      # out to the current object, whenever possible
+      delegate_missing_to :@field
+
       self.directive_location = :schema
 
       class << self
@@ -48,6 +53,11 @@ module Rails # :nodoc:
         def find(namespace)
           organize!
           schemas[namespace.to_sym]
+        end
+
+        # Checks if a given method can act as resolver
+        def gql_resolver?(method_name)
+          (instance_methods - GraphQL::Schema.instance_methods).include?(method_name)
         end
 
         # Find a given +type+ associated with the schema. It will raise an
@@ -133,7 +143,7 @@ module Rails # :nodoc:
               raise ArgumentError, <<~MSG.squish if schemas.key?(klass.namespace)
                 The #{klass.namespace.inspect} namespace is already assigned to
                 "#{schemas[klass.namespace].name}". Please change the value for
-                "#{klass.name}" class defined at: #{source}
+                "#{klass.name}" class defined at: #{source}.
               MSG
 
               schemas[klass.namespace] = klass

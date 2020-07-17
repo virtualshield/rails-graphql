@@ -27,6 +27,9 @@ module Rails # :nodoc:
       extend Helpers::Registerable
 
       eager_autoload do
+        # TODO: Remove
+        autoload :AlwaysVaderDirective
+
         autoload :SkipDirective
         autoload :IncludeDirective
         autoload :DeprecatedDirective
@@ -112,7 +115,7 @@ module Rails # :nodoc:
 
             invalid = list - VALID_LOCATIONS
             raise ArgumentError, <<~MSG.squish unless invalid.empty?
-              Invalid locations for @#{gql_name}: #{invalid.to_sentence}
+              Invalid locations for @#{gql_name}: #{invalid.to_sentence}.
             MSG
           end
 
@@ -130,7 +133,7 @@ module Rails # :nodoc:
 
           # Allows checking value existence
           def respond_to_missing?(method_name, include_private = false)
-            const_defined?(method_name) || autoload?(method_name) || super
+            (const_defined?(method_name) rescue nil) || autoload?(method_name) || super
           end
 
           # Allow fast creation of values
@@ -143,7 +146,7 @@ module Rails # :nodoc:
 
       attr_reader :args
 
-      delegate :locations, :gql_name, to: :class
+      delegate :locations, :listeners, :gql_name, to: :class
 
       def initialize(args = nil, **xargs)
         @args = args || OpenStruct.new(xargs.transform_keys { |key| key.to_s.underscore })
@@ -169,7 +172,7 @@ module Rails # :nodoc:
         MSG
 
         raise ArgumentError, <<~MSG.squish
-          Invalid usage of @#{gql_name} directive: #{invalid.to_sentence}
+          Invalid usage of @#{gql_name} directive: #{invalid.to_sentence}.
         MSG
 
         nil # No exception already means valid
