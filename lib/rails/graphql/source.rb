@@ -55,8 +55,7 @@ module Rails # :nodoc:
         default: '::Rails::GraphQL::Type::Input'
 
       # The list of hooks defined in order to describe a source
-      inherited_collection :hooks, instance_reader: false,
-        default: (Hash.new { |h, k| h[k] = [] })
+      inherited_collection :hooks, instance_reader: false, type: :array_hash
 
       self.abstract = true
 

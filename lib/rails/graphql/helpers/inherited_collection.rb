@@ -4,6 +4,27 @@ module Rails # :nodoc:
   module GraphQL # :nodoc:
     module Helpers # :nodoc:
       module InheritedCollection
+        DEFAULT_TYPES = {
+          array:      '[]',
+          set:        '[].to_set',
+          hash:       '{}',
+          array_hash: 'Hash.new { |h, k| h[k] = [] }',
+        }.freeze
+
+        # Support class for a lazy value processing. The values will be
+        # collected once the underling reference is actually used
+        class LazyValue < ActiveSupport::ProxyObject
+          delegate_missing_to :__target_object__
+
+          def initialize(&callable)
+            @callable = callable
+          end
+
+          def __target_object__
+            @target_objec ||= @callable.call
+          end
+        end
+
         # Declare a class-level attribute whose value is both isolated and also
         # inherited from parent classes. Subclasses can change their own value
         # and it will not impact parent class.
@@ -12,31 +33,27 @@ module Rails # :nodoc:
         #
         # ==== Options
         #
-        # * <tt>:singleton_writer</tt> - Sets the singleton writer method (defaults to false).
         # * <tt>:instance_reader</tt> - Sets the instance reader method (defaults to true).
         # * <tt>:instance_predicate</tt> - Sets a predicate method (defaults to true).
-        # * <tt>:default</tt> - Sets a default value for the attribute (defaults to Set.new).
+        # * <tt>:type</tt> - Defines the type of the values stored (defaults to :set).
         #
         # ==== Examples
         #
         #   class Base
-        #     inherited_collection :settings, singleton_writer: true
+        #     inherited_collection :settings
         #   end
         #
         #   class Subclass < Base
         #   end
         #
-        #   Base.settings += [:a]
+        #   Base.settings << :a
         #   Subclass.settings            # => []
         #   Subclass.all_settings        # => [:a]
-        #   Subclass.settings += [:b]
+        #   Subclass.settings << :b
         #   Subclass.settings            # => [:b]
         #   Subclass.all_settings        # => [:a, :b]
         #   Base.settings                # => [:a]
-        #
-        # By default, the writer is disable so the class cna implement a
-        # specific method which will be used to assign the values. Using the
-        # <tt>singleton_writer: true</tt> allows access to the assign method.
+        #   Base.all_settings            # => [:a]
         #
         # For convenience, an instance predicate method is defined as well,
         # which checks for the +all_+ method. To skip it, pass
@@ -49,39 +66,32 @@ module Rails # :nodoc:
         #   object.settings          # => NoMethodError
         #   object.settings?         # => NoMethodError
         #
-        #  To set a default value for the attribute, pass <tt>default:</tt>, like so:
-        #
-        #   class_attribute :settings, default: {}
         def inherited_collection(
           *attrs,
-          singleton_writer: false,
           instance_reader: true,
           instance_predicate: true,
-          default: Set.new
+          type: :set
         )
           attrs.each do |name|
             ivar = "@#{name}"
-            comb = default.is_a?(Hash) ? :merge : :+
 
-            # TODO: Improve this method to be a lazy enumerator
-            define_singleton_method("all_#{name}") do
-              (superclass.try(name) || default.dup).send(comb, send(name))
-            end
+            module_eval(<<~RUBY, __FILE__, __LINE__ + 1)
+              def self.all_#{name}
+                ::Rails::GraphQL::Helpers::InheritedCollection::LazyValue.new do
+                  fetch_inherited_#{type}('#{ivar}').freeze
+                end
+              end
 
-            define_singleton_method(name) do
-              instance_variable_defined?(ivar) \
-                ? instance_variable_get(ivar) \
-                : instance_variable_set(ivar, default.dup)
-            end
+              def self.#{name}
+                #{ivar} ||= #{DEFAULT_TYPES[type]}
+              end
+            RUBY
 
-            define_singleton_method("#{name}?") do
-              instance_variable_get(ivar).present? ||
-                superclass.try(name).present?
-            end if instance_predicate
-
-            define_singleton_method("#{name}=") do |value|
-              instance_variable_set(ivar, value)
-            end if singleton_writer
+            module_eval(<<~RUBY, __FILE__, __LINE__ + 1) if instance_predicate
+              def self.#{name}?
+                #{ivar}.present? || superclass.try(:#{name}?)
+              end
+            RUBY
 
             if instance_reader
               delegate(name.to_sym, :"all_#{name}", to: :class)
@@ -89,6 +99,54 @@ module Rails # :nodoc:
             end
           end
         end
+
+        protected
+
+          # Combine an inherited list of arrays
+          def fetch_inherited_array(ivar)
+            inherited_ancestors.inject([]) do |result, klass|
+              val = klass.instance_variable_get(ivar)
+              val.nil? ? result : result += val
+            end
+          end
+
+          # Combine an inherited list of set objects
+          def fetch_inherited_set(ivar)
+            inherited_ancestors.inject(Set.new) do |result, klass|
+              val = klass.instance_variable_get(ivar)
+              val.nil? ? result : result += val
+            end
+          end
+
+          # Combine an inherited list of hashes but keeping only the most recent
+          # value, which means that keys might be replaced
+          def fetch_inherited_hash(ivar)
+            inherited_ancestors.inject({}) do |result, klass|
+              val = klass.instance_variable_get(ivar)
+              val.nil? ? result : result.merge!(val)
+            end
+          end
+
+          # Combine an inherited list of hashes, which also will combine arrays,
+          # ensuring that same key items will be combined
+          def fetch_inherited_array_hash(ivar)
+            inherited_ancestors.inject({}) do |result, klass|
+              next result if (val = klass.instance_variable_get(ivar)).nil?
+              result.merge!(val.transform_values(&:dup)) do |_, lval, rval|
+                lval += rval
+              end
+            end
+          end
+
+        private
+
+          # Return a list of all the ancestor classes up until object
+          def inherited_ancestors
+            @inherited_ancestors ||= [self].tap do |list|
+              list.unshift(list.first.superclass) \
+                until list.first.superclass === Object
+            end
+          end
       end
     end
   end

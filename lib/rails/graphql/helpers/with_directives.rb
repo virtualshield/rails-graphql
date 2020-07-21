@@ -14,7 +14,10 @@ module Rails # :nodoc:
 
         def self.included(other)
           other.extend(WithDirectives::DirectiveLocation)
+
           other.define_method(:directives) { @directives ||= Set.new }
+          other.alias_method(:all_directives, :directives)
+
           other.class_attribute(:directive_location, instance_writer: false)
           other.delegate(:directive_location, to: :class)
         end

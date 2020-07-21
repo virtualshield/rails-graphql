@@ -65,16 +65,6 @@ module Rails # :nodoc:
         RUBY
       end
 
-      # Checks both self and proxied resolver hooks
-      def listeners
-        super + field.listeners
-      end
-
-      # Find all nested hooks, since proxy fields can proxy another proxy
-      def nested_hooks(hook)
-        super + field.nested_hooks(hook)
-      end
-
       def disable! # :nodoc:
         super unless non_interface_proxy!('disable')
       end
@@ -83,16 +73,26 @@ module Rails # :nodoc:
         super unless non_interface_proxy!('enable')
       end
 
-      def all_directives # :nodoc:
-        field.directives + super
+      def all_arguments # :nodoc:
+        field.arguments.merge(arguments)
       end
 
-      def all_arguments # :nodoc:
-        field.all_arguments.merge(super)
+      def all_directives # :nodoc:
+        field.directives + directives
+      end
+
+      def all_listeners # :nodoc:
+        field.listeners + listeners
+      end
+
+      def all_events # :nodoc:
+        Helpers::InheritedCollection::LazyValue.new do
+          super.merge!(field.all_events) { |_, lval, rval| rval += lval }
+        end
       end
 
       def has_argument?(name) # :nodoc:
-        field.has_argument?(name) || super
+        super || field.has_argument?(name)
       end
 
       def dynamic_resolver? # :nodoc:
@@ -113,10 +113,6 @@ module Rails # :nodoc:
 
         def normalize_name(value) # :nodoc:
           super unless value.blank? || non_interface_proxy!('rename')
-        end
-
-        def run_resolver(context) # :nodoc:
-          self_dynamic_resolver? ? super : field.run(:resolver, context)
         end
 
       private

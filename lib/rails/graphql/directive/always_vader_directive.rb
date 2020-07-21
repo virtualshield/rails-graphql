@@ -7,7 +7,7 @@ module Rails # :nodoc:
 
       desc 'Replace the value of a string with Darth Vader'
 
-      on :finalize, during: :execution do |context|
+      on :finalize do |context|
         context.override_value('Darth Vader')
       end
     end

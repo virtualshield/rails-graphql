@@ -11,7 +11,9 @@ module Rails # :nodoc:
 
       autoload :WithArguments
       autoload :WithAssignment
+      autoload :WithCallbacks
       autoload :WithDirectives
+      autoload :WithEvents
       autoload :WithFields
       autoload :WithNamespace
       autoload :WithSchemaFields

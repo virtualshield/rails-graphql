@@ -23,6 +23,8 @@ module Rails # :nodoc:
     class Directive
       extend ActiveSupport::Autoload
       extend Helpers::InheritedCollection
+      extend Helpers::WithEvents
+      extend Helpers::WithCallbacks
       extend Helpers::WithArguments
       extend Helpers::Registerable
 
@@ -41,8 +43,11 @@ module Rails # :nodoc:
       EXECUTION_LOCATIONS  = VALID_LOCATIONS[0..6].freeze
       DEFINITION_LOCATIONS = VALID_LOCATIONS[7..17].freeze
 
-      # The list of events listeners in order to process a directive
-      inherited_collection :events, default: (Hash.new { |h, k| h[k] = [] })
+      attr_reader :args
+
+      delegate :locations, :gql_name, to: :class
+
+      event_types %i[query mutation subscription request attach requested prepare finalize]
 
       class << self
         def gql_name # :nodoc:
@@ -68,28 +73,6 @@ module Rails # :nodoc:
         def placed_on!(*list)
           validate_locations!(list)
           @locations = list.to_set
-        end
-
-        # Add an event listener to the directive
-        def on(event_name, **options, &block)
-          method_name = options.delete(:prepend) ? :unshift : :push
-          block = GraphQL::Event.prepare(event_name, block, **options)
-          events[event_name].send(method_name, block)
-        end
-
-        # Since we have a hash of arrays, we need to properly merge them
-        def all_events
-          @all_events ||= ancestors.inject({}) do |list, klass|
-            break list unless klass.respond_to?(:events)
-            (klass.events.keys - list.keys).each { |key| list[key] = [] }
-            klass.events.each { |key, arr| list[key].prepend(*arr) }
-            list
-          end
-        end
-
-        # Get all event names
-        def listeners
-          all_events.keys
         end
 
         def eager_load! # :nodoc:
@@ -144,22 +127,10 @@ module Rails # :nodoc:
           end
       end
 
-      attr_reader :args
-
-      delegate :locations, :listeners, :gql_name, to: :class
-
       def initialize(args = nil, **xargs)
         @args = args || OpenStruct.new(xargs.transform_keys { |key| key.to_s.underscore })
         @args.freeze
         validate!
-      end
-
-      # Triggers a specific +event_name+.
-      def trigger(event_name, *args, **xargs)
-        all_events[event_name]&.each do |block|
-          send_args = block.prepare(*args, **xargs)
-          instance_exec(*send_args, &block) unless send_args.nil?
-        end
       end
 
       # Checks if all the arguments provided to the directive instance are valid
@@ -186,13 +157,6 @@ module Rails # :nodoc:
         args = args.presence && "(#{args.join(', ')})"
         "@#{gql_name}#{args}"
       end
-
-      protected
-
-        # Cache the list of events for this specific instance
-        def all_events
-          @all_events ||= self.class.all_events
-        end
     end
   end
 end

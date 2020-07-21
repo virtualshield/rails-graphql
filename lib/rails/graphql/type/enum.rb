@@ -24,10 +24,10 @@ module Rails # :nodoc:
         inherited_collection :values
 
         # Define the methods for accessing the description of each enum value
-        inherited_collection :value_description, default: {}
+        inherited_collection :value_description, type: :hash
 
         # Define the methods for accessing the directives of each enum value
-        inherited_collection :value_directives, default: {}
+        inherited_collection :value_directives, type: :hash
 
         class << self
           # Mark the enum as indexed, allowing values being set by number

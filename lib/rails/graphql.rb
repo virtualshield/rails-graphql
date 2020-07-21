@@ -56,6 +56,7 @@ module Rails # :nodoc:
       autoload :TypeMap
 
       autoload :Argument
+      autoload :Callback
       autoload :Directive
       autoload :Field
       autoload :Mutation
@@ -135,7 +136,7 @@ module Rails # :nodoc:
             You cannot use @#{item.gql_name} directive due to location restriction.
           MSG
 
-          event.trigger(item) unless event.nil?
+          # event.trigger(item) unless event.nil?
           others << item
           result << item
         end
