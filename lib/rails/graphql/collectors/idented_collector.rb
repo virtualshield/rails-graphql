@@ -26,7 +26,7 @@ module Rails # :nodoc:
         def value
           @val.map do |(ident, *content)|
             next if content.size.eql?(1) && content.first.blank?
-            content.pop while content.last.empty?
+            content.pop while content.last&.empty?
 
             ident = (' ' * ident)
             ident + content.join("\n#{ident}")
@@ -42,8 +42,6 @@ module Rails # :nodoc:
           @val.last.last << str
           self
         end
-
-        alias print <<
 
         def eol
           @val.last << ''

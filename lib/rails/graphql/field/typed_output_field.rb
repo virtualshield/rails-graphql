@@ -34,12 +34,12 @@ module Rails # :nodoc:
       end
 
       # Trigger the exception based value validator
-      def validate_output!(value)
+      def validate_output!(value, **xargs)
         raise DisabledFieldError, <<~MSG.squish if disabled?
           The "#{gql_name}" field is disabled.
         MSG
 
-        super(value, :field)
+        super(value, :field, **xargs)
       rescue ValidationError => error
         raise InvalidOutputError, error.message
       end

@@ -40,16 +40,6 @@ module Rails # :nodoc:
           raise NotImplementedError
         end
 
-        # Executes the strategy in the debug mode
-        def debug!
-          @debug_mode = true
-        end
-
-        # Checks if it's in debug mode
-        def debug_mode?
-          defined?(@debug_mode)
-        end
-
         # Check if it's enabled to collect listeners
         def add_listeners?
           !listeners.frozen?
@@ -71,19 +61,28 @@ module Rails # :nodoc:
           request.stacked(object, &block)
         end
 
-        # Fetch the data for a given field
-        def data_for(field, data = nil, &block)
-          return @context.stacked(data, &block) unless data.nil?
-
-          return block.call(@context.grab { data_from_resolver(field) }) \
+        # Resolve a value for a given object, It uses the +args+ to prevent
+        # problems with nil values.
+        def resolve(field, *args, array: false, &block)
+          data_for(args, field) unless args.one?
+          args << Event.trigger(field, :resolver, self).first \
             if field.dynamic_resolver?
 
-          return block.call if @context.blank?
+          # No need to move forward with the context if there's no way to fetch
+          # a real value for the field
+          return block.call(nil) unless args.one?
 
-          nested_value = @context.current.try(field.name) \
-            || @context.current.try(:[], field.name)
-
-          @context.stacked(nested_value, &block)
+          # Now we have a value to set on the context
+          @context.stacked(args.last) do |current|
+            if !array
+              block.call(current)
+              field.write_value(current)
+            elsif !current.respond_to?(:each)
+              current.nil? ? block.call(current) : field.resolve_invalid
+            else
+              field.resolve_with_array!(current, &block)
+            end
+          end
         end
 
         # Check if the given class is in the pool, or add a new instance to the
@@ -98,14 +97,6 @@ module Rails # :nodoc:
           end
         end
 
-        # Trigger the resolver callback defined on the field
-        def data_from_resolver(field)
-          xargs = { object?: true, request: @request, context: @context }
-          Event.trigger(field, :resolver, request.stack.first, :execution, **xargs)
-        ensure
-          change_current_object(nil)
-        end
-
         # Trigger an event using a set of filtered objects from +request.stack+.
         # {+trigger_all+}[rdoc-ref:Rails::GraphQL::Event#trigger_all].
         # The filter is based on the listeners that were collected by the
@@ -116,13 +107,7 @@ module Rails # :nodoc:
           objects = listeners[event_name.to_sym] & request.stack
           return if objects.empty?
 
-          source = request.stack.first
-
-          xargs[:all?] = true
-          xargs[:request] = @request
-          xargs[:context] = @context if @context.present?
-
-          Event.trigger(objects.to_a, event_name, source, :execution, **xargs) { @context }
+          Event.trigger(objects, event_name, self, **xargs)
         ensure
           change_current_object(nil)
         end
@@ -134,13 +119,13 @@ module Rails # :nodoc:
           list = []
 
           if object.is_a?(Component::Field)
-            list += object.field.listeners
+            list << object.field.listeners
           elsif object.respond_to?(:all_directives)
-            object.all_directives.each { |d| list += d.listeners }
+            object.all_directives.each { |d| list << d.listeners }
           end
 
-          list.flatten.each do |event_name|
-            listeners[event_name.to_sym] << object
+          list.compact.reduce(:concat).each do |event_name|
+            listeners[event_name] << object
           end
         end
 
@@ -165,17 +150,30 @@ module Rails # :nodoc:
 
           # A shortcut for +release_data!+ and +lock_data!+
           def collect_data
-            return false unless listening_to?(:prepare)
-            # TODO: Correctly implement data collector
+            @data_pool = {}
+            if listening_to?(:prepare)
+              yield
+            end
           end
 
           # Initiate the response context, named
           # ({Request::Context}[rdoc-ref:Rails::GraphQL::Request::Context])
           # and start collecting results
           def collect_response(operation)
-            @context = Request::Context.new(request, operation)
+            @context = request.build(Request::Context, request, operation)
             @objects_pool = {}
             yield
+          end
+
+          # Fetch the data for a given field and set as the first element
+          # of the returned list
+          def data_for(result, field)
+            return result << @data_pool[field] if @data_pool.key?(field)
+            return if field.entry_point?
+
+            current, key = @context.current, field.name
+            return result << current.public_send(key) if current.respond_to?(key)
+            result << current[key] if current.respond_to?(:[]) && current.key?(key)
           end
 
         private

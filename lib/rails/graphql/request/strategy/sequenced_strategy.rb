@@ -22,31 +22,6 @@ module Rails # :nodoc:
             end
           end
         end
-
-        # Executes the strategy in the debug mode
-        def debug!
-          super
-
-          response.with_stack(:data) do
-            operations.each_value.with_index do |op, i|
-              logger.eol if i > 0
-              logger.indented('# Organize phase') do
-                collect_listeners { op.debug_organize! }
-              end
-
-              logger.eol
-              logger.indented('# Prepare phase') do
-                performed = collect_data { op.prepare! }
-                logger << '* No prefetching data' if performed.eql?(false)
-              end
-
-              logger.eol
-              logger.indented('# Resolve phase') do
-                collect_response(op) { op.debug_resolve! }
-              end
-            end
-          end
-        end
       end
     end
   end

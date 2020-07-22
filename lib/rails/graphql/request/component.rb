@@ -72,8 +72,8 @@ module Rails # :nodoc:
           end
 
           # Use the strategy to set the component into the stack
-          def stacked(&block)
-            strategy.stacked(self) { block.call }
+          def stacked(value = self, &block)
+            strategy.stacked(value) { block.call }
           end
 
           # Trigger an event using the strategy, which has better performance

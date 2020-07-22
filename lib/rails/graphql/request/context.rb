@@ -36,28 +36,6 @@ module Rails # :nodoc:
           @stack.shift
         end
 
-        # Wait for a hit, which is when a possible new value was triggered,
-        # and choose which value to return, or return +:all+
-        def grab(idx = nil)
-          @hits = []
-          yield
-
-          if idx.nil?
-            @stack.unshift(@hits[0])
-            return @current
-          end
-
-          return @hits if idx === :all
-          @hits[idx]
-        ensure
-          @hits = nil
-        end
-
-        # Catch a new possible value and add to the list of hits
-        def hit(value)
-          @hits << value unless @hits.nil?
-        end
-
         # Find the parent object
         def parent
           @stack.second
@@ -70,7 +48,7 @@ module Rails # :nodoc:
 
         # Change the current value, either form hits or the actual value
         def override_value(other)
-          @hits.present? ? @hits[0] = other : @stack[0] = other
+          @stack[0] = other
         end
       end
     end

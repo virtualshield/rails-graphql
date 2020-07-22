@@ -40,31 +40,32 @@ module Rails # :nodoc:
             type_klass.fields
           end
 
-          # Organize the fragment in debug mode
-          def debug_organize
-            display_name = "Fragment #{name}"
-
-            organize_then do
-              logger.indented("#{display_name} on #{type_klass.gql_name}: Organized!") do
-                logger.puts("* Assigned: #{type_klass.inspect}")
-
-                debug_directives
-                debug_organize_fields
-              end
-            end
-
-            logger << "#{display_name}: Error! (#{errors.last[:message]})" if invalid?
-          end
-
           # Perform the organization step
           def organize_then(&block)
             super(block) do
               @type_klass = find_type!(data[:type])
-
               parse_directives(:fragment_definition)
+
+              check_assignment!
               parse_selection
             end
           end
+
+        private
+
+          # Check if the field was assigned correctly to an output field
+          def check_assignment!
+            raise ExecutionError, <<~MSG.squish unless type_klass.output_type?
+              Unable to assing #{type_klass.gql_name} to "#{gql_name}" fragment because
+              it is not a output type.
+            MSG
+
+            raise ExecutionError, <<~MSG.squish if type_klass.leaf_type?
+              Unable to assing #{type_klass.gql_name} to "#{gql_name}" fragment because
+              a "#{type_klass.kind}" type can not be the source of a fragmnet.
+            MSG
+          end
+
       end
     end
   end

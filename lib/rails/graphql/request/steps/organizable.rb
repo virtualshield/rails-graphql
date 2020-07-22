@@ -20,26 +20,11 @@ module Rails # :nodoc:
           end
         end
 
-        # Organize the object in debug mode
-        def debug_organize!
-          capture_exception(:organize, true) do
-            unless organized?
-              debug_organize
-              strategy.add_listener(self)
-            end
-          end
-        end
-
         protected
 
           # Normal mode of the organize step
           def organize
             organize_then { organize_fields }
-          end
-
-          # Debug mode of the organize step
-          def debug_organize
-            raise NotImplementedError
           end
 
           # The actual process that organizes the object
@@ -84,20 +69,9 @@ module Rails # :nodoc:
             @variables.freeze
           end
 
-          # Display the variables on the debug process
-          def debug_variables
-            size = variables.instance_variable_get(:@table).size
-            logger.indented("* Variables(#{size})") do
-              variables.each_pair.with_index do |(k, v), i|
-                logger.eol if i > 0
-                logger << "#{k}: #{v.inspect}"
-              end
-            end if size > 0
-          end
-
           # Helper parser for arguments that also collect necessary variables
           def parse_arguments
-            @arguments = Request::Arguments.new
+            @arguments = request.build(Request::Arguments)
             @op_vars = {}
 
             visitor.collect_arguments(*data[:arguments]) do |data|
@@ -112,17 +86,6 @@ module Rails # :nodoc:
 
             @op_vars.freeze
             @arguments.freeze
-          end
-
-          # Display the arguments on the debug process
-          def debug_arguments
-            size = arguments.instance_variable_get(:@table).size
-            logger.indented("* Arguments(#{size})") do
-              arguments.each_pair.with_index do |(k, v), i|
-                logger.eol if i > 0
-                logger << "#{k}: #{v.inspect}"
-              end
-            end if size > 0
           end
       end
     end

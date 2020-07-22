@@ -30,23 +30,6 @@ module Rails # :nodoc:
             @selection.freeze
           end
 
-          # Recursive operation that perform the organization step for the
-          # selection
-          def organize_fields
-            selection.each_value(&:organize!)
-          end
-
-          # Recursive operation that perform the organization step for the
-          # selection while in debug mode
-          def debug_organize_fields
-            logger.indented("* Fields(#{selection.size})") do
-              selection.each_value.with_index do |field, i|
-                logger.eol if i > 0
-                field.debug_organize!
-              end
-            end if selection.any?
-          end
-
           # Using +fields_source+, find the needed ones to be assigned to the
           # current requested fields. As shown by benchmark, since the index is
           # based on Symbols, the best way to find +gql_name+ based fields is
@@ -63,21 +46,15 @@ module Rails # :nodoc:
             end
           end
 
-          # Trigger the process of resolving the value of all the fields
-          def resolve_fields
-            return unless selection.any?
-
-            selection.each_value(&:resolve!) if selection.any?
+          # Recursive operation that perform the organization step for the
+          # selection
+          def organize_fields
+            selection.each_value(&:organize!) if selection.any?
           end
 
-          # Debug mode of the resolving process
-          def debug_resolve_fields
-            return unless selection.any?
-
-            selection.each_value.with_index do |field, i|
-              logger.eol if i > 0
-              field.debug_resolve!
-            end
+          # Trigger the process of resolving the value of all the fields
+          def resolve_fields
+            selection.each_value(&:resolve!) if selection.any?
           end
 
         private
@@ -86,11 +63,11 @@ module Rails # :nodoc:
             item_name = data[:alias].presence || data[:name]
 
             if kind === :spread
-              selection[selection.size] = Component::Spread.new(self, node, data)
+              selection[selection.size] = request.build(Component::Spread, self, node, data)
             elsif data[:name] === '__typename'
-              selection[item_name] ||= Component::Typename.new(self, node, data)
+              selection[item_name] ||= request.build(Component::Typename, self, node, data)
             else
-              selection[item_name] ||= Component::Field.new(self, node, data)
+              selection[item_name] ||= request.build(Component::Field, self, node, data)
             end
           end
       end

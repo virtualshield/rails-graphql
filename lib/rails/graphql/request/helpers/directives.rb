@@ -22,7 +22,7 @@ module Rails # :nodoc:
             list = []
 
             visitor.collect_directives(*data[:directives]) do |data|
-              data[:arguments].transform_values!(&method(:parse_argument))
+              data[:arguments].transform_values!(&method(:parse_directive_argument))
               args = Request::Arguments.new(data[:arguments])
               list << find_directive!(data[:name]).new(args)
             end unless data[:directives].empty?
@@ -33,16 +33,9 @@ module Rails # :nodoc:
             ).freeze
           end
 
-          # Display the directives on the debug process
-          def debug_directives
-            logger.indented("* Directives(#{directives.size})") do
-              directives.each { |x| logger << x.inspect }
-            end if directives.any?
-          end
-
           # If the value is a pointer, then it needs to collect a variable from
           # the operation level, otherwise, return the value without changes
-          def parse_argument(value)
+          def parse_directive_argument(value)
             return value unless value.is_a?(::FFI::Pointer)
 
             raise ArgumentError, <<~MSG.squish unless respond_to?(:variables)

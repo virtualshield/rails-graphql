@@ -15,8 +15,8 @@ module Rails # :nodoc:
 
         class << self
           # Helper method to initialize an operation given the data
-          def build(request, node, data)
-            const_get(data[:kind].classify).new(request, node, data)
+          def build(request, *args)
+            request.build(const_get(data[:kind].classify), *args)
           end
 
           # Defines if the current operation is a query type
@@ -64,9 +64,20 @@ module Rails # :nodoc:
           schema.fields_for(kind)
         end
 
+        # The typename is always based on the fake name used for the set of
+        # schema fields
+        def typename
+          schema.type_name_for(kind)
+        end
+
         # Support memory object to save information across the iteration
         def memo
           @memo ||= OpenStruct.new
+        end
+
+        # Add a empty entry if the operation has a name
+        def resolve_invalid
+          response.safe_add(name, nil) if name.present?
         end
 
         protected
@@ -75,24 +86,9 @@ module Rails # :nodoc:
           def organize
             organize_then do
               trigger_event(kind)
+              yield if block_given?
               organize_fields
             end
-          end
-
-          # Organize the fragment in debug mode
-          def debug_organize
-            organize_then do
-              logger.indented("#{display_name}: Organized!") do
-                yield if block_given?
-
-                debug_variables
-                debug_directives
-                debug_organize_fields
-              end
-            end
-          rescue StandardError => error
-            logger << "#{display_name}: Error! (#{error.message})"
-            raise
           end
 
           # Perform the organization step
@@ -105,27 +101,6 @@ module Rails # :nodoc:
 
             @var_args = nil
           end
-
-          # Set the response key as nil
-          def resolve_invalid
-            response.safe_add(name, nil) if name.present?
-          end
-
-          # Trigger the resolve of the fields
-          def resolve(debug = false)
-            stacked do
-              debug ? debug_resolve_fields : resolve_fields
-              trigger_event(:finalize)
-            end
-          end
-
-          # Display in a YAML format
-          def debug_resolve
-            return resolve(true) unless name.present?
-            logger.indented("#{name}:") { resolve(true) }
-          end
-
-        private
 
           # Name used for debug purposes
           def display_name

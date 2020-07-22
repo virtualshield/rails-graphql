@@ -47,8 +47,6 @@ module Rails # :nodoc:
 
       delegate :locations, :gql_name, to: :class
 
-      event_types %i[query mutation subscription request attach requested prepare finalize]
-
       class << self
         def gql_name # :nodoc:
           return @gql_name if defined?(@gql_name)

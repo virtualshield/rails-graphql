@@ -8,6 +8,9 @@ module Rails # :nodoc:
       # powers when actually executing the event against procs or owner-based
       # symbolic methods
       module WithCallbacks
+        DEFAULT_EVENT_TYPES = %i[query mutation subscription request attach
+          organize prepare finalize]
+
         def self.extended(other)
           other.extend(WithCallbacks::Setup)
         end
@@ -20,6 +23,11 @@ module Rails # :nodoc:
         # Add the ability to set up filters before the actual execution of the
         # callback
         module Setup
+          # Use the default list of event types when it's not set
+          def event_types(*)
+            super.presence || DEFAULT_EVENT_TYPES
+          end
+
           # Return the list of event filters hooks
           def event_filters
             @event_filters ||= {}

@@ -30,6 +30,11 @@ module Rails # :nodoc:
           alias_name || name
         end
 
+        # Write the typename information
+        def write_value(value)
+          response.add(gql_name, response.try(:prefer_string?) ? value.inspect : value)
+        end
+
         protected
 
           # Normal mode of the organize step
@@ -37,49 +42,21 @@ module Rails # :nodoc:
             organize_then
           end
 
-          # Organize the field in debug mode
-          def debug_organize
-            display_name = name
-            display_name += " as #{alias_name}" if alias_name.present?
-
-            organize_then do
-              logger.indented("#{display_name}: Organized!") do
-                logger.puts("* Assigned: Dynamic Typename")
-                debug_directives
-              end
-            end
-
-            logger << "#{display_name}: Error! (#{errors.last[:message]})" if invalid?
-          end
-
           # Perform the organization step
           def organize_then(&block)
             super(block) { parse_directives }
           end
 
-          # Write the typename information
+          # Go through the right flow to write the value
           def resolve
-            resolve_then { trigger_event(:finalize) }
-          end
-
-          # Resolve the field in debug mode
-          def debug_resolve(perform = false)
-            resolve_then do |value|
-              trigger_event(:finalize)
-              logger.puts("#{gql_name}: #{value}")
-            end
-          end
-
-          # Fetch the typename from parent and write on response
-          def resolve_then(&block)
             value = parent.typename
             raise InvalidOutputError, <<~MSG.squish if value.blank?
               The #{gql_name} field result cannot be null.
             MSG
 
-            strategy.with_context(item) do |value|
-              block.call(value)
-              response.add(gql_name, response.try(:prefer_string?) ? value.inspect : value)
+            strategy.resolve(self, value) do |value|
+              yield value if block_given?
+              trigger_event(:finalize)
             end
           end
       end

@@ -11,8 +11,9 @@ module Rails # :nodoc:
         protected
 
           # Run the validation process with +value+ against +type+
-          def validate_output!(value, type)
-            result = validate_null(value) || array? \
+          def validate_output!(value, type, array: true)
+            result = validate_null(value)
+            result ||= array? && array \
               ? validate_array(value) \
               : validate_type(value)
 
@@ -20,8 +21,8 @@ module Rails # :nodoc:
             message, idx = result
 
             base_error = idx.present? \
-              ? "#{ordinalize(idx)} result of the \"#{gql_name}\" #{type}" \
-              : "#{gql_name} #{type} result"
+              ? "#{ordinalize(idx)} value of the \"#{gql_name}\" #{type}" \
+              : "#{gql_name} #{type} value"
 
             raise InvalidOutputError, "The #{base_error} #{message}."
           end

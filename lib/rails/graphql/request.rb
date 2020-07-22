@@ -29,6 +29,10 @@ module Rails # :nodoc:
           autoload :SelectionSet
         end
 
+        autoload_under :extensions do
+          autoload :Debugger
+        end
+
         autoload :Arguments
         autoload :Component
         autoload :Context
@@ -46,8 +50,8 @@ module Rails # :nodoc:
         'Rails::GraphQL::Request::Strategy::SequencedStrategy',
       ]
 
-      attr_reader :schema, :visitor, :operations, :fragments, :errors, :args, :response,
-        :strategy, :logger, :stack
+      attr_reader :schema, :visitor, :operations, :fragments, :errors,
+        :args, :response, :strategy, :stack
 
       # Shortcut for initialize, set context, and execute
       def self.execute(*args, namespace: :base, context: {}, **xargs)
@@ -66,6 +70,7 @@ module Rails # :nodoc:
       def initialize(schema = nil, namespace: :base)
         @namespace = schema&.namespace || namespace
         @schema = schema || GraphQL::Schema.find(namespace)
+        @extensions = {}
 
         ensure_schema!
       end
@@ -91,21 +96,10 @@ module Rails # :nodoc:
         response.public_send(to)
       end
 
-      # Debug a given document to an IO
-      def debug(document, args: {}, as: :string, stdout: $stdout)
-        reset!(args)
-
-        to = RESPONSE_FORMATS[as]
-        @response = initialize_response(as, to)
-        @logger = Collectors::IdentedCollector.new(auto_eol: false)
-
-        logger.puts('# Document')
-        logger.puts(document)
-
-        execute!(document, mode: :debug!)
-        response.public_send(to)
-      ensure
-        stdout.puts(logger.value)
+      # Add the debug extension to the resquest and then normally execute
+      def debug(*args, **xargs)
+        extend(Request::Debugger)
+        execute(*args, **xargs)
       end
 
       # Add the given +object+ into the execution +stack+ and execute the given
@@ -127,7 +121,6 @@ module Rails # :nodoc:
         xargs[:path] ||= stack_to_path
 
         xargs[:exception] = exception.class.name
-        # TODO: Use rails stack filter to add the error stack
 
         errors.add(exception.message, **xargs)
       end
@@ -159,7 +152,24 @@ module Rails # :nodoc:
 
       alias perform execute
 
+      # Add extensions to the request, which ensures a bunch of extended
+      # behaviors for all the objects created through the request
+      def extend(*modules)
+        import_extensions(*modules)
+        request_ext = extensions[self.class]
+        super(request_ext) if request_ext && !is_a?(request_ext)
+      end
+
+      # This initiates a new object which is aware of extensions
+      def build(klass, *args, **xargs, &block)
+        ext_module = extensions[klass]
+        obj = klass.new(*args, **xargs, &block)
+        obj.extend(ext_module) if ext_module
+        obj
+      end
+
       private
+        attr_reader :extensions
 
         # Reset principal variables and set the given +args+
         def reset!(args)
@@ -174,13 +184,13 @@ module Rails # :nodoc:
 
         # This executes the whole process capturing any exceptions and handling
         # them as defined by the schema.
-        def execute!(document, mode: :resolve!)
+        def execute!(document)
           @document = GraphQL::Native.parse(document)
           collect_definitions!
 
-          @strategy = find_strategy!(mode.eql?(:debug!))
+          @strategy = find_strategy!
           @strategy.trigger_event(:request)
-          @strategy.public_send(mode)
+          @strategy.resolve!
         rescue ParseError => err
           parts = err.message.match(/\A(\d+)\.(\d+)(?:-\d+)?: (.*)\z/)
           errors.add(parts[3], line: parts[1], col: parts[2])
@@ -195,35 +205,41 @@ module Rails # :nodoc:
             when :operation
               operations[data[:name]] = Component::Operation.build(self, node, data)
             when :fragment
-              fragments[data[:name]] = Component::Fragment.new(self, node, data)
+              fragments[data[:name]] = build(Component::Fragment, self, node, data)
             end
           end
         end
 
         # Find the best strategy to resolve the request.
-        def find_strategy!(debug = false)
-          if debug
-            logger.puts('# Selecting strategy:')
-            logger.indent
-          end
-
-          strategy = strategies.lazy.map do |klass_name|
+        def find_strategy!
+          klasss = strategies.lazy.map do |klass_name|
             klass_name.constantize
           end.select do |klass|
-            result = klass.can_resolve?(self)
-            next result unless debug
+            klass.can_resolve?(self)
+          end.max_by(&:priority)
+          build(klass, self)
+        end
 
-            logger.puts("#{klass.name}[#{klass.priority}] is #{result ? 'a' : 'no'} match!")
-            result
-          end.max_by(&:priority).new(self)
-          return strategy unless debug
+        # Find all necessary extensions inside the given +modules+ and prepare
+        # the extension base module
+        def import_extensions(*modules)
+          modules.each do |mod|
+            mod.constants.each do |const_name|
+              const_name = const_name.to_s
+              const = mod.const_get(const_name)
+              next unless const.is_a?(Module)
 
-          logger.eol
-          logger.puts("Selected: #{strategy.class.name}")
-          logger.unindent
-          logger.eol
+              klass = const_name === 'Request' ? self.class : begin
+                const_name.split('_').inject(self.class) do |klass, next_const|
+                  klass.const_defined?(next_const) ? klass.const_get(next_const) : break
+                end
+              end
 
-          strategy
+              next unless klass&.is_a?(Class)
+              extensions[klass] ||= Module.new
+              extensions[klass].include(const)
+            end
+          end
         end
 
         # Initialize the class that responsible for storaging the response
