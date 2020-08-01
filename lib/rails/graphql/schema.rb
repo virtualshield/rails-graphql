@@ -30,15 +30,18 @@ module Rails # :nodoc:
       # The given description of the schema
       class_attribute :description, instance_writer: false
 
-      # The purpose of instantiating the schema is to have access to its
+      # The purpose of instantiating an schema is to have access to its
       # public methods. It then runs from the strategy perspective, pointing
-      # out to the current object, whenever possible
-      delegate_missing_to :@field
+      # out any other methods to the manually set event
+      delegate_missing_to :@event
+      attr_reader :event
 
       self.directive_location = :schema
 
       class << self
         alias namespaces namespace
+        alias all_events all_directive_events
+        alias all_listeners all_directive_listeners
 
         # Mark the given class to be pending of registration
         def inherited(subclass)
@@ -58,6 +61,11 @@ module Rails # :nodoc:
         # Checks if a given method can act as resolver
         def gql_resolver?(method_name)
           (instance_methods - GraphQL::Schema.instance_methods).include?(method_name)
+        end
+
+        # Find a given +type+ associated with the schema
+        def find_type(type)
+          @@type_map.fetch(type, namespaces: namespaces)
         end
 
         # Find a given +type+ associated with the schema. It will raise an

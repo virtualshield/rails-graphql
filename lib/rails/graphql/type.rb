@@ -31,8 +31,8 @@ module Rails # :nodoc:
         end
 
         # Check if the other type is equivalent
-        def ==(other)
-          other.class <= self.class
+        def =~(other)
+          (other.is_a?(Module) ? other.class : other) <= self
         end
 
         # Return the base type in a symbolized way
@@ -105,8 +105,6 @@ module Rails # :nodoc:
 
           # Reset some class attributes, meaning that they are not cascade
           def inherited(subclass)
-            super if defined? super
-
             if subclass.superclass.eql?(GraphQL::Type)
               subclass.redefine_singleton_method(:base_type) { subclass }
 
@@ -121,6 +119,8 @@ module Rails # :nodoc:
               subclass.base_object = false
               subclass.abstract = false
             end
+
+            super if defined? super
           end
       end
     end

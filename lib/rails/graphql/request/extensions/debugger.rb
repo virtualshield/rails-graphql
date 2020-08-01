@@ -48,6 +48,8 @@ module Rails # :nodoc:
         end
 
         module Component
+          delegate :logger, to: :request
+
           def debug_directives
             logger.indented("* Directives(#{directives.size})") do
               directives.each { |x| logger << x.inspect }
@@ -76,16 +78,13 @@ module Rails # :nodoc:
 
           def organize_fields
             logger.indented("* Fields(#{selection.size})") do
-              selection.each_value.with_index do |field, i|
-                logger.eol if i > 0
-                field.organize!
-              end
+              super
             end if selection.any?
           end
 
           def write_object(*)
             first_item = selection.each_value.first
-            first_item.instance_variable_set(:@log_array, true)
+            first_item.instance_variable_set(:@log_array, try(:array?))
             super
           ensure
             first_item.instance_variable_set(:@log_array, false)
@@ -99,6 +98,8 @@ module Rails # :nodoc:
         end
 
         module Component_Fragment
+          include Component
+
           def organize
             header_line = "Fragment #{name}"
 
@@ -115,6 +116,8 @@ module Rails # :nodoc:
         end
 
         module Component_Spread
+          include Component
+
           def organize
             header_line = 'Spread'
 
@@ -140,7 +143,7 @@ module Rails # :nodoc:
             def debug_organize_fragment
               unless fragment.organized?
                 logger.puts("* Fragment: #{fragment.name}")
-                return fragment.organize! 
+                return fragment.organize!
               end
 
               return logger.puts("* Fragment: #{fragment.name} [invalidated]") \
@@ -179,6 +182,8 @@ module Rails # :nodoc:
         end
 
         module Component_Typename
+          include Component
+
           def organize_then
             super
 
@@ -192,13 +197,15 @@ module Rails # :nodoc:
           end
 
           def resolve
-            resolve_then { |value| logger << "#{gql_name}: #{value}" }
+            resolve_then { |value| logger.puts("#{gql_name}: #{value.inspect}") }
           end
         end
 
         module Component_Field
+          include Component
+
           def organize_then
-            organize_then do
+            super do
               logger.indented("#{name_with_alias}: Organized!") do
                 logger.puts("* Assigned: #{field.inspect}")
 
@@ -214,12 +221,12 @@ module Rails # :nodoc:
 
           def resolve_as_nil
             super
-            logger << "#{gql_name}:" if leaf_type?
+            logger.puts("#{gql_name}: nil") if leaf_type?
           end
 
           def resolve
-            logger.puts("# As #{@tmp_klass.gql_name}") \
-              if @tmp_klass.present?
+            logger.puts("# As #{@current_object.gql_name}") \
+              if @current_object.present?
 
             prefix = @log_array ? '- ' : ''
             if !leaf_type?
@@ -239,12 +246,14 @@ module Rails # :nodoc:
           def debug_resolve
             resolve_then do |value|
               prefix = @log_array ? '- ' : ''
-              logger << "#{prefix}#{gql_name}: #{value}"
+              logger.puts("#{prefix}#{gql_name}: #{value.inspect}")
             end
           end
         end
 
         module Component_Operation
+          include Component
+
           def organize!
             logger.indented('# Organize stage') { super }
           end
@@ -275,6 +284,7 @@ module Rails # :nodoc:
           end
 
           def resolve_then
+            return super if name.blank?
             logger.indented("#{name}:") { super }
           end
 
@@ -282,6 +292,18 @@ module Rails # :nodoc:
             super
             logger << "#{name}: null" if name.present?
           end
+        end
+
+        module Component_Operation_Query
+          include Component_Operation
+        end
+
+        module Component_Operation_Mutation
+          include Component_Operation
+        end
+
+        module Component_Operation_Subscription
+          include Component_Operation
         end
       end
     end

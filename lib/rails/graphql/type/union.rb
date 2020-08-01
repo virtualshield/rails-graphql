@@ -17,6 +17,12 @@ module Rails # :nodoc:
         # Define the methods for accessing the members attribute
         inherited_collection :members
 
+        # The purpose of instantiating an interface is to have access to its
+        # public methods. It then runs from the strategy perspective, pointing
+        # out any other methods to the manually set event
+        delegate_missing_to :@event
+        attr_reader :event
+
         class << self
           # Return the base type of the objects on this union
           def of_kind
@@ -25,8 +31,8 @@ module Rails # :nodoc:
 
           # Check if the other type is equivalent by checking if the type is
           # member of any of this union members
-          def ==(other)
-            super || all_members.any? { |item| other <= item }
+          def =~(other)
+            super || all_members.any? { |item| other =~ item }
           end
 
           # Use this method to add members to the union

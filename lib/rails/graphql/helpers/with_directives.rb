@@ -16,7 +16,7 @@ module Rails # :nodoc:
           other.extend(WithDirectives::DirectiveLocation)
 
           other.define_method(:directives) { @directives ||= Set.new }
-          other.alias_method(:all_directives, :directives)
+          other.define_method(:all_directives) { @directives || Set.new }
 
           other.class_attribute(:directive_location, instance_writer: false)
           other.delegate(:directive_location, to: :class)
@@ -44,11 +44,6 @@ module Rails # :nodoc:
 
             @directive_location = value
           end
-        end
-
-        # This ensures that it works seamsly between module and class
-        def all_directives
-          directives
         end
 
         # Use this method to assign directives to the given definition. You can
@@ -86,15 +81,38 @@ module Rails # :nodoc:
         alias has_directive? using?
 
         # Get the list of listeners from all directives
-        def listeners
-          ((super if defined? super) || []) + directives.map(&:listeners)
+        def all_directive_listeners
+          all_directives.map(&:all_listeners).reduce(:+) || Set.new
+        end
+
+        # Get the list of events from all directives
+        def all_directive_events
+          InheritedCollection::LazyValue.new do
+            all_directives.map(&:all_events).inject({}) do |lhash, rhash|
+              InheritedCollection.merge_hash_array!(lhash, rhash)
+            end
+          end
+        end
+
+        # Validate all the directives to make sure the definition is valid
+        def validate!(*)
+          super if defined? super
+
+          directives.each(&:validate!)
+          directives.freeze
+
+          nil # No exception already means valid
         end
 
         private
 
           # Find a directive for its symbolized name
           def fetch!(name)
-            GraphQL.type_map.fetch!(name, base_class: :Directive, namespaces: namespaces)
+            GraphQL.type_map.fetch!(name,
+              base_class: :Directive,
+              namespaces: namespaces,
+              prevent_register: self,
+            )
           end
       end
     end

@@ -35,10 +35,12 @@ module Rails # :nodoc:
 
         attr_reader :data
 
-        delegate :schema, :visitor, :errors, :response, :strategy, :logger, to: :request
+        delegate :schema, :visitor, :response, :strategy, to: :request
         delegate :find_type!, :find_directive!, to: :schema
         delegate :memo, to: :operation
         delegate :kind, to: :class
+
+        alias of_type? is_a?
 
         eager_autoload do
           autoload :Field

@@ -28,24 +28,11 @@ module Rails # :nodoc:
       extend Helpers::WithArguments
       extend Helpers::Registerable
 
-      eager_autoload do
-        # TODO: Remove
-        autoload :AlwaysVaderDirective
-
-        autoload :SkipDirective
-        autoload :IncludeDirective
-        autoload :DeprecatedDirective
-      end
-
       VALID_LOCATIONS = Rails::GraphQL::Type::Enum::DirectiveLocationEnum
         .values.to_a.map { |value| value.downcase.to_sym }.freeze
 
       EXECUTION_LOCATIONS  = VALID_LOCATIONS[0..6].freeze
       DEFINITION_LOCATIONS = VALID_LOCATIONS[7..17].freeze
-
-      attr_reader :args
-
-      delegate :locations, :gql_name, to: :class
 
       class << self
         def gql_name # :nodoc:
@@ -113,22 +100,67 @@ module Rails # :nodoc:
           end
 
           # Allows checking value existence
-          def respond_to_missing?(method_name, include_private = false)
+          def respond_to_missing?(method_name, *)
             (const_defined?(method_name) rescue nil) || autoload?(method_name) || super
           end
 
           # Allow fast creation of values
-          def method_missing(method_name, *args, &block)
-            const_get(method_name)&.new(*args, &block) || super
+          def method_missing(method_name, *args, **xargs, &block)
+            const_get(method_name)&.new(*args, **xargs, &block) || super
           rescue ::NameError
             super
           end
       end
 
+      eager_autoload do
+        # TODO: Remove
+        autoload :AlwaysVaderDirective
+
+        autoload :SkipDirective
+        autoload :IncludeDirective
+        autoload :DeprecatedDirective
+      end
+
+      delegate :locations, :gql_name, :all_listeners, to: :class
+
+      array_sanitizer = ->(setting) do
+        Array.wrap(setting)
+      end
+
+      object_sanitizer = ->(setting) do
+        Array.wrap(setting).map! do |item|
+          next item unless item.is_a?(String) || item.is_a?(Symbol)
+          GraphQL.type_map.fetch(item, namespaces: namespaces) ||
+            ::GraphQL.const_get(item)
+        end
+      end
+
+      event_filter(:during, array_sanitizer) do |options, event|
+        options.include?(event[:phase])
+      end
+
+      event_filter(:for, object_sanitizer) do |options, event|
+        options.any?(&event.method(:for?))
+      end
+
+      event_filter(:on, object_sanitizer) do |options, event|
+        options.any?(&event.method(:on?))
+      end
+
+      attr_reader :args
+
       def initialize(args = nil, **xargs)
         @args = args || OpenStruct.new(xargs.transform_keys { |key| key.to_s.underscore })
         @args.freeze
         validate!
+      end
+
+      # When fetching all the events, embed the actual instance as the target
+      # of the callback
+      def all_events
+        self.class.all_events.transform_values do |events|
+          events.map { |callback| callback.retarget(self) }
+        end
       end
 
       # Checks if all the arguments provided to the directive instance are valid

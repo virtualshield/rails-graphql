@@ -53,18 +53,32 @@ module Rails # :nodoc:
       attr_reader :schema, :visitor, :operations, :fragments, :errors,
         :args, :response, :strategy, :stack
 
-      # Shortcut for initialize, set context, and execute
-      def self.execute(*args, namespace: :base, context: {}, **xargs)
-        result = new(namespace: namespace)
-        result.context = context if context.present?
-        result.execute(*args, **xargs)
-      end
+      delegate :all_listeners, to: :schema
 
-      # Shortcut for initialize, set context, and debug
-      def self.debug(*args, namespace: :base, context: {}, **xargs)
-        result = new(namespace: namespace)
-        result.context = context if context.present?
-        result.debug(*args, **xargs)
+      class << self
+        # Shortcut for initialize, set context, and execute
+        def execute(*args, namespace: :base, context: {}, **xargs)
+          result = new(namespace: namespace)
+          result.context = context if context.present?
+          result.execute(*args, **xargs)
+        end
+
+        # Shortcut for initialize, set context, and debug
+        def debug(*args, namespace: :base, context: {}, **xargs)
+          result = new(namespace: namespace)
+          result.context = context if context.present?
+          result.debug(*args, **xargs)
+        end
+
+        # Allow accessing component-based objects through the request
+        def const_defined?(name, *)
+          Component.const_defined?(name) || super
+        end
+
+        # Allow accessing component-based objects through the request
+        def const_missing(name)
+          Component.const_defined?(name) ? Component.const_get(name) : super
+        end
       end
 
       def initialize(schema = nil, namespace: :base)
@@ -85,6 +99,11 @@ module Rails # :nodoc:
         @context = build_ostruct(data).freeze
       end
 
+      # Cache all the schema events for this current request
+      def all_events
+        @all_events ||= schema.all_events
+      end
+
       # Execute a given document with the given arguments
       def execute(document, args: {}, as: :string, **xargs)
         reset!(args)
@@ -95,6 +114,8 @@ module Rails # :nodoc:
         execute!(document)
         response.public_send(to)
       end
+
+      alias perform execute
 
       # Add the debug extension to the resquest and then normally execute
       def debug(*args, **xargs)
@@ -113,28 +134,31 @@ module Rails # :nodoc:
         stack.shift
       end
 
-      # Add the given +exception+ to the errors using the +node+ location.
+      # Add the given +exception+ to the errors using the +node+ location
       def exception_to_error(exception, node, **xargs)
+        xargs[:exception] = exception.class.name
+        report_node_error(exception.message, node, **xargs)
+      end
+
+      # A little helper to report an error on a given node
+      def report_node_error(message, node, **xargs)
         location = GraphQL::Native.get_location(node)
-        xargs[:col] = location.begin_column
-        xargs[:line] = location.begin_line
+        xargs[:col] ||= location.begin_column
+        xargs[:line] ||= location.begin_line
         xargs[:path] ||= stack_to_path
 
-        xargs[:exception] = exception.class.name
-
-        errors.add(exception.message, **xargs)
+        errors.add(message, **xargs)
       end
 
       # Convert the current stack into a error path ignoring the schema
       def stack_to_path
         stack.map do |item|
-          next item if item.is_a?(Numeric)
-          item.try(:gql_name)
+          item.is_a?(Numeric) ? item : item.try(:gql_name)
         end.compact
       end
 
       # Build a easy-to-access object representing the current information of
-      # the execution to be used on +rescue_with_handler+.
+      # the execution to be used on +rescue_with_handler+
       def build_rescue_object(**extra)
         OpenStruct.new(extra.reverse_merge(
           args: @args,
@@ -146,11 +170,9 @@ module Rails # :nodoc:
       end
 
       # Use schema handlers for exceptions caught during the execution process
-      def rescue_with_handler(exception, **extra) # :nodoc:
+      def rescue_with_handler(exception, **extra)
         schema.rescue_with_handler(exception, object: build_rescue_object(**extra))
       end
-
-      alias perform execute
 
       # Add extensions to the request, which ensures a bunch of extended
       # behaviors for all the objects created through the request
@@ -183,7 +205,7 @@ module Rails # :nodoc:
         end
 
         # This executes the whole process capturing any exceptions and handling
-        # them as defined by the schema.
+        # them as defined by the schema
         def execute!(document)
           @document = GraphQL::Native.parse(document)
           collect_definitions!
@@ -198,7 +220,7 @@ module Rails # :nodoc:
           @response.try(:append_errors, errors)
         end
 
-        # Use the visitor to collect the operations and fragments.
+        # Use the visitor to collect the operations and fragments
         def collect_definitions!
           visitor.collect_definitions(@document) do |kind, node, data|
             case kind
@@ -210,7 +232,7 @@ module Rails # :nodoc:
           end
         end
 
-        # Find the best strategy to resolve the request.
+        # Find the best strategy to resolve the request
         def find_strategy!
           klasss = strategies.lazy.map do |klass_name|
             klass_name.constantize
@@ -229,12 +251,14 @@ module Rails # :nodoc:
               const = mod.const_get(const_name)
               next unless const.is_a?(Module)
 
+              # Find the related request class to extend
               klass = const_name === 'Request' ? self.class : begin
                 const_name.split('_').inject(self.class) do |klass, next_const|
                   klass.const_defined?(next_const) ? klass.const_get(next_const) : break
                 end
               end
 
+              # Create the shared module and include the extension
               next unless klass&.is_a?(Class)
               extensions[klass] ||= Module.new
               extensions[klass].include(const)
@@ -249,7 +273,7 @@ module Rails # :nodoc:
           MSG
 
           # TODO: Fix the +enable_response_collector+, because it must be a
-          # schema configuration.
+          # schema configuration
           klass = GraphQL::Core.enable_response_collector \
             ? Collectors::JsonCollector \
             : Collectors::HashCollector

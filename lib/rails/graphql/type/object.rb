@@ -40,10 +40,9 @@ module Rails # :nodoc:
 
         # The purpose of instantiating an object is to have access to its
         # public methods. It then runs from the strategy perspective, pointing
-        # out to the current object, whenever possible
-        delegate_missing_to :@field
-
-        attr_reader :object
+        # out any other methods to the manually set event
+        delegate_missing_to :@event
+        attr_reader :event
 
         class << self
           # Plain objects cannot check if a given value is a valid member
@@ -51,19 +50,9 @@ module Rails # :nodoc:
             return false
           end
 
-          # Make sure to add the newly registered object as valid object to all
-          # its interfaces
-          def register!
-            super
-
-            all_interfaces.each do |o|
-              o.implemented(self)
-            end unless abstract?
-          end
-
           # Check if the other type is equivalent, by checking if the other is
           # an interface that the current object implements
-          def ==(other)
+          def =~(other)
             super || (other.interface? && implements?(other))
           end
 
@@ -73,10 +62,9 @@ module Rails # :nodoc:
 
             cache = all_interfaces.dup
             others.flat_map do |item|
-              item = GraphQL.type_map.fetch!(item, namespaces: namespaces) \
-                unless item.is_a?(Module) && item < Type::Interface
-
+              item = find_interface!(item)
               next if cache.include?(item)
+
               item.implemented(self)
               interfaces << item
               cache << item
@@ -99,8 +87,10 @@ module Rails # :nodoc:
 
             # Find a given +object+ and ensures it is an interface
             def find_interface!(object)
-              object = GraphQL.type_map.fetch!(object, namespaces: namespaces) \
-                unless object.is_a?(Module) && object < Type::Interface
+              object = GraphQL.type_map.fetch!(object,
+                namespaces: namespaces,
+                prevent_register: self,
+              ) unless object.is_a?(Module) && object < Type::Interface
 
               return object if object.try(:interface?)
               raise ArgumentError, <<~MSG.squish

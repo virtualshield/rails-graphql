@@ -16,6 +16,11 @@ module Rails # :nodoc:
 
         attr_reader :name, :alias_name, :parent
 
+        # Rewrite the kind to always return +:field+
+        def self.kind
+          :field
+        end
+
         def initialize(parent, node, data)
           @parent = parent
 
@@ -23,6 +28,12 @@ module Rails # :nodoc:
           @alias_name = data[:alias]
 
           super(node, data)
+        end
+
+        # Set the value that the field will be resolved as
+        def resolve_with!(object)
+          @typename = object.gql_name
+          resolve!
         end
 
         # Return the name of the field to be used on the response
@@ -48,15 +59,16 @@ module Rails # :nodoc:
           end
 
           # Go through the right flow to write the value
-          def resolve
-            value = parent.typename
-            raise InvalidOutputError, <<~MSG.squish if value.blank?
-              The #{gql_name} field result cannot be null.
-            MSG
+          def resolve_then
+            super do
+              raise InvalidOutputError, <<~MSG.squish if @typename.blank?
+                The #{gql_name} field value cannot be null.
+              MSG
 
-            strategy.resolve(self, value) do |value|
-              yield value if block_given?
-              trigger_event(:finalize)
+              strategy.resolve(self, @typename) do |value|
+                yield value if block_given?
+                trigger_event(:finalize)
+              end
             end
           end
       end

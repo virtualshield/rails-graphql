@@ -10,7 +10,7 @@ module Rails # :nodoc:
           other.extend(Helpers::InheritedCollection)
           other.extend(WithEvents::FixedTypes)
 
-          other.inherited_collection(:events, type: :array_hash)
+          other.inherited_collection(:events, type: :hash_array)
           other.inherited_collection(:listeners)
         end
 
@@ -20,9 +20,8 @@ module Rails # :nodoc:
           other.define_method(:event_types) { self.class.event_types }
           other.define_method(:events) { @events ||= Hash.new { |h, k| h[k] = [] } }
           other.define_method(:listeners) { @listeners ||= Set.new }
-
-          other.alias_method(:all_events, :events)
-          other.alias_method(:all_listeners, :listeners)
+          other.define_method(:all_events) { @events || {} }
+          other.define_method(:all_listeners) { @listeners || Set.new }
         end
 
         # Helper module to define static list of valid event types

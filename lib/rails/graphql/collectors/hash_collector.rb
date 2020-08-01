@@ -20,7 +20,7 @@ module Rails # :nodoc:
           return unless block_given?
           start_stack(array, plain)
           yield
-          end_stack(key)
+          end_stack(key, array, plain)
         rescue
           @data = @stack.pop
           raise

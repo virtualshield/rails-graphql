@@ -5,7 +5,9 @@ module GraphQL
   # List of constant shortcuts, as string to not trigger autoload
   CONST_SHORTCUTS = {
     Directive:          '::Rails::GraphQL::Directive',
+    Field:              '::Rails::GraphQL::Field',
     Mutation:           '::Rails::GraphQL::Mutation',
+    ProxyField:         '::Rails::GraphQL::ProxyField',
     Request:            '::Rails::GraphQL::Request',
     Schema:             '::Rails::GraphQL::Schema',
     Source:             '::Rails::GraphQL::Source',
@@ -56,13 +58,13 @@ module GraphQL
     end
 
     # See {CONST_SHORTCUTS}[rdoc-ref:GraphQL::CONST_SHORTCUTS]
-    def const_defined?(name) # :nodoc:
+    def const_defined?(name, *)
       name = :"ActiveRecord#{name[2..-1]}" if name.start_with?('AR')
       CONST_SHORTCUTS.key?(name) || super
     end
 
     # See {CONST_SHORTCUTS}[rdoc-ref:GraphQL::CONST_SHORTCUTS]
-    def const_missing(name) # :nodoc:
+    def const_missing(name)
       name = :"ActiveRecord#{name[2..-1]}" if name.start_with?('AR')
       return resolved[name] if resolved.key?(name)
       return super unless CONST_SHORTCUTS.key?(name)

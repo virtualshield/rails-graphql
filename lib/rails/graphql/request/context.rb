@@ -8,7 +8,7 @@ module Rails # :nodoc:
       # This class is used as context for the response while processing fields,
       # objects, or any data that it's going to be placed on the response
       class Context
-        CurrentValue = Class.new(ActiveSupport::ProxyObject) do
+        class CurrentValue < ActiveSupport::ProxyObject
           delegate_missing_to '@stack.first'
 
           def initialize(stack)

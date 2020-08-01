@@ -38,6 +38,7 @@ module Rails # :nodoc:
           # correctly trigger the registration
           def inherited(subclass)
             super if defined? super
+            return if subclass.try(:abstract)
             type_map.postpone_registration(subclass)
           end
 
@@ -56,7 +57,7 @@ module Rails # :nodoc:
               spec can have a name starting with "__".
             MSG
 
-            type_map.register(self).try(:validate!)
+            type_map.register(self).method(:validate!)
           end
         end
 

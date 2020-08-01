@@ -4,15 +4,14 @@ module Rails # :nodoc:
   module GraphQL # :nodoc:
     # = GraphQL Event
     #
-    # This class is responsible for managing directive events, from validating
-    # to triggering and executing.
+    # This class is responsible for trigerring events. It also contains the
+    # +data+ that can be used on the event handlers.
     class Event
-      attr_reader :source, :extra, :name
+      attr_reader :source, :data, :name, :object
 
-      # The list of available events
-      LIST = %i[attach organize prepare finalize
-        query mutation subscription request].freeze
+      delegate :[], :key?, to: :data
 
+      # List of trigger types used on +trigger+ shortcut
       TRIGGER_TYPES = {
         all?: :trigger_all,
         stack?: :trigger_all,
@@ -20,130 +19,77 @@ module Rails # :nodoc:
         single?: :trigger,
       }
 
-      class << self
-        # This helps to build a event callback, which validates and also
-        # disassemble the block arguments, facilitating the definition.
-        #
-        # ==== Options
-        #
-        # * <tt>:during</tt> - Run the event only for the given phase, which can
-        #   be +:definition+ or +:execution+.
-        # * <tt>:for</tt> - Run the event only if the class of the source object
-        #   is one of the given list.
-        def prepare(event_name, callback = nil, **filters, &block)
-          raise ArgumentError, <<~MSG.squish unless LIST.include?(event_name)
-            The #{event_name.inspect} event name is invalid. Make sure to use symbols.
-          MSG
+      # Event trigger shortcut that can perform any mode of trigger
+      def self.trigger(event_name, object, source, **xargs, &block)
+        extra = xargs.slice!(*TRIGGER_TYPES.keys)
+        method_name = xargs.find { |k, v| break TRIGGER_TYPES[k] if v } || :trigger
 
-          ehance_callback_caller(callback || block, filters)
-        end
-
-        # Trigger a given +event_name+ on a given +object+ providing the
-        # +phase+ of the execution and any +xargs+ information.
-        def trigger(object, event_name, source, phase, **xargs, &block)
-          extra = xargs.slice!(*TRIGGER_TYPES.keys)
-          method_name = xargs.find { |k, v| break TRIGGER_TYPES[k] if v } || :trigger
-          new(event_name, source, phase, **extra, &block).public_send(method_name, *object)
-        end
-
-        private
-
-          # This allows an easy way to catch params for callbacks by "requiring"
-          # specific informations using the arguments names.
-          def ehance_callback_caller(callback, filters)
-            params = callback_params(callback)
-            filters = callback_filters(filters)
-            callback.tap do |callback|
-              callback.instance_eval <<~RUBY, __FILE__, __LINE__ + 1
-                def prepare(source, **extra)
-                  source_klass = source.is_a?(::Module) ? source : source.class
-                  #{filters.join("\n  ")}
-                  args = []
-                  #{params.join("\n  ")}
-                  args
-                end
-              RUBY
-            end
-          end
-
-          # Translate callback parameters into actual parameters comming from
-          # the source or the keyed arguments.
-          def callback_params(callback)
-            callback.parameters.map do |(type, item)|
-              next if type != :opt
-              next "args << source" if item.eql?(:source)
-              "args << (source.try(:#{item}) || extra[:#{item}])"
-            end.compact
-          end
-
-          # Translate callback filters options into actual filters that skip
-          # the call of the callback.
-          def callback_filters(filters)
-            filters.map do |type, value|
-              value = Array.wrap(value)
-              case type
-              when :during
-                "return unless #{value.inspect}.include?(extra[:phase])"
-              when :for
-                value.map! { |item| item.is_a?(Module) ? item.name : item }
-                "return unless #{value.inspect}.any? { |item| source_klass <= item }"
-              end
-            end.compact
-          end
+        instance = new(event_name, source, **extra)
+        instance.instance_variable_set(:@object, object) if block.present?
+        instance.public_send(method_name, block || object)
       end
 
-      def initialize(name, source, phase, **extra, &block)
-        @contextualize = block
-        @source = source
-        @extra = extra.merge(phase: phase, owner: source, event: self)
+      def initialize(name, source, **data)
         @name = name
+        @data = data.reverse_merge(event: self)
+        @source = source
+        @layers = []
+        @iterator = data.delete(:collect?) ? :map : :each
       end
 
-      # Either run the +contextualize+ block or run from the +source+ POV
-      def instance_exec(*args, **xargs, &block)
-        context = super(&@contextualize) if @contextualize.present?
-        context ||= @source
-
-        args.unshift(self) if block.parameters.first&.last.eql?(:event) &&
-          args.first != self
-
-        context.instance_exec(*args, **xargs, &block)
+      # Return a given +name+ information from the event
+      def parameter(name)
+        respond_to?(name) ? public_send(name) : data[name]
       end
 
-      # Trigger the current event for all the given +objects+. Works very
-      # similar to +trigger+ with the addition of
-      # +throw :stack, *optional_data+ or +event.stop(*result, level: :stack)+
-      # to end the trigger for all the objects
+      # Check if the event has a given +name+ information
+      def parameter?(name)
+        respond_to?(name) || key?(name)
+      end
+
+      # From the list of all given objects, run the +trigger_object+
       def trigger_all(*objects)
-        catch(:stack) do
-          objects.flatten.each { |object| trigger_object(object) }
+        catchable(:stack) do
+          objects.flatten.send(@iterator) do |object|
+            trigger_object(object)
+          end
         end
       end
 
-      # Trigger the current event for all directives of given +object+. Works
-      # very similar to +trigger+ with the addition of
-      # +throw :object, *optional_data+ or +event.stop(*result, level: :object)+
-      # to end the trigger for the current object
+      # Fetch all the events from the object, get only the ones that are from
+      # the same name as the instance of this class and call +trigger+. It runs
+      # in reverse order, so first in first out
       def trigger_object(object)
-        catch(:object) do
-          object.try(:trigger_event, self)
-          object = object.is_a?(GraphQL::Directive) ? [object] : object.try(:all_directives)
-          object&.each { |directive| trigger(directive) }
+        @object = object
+        catchable(:object) do
+          object.all_events[name]&.reverse.send(@iterator) do |block|
+            trigger(block)
+          end
         end
+      ensure
+        @object = nil
       end
 
-      # Trigger the current event for the given +directive+. You can use
-      # +throw :item, *optional_data+ or +event.stop(*result)+ as a way to
-      # early return from the events.
-      def trigger(directive)
-        catch(:item) { directive.trigger(name, source, **extra) }
+      # Call a given block and send the event as reference
+      def trigger(block)
+        block.call(self)
       end
 
-      # Stop the propagation of the event by using a +throw+. Any extra argument
-      # provided will be returned to the trigger of the event.
-      def stop(*result, level: :item)
-        throw(level, *result)
+      # Stop the execution of an event using a given +layer+. The default is to
+      # get the last activated layer and stop it
+      def stop(*result, layer: nil)
+        throw(layer || @layers.last, *result)
       end
+
+      private
+
+        # Add the layer, exec the block and remove the layer
+        def catchable(layer)
+          @layers << layer
+          yield
+        ensure
+          @layers.pop
+        end
     end
   end
 end

@@ -26,6 +26,12 @@ module Rails # :nodoc:
           Type::Union,
         ].freeze
 
+        # The purpose of instantiating an interface is to have access to its
+        # public methods. It then runs from the strategy perspective, pointing
+        # out any other methods to the manually set event
+        delegate_missing_to :@event
+        attr_reader :event
+
         class << self
           # Stores the list of types associated with the interface so it can
           # be used during the execution step to find the right object type
@@ -40,7 +46,7 @@ module Rails # :nodoc:
 
           # Check if the other type is equivalent, by checking if the other is
           # an object and the object implements this interface
-          def ==(other)
+          def =~(other)
             super || (other.object? && other.implements?(self))
           end
 
@@ -49,7 +55,7 @@ module Rails # :nodoc:
           # equivalent produces an exception.
           def implemented(object)
             fields.each do |name, field|
-              invalid = object.field?(name) && object.fields[name] != field
+              invalid = object.field?(name) && !(object.fields[name] =~ field)
               raise ArgumentError, <<~MSG.squish if invalid
                 The "#{object.gql_name}" object already has a "#{field.gql_name}" field and it
                 is not equivalent to the one defined on the "#{gql_name}" interface.
@@ -62,7 +68,7 @@ module Rails # :nodoc:
           end
 
           def inspect # :nodoc:
-            fields = fields.each_value.map(&:inspect)
+            fields = @fields.each_value.map(&:inspect)
             fields = fields.presence && "{#{fields.join(', ')}}"
             "#<GraphQL::Interface #{gql_name} #{fields}>"
           end

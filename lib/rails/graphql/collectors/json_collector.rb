@@ -45,7 +45,7 @@ module Rails # :nodoc:
         # Add the given +value+ to the given +key+. Ensure to encode the value
         # before calling this function.
         def add(key, value)
-          @current_value << @current_array ? %(#{value},) : %("#{key}":#{value},)
+          @current_value << (@current_array ? %(#{value},) : %("#{key}": #{value},))
         end
 
         # Same as +add+ but this always encode the +value+ beforehand.

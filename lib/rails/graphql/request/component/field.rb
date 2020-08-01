@@ -13,13 +13,15 @@ module Rails # :nodoc:
 
         DATA_PARTS = %i[arguments]
 
-        delegate :type_klass, :leaf_type?, to: :field
         delegate :operation, :variables, to: :parent
+        delegate :merge_hash_array!, to: 'Helpers::InheritedCollection'
+        delegate :method_name, :resolver, :type_klass, :leaf_type?,
+          :dynamic_resolver?, to: :field
 
         parent_memoize :request
 
         attr_reader :name, :alias_name, :parent, :field, :arguments,
-          :tmp_klass, :op_vars
+          :current_object, :op_vars
 
         alias args arguments
 
@@ -30,6 +32,23 @@ module Rails # :nodoc:
           @alias_name = data[:alias]
 
           super(node, data)
+        end
+
+        # Return both the field directives and the request directives
+        def all_directives
+          field.all_directives + super
+        end
+
+        # Override that considers the requested field directives and also the
+        # definition field events, both from itself and its directives events
+        def all_listeners
+          field.all_listeners + super
+        end
+
+        # Override that considers the requested field directives and also the
+        # definition field events, both from itself and its directives events
+        def all_events
+          @all_events ||= merge_hash_array!(field.all_events, super)
         end
 
         # Assign a given +field+ to this class. The field must be an output
@@ -53,15 +72,21 @@ module Rails # :nodoc:
           type_klass.fields
         end
 
-        # A little helper for finding the parent type name
+        # A little helper for finding the correct parent type name
         def typename
-          (try(:tmp_klass) || try(:type_klass))&.gql_name
+          (try(:current_object) || try(:type_klass))&.gql_name
         end
 
         # Check if the field is an entry point, meaning that its parent is the
-        # operation and it came from a schema field
+        # operation and it is associated to a schema field
         def entry_point?
-          parent === operation
+          parent.kind === :operation
+        end
+
+        # A little extension of the +is_a?+ method that allows checking it using
+        # the underlying +field+
+        def of_type?(klass)
+          super || field.of_type?(klass)
         end
 
         # When the field is invalid, there's no much to do
@@ -99,8 +124,8 @@ module Rails # :nodoc:
         private
 
           # Resolve the value of the field for a single information
-          def resolve_one(item = nil)
-            strategy.resolve(self, item) do |item|
+          def resolve_one(*args)
+            strategy.resolve(self, *args) do |value|
               yield value if block_given?
               trigger_event(:finalize)
             end

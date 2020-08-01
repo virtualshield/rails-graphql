@@ -16,6 +16,8 @@ module Rails # :nodoc:
     # The cache stores in the following structure:
     # Namespace -> BaseClass -> ItemKey -> Item
     class TypeMap
+      FILTER_REGISTER_TRACE = /((inherited|initialize)'$|schema\.rb:\d+)/.freeze
+
       # Store all the base classes and if they were eager loaded by the type map
       mattr_accessor :base_classes, instance_writer: false, default: {
         Directive: false,
@@ -87,20 +89,23 @@ module Rails # :nodoc:
 
       # Find the given key or name inside the base class either on the given
       # namespace or in the base +:base+ namespace
-      def fetch(key_or_name, base_class: :Type, namespaces: nil, exclusive: false)
+      def fetch(key_or_name, prevent_register: nil, **xargs)
+        skip_register << Array.wrap(prevent_register)
         register_pending!
 
-        namespaces = Array.wrap(namespaces)
-        namespaces += [:base] unless exclusive
+        namespaces = Array.wrap(xargs[:namespaces])
+        namespaces += [:base] unless xargs.fetch(:exclusive, false)
         namespaces.find do |namespace|
-          result = dig(namespace, base_class, key_or_name)
+          result = dig(namespace, xargs.fetch(:base_class, :Type), key_or_name)
           break result unless result.nil?
         end&.call
+      ensure
+        skip_register.pop
       end
 
       # Mark the given object to be registered later, when a fetch is triggered
       def postpone_registration(object)
-        source = caller(3).find { |item| !item.end_with?("`inherited'") }
+        source = caller(3).find { |item| !(item =~ FILTER_REGISTER_TRACE) }
         @pending << [object, source]
       end
 
@@ -192,13 +197,28 @@ module Rails # :nodoc:
 
       private
 
+        # A list of classes to prevent the registration, since they might be
+        # the source of a fetch
+        def skip_register
+          @skip_register ||= []
+        end
+
         # Clear the pending list of classes to be registered
         def register_pending!
+          return if @pending.blank?
+
+          skip, keep, validate = skip_register.flatten, [], []
           while (klass, source = @pending.shift)
-            klass.register!
+            skip.include?(klass) \
+              ? keep << [klass, source] \
+              : validate << klass.register!
           end
+
+          validate.compact.each(&:call)
+          @pending = keep
         rescue DefinitionError => e
           raise e.class, e.message + "\n  Defined at: #{source}"
+          @pending = keep + @pending
         end
 
         # Since concurrent map doesn't implement this method, use this to

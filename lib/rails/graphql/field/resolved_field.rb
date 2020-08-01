@@ -9,10 +9,6 @@ module Rails # :nodoc:
       include Helpers::WithEvents
       include Helpers::WithCallbacks
 
-      ALIAS_KEYS = { before: :prepare, after: :finalize }.freeze
-
-      attr_reader :resolver
-
       event_types %i[prepare finalize]
       expose_events!
 
@@ -39,6 +35,13 @@ module Rails # :nodoc:
       # Add a block that is performed while resolving a value of a field
       def resolve(*args, **xargs, &block)
         @resolver = Callback.new(self, :resolve, *args, **xargs, &block)
+      end
+
+      # Get the resolver that can be already defined or used through the
+      # +method_name+
+      def resolver
+        return unless dynamic_resolver?
+        @resolver ||= Callback.new(self, :resolve, method_name)
       end
 
       # Check if the field has a dynamic resolver

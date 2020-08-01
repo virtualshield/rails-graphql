@@ -32,13 +32,6 @@ module Rails # :nodoc:
           end
         end
 
-        # Validate all the fields to make sure the definition is valid
-        def validate!(*)
-          super if defined? super
-          fields.each_value(&:validate!)
-          nil # No exception already means valid
-        end
-
         # See {Field}[rdoc-ref:Rails::GraphQL::Field] class.
         def field(name, *args, **xargs, &block)
           xargs[:owner] = self
@@ -61,6 +54,7 @@ module Rails # :nodoc:
             The #{field.class.name} is not a valid field.
           MSG
 
+          puts name if field?(field.name)
           raise ArgumentError, <<~MSG.squish if field?(field.name)
             The #{field.name.inspect} field is already defined and can't be replaced.
           MSG
@@ -116,6 +110,16 @@ module Rails # :nodoc:
         # Get the list of GraphQL names of all the fields difined
         def field_names
           fields.map(&:gql_name)
+        end
+
+        # Validate all the fields to make sure the definition is valid
+        def validate!(*)
+          super if defined? super
+
+          fields.each_value(&:validate!)
+          fields.freeze
+
+          nil # No exception already means valid
         end
 
         protected

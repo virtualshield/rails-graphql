@@ -50,13 +50,6 @@ module Rails # :nodoc:
           end
         end
 
-        # Validate all the arguments to make sure the definition is valid
-        def validate!(*)
-          super if defined? super
-          arguments.each_value(&:validate!)
-          nil # No exception already means valid
-        end
-
         # See {Argument}[rdoc-ref:Rails::GraphQL::Argument] class.
         def argument(name, base_type, **xargs)
           xargs[:owner] = self
@@ -81,6 +74,16 @@ module Rails # :nodoc:
         # Check if a given +name+ is already defined on the list of arguments
         def has_argument?(name)
           arguments.key?(name)
+        end
+
+        # Validate all the arguments to make sure the definition is valid
+        def validate!(*)
+          super if defined? super
+
+          arguments.each_value(&:validate!)
+          arguments.freeze
+
+          nil # No exception already means valid
         end
       end
     end

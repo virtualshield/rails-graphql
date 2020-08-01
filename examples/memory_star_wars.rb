@@ -98,7 +98,7 @@ class ApplicationSchema < GraphQL::Schema
   interface 'Character' do
     desc 'A character in the Star Wars Trilogy'
 
-    field :id, :string, null: false,
+    field :id, :id, null: false,
       desc: 'The id of the character'
 
     field :name, :string,

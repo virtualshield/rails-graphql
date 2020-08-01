@@ -8,7 +8,7 @@ module Rails # :nodoc:
           array:      '[]',
           set:        '[].to_set',
           hash:       '{}',
-          array_hash: 'Hash.new { |h, k| h[k] = [] }',
+          hash_array: 'Hash.new { |h, k| h[k] = [] }',
         }.freeze
 
         # Support class for a lazy value processing. The values will be
@@ -21,8 +21,13 @@ module Rails # :nodoc:
           end
 
           def __target_object__
-            @target_objec ||= @callable.call
+            @target_object ||= @callable.call
           end
+        end
+
+        # Global helper that merge a hash that contains values as arrays
+        def self.merge_hash_array!(one, other)
+          one.merge!(other) { |_, lval, rval| lval + rval }
         end
 
         # Declare a class-level attribute whose value is both isolated and also
@@ -78,7 +83,9 @@ module Rails # :nodoc:
             module_eval(<<~RUBY, __FILE__, __LINE__ + 1)
               def self.all_#{name}
                 ::Rails::GraphQL::Helpers::InheritedCollection::LazyValue.new do
-                  fetch_inherited_#{type}('#{ivar}').freeze
+                  defined?(:#{ivar}) \
+                    ? fetch_inherited_#{type}('#{ivar}') \
+                    : #{DEFAULT_TYPES[type]}
                 end
               end
 
@@ -129,12 +136,10 @@ module Rails # :nodoc:
 
           # Combine an inherited list of hashes, which also will combine arrays,
           # ensuring that same key items will be combined
-          def fetch_inherited_array_hash(ivar)
+          def fetch_inherited_hash_array(ivar)
             inherited_ancestors.inject({}) do |result, klass|
               next result if (val = klass.instance_variable_get(ivar)).nil?
-              result.merge!(val.transform_values(&:dup)) do |_, lval, rval|
-                lval += rval
-              end
+              InheritedCollection.merge_hash_array!(result, val)
             end
           end
 

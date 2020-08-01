@@ -27,8 +27,14 @@ module Rails # :nodoc:
         @type_klass = nil
       end
 
+      # A little extension of the +is_a?+ method that allows checking it using
+      # the +type_klass+
+      def of_type?(klass)
+        is_a?(klass) || type_klass <= klass
+      end
+
       # Check if types are compatible
-      def ==(other)
+      def =~(other)
         other.type_klass == type_klass && super
       end
 

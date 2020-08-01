@@ -74,7 +74,7 @@ module Rails # :nodoc:
       end
 
       # Check if the other field is equivalent
-      def ==(other)
+      def =~(other)
         (defined? super ? super : true) &&
           other.gql_name == gql_name &&
           (other.null? == null? || other.null? && !null?) &&
@@ -172,7 +172,7 @@ module Rails # :nodoc:
       def validate!(*)
         super if defined? super
 
-        raise NameError, <<~MSG.squish if !internal? && gql_name.start_with?('__')
+        raise NameError, <<~MSG.squish if internal? && !owner.try(:spec_object)
           The name "#{gql_name}" is invalid. Only internal fields from the
           spec can have a name starting with "__".
         MSG
@@ -193,7 +193,7 @@ module Rails # :nodoc:
           @name = value.to_s.underscore.to_sym
 
           @gql_name = @name.to_s.camelize(:lower)
-          @gql_name = "__#{@gql_name.camelize(:lower)}" if internal?
+          @gql_name.prepend('__') if internal?
         end
 
         def match_arguments?(other)

@@ -14,9 +14,16 @@ module Rails # :nodoc:
         include Directives
 
         class << self
+          alias type kind
+
           # Helper method to initialize an operation given the data
-          def build(request, *args)
-            request.build(const_get(data[:kind].classify), *args)
+          def build(request, node, data)
+            request.build(const_get(data[:kind].classify), request, node, data)
+          end
+
+          # Rewrite the kind to always return +:operation+
+          def kind
+            :operation
           end
 
           # Defines if the current operation is a query type
@@ -43,7 +50,7 @@ module Rails # :nodoc:
 
         DATA_PARTS = %i[variables]
 
-        delegate :query?, :mutation?, :subscription?, to: :class
+        delegate :type, :query?, :mutation?, :subscription?, to: :class
 
         attr_reader :name, :variables, :var_args, :request
 
@@ -59,15 +66,15 @@ module Rails # :nodoc:
         end
 
         # The list of fields comes from the +fields_for+ of the same type as
-        # the kind of the operation
+        # the +type+ of the operation
         def fields_source
-          schema.fields_for(kind)
+          schema.fields_for(type)
         end
 
         # The typename is always based on the fake name used for the set of
         # schema fields
         def typename
-          schema.type_name_for(kind)
+          schema.type_name_for(type)
         end
 
         # Support memory object to save information across the iteration
@@ -82,10 +89,10 @@ module Rails # :nodoc:
 
         protected
 
-          # Trigger an specific event with the kind of the operation
+          # Trigger an specific event with the +type+ of the operation
           def organize
             organize_then do
-              trigger_event(kind)
+              trigger_event(type)
               yield if block_given?
               organize_fields
             end
@@ -102,9 +109,14 @@ module Rails # :nodoc:
             @var_args = nil
           end
 
+          # Resolve all the fields
+          def resolve
+            invalid? ? resolve_invalid : resolve_then { resolve_fields }
+          end
+
           # Name used for debug purposes
           def display_name
-            @display_name ||= "#{kind.to_s.titlecase} #{name.presence || '__default__'}"
+            @display_name ||= "#{type.to_s.titlecase} #{name.presence || '__default__'}"
           end
       end
     end

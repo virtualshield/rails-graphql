@@ -118,7 +118,7 @@ module Rails # :nodoc:
         others = others.dup
 
         if source.present?
-          event = GraphQL::Event.new(:attach, source, :definition)
+          event = GraphQL::Event.new(:attach, source, phase: :definition)
           location ||= source.try(:directive_location)
         end
 
@@ -136,7 +136,7 @@ module Rails # :nodoc:
             You cannot use @#{item.gql_name} directive due to location restriction.
           MSG
 
-          # event.trigger(item) unless event.nil?
+          event.trigger_object(item) unless event.nil?
           others << item
           result << item
         end

@@ -28,6 +28,7 @@ module Rails # :nodoc:
       include Field::TypedOutputField
 
       alias self_dynamic_resolver? dynamic_resolver?
+      alias all_proxy_directives all_directives
 
       delegate :type, :array?, :nullable?, :internal?, to: :field
 
@@ -39,9 +40,6 @@ module Rails # :nodoc:
         @owner = owner
 
         apply_changes(**xargs, &block)
-
-        # directives.freeze
-        # arguments.freeze
       end
 
       # Allow chaging the name of a proxy field
@@ -55,12 +53,17 @@ module Rails # :nodoc:
         super
       end
 
+      # Return the original owner from +field+
+      def proxied_owner
+        field.owner
+      end
+
       # Generate a set of methods that can be set or passed to the proxied field
-      %i[name gql_name method_name null? enabled?].each do |name|
-        ivar = name.to_s.delete_suffix('?')
+      %w[name gql_name method_name resolver null? enabled?].each do |method_name|
+        ivar = method_name.delete_suffix('?')
         class_eval <<~RUBY, __FILE__, __LINE__ + 1
-          def #{name}
-            defined?(@#{ivar}) ? @#{ivar} : field.#{name}
+          def #{method_name}
+            defined?(@#{ivar}) ? @#{ivar} : field.#{method_name}
           end
         RUBY
       end
@@ -74,20 +77,20 @@ module Rails # :nodoc:
       end
 
       def all_arguments # :nodoc:
-        field.arguments.merge(arguments)
+        field.arguments.merge(super)
       end
 
       def all_directives # :nodoc:
-        field.directives + directives
+        field.all_directives + all_proxy_directives
       end
 
       def all_listeners # :nodoc:
-        field.listeners + listeners
+        field.all_listeners + super
       end
 
       def all_events # :nodoc:
         Helpers::InheritedCollection::LazyValue.new do
-          super.merge!(field.all_events) { |_, lval, rval| rval += lval }
+          Helpers::InheritedCollection.merge_hash_array!(field.all_events, super)
         end
       end
 

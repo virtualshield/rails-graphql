@@ -45,8 +45,8 @@ module Rails # :nodoc:
             end
 
             # Attach a new key based event filter
-            def event_filter(key, as: nil, &block)
-              event_filters[key.to_sym] = { format: as, block: block }
+            def event_filter(key, sanitizer = nil, &block)
+              event_filters[key.to_sym] = { block: block, sanitizer: sanitizer }
             end
         end
 
@@ -57,19 +57,23 @@ module Rails # :nodoc:
           super(event_name, unshift: unshift, &block)
         end
 
-        # Override the all events method since callbacks can eventually be
+        # Override the +all_listeners+ method since callbacks can eventually be
+        # attached to objects that have directives, which then they need to
+        # be combined
+        def all_listeners
+          respond_to?(:all_directive_listeners) \
+            ? super + all_directive_listeners \
+            : super
+        end
+
+        # Override the +all_events+ method since callbacks can eventually be
         # attached to objects that have directives, which then they need to
         # be combined
         def all_events
-          return(defined? super ? super : events) \
-            unless respond_to?(:all_directives)
+          return super unless respond_to?(:all_directive_events)
 
           InheritedCollection::LazyValue.new do
-            instance = fetch_inherited_array_hash(:@events)
-            all_directives.inject(instance) do |result, directive|
-              next result if (val = directive.all_events).blank?
-              result.merge!(val) { |_, lval, rval| rval += lval }
-            end
+            InheritedCollection.merge_hash_array!(super, all_directive_events)
           end
         end
       end

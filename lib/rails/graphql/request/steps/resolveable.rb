@@ -11,11 +11,11 @@ module Rails # :nodoc:
         def resolve_with!(object)
           return resolve! if invalid?
           capture_exception(:resolve) do
-            old_field, @field, @tmp_klass = @field, object[@field.name], object
+            old_field, @field, @current_object = @field, object[@field.name], object
 
-            resolve
+            resolve!
           ensure
-            @field, @tmp_klass = old_field, nil
+            @field, @current_object = old_field, nil
           end
         end
 
@@ -24,15 +24,15 @@ module Rails # :nodoc:
           capture_exception(:resolve) { resolve }
         end
 
-        # Resolve a given value when it's an array
+        # Resolve a given value when it is an array
         def resolve_with_array!(value, &block)
-          response.with_stack(field.gql_name, array: true, plain: leaf_type?) do
-            current.each_with_index do |item, idx|
+          write_array do
+            value.each.with_index do |item, idx|
               block.call(item, idx)
             rescue StandardError => e
-              real_error = ActiveSupport::Inflector.ordinalize(idx)
-              real_error += " result of the #{gql_name} field"
-              source_error = "The #{gql_name} field result"
+              real_error = 'The ' + ActiveSupport::Inflector.ordinalize(idx)
+              real_error += " value of the #{gql_name} field"
+              source_error = "The #{gql_name} field value"
 
               e.message.gsub!(source_error, real_error)
               raise
@@ -44,22 +44,29 @@ module Rails # :nodoc:
         def write_value(value)
           writer = 'write_' + field.kind.to_s
           writer = 'write_leaf' unless respond_to?(writer, true)
-          send(writer, item)
+          send(writer, value)
+        end
+
+        # Helper to start writing as array
+        def write_array(&block)
+          @writing_array = true
+          response.with_stack(field.gql_name, array: true, plain: leaf_type?, &block)
+        ensure
+          @writing_array = nil
         end
 
         protected
 
           # Normal mode of the resolve step
           def resolve
-            return try(:resolve_invalid) if invalid?
-            resolve_then { resolve_fields }
+            invalid? ? try(:resolve_invalid) : resolve_then
           end
 
           # The actual process that resolve the object
-          def resolve_then(after_block, &block)
+          def resolve_then(after_block = nil, &block)
             return if invalid?
             stacked do
-              block.call
+              block.call if block.present?
               trigger_event(:finalize)
               after_block.call if after_block.present?
             end
@@ -68,19 +75,23 @@ module Rails # :nodoc:
           # Write a value based on a Union type
           def write_union(value)
             object = type_klass.all_members.reverse_each.find { |t| t.valid_member?(value) }
-            object.nil? ? raise_invalid_member! : write_object(value, object)
+
+            raise_invalid_member! if object.nil?
+            selection.each_value { |field| field.resolve_with!(object) }
           end
 
           # Write a value based on a Interface type
           def write_interface(value)
             object = type_klass.all_types.reverse_each.find { |t| t.valid_member?(value) }
-            object.nil? ? raise_invalid_member! : write_object(value, object)
+
+            raise_invalid_member! if object.nil?
+            selection.each_value { |field| field.resolve_with!(object) }
           end
 
           # Write a value based on a Object type
-          def write_object(value, object = nil)
-            object ||= type_klass.valid_member?(value) ? type_klass : raise_invalid_member!
-            selection.each_value { |field| field.resolve_with!(object) }
+          def write_object(value)
+            raise_invalid_member! unless type_klass.valid_member?(value)
+            selection.each_value(&:resolve!)
           end
 
           # Write a value with the correct serialize mode. Validate the output
@@ -88,13 +99,18 @@ module Rails # :nodoc:
           # multiple times inside of an array.
           def write_leaf(value)
             validate_output!(value)
+            return response.safe_add(gql_name, nil) if value.nil?
+
             serializer = response.try(:prefer_string?) ? :to_json : :to_hash
             response.add(gql_name, type_klass.public_send(serializer, value))
           end
 
           # Trigger the plain field output validation
           def validate_output!(value)
-            field&.validate_output!(value, array: false)
+            field&.validate_output!(value,
+              checker: @writing_array ? :nullable? : :null?,
+              array: false,
+            )
           end
 
         private
@@ -104,6 +120,14 @@ module Rails # :nodoc:
           def raise_invalid_member!
             raise(FieldError, <<~MSG.squish)
               The #{gql_name} field result is not a member of #{type_klass.gql_name}.
+            MSG
+          end
+
+          # When the field is expecting an array but the resolved value is not
+          # an array, before marking the field as nil, add an error about it
+          def inform_invalid_array_result(value)
+            request.report_node_error(<<~MSG, node)
+              The #{gql_name} field was expecting an array but it got "#{value.class.name}".
             MSG
           end
       end

@@ -9,13 +9,53 @@ module Rails # :nodoc:
       class Strategy
         extend ActiveSupport::Autoload
 
+        # When an event is call on non-object types, this class allows both
+        # finding a method on two different places
+        class DynamicInstance < ActiveSupport::ProxyObject
+          def initialize(source)
+            @source = source
+          end
+
+          def instance_variable_set(ivar, value)
+            @source.instance_variable_set(ivar, value)
+            __current_object__.instance_variable_set(ivar, value)
+          end
+
+          def method(method_name)
+            __current_object__&.method(method_name) || @source.method(method_name)
+          end
+
+          private
+
+            def respond_to_missing?(method_name, include_private = false) # :nodoc:
+              __current_object__&.respond_to?(method_name, include_private) ||
+                @source.respond_to?(method_name, include_private) || super
+            end
+
+            def method_missing(method_name, *args, **xargs, &block) # :nodoc:
+              object = __current_object__
+              if object&.respond_to?(method_name, true)
+                object.send(method_name, *args, **xargs, &block)
+              elsif @source.respond_to?(method_name, true)
+                @source.send(method_name, *args, **xargs, &block)
+              else
+                super
+              end
+            end
+
+            def __current_object__ # :nodoc:
+              return if @event.blank? || (object = @event.source.try(:current_object)).blank?
+              @event.strategy.instance_for(object)
+            end
+        end
+
         autoload :SequencedStrategy
         autoload :MultiQueryStrategy
 
         # The priority of the strategy
         class_attribute :priority, instance_accessor: false, default: 1
 
-        delegate :operations, :errors, :response, :schema, :logger, to: :request
+        delegate :operations, :errors, :response, :schema, to: :request
 
         attr_reader :listeners, :request, :context
 
@@ -30,8 +70,6 @@ module Rails # :nodoc:
 
         def initialize(request)
           @request = request
-          @objects_pool = {}
-          @current_object = nil
           collect_request_listeners
         end
 
@@ -64,13 +102,9 @@ module Rails # :nodoc:
         # Resolve a value for a given object, It uses the +args+ to prevent
         # problems with nil values.
         def resolve(field, *args, array: false, &block)
-          data_for(args, field) unless args.one?
-          args << Event.trigger(field, :resolver, self).first \
-            if field.dynamic_resolver?
-
-          # No need to move forward with the context if there's no way to fetch
-          # a real value for the field
-          return block.call(nil) unless args.one?
+          data_for(args, field) unless args.any?
+          args << Event.trigger(:resolve, field, self, &field.resolver) \
+            if field.try(:dynamic_resolver?)
 
           # Now we have a value to set on the context
           @context.stacked(args.last) do |current|
@@ -78,7 +112,7 @@ module Rails # :nodoc:
               block.call(current)
               field.write_value(current)
             elsif !current.respond_to?(:each)
-              current.nil? ? block.call(current) : field.resolve_invalid
+              field.resolve_invalid
             else
               field.resolve_with_array!(current, &block)
             end
@@ -88,12 +122,15 @@ module Rails # :nodoc:
         # Check if the given class is in the pool, or add a new instance to the
         # pool, and then set the instance as the current object
         def instance_for(klass)
-          begin
-            @objects_pool[klass] ||= @objects_pool.each_value.find do |value|
+          @objects_pool[klass] ||= begin
+            @objects_pool.each_value.find do |value|
               value < klass
-            end || klass.new
-          end.tap do |instance|
-            change_current_object(instance, request.stack.first, @context.current)
+            end || begin
+              instance = klass.new
+              instance = DynamicInstance.new(instance) unless klass < GraphQL::Schema ||
+                klass < GraphQL::Types::Object
+              instance
+            end
           end
         end
 
@@ -107,24 +144,15 @@ module Rails # :nodoc:
           objects = listeners[event_name.to_sym] & request.stack
           return if objects.empty?
 
-          Event.trigger(objects, event_name, self, **xargs)
-        ensure
-          change_current_object(nil)
+          Event.trigger(event_name, objects, self, **xargs)
         end
 
         # Check what kind of event listeners the object have, in order to speed
         # up processing by avoiding unnecesary event instances
         def add_listener(object)
           return unless add_listeners?
-          list = []
 
-          if object.is_a?(Component::Field)
-            list << object.field.listeners
-          elsif object.respond_to?(:all_directives)
-            object.all_directives.each { |d| list << d.listeners }
-          end
-
-          list.compact.reduce(:concat).each do |event_name|
+          object.all_listeners.each do |event_name|
             listeners[event_name] << object
           end
         end
@@ -148,7 +176,8 @@ module Rails # :nodoc:
             lock_listeners!
           end
 
-          # A shortcut for +release_data!+ and +lock_data!+
+          # This is where the strategy is most effective. By preparing the tree,
+          # it can load data in a pretty smart way
           def collect_data
             @data_pool = {}
             if listening_to?(:prepare)
@@ -171,7 +200,7 @@ module Rails # :nodoc:
             return result << @data_pool[field] if @data_pool.key?(field)
             return if field.entry_point?
 
-            current, key = @context.current, field.name
+            current, key = @context.current, field.method_name
             return result << current.public_send(key) if current.respond_to?(key)
             result << current[key] if current.respond_to?(:[]) && current.key?(key)
           end
@@ -181,17 +210,10 @@ module Rails # :nodoc:
           # Collect the base listeners from the request
           def collect_request_listeners
             @listeners = Hash.new { |h, k| h[k] = Set.new }
-            add_listener(request.schema)
+            add_listener(request)
 
             lock_listeners!
             @base_listeners = @listeners
-          end
-
-          # Change the current active object instance
-          def change_current_object(klass, field = nil, object = nil)
-            @current_object = klass
-            @current_object&.instance_variable_set(:@field, field)
-            @current_object&.instance_variable_set(:@object, object)
           end
       end
     end

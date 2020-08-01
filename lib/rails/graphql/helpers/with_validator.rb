@@ -11,8 +11,8 @@ module Rails # :nodoc:
         protected
 
           # Run the validation process with +value+ against +type+
-          def validate_output!(value, type, array: true)
-            result = validate_null(value)
+          def validate_output!(value, type, checker: :null?, array: true)
+            result = validate_null(value, checker)
             result ||= array? && array \
               ? validate_array(value) \
               : validate_type(value)
@@ -21,7 +21,7 @@ module Rails # :nodoc:
             message, idx = result
 
             base_error = idx.present? \
-              ? "#{ordinalize(idx)} value of the \"#{gql_name}\" #{type}" \
+              ? "#{ordinalize(idx)} value of the #{gql_name} #{type}" \
               : "#{gql_name} #{type} value"
 
             raise InvalidOutputError, "The #{base_error} #{message}."
@@ -33,13 +33,13 @@ module Rails # :nodoc:
             return 'is not an array' unless value.is_a?(Enumerable)
 
             value.each_with_index do |val, idx|
-              err = validate_null(val, nullable?) || validate_type(val)
+              err = validate_null(val, :nullable?) || validate_type(val)
               return err, idx unless err.nil?
             end
           end
 
-          def validate_null(value, checker = null?) # :nodoc:
-            return 'cannot be null' if value.nil? && !checker
+          def validate_null(value, checker = :null?) # :nodoc:
+            return 'cannot be null' if value.nil? && !send(checker)
           end
 
           def validate_type(value) # :nodoc:

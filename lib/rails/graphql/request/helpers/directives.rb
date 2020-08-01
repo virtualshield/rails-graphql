@@ -8,14 +8,30 @@ module Rails # :nodoc:
       module Directives
         DATA_PARTS = %i[directives]
 
-        attr_reader :directives
-
         # Add the +directives+ to the list of data parts
         def data_parts
           defined?(super) ? DATA_PARTS + super : DATA_PARTS
         end
 
+        # Get the list of listeners from all directives
+        def all_listeners
+          directives.map(&:all_listeners).reduce(:+) || Set.new
+        end
+
+        # Get the list of events from all directives and caches it by request
+        def all_events
+          @all_events ||= directives.map(&:all_events).inject({}) do |lhash, rhash|
+            Helpers::InheritedCollection.merge_hash_array!(lhash, rhash)
+          end
+        end
+
         protected
+          # Make sure to always return a set
+          def directives
+            @directives || Set.new
+          end
+
+          alias all_directives directives
 
           # Helper parser for directives that also collect necessary variables
           def parse_directives(location = nil)
