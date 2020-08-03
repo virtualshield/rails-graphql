@@ -59,7 +59,7 @@ module Rails # :nodoc:
 
           # Turn a user input of this given type into an ruby object
           def deserialize(value)
-            to_hash(value)
+            value
           end
 
           def inspect # :nodoc:

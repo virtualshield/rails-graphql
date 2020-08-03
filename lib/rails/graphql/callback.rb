@@ -11,6 +11,11 @@ module Rails # :nodoc:
 
       delegate :event_filters, to: :target
 
+      # Directives need to be contextualized by the given instance as +context+
+      def self.set_context(item, context)
+        lambda { |*args| item.call(*args, context: context) }
+      end
+
       def initialize(target, event_name, *args, **xargs, &block)
         raise ::ArgumentError, <<~MSG.squish if block.nil? && !args.first.present?
           Either provide a block or a method name when setting a #{event_name}
@@ -37,16 +42,11 @@ module Rails # :nodoc:
         @block = block
       end
 
-      # Directives need to retarget the callback to the actual instance
-      def retarget(new_target)
-        dup.tap { |callback| callback.instance_variable_set(:@target, new_target) }
-      end
-
       # This does the whole checking and preparation in order to really execute
       # the callback method
-      def call(event)
+      def call(event, context: nil)
         return unless event.name === event_name && can_run?(event)
-        block.is_a?(Symbol) ? call_symbol(event) : call_proc(event)
+        block.is_a?(Symbol) ? call_symbol(event) : call_proc(event, context)
       end
 
       # This basically allows the class to be passed as +&block+
@@ -74,10 +74,9 @@ module Rails # :nodoc:
         end
 
         # Call the callback block as a proc
-        def call_proc(event)
+        def call_proc(event, context = nil)
           args, xargs = collect_parameters(event)
-          context = target.is_a?(GraphQL::Directive) ? target : event.source
-          context.instance_exec(*args, **xargs, &block)
+          (context || event.source).instance_exec(*args, **xargs, &block)
         end
 
         # Read the arguments needed for a block then collect them from the

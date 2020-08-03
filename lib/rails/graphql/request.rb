@@ -89,6 +89,11 @@ module Rails # :nodoc:
         ensure_schema!
       end
 
+      # Cache all the schema events for this current request
+      def all_events
+        @all_events ||= schema.all_events
+      end
+
       # Get the context of the request
       def context
         @context ||= OpenStruct.new.freeze
@@ -97,11 +102,6 @@ module Rails # :nodoc:
       # Set the context of the request, it must be a +Hash+
       def context=(data)
         @context = build_ostruct(data).freeze
-      end
-
-      # Cache all the schema events for this current request
-      def all_events
-        @all_events ||= schema.all_events
       end
 
       # Execute a given document with the given arguments
@@ -123,15 +123,21 @@ module Rails # :nodoc:
         execute(*args, **xargs)
       end
 
-      # Add the given +object+ into the execution +stack+ and execute the given
-      # +block+ making sure to rescue exceptions using the +rescue_with_handler+
-      def stacked(object, &block)
-        stack.unshift(object)
-        block.call
-      rescue => exception
-        rescue_with_handler(exception) || raise
-      ensure
-        stack.shift
+      # Build a easy-to-access object representing the current information of
+      # the execution to be used on +rescue_with_handler+
+      def build_rescue_object(**extra)
+        OpenStruct.new(extra.reverse_merge(
+          args: @args,
+          source: stack.first,
+          request: self,
+          response: @response,
+          document: @document,
+        )).freeze
+      end
+
+      # Use schema handlers for exceptions caught during the execution process
+      def rescue_with_handler(exception, **extra)
+        schema.rescue_with_handler(exception, object: build_rescue_object(**extra))
       end
 
       # Add the given +exception+ to the errors using the +node+ location
@@ -150,28 +156,22 @@ module Rails # :nodoc:
         errors.add(message, **xargs)
       end
 
+      # Add the given +object+ into the execution +stack+ and execute the given
+      # +block+ making sure to rescue exceptions using the +rescue_with_handler+
+      def stacked(object, &block)
+        stack.unshift(object)
+        block.call
+      rescue => exception
+        rescue_with_handler(exception) || raise
+      ensure
+        stack.shift
+      end
+
       # Convert the current stack into a error path ignoring the schema
       def stack_to_path
         stack.map do |item|
           item.is_a?(Numeric) ? item : item.try(:gql_name)
-        end.compact
-      end
-
-      # Build a easy-to-access object representing the current information of
-      # the execution to be used on +rescue_with_handler+
-      def build_rescue_object(**extra)
-        OpenStruct.new(extra.reverse_merge(
-          args: @args,
-          source: stack.first,
-          request: self,
-          response: @response,
-          document: @document,
-        )).freeze
-      end
-
-      # Use schema handlers for exceptions caught during the execution process
-      def rescue_with_handler(exception, **extra)
-        schema.rescue_with_handler(exception, object: build_rescue_object(**extra))
+        end.compact.reverse
       end
 
       # Add extensions to the request, which ensures a bunch of extended
@@ -183,11 +183,16 @@ module Rails # :nodoc:
       end
 
       # This initiates a new object which is aware of extensions
-      def build(klass, *args, **xargs, &block)
+      def build(klass, *args, &block)
         ext_module = extensions[klass]
-        obj = klass.new(*args, **xargs, &block)
+        obj = klass.new(*args, &block)
         obj.extend(ext_module) if ext_module
         obj
+      end
+
+      # A shared way to cache information across the execution of an request
+      def cache(key, init_value = nil)
+        @cache[key] ||= init_value
       end
 
       private
@@ -200,6 +205,7 @@ module Rails # :nodoc:
           @visitor = GraphQL::Native::Visitor.new
 
           @stack      = [schema]
+          @cache      = {}
           @fragments  = {}
           @operations = {}
         end
@@ -234,7 +240,7 @@ module Rails # :nodoc:
 
         # Find the best strategy to resolve the request
         def find_strategy!
-          klasss = strategies.lazy.map do |klass_name|
+          klass = strategies.lazy.map do |klass_name|
             klass_name.constantize
           end.select do |klass|
             klass.can_resolve?(self)

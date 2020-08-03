@@ -114,12 +114,14 @@ module Rails # :nodoc:
       #
       # If a +source+ is provided, then an +:attach+ event will be triggered
       # for each directive on the givem source element.
-      def directives_to_set(list, others = [], location: nil, source: nil)
+      def directives_to_set(list, others = [], event = nil, **xargs)
         others = others.dup
 
-        if source.present?
-          event = GraphQL::Event.new(:attach, source, phase: :definition)
-          location ||= source.try(:directive_location)
+        if (source = xargs.delete(:source)).present?
+          location = xargs.delete(:location) || source.try(:directive_location)
+          event ||= GraphQL::Event.new(:attach, source, **xargs.reverse_merge(
+            phase: :definition,
+          ))
         end
 
         Array.wrap(list).inject(Set.new) do |result, item|

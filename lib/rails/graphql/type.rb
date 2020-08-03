@@ -32,7 +32,7 @@ module Rails # :nodoc:
 
         # Check if the other type is equivalent
         def =~(other)
-          (other.is_a?(Module) ? other.class : other) <= self
+          (other.is_a?(Module) ? other : other.class) <= self
         end
 
         # Return the base type in a symbolized way

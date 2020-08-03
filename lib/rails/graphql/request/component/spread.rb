@@ -13,7 +13,7 @@ module Rails # :nodoc:
 
         DATA_PARTS = %i[type]
 
-        delegate :operation, :fields_source, :typename, to: :parent
+        delegate :operation, :typename, to: :parent
 
         parent_memoize :request
 
@@ -33,18 +33,33 @@ module Rails # :nodoc:
           @inline.present?
         end
 
-        # Fields come from the parent scope, since the spread happens inside
-        # a field or an operation
-        def fields_source
-          parent.fields_source
-        end
-
         # Return a lazy loaded variable proc
         def variables
           Request::Arguments.lazy
         end
 
+        # Redirect to the fragment or check the inline type before resolving
+        def resolve_with!(object)
+          return if invalid?
+
+          @current_object = object
+          resolve!
+        ensure
+          @current_object = nil
+        end
+
         protected
+
+          # Spread always resolve inline selection unstacked on response,
+          # meaning that its fields will be set in the same level as the parent
+          def unstacked_selection?
+            true
+          end
+
+          # Just provide the correct location for directives
+          def parse_directives
+            super(inline? ? :inline_fragment : :fragment_spread)
+          end
 
           # Scope the arguments whenever stacked within a spread
           def stacked(*)
@@ -62,17 +77,31 @@ module Rails # :nodoc:
               parse_directives
 
               if inline?
+                # TODO: Add request cache
                 @type_klass = find_type!(data[:type])
-
                 parse_selection
               else
                 @fragment = request.fragments[name]
-
                 raise ArgumentError, <<~MSG.squish if @fragment.nil?
                   The "#{name}" fragment is not defined in this request.
                 MSG
               end
             end
+          end
+
+          # Resolve the spread operation
+          def resolve
+            return if invalid?
+
+            object = @current_object || parent.type_klass
+            return fragment.resolve_with!(object) unless inline?
+
+            super if type_klass =~ object
+          end
+
+          # This will just trigger the selection resolver
+          def resolve_then(&block)
+            super(block) { write_selection(@current_object) }
           end
       end
     end

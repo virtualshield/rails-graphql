@@ -65,6 +65,11 @@ module Rails # :nodoc:
           @invalid = true
         end
 
+        # Normaly, components are not assignable, only fields are
+        def assignable?
+          false
+        end
+
         protected
 
           # It's extremely important to have a way to access the current request

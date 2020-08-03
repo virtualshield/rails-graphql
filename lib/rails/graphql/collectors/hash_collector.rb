@@ -28,7 +28,7 @@ module Rails # :nodoc:
 
         # Add the given +value+ to the given +key+.
         def add(key, value)
-          @data.is_a?(Array) ? @data << value : object[key.to_s] = value
+          @data.is_a?(Array) ? @data << value : @data[key.to_s] = value
         end
 
         alias safe_add add

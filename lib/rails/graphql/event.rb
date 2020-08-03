@@ -30,11 +30,13 @@ module Rails # :nodoc:
       end
 
       def initialize(name, source, **data)
+        @iterator = data.delete(:collect?) ? :map : :each
+
         @name = name
         @data = data.reverse_merge(event: self)
         @source = source
         @layers = []
-        @iterator = data.delete(:collect?) ? :map : :each
+        @completed = false
       end
 
       # Return a given +name+ information from the event
@@ -47,24 +49,32 @@ module Rails # :nodoc:
         respond_to?(name) || key?(name)
       end
 
+      # Check if the event was completed and not stopped
+      def completed?
+        @completed
+      end
+
+      # An event is marked as stopped if it is not completed
+      def stopped?
+        !completed?
+      end
+
       # From the list of all given objects, run the +trigger_object+
       def trigger_all(*objects)
         catchable(:stack) do
-          objects.flatten.send(@iterator) do |object|
-            trigger_object(object)
-          end
+          objects.flatten.send(@iterator, &method(:trigger_object))
         end
       end
 
       # Fetch all the events from the object, get only the ones that are from
       # the same name as the instance of this class and call +trigger+. It runs
-      # in reverse order, so first in first out
-      def trigger_object(object)
+      # in reverse order, so first in first out. Since events can sometimes be
+      # cached, using +events+ avoid calculating the +all_events+
+      def trigger_object(object, events = nil)
         @object = object
         catchable(:object) do
-          object.all_events[name]&.reverse.send(@iterator) do |block|
-            trigger(block)
-          end
+          events ||= object.all_events
+          events[name]&.send(@iterator, &method(:trigger))
         end
       ensure
         @object = nil
@@ -72,7 +82,7 @@ module Rails # :nodoc:
 
       # Call a given block and send the event as reference
       def trigger(block)
-        block.call(self)
+        catchable(:item) { block.call(self) }
       end
 
       # Stop the execution of an event using a given +layer+. The default is to
@@ -85,8 +95,13 @@ module Rails # :nodoc:
 
         # Add the layer, exec the block and remove the layer
         def catchable(layer)
+          @completed = false
           @layers << layer
-          yield
+
+          result = yield
+          @completed = true
+
+          result
         ensure
           @layers.pop
         end

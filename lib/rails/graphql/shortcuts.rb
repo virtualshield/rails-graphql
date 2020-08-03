@@ -52,6 +52,8 @@ module GraphQL
       Rails::GraphQL::Request.execute(*args, **xargs)
     end
 
+    alias perform execute
+
     # See {Request}[rdoc-ref:Rails::GraphQL::Request]
     def debug(*args, **xargs)
       Rails::GraphQL::Request.debug(*args, **xargs)

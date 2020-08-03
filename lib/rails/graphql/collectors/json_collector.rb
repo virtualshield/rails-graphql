@@ -30,8 +30,9 @@ module Rails # :nodoc:
           yield
           end_stack(key, array, plain)
         rescue
-          @current_value = @stack_value.pop
-          @current_array = @stack_array.pop
+          pop_size = array && !plain ? 2 : 1
+          @current_value = @stack_value.pop(pop_size)
+          @current_array = @stack_array.pop(pop_size)
           raise
         end
 
@@ -45,7 +46,7 @@ module Rails # :nodoc:
         # Add the given +value+ to the given +key+. Ensure to encode the value
         # before calling this function.
         def add(key, value)
-          @current_value << (@current_array ? %(#{value},) : %("#{key}": #{value},))
+          @current_value << (@current_array ? %(#{value},) : %("#{key}":#{value},))
         end
 
         # Same as +add+ but this always encode the +value+ beforehand.
@@ -57,7 +58,7 @@ module Rails # :nodoc:
         def next
           return unless @stack_array.last === :complex
           @stack_value.last << to_s
-          @stack_value.last << '},{'
+          @stack_value.last << ','
           @current_value = ''
         end
 
@@ -88,12 +89,11 @@ module Rails # :nodoc:
           # Finalize a stack and set the result on the given +key+.
           def end_stack(key, as_array = false, plain_array = false)
             if as_array && !plain_array
-              result = @stack_value.pop
-              @stack_array.pop
-            else
-              result = to_s
+              @current_value = @stack_value.pop
+              @current_array = @stack_array.pop
             end
 
+            result = to_s
             @current_value = @stack_value.pop
             @current_array = @stack_array.pop
             add(key, result)

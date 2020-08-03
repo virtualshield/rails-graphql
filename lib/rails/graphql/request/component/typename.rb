@@ -34,6 +34,8 @@ module Rails # :nodoc:
         def resolve_with!(object)
           @typename = object.gql_name
           resolve!
+        ensure
+          @typename = nil
         end
 
         # Return the name of the field to be used on the response
@@ -55,17 +57,18 @@ module Rails # :nodoc:
 
           # Perform the organization step
           def organize_then(&block)
-            super(block) { parse_directives }
+            super(block) { parse_directives(:field) }
           end
 
           # Go through the right flow to write the value
           def resolve_then
             super do
-              raise InvalidOutputError, <<~MSG.squish if @typename.blank?
+              typename = @typename || parent.typename
+              raise InvalidOutputError, <<~MSG.squish if typename.blank?
                 The #{gql_name} field value cannot be null.
               MSG
 
-              strategy.resolve(self, @typename) do |value|
+              strategy.resolve(self, typename) do |value|
                 yield value if block_given?
                 trigger_event(:finalize)
               end

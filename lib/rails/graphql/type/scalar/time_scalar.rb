@@ -25,7 +25,7 @@ module Rails # :nodoc:
           end
 
           def deserialize(value)
-            EPOCH + super
+            EPOCH + to_hash(value)
           end
         end
       end

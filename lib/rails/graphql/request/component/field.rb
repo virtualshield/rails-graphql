@@ -14,7 +14,6 @@ module Rails # :nodoc:
         DATA_PARTS = %i[arguments]
 
         delegate :operation, :variables, to: :parent
-        delegate :merge_hash_array!, to: 'Helpers::InheritedCollection'
         delegate :method_name, :resolver, :type_klass, :leaf_type?,
           :dynamic_resolver?, to: :field
 
@@ -48,7 +47,18 @@ module Rails # :nodoc:
         # Override that considers the requested field directives and also the
         # definition field events, both from itself and its directives events
         def all_events
-          @all_events ||= merge_hash_array!(field.all_events, super)
+          @all_events ||= Helpers::InheritedCollection.merge_hash_array!(
+            field.all_events, super)
+        end
+
+        # Get and cache all the arguments for this given field
+        def all_arguments
+          @all_arguments ||= begin
+            request.cache(:field_argumnets, {})[field] ||= begin
+              result = field.all_arguments
+              result.each_value.map(&:gql_name).zip(result.each_value).to_h
+            end
+          end
         end
 
         # Assign a given +field+ to this class. The field must be an output
@@ -67,11 +77,6 @@ module Rails # :nodoc:
           alias_name || name
         end
 
-        # Fields come from the type klass of the current assigned field
-        def fields_source
-          type_klass.fields
-        end
-
         # A little helper for finding the correct parent type name
         def typename
           (try(:current_object) || try(:type_klass))&.gql_name
@@ -81,6 +86,12 @@ module Rails # :nodoc:
         # operation and it is associated to a schema field
         def entry_point?
           parent.kind === :operation
+        end
+
+        # Fields are assignable because they are actually the selection, so they
+        # need to be assigned to a filed
+        def assignable?
+          true
         end
 
         # A little extension of the +is_a?+ method that allows checking it using
@@ -98,16 +109,30 @@ module Rails # :nodoc:
           raise unless entry_point?
         end
 
+        # When the +type_klass+ of an object is an interface or a union, the
+        # field needs to be redirected to the one from the actual resolved
+        # +object+ type
+        def resolve_with!(object)
+          return resolve! if invalid?
+
+          old_field, @field = @field, object[@field.name]
+          @current_object = object
+          resolve!
+        ensure
+          @field, @current_object = old_field, nil
+        end
+
         protected
 
           # Perform the organization step
           def organize_then(&block)
             super(block) do
-              parse_arguments
-              parse_directives
-
               check_assignment!
+
+              parse_arguments
               check_arguments!
+
+              parse_directives
               parse_selection
             end
 
@@ -119,6 +144,11 @@ module Rails # :nodoc:
             stacked { send("resolve_#{field.array? ? 'many' : 'one'}", &block) }
           rescue StandardError
             resolve_invalid
+          end
+
+          # Don't stack over response when it's processing as array
+          def unstacked_selection?
+            field.array?
           end
 
         private
@@ -140,18 +170,36 @@ module Rails # :nodoc:
             end
           end
 
+          # This override allows reasigned fields to perform events. This
+          # happens when fields are originally organized from interfaces. If
+          # the event is stopped for the object, then it doesn't proceed to the
+          # strategy implementation, ensuring compatibility
+          def trigger_event(event_name, **xargs)
+            return super if @current_object.nil?
+
+            listeners = request.cache(:dynamic_listeners, {})[field] ||= field.all_listeners
+            return super unless listeners.include?(event_name)
+
+            event = Event.new(event_name, strategy, **xargs.reverse_merge(phase: :execution))
+            callbacks = request.cache(:dynamic_events, {})[field] ||= field.all_events
+
+            result = event.trigger_object(field, callbacks)
+            event.stopped? ? result : super
+          end
+
           # Check if the field was assigned correctly to an output field
           def check_assignment!
             raise MissingFieldError, <<~MSG.squish if field.nil?
               Unable to find a field named "#{gql_name}" on
-              #{parent === operation ? operation.kind : parent.type_klass.name}.
+              #{entry_point? ? operation.kind : parent.type_klass.name}.
             MSG
 
             raise FieldError, <<~MSG.squish unless field.output_type?
               The "#{gql_name}" was assigned to a non-output type of field: #{field.inspect}.
             MSG
 
-            raise FieldError, <<~MSG.squish if field.leaf_type? && selection.present?
+            empty_selection = data[:selection].nil? || data[:selection].null?
+            raise FieldError, <<~MSG.squish if field.leaf_type? && !empty_selection
               The "#{gql_name}" was assigned to the #{type_klass.gql_name} which
               is a leaf type and does not have nested fields.
             MSG

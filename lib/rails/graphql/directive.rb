@@ -155,11 +155,11 @@ module Rails # :nodoc:
         validate!
       end
 
-      # When fetching all the events, embed the actual instance as the target
+      # When fetching all the events, embed the actual instance as the context
       # of the callback
       def all_events
         self.class.all_events.transform_values do |events|
-          events.map { |callback| callback.retarget(self) }
+          events.map { |item| Callback.set_context(item, self) }
         end
       end
 

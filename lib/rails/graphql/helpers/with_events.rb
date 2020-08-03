@@ -20,8 +20,6 @@ module Rails # :nodoc:
           other.define_method(:event_types) { self.class.event_types }
           other.define_method(:events) { @events ||= Hash.new { |h, k| h[k] = [] } }
           other.define_method(:listeners) { @listeners ||= Set.new }
-          other.define_method(:all_events) { @events || {} }
-          other.define_method(:all_listeners) { @listeners || Set.new }
         end
 
         # Helper module to define static list of valid event types
@@ -31,6 +29,16 @@ module Rails # :nodoc:
             list.blank? ? @event_types : @event_types =
               list.flatten.compact.map(&:to_sym).freeze
           end
+        end
+
+        # Mostly for correct inheritance on instances
+        def all_events
+          @events || {}
+        end
+
+        # Mostly for correct inheritance on instances
+        def all_listeners
+          @listeners || Set.new
         end
 
         # Add a new event listener for the given +event_name+. It is possible

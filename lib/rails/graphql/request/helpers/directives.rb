@@ -38,20 +38,36 @@ module Rails # :nodoc:
             list = []
 
             visitor.collect_directives(*data[:directives]) do |data|
-              data[:arguments].transform_values!(&method(:parse_directive_argument))
-              args = Request::Arguments.new(data[:arguments])
-              list << find_directive!(data[:name]).new(args)
+              # TODO: Add request cache
+              # TODO: Share this behavior of argument/variable assignment
+              instance = find_directive!(data[:name])
+
+              parser = instance.all_arguments
+              parser = parser.map(&:gql_name).zip(parser.values).to_h
+
+              args = data[:arguments].map do |key, value|
+                raise ArgumentError, <<~MSG.squish unless parser.key?(key)
+                  The "#{instance.gql_name}" directive does not contain a
+                  "#{arg_name}" argument.
+                MSG
+
+                parse_directive_argument(parser[key], value)
+              end.to_h
+
+              list << instance.new(request.build(Request::Arguments, args))
             end unless data[:directives].empty?
 
-            @directives = GraphQL.directives_to_set(list,
-              location: location || kind,
-              source: self,
-            ).freeze
+            if list.present?
+              event = Event.new(:attach, strategy, self, phase: :execution)
+              list = GraphQL.directives_to_set(list, [], event, location: location || kind)
+            end
+
+            @directives = list.freeze
           end
 
           # If the value is a pointer, then it needs to collect a variable from
           # the operation level, otherwise, return the value without changes
-          def parse_directive_argument(value)
+          def parse_directive_argument(argument, value)
             return value unless value.is_a?(::FFI::Pointer)
 
             raise ArgumentError, <<~MSG.squish unless respond_to?(:variables)

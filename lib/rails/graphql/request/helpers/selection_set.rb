@@ -21,12 +21,14 @@ module Rails # :nodoc:
           # field defined under the schema structure
           def parse_selection
             @selection = {}
+            assigners = {}
 
             visitor.collect_fields(*data[:selection]) do |kind, node, data|
-              add_component(kind, node, data)
+              component = add_component(kind, node, data)
+              assigners[component.name] = component if component.assignable?
             end unless data[:selection].nil? || data[:selection].null?
 
-            assing_fields!
+            assing_fields!(assigners)
             @selection.freeze
           end
 
@@ -34,12 +36,12 @@ module Rails # :nodoc:
           # current requested fields. As shown by benchmark, since the index is
           # based on Symbols, the best way to find +gql_name+ based fields is
           # through interation and search. Complexity O(n)
-          def assing_fields!
-            pending = selection.size
+          def assing_fields!(assigners)
+            pending = assigners.size
             return if pending.zero?
 
             fields_source.each_value do |field|
-              next unless (item = selection[field.gql_name])
+              next unless (item = assigners[field.gql_name])
 
               item.assing_to(field)
               break if (pending -= 1) === 0

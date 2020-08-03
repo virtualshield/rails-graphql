@@ -23,11 +23,11 @@ module Rails # :nodoc:
           super(event_name, object, *args, **xargs, &block)
         end
 
-        def initialize(name, strategy, **data)
+        def initialize(name, strategy, source = nil, **data)
           @request = strategy.request
           @strategy = strategy
 
-          source = request.stack.first
+          source ||= request.stack.first
           @index, source = source, request.stack.second if source.is_a?(Numeric)
 
           super(name, source, **data)

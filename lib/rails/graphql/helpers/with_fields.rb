@@ -54,7 +54,6 @@ module Rails # :nodoc:
             The #{field.class.name} is not a valid field.
           MSG
 
-          puts name if field?(field.name)
           raise ArgumentError, <<~MSG.squish if field?(field.name)
             The #{field.name.inspect} field is already defined and can't be replaced.
           MSG

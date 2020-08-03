@@ -5,20 +5,6 @@ module Rails # :nodoc:
     class Request # :nodoc:
       # Helper methods for the resolve step of a request
       module Resolveable
-        # When the +type_klass+ of an object is an interface or a union, the
-        # field needs to be redirected to the one from the actual resolved
-        # +object+ type
-        def resolve_with!(object)
-          return resolve! if invalid?
-          capture_exception(:resolve) do
-            old_field, @field, @current_object = @field, object[@field.name], object
-
-            resolve!
-          ensure
-            @field, @current_object = old_field, nil
-          end
-        end
-
         # Resolve the object
         def resolve!
           capture_exception(:resolve) { resolve }
@@ -29,6 +15,7 @@ module Rails # :nodoc:
           write_array do
             value.each.with_index do |item, idx|
               block.call(item, idx)
+              response.next
             rescue StandardError => e
               real_error = 'The ' + ActiveSupport::Inflector.ordinalize(idx)
               real_error += " value of the #{gql_name} field"
@@ -72,26 +59,35 @@ module Rails # :nodoc:
             end
           end
 
+          # Since comples object may or may not be inside an array, this helps
+          # to decide if a new stack should be started or not
+          def write_selection(object = nil)
+            items = selection.each_value
+            items = items.each_with_object(object) unless object.nil?
+            iterator = object.nil? ? :resolve! : :resolve_with!
+
+            return items.each(&iterator) if unstacked_selection?
+
+            response.with_stack(gql_name) do
+              items.each(&iterator)
+            end
+          end
+
           # Write a value based on a Union type
           def write_union(value)
             object = type_klass.all_members.reverse_each.find { |t| t.valid_member?(value) }
-
-            raise_invalid_member! if object.nil?
-            selection.each_value { |field| field.resolve_with!(object) }
+            object.nil? ? raise_invalid_member! : write_selection(object)
           end
 
           # Write a value based on a Interface type
           def write_interface(value)
             object = type_klass.all_types.reverse_each.find { |t| t.valid_member?(value) }
-
-            raise_invalid_member! if object.nil?
-            selection.each_value { |field| field.resolve_with!(object) }
+            object.nil? ? raise_invalid_member! : write_selection(object)
           end
 
           # Write a value based on a Object type
           def write_object(value)
-            raise_invalid_member! unless type_klass.valid_member?(value)
-            selection.each_value(&:resolve!)
+            type_klass.valid_member?(value) ? write_selection : raise_invalid_member!
           end
 
           # Write a value with the correct serialize mode. Validate the output

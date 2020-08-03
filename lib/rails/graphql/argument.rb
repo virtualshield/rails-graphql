@@ -90,7 +90,10 @@ module Rails # :nodoc:
 
       # Return the class of the type object
       def type_klass
-        @type_klass ||= GraphQL.type_map.fetch!(type, namespaces: namespaces)
+        @type_klass ||= GraphQL.type_map.fetch!(type,
+          namespaces: namespaces,
+          prevent_register: owner,
+        )
       end
 
       # Checks if the argument can be null
@@ -139,6 +142,8 @@ module Rails # :nodoc:
         return type_klass.to_hash(value) unless array?
         value.map { |part| type_klass.to_hash(part) }
       end
+
+      alias deserialize to_hash
 
       # This checks if a given serialized value is valid for this field
       def valid_input?(value)

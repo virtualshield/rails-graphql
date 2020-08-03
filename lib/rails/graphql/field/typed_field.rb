@@ -40,7 +40,10 @@ module Rails # :nodoc:
 
       # Return the class of the type object
       def type_klass
-        @type_klass ||= GraphQL.type_map.fetch!(type, namespaces: namespaces)
+        @type_klass ||= GraphQL.type_map.fetch!(type,
+          namespaces: namespaces,
+          prevent_register: owner,
+        )
       end
 
       # Checks if the type of the field is valid
