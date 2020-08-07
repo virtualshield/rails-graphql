@@ -6,11 +6,16 @@ module Rails # :nodoc:
       class Visitor < FFI::Struct
         CALLBACK_LAYOUT = %i[pointer pointer].freeze
 
-        macros = Pathname.new(__dir__).join('../../../../')
-        macros = macros.join('ext/graphqlparser/c/GraphQLAstForEachConcreteType.h')
-        MACROS = File.foreach(macros.to_s).map do |line|
-          line.match(/MACRO\(\w+, (\w+)\)/).try(:[], 1)
-        end.compact.freeze
+        MACROS = %w[
+          document operation_definition variable_definition selection_set field argument
+          fragment_spread inline_fragment fragment_definition variable int_value float_value
+          string_value boolean_value null_value enum_value list_value object_value object_field
+          directive named_type list_type non_null_type name schema_definition
+          operation_type_definition scalar_type_definition object_type_definition
+          field_definition input_value_definition interface_type_definition
+          union_type_definition enum_type_definition enum_value_definition
+          input_object_type_definition type_extension_definition directive_definition
+        ]
 
         macros = MACROS.map do |key|
           [
@@ -47,7 +52,7 @@ module Rails # :nodoc:
 
           # Unregister a list or all registered function visitors
           def unregister!
-            registered.map { |key| self[key.to_sym] = nil }
+            registered.map { |key| self[key] = nil }
             registered.clear
           end
 
@@ -58,11 +63,14 @@ module Rails # :nodoc:
 
           # Run a given block then unregister all the visitors
           def setup_for(method_name)
+            old_registered, @registered = @registered, []
             send("setup_for_#{method_name}")
             yield
 
             unregister!
             nil
+          ensure
+            @registered = old_registered
           end
 
           # An abstract setup for named stuff

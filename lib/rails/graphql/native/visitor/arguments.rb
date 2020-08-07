@@ -37,7 +37,7 @@ module Rails # :nodoc:
             end
 
             register(:visit_variable) do |node|
-              (object[:variable] = node_name(variable_name(node)))              && false
+              (object[:variable] = variable_name(node))                         && false
             end
           end
       end

@@ -16,6 +16,8 @@ module Rails # :nodoc:
 
         attr_reader :name, :type_klass, :request
 
+        alias gql_name name
+
         def initialize(request, node, data)
           @name = data[:name]
           @request = request
@@ -26,6 +28,7 @@ module Rails # :nodoc:
         end
 
         # Return a lazy loaded variable proc
+        # TODO: Mark all the dependent variables
         def variables
           Request::Arguments.lazy
         end
@@ -62,7 +65,6 @@ module Rails # :nodoc:
           # Perform the organization step
           def organize_then(&block)
             super(block) do
-              # TODO: Add request cache
               @type_klass = find_type!(data[:type])
               parse_directives(:fragment_definition)
 
@@ -110,7 +112,7 @@ module Rails # :nodoc:
             location = GraphQL::Native.get_location(other_node)
 
             request.report_node_error(<<~MSG.squish, @node)
-              Duplicated fragment named "#{name}" found on
+              Duplicated fragment named "#{name}" defined on
               line #{location.begin_line}:#{location.begin_column}
             MSG
           end

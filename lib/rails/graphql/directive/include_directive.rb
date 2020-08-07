@@ -12,6 +12,10 @@ module Rails # :nodoc:
       argument :if, :boolean, null: false, desc: <<~DESC
         When false, the underlying element will be automatically marked as null.
       DESC
+
+      on :attach do |source|
+        source.invalidate! unless args[:if]
+      end
     end
   end
 end

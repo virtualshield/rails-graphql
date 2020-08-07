@@ -11,9 +11,9 @@ module Rails # :nodoc:
     # 3. 2 Query fields (ingular and plural)
     # 4. 3 Mutation fields (create, update, destroy)
     class Source::ActiveRecordSource < Source
-      validate_assignment(::ActiveRecord::Base) do |value|
-        "The \"#{value.name}\" is not a valid Active Record model"
-      end
+      # validate_assignment(::ActiveRecord::Base) do |value|
+      #   "The \"#{value.name}\" is not a valid Active Record model"
+      # end
 
       self.object_class = '::Rails::GraphQL::Type::Object::ActiveRecordObject'
       self.input_class = '::Rails::GraphQL::Type::Input::ActiveRecordInput'

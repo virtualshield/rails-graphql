@@ -19,8 +19,7 @@ module Rails # :nodoc:
 
         parent_memoize :request
 
-        attr_reader :name, :alias_name, :parent, :field, :arguments,
-          :current_object, :op_vars
+        attr_reader :name, :alias_name, :parent, :field, :arguments, :current_object
 
         alias args arguments
 
@@ -47,17 +46,15 @@ module Rails # :nodoc:
         # Override that considers the requested field directives and also the
         # definition field events, both from itself and its directives events
         def all_events
-          @all_events ||= Helpers::InheritedCollection.merge_hash_array!(
+          @all_events ||= Helpers::InheritedCollection.merge_hash_array(
             field.all_events, super)
         end
 
-        # Get and cache all the arguments for this given field
+        # Get and cache all the arguments for the field
         def all_arguments
-          @all_arguments ||= begin
-            request.cache(:field_argumnets, {})[field] ||= begin
-              result = field.all_arguments
-              result.each_value.map(&:gql_name).zip(result.each_value).to_h
-            end
+          request.cache(:arguments)[field] ||= begin
+            result = field.all_arguments
+            result.each_value.map(&:gql_name).zip(result.each_value).to_h
           end
         end
 
@@ -102,9 +99,10 @@ module Rails # :nodoc:
 
         # When the field is invalid, there's no much to do
         # TODO: Maybe add a invalid event trigger here
-        def resolve_invalid
+        def resolve_invalid(error = nil)
           validate_output!(nil)
           response.safe_add(gql_name, nil)
+          request.exception_to_error(error, @node) if error.present?
         rescue InvalidOutputError
           raise unless entry_point?
         end
@@ -130,20 +128,18 @@ module Rails # :nodoc:
               check_assignment!
 
               parse_arguments
-              check_arguments!
-
               parse_directives
               parse_selection
             end
-
-            @op_vars = nil
           end
 
           # Perform the resolve step
           def resolve_then(&block)
-            stacked { send("resolve_#{field.array? ? 'many' : 'one'}", &block) }
-          rescue StandardError
-            resolve_invalid
+            stacked do
+              send("resolve_#{field.array? ? 'many' : 'one'}", &block)
+            rescue StandardError => error
+              resolve_invalid(error)
+            end
           end
 
           # Don't stack over response when it's processing as array
@@ -163,10 +159,8 @@ module Rails # :nodoc:
 
           # Resolve the field for a list of information
           def resolve_many(&block)
-            strategy.resolve(self, array: true) do |item, idx|
-              stacked(idx) { resolve_one(item, &block) }
-            rescue StandardError
-              resolve_invalid
+            strategy.resolve(self, array: true) do |item|
+              resolve_one(item, &block)
             end
           end
 
@@ -177,14 +171,16 @@ module Rails # :nodoc:
           def trigger_event(event_name, **xargs)
             return super if @current_object.nil?
 
-            listeners = request.cache(:dynamic_listeners, {})[field] ||= field.all_listeners
+            listeners = request.cache(:dynamic_listeners)[field] ||= field.all_listeners
             return super unless listeners.include?(event_name)
 
             event = Event.new(event_name, strategy, **xargs.reverse_merge(phase: :execution))
-            callbacks = request.cache(:dynamic_events, {})[field] ||= field.all_events
+            callbacks = request.cache(:dynamic_events)[field] ||= field.all_events
 
-            result = event.trigger_object(field, callbacks)
-            event.stopped? ? result : super
+            old_events, @all_events = @all_events, callbacks
+            super
+          ensure
+            @all_events = old_events
           end
 
           # Check if the field was assigned correctly to an output field
@@ -207,20 +203,6 @@ module Rails # :nodoc:
             raise DisabledFieldError, <<~MSG.squish if field.disabled?
               The "#{gql_name}" was found but it is marked as disabled.
             MSG
-          end
-
-          # Check if all the arguments are compatible with operation arguments
-          # when they are conected via a variable
-          def check_arguments!
-            field.all_arguments.each_value do |arg|
-              op_argument = op_vars[arg.gql_name]
-              next if op_argument.nil?
-
-              raise FieldError, <<~MSG.squish unless arg =~ operation.var_args[op_argument]
-                The "$#{op_argument}" operation arguemnt is not compatible with
-                the "#{arg.gql_name}" argument on the "#{gql_name}" field.
-              MSG
-            end
           end
       end
     end

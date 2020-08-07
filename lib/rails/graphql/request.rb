@@ -79,6 +79,13 @@ module Rails # :nodoc:
         def const_missing(name)
           Component.const_defined?(name) ? Component.const_get(name) : super
         end
+
+        def eager_load! # :nodoc:
+          super
+
+          Request::Component.eager_load!
+          Request::Strategy.eager_load!
+        end
       end
 
       def initialize(schema = nil, namespace: :base)
@@ -151,8 +158,12 @@ module Rails # :nodoc:
         location = GraphQL::Native.get_location(node)
         xargs[:col] ||= location.begin_column
         xargs[:line] ||= location.begin_line
-        xargs[:path] ||= stack_to_path
+        report_error(message, **xargs)
+      end
 
+      # The final helper that facilitates how errors are reported
+      def report_error(message, **xargs)
+        xargs[:path] ||= stack_to_path
         errors.add(message, **xargs)
       end
 
@@ -190,9 +201,17 @@ module Rails # :nodoc:
         obj
       end
 
+      # Get and cache a sanitized version of the arguments
+      def sanitized_arguments
+        return {} unless args.each_pair.any?
+        cache(:sanitized_arguments) do
+          args.to_h.transform_keys { |key| key.to_s.camelize(:lower) }
+        end
+      end
+
       # A shared way to cache information across the execution of an request
-      def cache(key, init_value = nil)
-        @cache[key] ||= init_value
+      def cache(key, init_value = nil, &block)
+        @cache[key] ||= (init_value || block&.call || {})
       end
 
       private
@@ -223,6 +242,7 @@ module Rails # :nodoc:
           parts = err.message.match(/\A(\d+)\.(\d+)(?:-\d+)?: (.*)\z/)
           errors.add(parts[3], line: parts[1], col: parts[2])
         ensure
+          GraphQL::Native.free_node(@document)
           @response.try(:append_errors, errors)
         end
 
@@ -293,14 +313,15 @@ module Rails # :nodoc:
           obj
         end
 
-        # Little helper to build an +OpenStruct+ that has the correct underscore
-        # keys
-        def build_ostruct(hash)
-          raise ::ArgumentError, <<~MSG.squish unless hash.kind_of?(Hash)
-            The "#{hash.class.name}" is not a valid hash.
+        # Little helper to build an +OpenStruct+ ensure the given +value+ is a
+        # +Hash+. It can also +transform_keys+ with the given block
+        def build_ostruct(value, &block)
+          raise ::ArgumentError, <<~MSG.squish unless value.kind_of?(Hash)
+            The "#{value.class.name}" is not a valid hash.
           MSG
 
-          OpenStruct.new(hash.transform_keys { |key| key.to_s.underscore })
+          value = value.transform_keys(&block) if block.present?
+          OpenStruct.new(value)
         end
 
         # Make sure that a schema was assigned by find the corresponding one for

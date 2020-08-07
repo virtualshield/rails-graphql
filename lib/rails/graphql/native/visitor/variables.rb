@@ -22,7 +22,7 @@ module Rails # :nodoc:
           setup_for(:variables) do
             register(:end_visit_variable_definition) do |node|
               stack[-2][:default] = stack.pop unless default_value(node).null?
-              block.call(stack.pop)
+              block.call(stack.pop, node)
             end
 
             nodes.each { |node| visit(node, self, user_data) }

@@ -1,10 +1,16 @@
 # frozen_string_literal: true
 
-require 'benchmark/ips'
-require 'graphql'
+require 'bundler/inline'
 
-require_relative '../lib/rails/graphqlparser'
-require_relative '../lib/rails/graphql/native'
+gemfile do
+  source 'https://rubygems.org'
+  gem 'rails', '>= 5.0'
+  gem 'benchmark-ips', require: 'benchmark/ips'
+  gem 'graphql',       require: 'graphql'
+  gem 'rails-graphql', path: '../'
+end
+
+require_relative '../lib/rails/graphql'
 
 document = <<-GRAPHQL
   query IntrospectionQuery {

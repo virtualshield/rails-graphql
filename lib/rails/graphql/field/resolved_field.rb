@@ -53,9 +53,11 @@ module Rails # :nodoc:
       def validate!(*)
         super if defined? super
 
-        invalid = events.each_value.reject do |callback|
+        invalid = @events&.each_value&.reject do |callback|
           callback.block.is_a?(Proc) || callable?(callback.block)
         end
+
+        # TODO: Store the result of +dynamic_resolver?+
 
         raise ArgumentError, <<~MSG.squish if invalid.present?
           The "#{owner.name}" class does not define the following methods needed

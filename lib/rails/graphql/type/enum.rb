@@ -47,7 +47,7 @@ module Rails # :nodoc:
 
           # Check if a given value is a valid non-serialized output
           def valid_output?(value)
-            value.respond_to?(:to_s) && all_values.include?(value.to_s)
+            all_values.include?(to_hash(value))
           end
 
           # Transforms the given value to its representation in a JSON string
@@ -92,17 +92,26 @@ module Rails # :nodoc:
 
             directives = Array.wrap(directives)
             directives << deprecated_klass.new(
-              reason: (deprecated.is_a?(String) ? deprecated : nil)
+              reason: (deprecated.is_a?(String) ? deprecated : nil),
             ) if deprecated.present?
 
             directives = GraphQL.directives_to_set(directives,
               location: :enum_value,
-              source:  self,
+              source: self,
             )
 
             self.values << value
             self.value_description[value] = desc unless desc.nil?
             self.value_directives[value] = directives
+          end
+
+          # Check if a given +value+ is using a +directive+
+          def value_using?(value, directive)
+            raise ArgumentError, <<~MSG.squish unless directive < GraphQL::Directive
+              The provided #{item_or_symbol.inspect} is not a valid directive.
+            MSG
+
+            value_directives[to_hash(value)]&.any? { |item| item.is_a?(directive) }
           end
 
           # Build a hash with deprecated values and their respective reason for
@@ -114,6 +123,11 @@ module Rails # :nodoc:
                 list.merge(value => obj.args.reason)
               end
             end.freeze
+          end
+
+          # This returns the field directives and all value directives
+          def all_directives
+            super + all_value_directives.each_value.reduce(:+)
           end
 
           def inspect # :nodoc:

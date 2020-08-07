@@ -12,12 +12,7 @@ module Rails # :nodoc:
 
         # Organize the object if it is not already organized
         def organize!
-          capture_exception(:organize, true) do
-            unless organized?
-              organize
-              strategy.add_listener(self)
-            end
-          end
+          capture_exception(:organize, true) { organize unless organized? }
         end
 
         protected
@@ -36,6 +31,7 @@ module Rails # :nodoc:
           def organize_then(after_block, &block)
             stacked do
               block.call
+              strategy.add_listener(self)
               trigger_event(:organize)
               after_block.call if after_block.present?
             end
@@ -46,70 +42,106 @@ module Rails # :nodoc:
           # Helper parser for request arguments (operation variables) that
           # collect necessary arguments from the request
           def parse_variables
-            @variables = OpenStruct.new
-            @var_args = {}
+            @arguments = {}
 
-            visitor.collect_variables(*data[:variables]) do |data|
-              # TODO: Share this behavior of argument/variable assignment
+            visitor.collect_variables(*data[:variables]) do |data, node|
               arg_name = data[:name]
-              raise ExecutionError, <<~MSG.squish if var_args.key?(arg_name)
+              raise ExecutionError, <<~MSG.squish if arguments.key?(arg_name)
                 The "#{arg_name}" argument is already defined for this #{kind}.
               MSG
 
               extra = data.except(:name, :type).merge(owner: schema)
-              arg = Argument.new(arg_name, data[:type], **extra)
-              arg.validate!
-
-              value = request.args[arg.gql_name]
-              value = arg.default if value.nil?
-
-              raise ArgumentError, <<~MSG.squish unless arg.valid?(value)
-                Invalid value "#{value.inspect}" for "$#{arg.gql_name}" argument.
-              MSG
-
-              var_args[arg.gql_name] = arg
-              variables[arg.name] = arg.deserialize(value) unless value.nil?
+              item = arguments[arg_name] = Argument.new(arg_name, data[:type], **extra)
+              item.node = node
+              item.validate!
             end unless data[:variables].empty?
 
-            @var_args.freeze
-            @variables.freeze
+            args = request.sanitized_arguments
+            args = collect_arguments(self, args, var_access: false) do |errors|
+              "Invalid arguments for #{log_source}: #{errors}."
+            end
+
+            @variables = OpenStruct.new(args).freeze
+            @arguments.freeze
           end
 
           # Helper parser for arguments that also collect necessary variables
           def parse_arguments
-            @arguments = request.build(Request::Arguments)
-            @op_vars = {}
-
-            parser = all_arguments
+            args = {}
             visitor.collect_arguments(*data[:arguments]) do |data|
-              # TODO: Share this behavior of argument/variable assignment
-              arg_name = data[:name]
-              variable = data[:variable]
-
-              raise ArgumentError, <<~MSG.squish unless parser.key?(arg_name)
-                The "#{gql_name}" field does not contain a "#{arg_name}" argument.
-              MSG
-
-              # There's no need for further checkings if the value comes from a
-              # operation variable
-              if variable.present?
-                op_vars[arg_name] = variable
-                arguments[arg_name.underscore] = variables[variable]
-                next
-              end
-
-              # Deserialize the value and check if it is a valid input
-              field_argument = parser[arg_name]
-              value = field_argument.deserialize(data[:value])
-              raise ArgumentError, <<~MSG.squish unless field_argument.valid?(value)
-                The value provided for the "#{arg_name}" on "#{gql_name}" field is invalid.
-              MSG
-
-              arguments[arg_name.underscore] = value
+              args[data[:name]] = variable = data[:variable]
+              args[data[:name]] = data[:value] if variable.nil? || variable.null?
             end unless data[:arguments].empty?
 
-            @op_vars.freeze
-            @arguments.freeze
+            args = collect_arguments(self, args) do |errors|
+              "Invalid arguments for #{gql_name} #{kind}: #{errors}."
+            end
+
+            @arguments = request.build(Request::Arguments, args).freeze
+          end
+
+          # Build a hash that collect validated values for a set of arguments.
+          # The +source+ can either be the list of arguments or an object that
+          # responds to +all_arguments+. The +block+ is called when something
+          # goes wrong to collect a formatted message.
+          def collect_arguments(source, values, var_access: true, &block)
+            op_source = nil
+            op_vars = nil
+
+            errors = []
+            source = source.all_arguments if source.respond_to?(:all_arguments)
+            result = values.each_pair.inject({}) do |result, (key, value)|
+              # Check for argument existance
+              raise ArgumentError, <<~MSG.squish unless (argument = source[key]).present?
+                The "#{key}" argument is not defined
+              MSG
+
+              # Pointer means operation variable
+              if value.is_a?(::FFI::Pointer)
+                var_name = visitor.node_name(value)
+                raise ArgumentError, <<~MSG.squish unless var_access
+                  Unable to use variable "$#{var_name}" in the current scope
+                MSG
+
+                op_vars ||= operation.all_arguments
+                raise ArgumentError, <<~MSG.squish unless (op_var = op_vars[var_name]).present?
+                  The #{operation.log_source} does not define the $#{var_name} variable
+                MSG
+
+                # When arguments are not equivalent, they can ended up with
+                # invalid values, so this already ensures that whatever the
+                # variable value ended up being, it will be valid due to this
+                raise ArgumentError, <<~MSG.squish unless argument =~ op_var
+                  The $#{var_name} variable on #{operation.log_source} is not compatible
+                  with "#{key}" argument
+                MSG
+
+                operation.used_variables << var_name
+                value = variables[var_name]
+              else
+                # Only when the given value is an actual value is when we check
+                # if the given value is actually valid
+                value = argument.deserialize(value)
+                raise ArgumentError, <<~MSG.squish unless argument.valid?(value)
+                  Invalid value provided to "#{key}" argument
+                MSG
+              end
+
+              result[argument.name] = value
+              result
+            rescue ArgumentError => error
+              errors << error.message
+              result
+            end
+
+            # Checks for any required arugment that was not provided
+            source.each_value do |argument|
+              next if result.key?(argument.name) || argument.null?
+              errors << "The \"#{argument.gql_name}\" argument can not be null"
+            end
+
+            return result if errors.blank?
+            raise ArgumentError, block.call(errors.to_sentence)
           end
       end
     end

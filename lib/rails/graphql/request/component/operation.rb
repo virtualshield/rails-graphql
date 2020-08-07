@@ -52,17 +52,20 @@ module Rails # :nodoc:
 
         delegate :type, :query?, :mutation?, :subscription?, to: :class
 
-        attr_reader :name, :variables, :var_args, :request
+        attr_reader :name, :variables, :arguments, :request
 
-        alias vars variables
         alias gql_name name
         alias operation itself
+        alias vars variables
+        alias all_arguments arguments
 
         def initialize(request, node, data)
           @name = data[:name]
           @request = request
 
           super(node, data)
+
+          check_duplicated_operation!
         end
 
         # The list of fields comes from the +fields_for+ of the same type as
@@ -87,6 +90,16 @@ module Rails # :nodoc:
           response.safe_add(name, nil) if name.present?
         end
 
+        # Stores all the used arguments to report not used ones
+        def used_variables
+          @used_variables ||= Set.new
+        end
+
+        # A fast way to access the correct display name for log or errors
+        def log_source
+          @log_source ||= name.blank? ? type : "#{name} #{type}"
+        end
+
         protected
 
           # Trigger an specific event with the +type+ of the operation
@@ -95,6 +108,7 @@ module Rails # :nodoc:
               trigger_event(type)
               yield if block_given?
               organize_fields
+              report_unused_variables
             end
           end
 
@@ -105,8 +119,6 @@ module Rails # :nodoc:
               parse_directives
               parse_selection
             end
-
-            @var_args = nil
           end
 
           # Resolve all the fields
@@ -117,6 +129,35 @@ module Rails # :nodoc:
           # Name used for debug purposes
           def display_name
             @display_name ||= "#{type.to_s.titlecase} #{name.presence || '__default__'}"
+          end
+
+          # Add an error for each not used variable and then clean up some data
+          def report_unused_variables
+            (arguments.keys - used_variables.to_a).each do |key|
+              argument = arguments[key]
+              request.report_node_error(<<~MSG.squish, argument.node || @node)
+                Unused variable $#{argument.gql_name} on #{log_source}.
+              MSG
+            end
+
+            @arguments = nil
+            @used_variables = nil
+          end
+
+          # If there is another operation with the same name already defined,
+          # raise an error
+          def check_duplicated_operation!
+            return unless request.operations.key?(name)
+
+            invalidate!
+
+            other_node = request.operations[name].instance_variable_get(:@node)
+            location = GraphQL::Native.get_location(other_node)
+
+            request.report_node_error(<<~MSG.squish, @node)
+              Duplicated operation named "#{name}" defined on
+              line #{location.begin_line}:#{location.begin_column}
+            MSG
           end
       end
     end

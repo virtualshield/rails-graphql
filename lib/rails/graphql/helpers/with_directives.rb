@@ -65,7 +65,7 @@ module Rails # :nodoc:
             list << item_or_symbol
           end
 
-          current = try(:all_directives) || directives
+          current = try(:all_directives) || @directives
           items = GraphQL.directives_to_set(list, current, source: self)
           directives.merge(items)
         rescue DefinitionError => e
@@ -79,7 +79,7 @@ module Rails # :nodoc:
             The provided #{item_or_symbol.inspect} is not a valid directive.
           MSG
 
-          directives.any? { |item| item.is_a?(directive) }
+          all_directives.any? { |item| item.is_a?(directive) }
         end
 
         alias has_directive? using?
@@ -93,7 +93,7 @@ module Rails # :nodoc:
         def all_directive_events
           InheritedCollection::LazyValue.new do
             all_directives.map(&:all_events).inject({}) do |lhash, rhash|
-              InheritedCollection.merge_hash_array!(lhash, rhash)
+              InheritedCollection.merge_hash_array(lhash, rhash)
             end
           end
         end
@@ -102,8 +102,8 @@ module Rails # :nodoc:
         def validate!(*)
           super if defined? super
 
-          directives.each(&:validate!)
-          directives.freeze
+          @directives&.each(&:validate!)
+          @directives&.freeze
 
           nil # No exception already means valid
         end

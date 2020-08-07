@@ -36,7 +36,6 @@ module Rails # :nodoc:
         @data = data.reverse_merge(event: self)
         @source = source
         @layers = []
-        @completed = false
       end
 
       # Return a given +name+ information from the event
@@ -47,16 +46,6 @@ module Rails # :nodoc:
       # Check if the event has a given +name+ information
       def parameter?(name)
         respond_to?(name) || key?(name)
-      end
-
-      # Check if the event was completed and not stopped
-      def completed?
-        @completed
-      end
-
-      # An event is marked as stopped if it is not completed
-      def stopped?
-        !completed?
       end
 
       # From the list of all given objects, run the +trigger_object+
@@ -88,20 +77,16 @@ module Rails # :nodoc:
       # Stop the execution of an event using a given +layer+. The default is to
       # get the last activated layer and stop it
       def stop(*result, layer: nil)
-        throw(layer || @layers.last, *result)
+        layer = @layers[layer] if layer.is_a?(Numeric)
+        throw(layer || @layers.first, *result)
       end
 
       private
 
         # Add the layer, exec the block and remove the layer
         def catchable(layer)
-          @completed = false
-          @layers << layer
-
-          result = yield
-          @completed = true
-
-          result
+          @layers.unshift(layer)
+          catch(layer) { yield }
         ensure
           @layers.pop
         end

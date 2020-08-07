@@ -15,13 +15,14 @@ module Rails # :nodoc:
             result = validate_null(value, checker)
             result ||= array? && array \
               ? validate_array(value) \
-              : validate_type(value)
+              : validate_type(value) \
+              unless value.nil?
 
             return if result.blank?
             message, idx = result
 
             base_error = idx.present? \
-              ? "#{ordinalize(idx)} value of the #{gql_name} #{type}" \
+              ? "#{ordinalize(idx + 1)} value of the #{gql_name} #{type}" \
               : "#{gql_name} #{type} value"
 
             raise InvalidOutputError, "The #{base_error} #{message}."
@@ -39,11 +40,11 @@ module Rails # :nodoc:
           end
 
           def validate_null(value, checker = :null?) # :nodoc:
-            return 'cannot be null' if value.nil? && !send(checker)
+            'can not be null' if value.nil? && !send(checker)
           end
 
           def validate_type(value) # :nodoc:
-            return 'is invalid.' if leaf_type? && !type_klass.valid_output?(value)
+            'is invalid' if leaf_type? && !type_klass.valid_output?(value)
           end
       end
     end

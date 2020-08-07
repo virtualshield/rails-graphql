@@ -73,7 +73,7 @@ module Rails # :nodoc:
           return super unless respond_to?(:all_directive_events)
 
           InheritedCollection::LazyValue.new do
-            InheritedCollection.merge_hash_array!(super, all_directive_events)
+            InheritedCollection.merge_hash_array(super, all_directive_events)
           end
         end
       end

@@ -36,6 +36,7 @@ module Rails # :nodoc:
       # directives so add this possibility
 
       attr_reader :name, :gql_name, :type, :owner, :default
+      attr_accessor :node
 
       delegate :namespaces, to: :owner
 
@@ -83,7 +84,8 @@ module Rails # :nodoc:
 
       # Check if the other argument is equivalent, regardless the name
       def =~(other)
-        (other.null? == null? || other.null? && !null?) &&
+        other.type_klass == type_klass &&
+          (other.null? == null? || other.null? && !null?) &&
           other.array? == array? &&
           other.nullable? == nullable?
       end

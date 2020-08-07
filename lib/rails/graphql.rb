@@ -129,7 +129,8 @@ module Rails # :nodoc:
             The "#{item.class}" is not a valid directive.
           MSG
 
-          raise ArgumentError, <<~MSG.squish if (others.any? { |k| k.class.eql?(item.class) })
+          invalid = others.present? && (others.any? { |k| k.class.eql?(item.class) })
+          raise ArgumentError, <<~MSG.squish if invalid
             A @#{item.gql_name} directive have already been provided.
           MSG
 
@@ -138,7 +139,11 @@ module Rails # :nodoc:
             You cannot use @#{item.gql_name} directive due to location restriction.
           MSG
 
-          event.trigger_object(item) unless event.nil?
+          unless event.nil?
+            item.assing_owner!(event.source)
+            event.trigger_object(item)
+          end
+
           others << item
           result << item
         end

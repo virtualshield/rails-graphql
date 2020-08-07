@@ -21,7 +21,7 @@ module Rails # :nodoc:
         # Get the list of events from all directives and caches it by request
         def all_events
           @all_events ||= directives.map(&:all_events).inject({}) do |lhash, rhash|
-            Helpers::InheritedCollection.merge_hash_array!(lhash, rhash)
+            Helpers::InheritedCollection.merge_hash_array(lhash, rhash)
           end
         end
 
@@ -38,21 +38,13 @@ module Rails # :nodoc:
             list = []
 
             visitor.collect_directives(*data[:directives]) do |data|
-              # TODO: Add request cache
-              # TODO: Share this behavior of argument/variable assignment
               instance = find_directive!(data[:name])
 
-              parser = instance.all_arguments
-              parser = parser.map(&:gql_name).zip(parser.values).to_h
-
-              args = data[:arguments].map do |key, value|
-                raise ArgumentError, <<~MSG.squish unless parser.key?(key)
-                  The "#{instance.gql_name}" directive does not contain a
-                  "#{arg_name}" argument.
-                MSG
-
-                parse_directive_argument(parser[key], value)
-              end.to_h
+              args = directive_arguments(instance)
+              args = collect_arguments(args, data[:arguments]) do |errors|
+                "Invalid arguments for @#{instance.gql_name} directive" +
+                  " added to #{gql_name} #{kind}: #{errors}."
+              end
 
               list << instance.new(request.build(Request::Arguments, args))
             end unless data[:directives].empty?
@@ -65,16 +57,12 @@ module Rails # :nodoc:
             @directives = list.freeze
           end
 
-          # If the value is a pointer, then it needs to collect a variable from
-          # the operation level, otherwise, return the value without changes
-          def parse_directive_argument(argument, value)
-            return value unless value.is_a?(::FFI::Pointer)
-
-            raise ArgumentError, <<~MSG.squish unless respond_to?(:variables)
-              Unable to use variable "$#{var_name}" in the current scope.
-            MSG
-
-            variables[visitor.node_name(value)]
+          # Get and cache all the arguments for this given +directive+
+          def directive_arguments(directive)
+            request.cache(:arguments)[directive] ||= begin
+              result = directive.all_arguments
+              result.each_value.map(&:gql_name).zip(result.each_value).to_h
+            end
           end
       end
     end

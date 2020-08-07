@@ -22,7 +22,8 @@ module Rails # :nodoc:
           yield
           end_stack(key, array, plain)
         rescue
-          @data = @stack.pop
+          pop_size = array && !plain ? 2 : 1
+          @data = @stack.pop(pop_size).first
           raise
         end
 

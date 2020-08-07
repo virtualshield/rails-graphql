@@ -14,6 +14,7 @@ module Rails # :nodoc:
         DATA_PARTS = %i[type]
 
         delegate :operation, :typename, to: :parent
+        delegate :variables, to: :operation
 
         parent_memoize :request
 
@@ -31,11 +32,6 @@ module Rails # :nodoc:
         # Check if the object is an inline spread
         def inline?
           @inline.present?
-        end
-
-        # Return a lazy loaded variable proc
-        def variables
-          Request::Arguments.lazy
         end
 
         # Redirect to the fragment or check the inline type before resolving
@@ -67,8 +63,13 @@ module Rails # :nodoc:
           end
 
           # Normal mode of the organize step
+          # TODO: Once the fragment is organized, double checks the needed
+          # variables to ensure that the operation has everything necessary
           def organize
-            organize_then { inline? ? organize_fields : fragment.organize! }
+            inline? ? organize_then { organize_fields } : organize_then do
+              run_on_fragment(:organize!)
+              # Ensure necessary variables
+            end
           end
 
           # Perform the organization step
@@ -77,7 +78,6 @@ module Rails # :nodoc:
               parse_directives
 
               if inline?
-                # TODO: Add request cache
                 @type_klass = find_type!(data[:type])
                 parse_selection
               else
@@ -94,7 +94,7 @@ module Rails # :nodoc:
             return if invalid?
 
             object = @current_object || parent.type_klass
-            return fragment.resolve_with!(object) unless inline?
+            return run_on_fragment(:resolve_with!, object) unless inline?
 
             super if type_klass =~ object
           end
@@ -102,6 +102,12 @@ module Rails # :nodoc:
           # This will just trigger the selection resolver
           def resolve_then(&block)
             super(block) { write_selection(@current_object) }
+          end
+
+          # Most of the things that are redirected to the fragment needs to run
+          # inside a arguments scoped
+          def run_on_fragment(method_name, *args)
+            Request::Arguments.scoped(operation) { fragment.public_send(method_name, *args) }
           end
       end
     end

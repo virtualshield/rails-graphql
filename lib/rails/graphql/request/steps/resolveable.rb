@@ -12,19 +12,33 @@ module Rails # :nodoc:
 
         # Resolve a given value when it is an array
         def resolve_with_array!(value, &block)
-          write_array do
-            value.each.with_index do |item, idx|
+          write_array(value) do |item, idx|
+            stacked(idx) do
               block.call(item, idx)
               response.next
-            rescue StandardError => e
-              real_error = 'The ' + ActiveSupport::Inflector.ordinalize(idx)
-              real_error += " value of the #{gql_name} field"
-              source_error = "The #{gql_name} field value"
+            rescue StandardError => error
+              raise if item.nil?
 
-              e.message.gsub!(source_error, real_error)
-              raise
+              block.call(nil, idx)
+              response.next
+
+              format_array_execption(error, idx)
+              request.exception_to_error(error, @node)
             end
+          rescue StandardError => error
+            format_array_execption(error, idx)
+            raise
           end
+        end
+
+        # Add the item index to the exception message
+        def format_array_execption(error, idx)
+          real_error = 'The ' + ActiveSupport::Inflector.ordinalize(idx + 1)
+          real_error += " value of the #{gql_name} field"
+          source_error = "The #{gql_name} field value"
+
+          message = error.message.gsub(source_error, real_error)
+          error.define_singleton_method(:message) { message }
         end
 
         # Write a value to the response
@@ -35,9 +49,16 @@ module Rails # :nodoc:
         end
 
         # Helper to start writing as array
-        def write_array(&block)
+        def write_array(value, &block)
+          raise InvalidOutputError, <<~MSG.squish unless value.respond_to?(:each)
+            The #{gql_name} field is excepting an array
+            but got an "#{value.class.name}" instead.
+          MSG
+
           @writing_array = true
-          response.with_stack(field.gql_name, array: true, plain: leaf_type?, &block)
+          response.with_stack(field.gql_name, array: true, plain: leaf_type?) do
+            value.each.with_index(&block)
+          end
         ensure
           @writing_array = nil
         end

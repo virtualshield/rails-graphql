@@ -26,8 +26,8 @@ module Rails # :nodoc:
         end
 
         # Global helper that merge a hash that contains values as arrays
-        def self.merge_hash_array!(one, other)
-          one.merge!(other) { |_, lval, rval| lval + rval }
+        def self.merge_hash_array(one, other)
+          one.merge(other) { |_, lval, rval| lval + rval }
         end
 
         # Declare a class-level attribute whose value is both isolated and also
@@ -130,7 +130,7 @@ module Rails # :nodoc:
           def fetch_inherited_hash(ivar)
             inherited_ancestors.inject({}) do |result, klass|
               val = klass.instance_variable_get(ivar)
-              val.nil? ? result : result.merge!(val)
+              val.nil? ? result : result.merge(val)
             end
           end
 
@@ -139,7 +139,7 @@ module Rails # :nodoc:
           def fetch_inherited_hash_array(ivar)
             inherited_ancestors.inject({}) do |result, klass|
               next result if (val = klass.instance_variable_get(ivar)).nil?
-              InheritedCollection.merge_hash_array!(result, val)
+              InheritedCollection.merge_hash_array(result, val)
             end
           end
 

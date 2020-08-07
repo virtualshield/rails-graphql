@@ -6,9 +6,6 @@ module Rails # :nodoc:
       # Helper module responsible for name stuff and also responsible for
       # registering the objects to the type map, which also checks for the
       # uniqueness of the name of things.
-      #
-      # TODO: Maybe implement +validate!+ to make sure that we follow the spec
-      # validation of the names
       module Registerable
         NAME_EXP = /GraphQL::(?:Type::\w+::|Directive::)?([:\w]+)[A-Z][A-Za-z]+\z/.freeze
 
@@ -75,8 +72,10 @@ module Rails # :nodoc:
 
         # Get or set a list of aliases for this object
         def aliases(*list)
-          return (@aliases ||= Set.new) if list.empty?
-          aliases.merge(list.flatten.map { |item| item.to_s.underscore.to_sym })
+          return (@aliases || Set.new) if list.empty?
+          (@aliases ||= Set.new).merge list.flatten.map do |item|
+            item.to_s.underscore.to_sym
+          end
         end
 
         protected

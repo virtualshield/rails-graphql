@@ -43,6 +43,7 @@ module Rails # :nodoc:
 
           # If it's running under a scope, transform proc based values
           def transform(value)
+            return if value.nil?
             scoped? && value.is_a?(Proc) ? value.call(operation) : value
           end
         end
@@ -69,6 +70,25 @@ module Rails # :nodoc:
         def [](*)
           self.class.transform(super)
         end
+
+        # Transform the value before returning
+        def dig(name, *names)
+          result = self.class.transform(super(name))
+          names.empty? ? result : result&.dig(*names)
+        end
+
+        private
+
+          # When we freeze the arguments, we need to make sure to correctly set
+          # the accessor with the transform method
+          def new_ostruct_member!(name)
+            name = name.to_sym
+            unless singleton_class.method_defined?(name)
+              define_singleton_method(name) { self.class.transform(@table[name]) }
+              define_singleton_method("#{name}=") {|x| modifiable?[name] = x}
+            end
+            name
+          end
       end
     end
   end

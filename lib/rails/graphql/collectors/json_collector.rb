@@ -31,8 +31,8 @@ module Rails # :nodoc:
           end_stack(key, array, plain)
         rescue
           pop_size = array && !plain ? 2 : 1
-          @current_value = @stack_value.pop(pop_size)
-          @current_array = @stack_array.pop(pop_size)
+          @current_value = @stack_value.pop(pop_size).first
+          @current_array = @stack_array.pop(pop_size).first
           raise
         end
 

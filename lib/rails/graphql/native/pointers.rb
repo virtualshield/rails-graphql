@@ -7,7 +7,7 @@ module Rails # :nodoc:
       # ast node. It will also be correctly garbage-collected.
       class AstNode < FFI::AutoPointer
         def self.release(ptr)
-          Native.free_node(ptr)
+          # Native.free_node(ptr)
         end
       end
 

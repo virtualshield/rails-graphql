@@ -113,9 +113,6 @@ module Rails # :nodoc:
       end
 
       eager_autoload do
-        # TODO: Remove
-        autoload :AlwaysVaderDirective
-
         autoload :SkipDirective
         autoload :IncludeDirective
         autoload :DeprecatedDirective
@@ -147,12 +144,21 @@ module Rails # :nodoc:
         options.any?(&event.method(:on?))
       end
 
-      attr_reader :args
+      attr_reader :owner, :args
 
       def initialize(args = nil, **xargs)
         @args = args || OpenStruct.new(xargs.transform_keys { |key| key.to_s.underscore })
         @args.freeze
-        validate!
+        validate! if args.nil?
+      end
+
+      # Once the directive is correctly prepared, we need to assign the owner
+      def assing_owner!(owner)
+        raise ArgumentError, <<~MSG.squish if defined?(@owner)
+          Owner already assigned for @#{gql_name} directive.
+        MSG
+
+        @owner = owner
       end
 
       # When fetching all the events, embed the actual instance as the context

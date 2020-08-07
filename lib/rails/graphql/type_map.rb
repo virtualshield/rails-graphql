@@ -121,8 +121,11 @@ module Rails # :nodoc:
         object_name = object.gql_name
         object_key = object_name.underscore.to_sym
         alias_proc = -> do
-          namespaces = [base_namespace]
-          fetch(object_key, base_class: base_class, namespaces: namespaces, exclusive: true)
+          fetch(object_key,
+            base_class: base_class,
+            namespaces: base_namespace,
+            exclusive: true,
+          )
         end
 
         # Update counters
@@ -215,7 +218,7 @@ module Rails # :nodoc:
           end
 
           validate.compact.each(&:call)
-          @pending = keep
+          @pending = keep.presence
         rescue DefinitionError => e
           raise e.class, e.message + "\n  Defined at: #{source}"
           @pending = keep + @pending

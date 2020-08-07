@@ -6,22 +6,21 @@ module Rails # :nodoc:
       # Helper module that allows other objects to hold arguments
       module WithArguments
         def self.extended(other)
+          other.extend(Helpers::InheritedCollection)
           other.extend(WithArguments::ClassMethods)
-          other.define_singleton_method(:arguments) { @arguments ||= {} }
-          other.delegate(:arguments, to: :class)
+          other.inherited_collection(:arguments, type: :hash)
         end
 
         def self.included(other)
           other.define_method(:arguments) { @arguments ||= {} }
-          other.alias_method(:all_arguments, :arguments)
         end
 
         module ClassMethods # :nodoc: all
           def inherited(subclass)
             super if defined? super
-            return if arguments.empty?
+            return if @arguments.blank?
 
-            new_arguments = arguments.transform_values do |item|
+            new_arguments = @arguments.transform_values do |item|
               item.dup.tap { |x| x.instance_variable_set(:@owner, subclass) }
             end
 
@@ -50,6 +49,11 @@ module Rails # :nodoc:
           end
         end
 
+        # Mostly for correct inheritance on instances
+        def all_arguments
+          @arguments || {}
+        end
+
         # See {Argument}[rdoc-ref:Rails::GraphQL::Argument] class.
         def argument(name, base_type, **xargs)
           xargs[:owner] = self
@@ -73,15 +77,15 @@ module Rails # :nodoc:
 
         # Check if a given +name+ is already defined on the list of arguments
         def has_argument?(name)
-          arguments.key?(name)
+          @arguments&.key?(name)
         end
 
         # Validate all the arguments to make sure the definition is valid
         def validate!(*)
           super if defined? super
 
-          arguments.each_value(&:validate!)
-          arguments.freeze
+          @arguments&.each_value(&:validate!)
+          @arguments&.freeze
 
           nil # No exception already means valid
         end

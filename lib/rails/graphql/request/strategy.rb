@@ -11,8 +11,10 @@ module Rails # :nodoc:
 
         autoload :DynamicInstance
 
-        autoload :SequencedStrategy
-        autoload :MultiQueryStrategy
+        eager_autoload do
+          autoload :SequencedStrategy
+          autoload :MultiQueryStrategy
+        end
 
         # The priority of the strategy
         class_attribute :priority, instance_accessor: false, default: 1
@@ -40,6 +42,16 @@ module Rails # :nodoc:
           raise NotImplementedError
         end
 
+        # Find a given +type+ and store it on request cache
+        def find_type!(type)
+          request.cache(:types)[type] ||= schema.find_type!(type)
+        end
+
+        # Find a given +directive+ and store it on request cache
+        def find_directive!(directive)
+          request.cache(:directives)[directive] ||= schema.find_directive!(directive)
+        end
+
         # Check if it's enabled to collect listeners
         def add_listeners?
           !listeners.frozen?
@@ -64,7 +76,7 @@ module Rails # :nodoc:
         # Resolve a value for a given object, It uses the +args+ to prevent
         # problems with nil values.
         def resolve(field, *args, array: false, &block)
-          data_for(args, field) unless args.any?
+          data_for(args, field) if args.size.zero?
           args << Event.trigger(:resolve, field, self, &field.resolver) \
             if field.try(:dynamic_resolver?)
 
@@ -74,8 +86,6 @@ module Rails # :nodoc:
               block.call(current)
               # Necessary call #itself to loose the dynamic reference
               field.write_value(current.itself)
-            elsif !current.respond_to?(:each)
-              field.resolve_invalid
             else
               field.resolve_with_array!(current, &block)
             end
@@ -155,6 +165,8 @@ module Rails # :nodoc:
             @context = request.build(Request::Context, request, operation)
             @objects_pool = {}
             yield
+          ensure
+            @context = @objects_pool = @data_pool = @listeners = nil
           end
 
           # Fetch the data for a given field and set as the first element

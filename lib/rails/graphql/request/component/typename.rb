@@ -11,6 +11,7 @@ module Rails # :nodoc:
         include Directives
 
         delegate :operation, to: :parent
+        delegate :variables, to: :operation
 
         parent_memoize :request
 

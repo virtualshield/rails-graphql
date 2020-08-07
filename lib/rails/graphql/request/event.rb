@@ -8,7 +8,7 @@ module Rails # :nodoc:
       # A small extension of the original event to support extra methods and
       # helpers when performing events during a request
       class Event < GraphQL::Event
-        OBJECT_BASED_READERS = %i[field fragment operation spread]
+        OBJECT_BASED_READERS = %i[fragment operation spread]
 
         delegate :schema, :errors, to: :request
         delegate :context, to: :strategy
@@ -28,9 +28,19 @@ module Rails # :nodoc:
           @strategy = strategy
 
           source ||= request.stack.first
-          @index, source = source, request.stack.second if source.is_a?(Numeric)
+          @index, source = source, request.stack[1] if source.is_a?(Numeric)
 
           super(name, source, **data)
+        end
+
+        # Provide a way to access the current field value
+        def current_value
+          strategy.context&.current&.itself
+        end
+
+        # Return the actual field when the source is a request field
+        def field
+          source.field if source.try(:kind) === :field
         end
 
         # Check if the event source is of the given +type+
@@ -49,17 +59,11 @@ module Rails # :nodoc:
           # parameters of a proc callback will be associated with actual field
           # arguments
           def args_source
-            object.arguments if object.kind === :field
+            object.arguments if object.try(:kind) === :field
           end
 
         private
           delegate :instance_for, to: :strategy
-
-          # Find a type or a constant based on the given +object+
-          def class_of(object)
-            return object unless item.is_a?(Symbol) || item.is_a?(String)
-            schema.find_type(item) || ::GraphQL.const_get(item)
-          end
 
           # Check for object based readers
           def respond_to_missing?(method_name, *)
