@@ -29,21 +29,24 @@ module Rails # :nodoc:
         end
 
         module ClassMethods # :nodoc: all
-          delegate :type_map, to: 'Rails::GraphQL'
-
           # Here we wait for the class to be fully loaded so that we can
           # correctly trigger the registration
           def inherited(subclass)
             super if defined? super
             return if subclass.try(:abstract)
-            type_map.postpone_registration(subclass)
+            GraphQL.type_map.postpone_registration(subclass)
+          end
+
+          # Check if the class is already registered in the typemap
+          def registered?
+            GraphQL.type_map.object_exist?(self, exclusive: true)
           end
 
           # The process to register a class and it's name on the index
           def register!
             return if abstract?
 
-            raise NameError, <<~MSG.squish if type_map.object_exist?(self)
+            raise DuplicatedError, <<~MSG.squish if registered?
               The "#{gql_name}" is already defined, the only way to change its
               definition is by using extensions.
             MSG
@@ -54,7 +57,7 @@ module Rails # :nodoc:
               spec can have a name starting with "__".
             MSG
 
-            type_map.register(self).method(:validate!)
+            GraphQL.type_map.register(self).method(:validate!)
           end
         end
 

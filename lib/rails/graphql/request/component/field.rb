@@ -103,7 +103,7 @@ module Rails # :nodoc:
           validate_output!(nil)
           response.safe_add(gql_name, nil)
           request.exception_to_error(error, @node) if error.present?
-        rescue InvalidOutputError
+        rescue InvalidValueError
           raise unless entry_point?
         end
 

@@ -46,7 +46,8 @@ module Rails # :nodoc:
 
       # Check if the field has a dynamic resolver
       def dynamic_resolver?
-        @resolver.present? || callable?(method_name)
+        defined?(@dynamic_resolver) ? @dynamic_resolver :
+          @resolver.present? || callable?(method_name)
       end
 
       # Checks if all the named callbacks can actually be called
@@ -57,12 +58,13 @@ module Rails # :nodoc:
           callback.block.is_a?(Proc) || callable?(callback.block)
         end
 
-        # TODO: Store the result of +dynamic_resolver?+
-
         raise ArgumentError, <<~MSG.squish if invalid.present?
           The "#{owner.name}" class does not define the following methods needed
           for performing hooks: #{invalid.map(&:block).to_sentence}.
         MSG
+
+        # Store this result for performance purposes
+        @dynamic_resolver = dynamic_resolver?
 
         nil # No exception already means valid
       end

@@ -16,6 +16,7 @@ module Rails # :nodoc:
     # * <tt>:directives</tt> - The list of directives associated with the value
     #   (defaults to nil).
     class Field::InputField < Field
+      include Helpers::WithValidator
       include Field::TypedField
 
       attr_reader :default
@@ -54,6 +55,11 @@ module Rails # :nodoc:
       # Turn the given value into an ruby representation of it
       def deserialize(value)
         value.nil? ? default : super
+      end
+
+      # Trigger the exception based value validator
+      def validate_output!(value)
+        super(value, :field)
       end
 
       # Checks if the default value of the field is valid

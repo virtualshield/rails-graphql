@@ -19,8 +19,20 @@ module Rails # :nodoc:
           def valid_member?(value)
             assigned_to.present? && value.is_a?(assigned_class)
           end
+
+          # After a successfully registration, add the assigned class to the
+          # type map as a great alias to find the object
+          def register!
+            return if abstract?
+            super.tap do
+              klass = assigned_class rescue false # Ignore errors here
+              GraphQL.type_map.register_alias(assigned_class, &method(:itself)) if klass
+            end
+          end
         end
       end
     end
   end
 end
+
+# GraphQL.type_map.register_alias(assigned_class) { klass }

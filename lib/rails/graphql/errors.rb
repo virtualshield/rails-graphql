@@ -17,6 +17,9 @@ module Rails # :nodoc:
     # Errors related to the name of the objects
     NameError = Class.new(DefinitionError)
 
+    # Errors related to duplciated objects
+    DuplicatedError = Class.new(NameError)
+
     # Error class related to problems during the execution process
     ExecutionError = Class.new(StandardError)
 
@@ -34,6 +37,6 @@ module Rails # :nodoc:
 
     # Error class related to when the captured output value is invalid due to
     # type checking
-    InvalidOutputError = Class.new(FieldError)
+    InvalidValueError = Class.new(FieldError)
   end
 end

@@ -84,6 +84,7 @@ module Rails # :nodoc:
 
       # Check if the other argument is equivalent, regardless the name
       def =~(other)
+        return false unless other.is_a?(Argument)
         other.type_klass == type_klass &&
           (other.null? == null? || other.null? && !null?) &&
           other.array? == array? &&

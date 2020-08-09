@@ -8,7 +8,6 @@ module Rails # :nodoc:
       attr_reader :type
 
       delegate :input_type?, :output_type?, :leaf_type?, :kind, to: :type_klass
-      delegate :valid_field_types, to: :owner
 
       def initialize(name, type, *args, **xargs, &block)
         super(name, *args, **xargs, &block)
@@ -25,6 +24,17 @@ module Rails # :nodoc:
         super
 
         @type_klass = nil
+      end
+
+      # Sometimes the owner does not designate this, but it is safe to assume it
+      # will be associated to the object valyd types
+      def valid_field_types
+        owner.try(:valid_field_types) || Type::Object.valid_field_types
+      end
+
+      # Check if the field is an internal one
+      def internal?
+        super && type_klass.spec_object
       end
 
       # A little extension of the +is_a?+ method that allows checking it using
@@ -68,7 +78,7 @@ module Rails # :nodoc:
       protected
 
         def inspect_type # :nodoc:
-          result = ' '
+          result = ': '
           result += '[' if array?
           result += type_klass.gql_name
           result += '!' if array? && !nullable?

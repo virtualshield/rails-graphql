@@ -25,7 +25,7 @@ module Rails # :nodoc:
               ? "#{ordinalize(idx + 1)} value of the #{gql_name} #{type}" \
               : "#{gql_name} #{type} value"
 
-            raise InvalidOutputError, "The #{base_error} #{message}."
+            raise InvalidValueError, "The #{base_error} #{message}."
           end
 
         private

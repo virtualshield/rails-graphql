@@ -14,7 +14,7 @@ module Rails # :nodoc:
       module WithFields
         def self.extended(other)
           other.extend(WithFields::ClassMethods)
-          other.define_singleton_method(:fields) { @fields ||= {} }
+          other.define_singleton_method(:fields) { @fields ||= Concurrent::Map.new }
           other.class_attribute(:field_types, instance_writer: false, default: [])
           other.class_attribute(:valid_field_types, instance_writer: false, default: [])
         end
@@ -22,14 +22,22 @@ module Rails # :nodoc:
         module ClassMethods # :nodoc: all
           def inherited(subclass)
             super if defined? super
-            return if fields.empty?
-
-            new_fields = fields.transform_values do |item|
-              item.dup.tap { |x| x.instance_variable_set(:@owner, subclass) }
-            end
-
-            subclass.instance_variable_set(:@fields, new_fields)
+            return unless defined?(@fields)
+            fields.each_value(&subclass.method(:proxy_field))
           end
+        end
+
+        # Check if the field is already defined before actually creating it
+        def safe_field(*args, of_type: nil, **xargs, &block)
+          check_name = xargs[:as] || xargs[:alias] || args.first
+
+          return if (check_name.is_a?(Symbol) || check_name.is_a?(String)) &&
+            field?(check_name)
+
+          method_name = of_type.nil? ? :field : "#{of_type}_field"
+          public_send(method_name, *args, **xargs, &block)
+        rescue DuplicatedError
+          # Do not do anything if it is duplicated
         end
 
         # See {Field}[rdoc-ref:Rails::GraphQL::Field] class.
@@ -37,7 +45,7 @@ module Rails # :nodoc:
           xargs[:owner] = self
           object = field_builder.call(name, *args, **xargs, &block)
 
-          raise ArgumentError, <<~MSG.squish if field?(object.name)
+          raise DuplicatedError, <<~MSG.squish if field?(object.name)
             The #{name.inspect} field is already defined and can't be redefined.
           MSG
 
@@ -48,18 +56,31 @@ module Rails # :nodoc:
 
         # Add a new field to the list but use a proxy instead of a hard copy of
         # a given +field+
-        def proxy_field(field, **xargs)
-          valid = field.is_a?(GraphQL::Field) || field.is_a?(GraphQL::ProxyField)
-          raise ArgumentError, <<~MSG.squish unless valid
+        def proxy_field(field, **xargs, &block)
+          raise ArgumentError, <<~MSG.squish unless field.is_a?(GraphQL::Field::Core)
             The #{field.class.name} is not a valid field.
           MSG
 
-          raise ArgumentError, <<~MSG.squish if field?(field.name)
+          xargs[:owner] = self
+          object = Field::ProxyField.new(field, **xargs, &block)
+          raise DuplicatedError, <<~MSG.squish if field?(object.name)
             The #{field.name.inspect} field is already defined and can't be replaced.
           MSG
 
-          object = GraphQL::ProxyField.new(field, self, **xargs)
           fields[object.name] = object
+        end
+
+        # Add a new field to the list but use a association field, which has
+        # dynamic activation
+        def association_field(*args, **xargs, &block)
+          xargs[:owner] = self
+          object = Field::AssociationField.new(*args, **xargs, &block)
+          raise DuplicatedError, <<~MSG.squish if field?(object.name || object)
+            The #{field.name ? field.name.inspect : 'association'}
+            field is already defined and can't be replaced.
+          MSG
+
+          fields[object.name || object] = object
         end
 
         # Overwrite attributes of a given field named as +name+, it also allows
@@ -107,16 +128,17 @@ module Rails # :nodoc:
         end
 
         # Get the list of GraphQL names of all the fields difined
-        def field_names
-          fields.map(&:gql_name)
+        def field_names(enabled_only = true)
+          (enabled_only ? fields.select(&:enabled?) : fields).map(&:gql_name).compact
         end
 
         # Validate all the fields to make sure the definition is valid
         def validate!(*)
           super if defined? super
 
+          # TODO: Maybe find a way to freeze the fields, since after validation
+          # the best thing to do is block changes
           fields.each_value(&:validate!)
-          fields.freeze
 
           nil # No exception already means valid
         end

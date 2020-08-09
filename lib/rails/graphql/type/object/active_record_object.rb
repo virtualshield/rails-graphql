@@ -10,12 +10,15 @@ module Rails # :nodoc:
       class Object::ActiveRecordObject < Object::AssignedObject
         self.abstract = true
 
+        # AR objects can be owned by a source
+        class_attribute :owner, instance_writer: false
+
         class << self
           # This class will be able to be resolved from a query point of view if
           # all the requested fields (which are non-object) can also be resolved
           # from active record
           def from_ar?(ar_object, list)
-            Array.wrap(list).all? do |field_name|
+            Array.wrap(list).select do |field_name|
               self[field_name].from_ar?(ar_object)
             end
           end
@@ -50,6 +53,18 @@ module Rails # :nodoc:
             def query_log_name
               @query_log_name ||= format('GraphQL %s Load', name.remove_prefix('GraphQL::'))
             end
+        end
+
+        # Prepare to load a single record from the underlying table
+        def load_record(id)
+        end
+
+        # Prepare to load multiple records from the underlying table
+        def load_records(ids)
+        end
+
+        # Prepare the records for a reflection with the given +reflection_name+
+        def load_association(reflection_name)
         end
       end
     end

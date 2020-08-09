@@ -22,6 +22,10 @@ module Rails # :nodoc:
     #   (defaults to false).
     # * <tt>:method_name</tt> - The name of the method used to fetch the field data
     #   (defaults to nil).
+    # * <tt>:enabled</tt> - Mark the field as enabled
+    #   (defaults to true).
+    # * <tt>:disabled</tt> - Works as the oposite of the enabled option
+    #   (defaults to false).
     # * <tt>:directives</tt> - The list of directives associated with the value
     #   (defaults to nil).
     # * <tt>:desc</tt> - The description of the argument
@@ -35,12 +39,16 @@ module Rails # :nodoc:
       require_relative 'field/resolved_field'
       require_relative 'field/typed_field'
       require_relative 'field/typed_output_field'
+      require_relative 'field/proxied_field'
 
       include Helpers::WithDirectives
       include Field::Core
 
       require_relative 'field/input_field'
       require_relative 'field/output_field'
+
+      require_relative 'field/proxy_field'
+      require_relative 'field/association_field'
 
       def initialize(name, *args, owner: , **xargs, &block)
         @owner = owner
@@ -59,8 +67,6 @@ module Rails # :nodoc:
         @enabled = xargs.fetch(:enabled, !xargs.fetch(:disabled, false))
 
         configure(&block) if block.present?
-        directives.freeze
-        arguments.freeze
       end
 
       def initialize_copy(*)
@@ -73,7 +79,8 @@ module Rails # :nodoc:
         extra = send(:inspect_type) rescue nil
         <<~INSPECT.squish + '>'
           #<GraphQL::Field @owner="#{owner.name}"
-          #{gql_name}#{inspect_arguments}:#{extra}#{inspect_directives}
+          #{'[disabled]' if disabled?}
+          #{gql_name}#{inspect_arguments}#{extra}#{inspect_directives}
         INSPECT
       end
     end

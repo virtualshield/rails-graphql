@@ -75,8 +75,8 @@ module Rails # :nodoc:
 
       # Check if the other field is equivalent
       def =~(other)
+        return false unless other.is_a?(Field::Core)
         (defined? super ? super : true) &&
-          other.gql_name == gql_name &&
           (other.null? == null? || other.null? && !null?) &&
           other.array? == array? &&
           other.nullable? == nullable? &&
@@ -145,7 +145,9 @@ module Rails # :nodoc:
 
       # Transforms the given value to its representation in a JSON string
       def to_json(value)
-        to_hash(value).inspect
+        return 'null' if value.nil?
+        return type_klass.to_json(value) unless array?
+        value.map { |part| type_klass.to_json(part) }
       end
 
       # Turn the given value into a JSON string representation
@@ -197,8 +199,8 @@ module Rails # :nodoc:
         end
 
         def match_arguments?(other)
-          other.all_arguments.size == all_arguments.size &&
-            other.all_arguments.all? { |key, arg| arg == all_arguments[key] }
+          l_args, r_args = all_arguments, other.all_arguments
+          l_args.size <= r_args.size && l_args.all? { |key, arg| arg =~ r_args[key] }
         end
 
         def inspect_directives

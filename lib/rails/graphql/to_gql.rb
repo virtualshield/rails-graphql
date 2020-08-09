@@ -74,11 +74,18 @@ module Rails # :nodoc:
         end
 
         def visit_Rails_GraphQL_Field(o, collector)
+          return if o.disabled?
+
           visit_description(o, collector)
           collector << o.gql_name
 
           visit_arguments(o.arguments, collector)
           collector << ': '
+
+          visit_typed_object(o, collector)
+          visit_directives(o.directives, collector)
+          collector.eol if @with_descriptions
+          collector.eol
         end
 
         def visit_Rails_GraphQL_Mutation(o, collector)
@@ -109,39 +116,44 @@ module Rails # :nodoc:
           end
         end
 
-        def visit_Rails_GraphQL_ProxyField(o, collector)
+        def visit_Rails_GraphQL_Field_AssociationField(o, collector)
+          return if o.disabled?
+
+          if @with_descriptions
+            field = o.instance_variable_get(:@field)
+            collector << '# Association of '
+            collector << field.owner.gql_name
+            collector << '["'
+            collector << field.gql_name
+            collector << '"]'
+            collector.eol
+          end
+
+          visit_Rails_GraphQL_Field(o, collector)
+        end
+
+        def visit_Rails_GraphQL_Field_ProxyField(o, collector)
           return if o.disabled?
 
           if @with_descriptions
             field = o.instance_variable_get(:@field)
             collector << '# Proxy of '
             collector << field.owner.gql_name
-            collector << '#'
+            collector << '["'
             collector << field.gql_name
+            collector << '"]'
             collector.eol
           end
 
-          visit_Rails_GraphQL_Field_OutputField(o, collector)
+          visit_Rails_GraphQL_Field(o, collector)
         end
 
         def visit_Rails_GraphQL_Field_OutputField(o, collector)
-          return if o.disabled?
-
           visit_Rails_GraphQL_Field(o, collector)
-          visit_typed_object(o, collector)
-          visit_directives(o.directives, collector)
-          collector.eol if @with_descriptions
-          collector.eol
         end
 
         def visit_Rails_GraphQL_Field_InputField(o, collector)
-          return if o.disabled?
-
           visit_Rails_GraphQL_Field(o, collector)
-          visit_typed_object(o, collector)
-          visit_directives(o.directives, collector)
-          collector.eol if @with_descriptions
-          collector.eol
         end
 
         def visit_Rails_GraphQL_Type_Enum(o, collector)

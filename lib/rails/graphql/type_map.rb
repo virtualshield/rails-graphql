@@ -18,6 +18,7 @@ module Rails # :nodoc:
     class TypeMap
       FILTER_REGISTER_TRACE = /((inherited|initialize)'$|schema\.rb:\d+)/.freeze
 
+
       # Store all the base classes and if they were eager loaded by the type map
       mattr_accessor :base_classes, instance_writer: false, default: {
         Directive: false,
@@ -36,6 +37,7 @@ module Rails # :nodoc:
         # Registerable classes that are pending registration with their given
         # source location
         @pending = []
+        @callbacks = Hash.new { |h, k| h[k] = [] }
 
         @index = Concurrent::Map.new do |h, key|                  # Namespaces
           base_class = Concurrent::Map.new do |h, key|            # Base classes
@@ -48,27 +50,23 @@ module Rails # :nodoc:
       end
 
       # Checks if a given key or name is already defined under the same base
-      # class and namespace. If +exclusive+ is set to +true+, then it won't
+      # class and namespace. If +exclusive+ is set to +false+, then it won't
       # check the +:base+ namespace when not found on the given namespace.
-      #
-      # It triggers object_exist? if the +name_or_key+ is actually a reference
-      # to a class
-      def exist?(name_or_key, base_class: :Type, namespace: :base, exclusive: false)
-        return object_exist?(name_or_key) if name_or_key.is_a?(Module)
-
-        @index[namespace][base_class].key?(name_or_key) || !exclusive &&
-          @index[:base][base_class].key?(name_or_key)
+      def exist?(name_or_key, base_class: :Type, namespaces: :base, exclusive: false)
+        namespaces = namespaces.is_a?(Set) ? namespaces.to_a : Array.wrap(namespaces)
+        namespaces += [:base] unless exclusive
+        namespaces.any? { |namespace| @index[namespace][base_class].key?(name_or_key) }
       end
 
       # Find if a given object is already defined. If +exclusive+ is set to
-      # +true+, then it won't check the +:base+ namespace
+      # +false+, then it won't check the +:base+ namespace
       def object_exist?(object, exclusive: false)
         base_class = find_base_class(object)
-        namespaces = object.namespaces.to_a
-        namespaces << :base unless exclusive
-
-        object_key = object.to_sym
-        namespaces.any? { |namespace| @index[namespace][base_class].key?(object_key) }
+        exist?(object.gql_name,
+          base_class: base_class,
+          namespaces: object.namespaces,
+          exclusive: exclusive,
+        )
       end
 
       # Same as +fetch+ but it will raise an exception or retry depending if the
@@ -90,14 +88,25 @@ module Rails # :nodoc:
       # Find the given key or name inside the base class either on the given
       # namespace or in the base +:base+ namespace
       def fetch(key_or_name, prevent_register: nil, **xargs)
-        skip_register << Array.wrap(prevent_register)
-        register_pending!
+        if prevent_register != true
+          skip_register << Array.wrap(prevent_register)
+          register_pending!
+        end
 
-        namespaces = Array.wrap(xargs[:namespaces])
+        namespaces = xargs[:namespaces]
+        namespaces = namespaces.is_a?(Set) ? namespaces.to_a : Array.wrap(namespaces)
         namespaces += [:base] unless xargs.fetch(:exclusive, false)
-        namespaces.find do |namespace|
-          result = dig(namespace, xargs.fetch(:base_class, :Type), key_or_name)
-          break result unless result.nil?
+
+        possibilities = Array.wrap(key_or_name)
+        possibilities += Array.wrap(xargs[:fallback]) if xargs.key?(:fallback)
+
+        catch :found do
+          namespaces.find do |namespace|
+            possibilities.find do |item|
+              result = dig(namespace, xargs.fetch(:base_class, :Type), key_or_name)
+              throw :found, result unless result.nil?
+            end
+          end
         end&.call
       ensure
         skip_register.pop
@@ -119,7 +128,7 @@ module Rails # :nodoc:
 
         # Cache the name, the key, and the alias proc
         object_name = object.gql_name
-        object_key = object_name.underscore.to_sym
+        object_key = object.to_sym
         alias_proc = -> do
           fetch(object_key,
             base_class: base_class,
@@ -133,16 +142,16 @@ module Rails # :nodoc:
         @objects += 1
 
         # Register the main type object
-        @index[base_namespace][base_class][object_key] = -> { object }
+        add(base_namespace, base_class, object_key, -> { object })
 
         # Register all the aliases plus the object name
         [object_name, *object.aliases].each do |alias_name|
-          @index[base_namespace][base_class][alias_name] = alias_proc
+          add(base_namespace, base_class, alias_name, alias_proc)
         end
 
         # For each remaining namespace, register a key and a name alias
         namespaces.product([object_key, object_name]) do |(namespace, key_or_name)|
-          @index[namespace][base_class][key_or_name] = alias_proc
+          add(namespace, base_class, key_or_name, alias_proc)
         end
 
         # Return the object for chain purposes
@@ -163,7 +172,7 @@ module Rails # :nodoc:
           fetch(key, base_class: base_class, namespaces: [namespace], exclusive: true)
         end
 
-        @index[namespace][base_class][name_or_key] = block
+        add(namespace, base_class, name_or_key, block)
         @aliases += 1 if name_or_key.is_a?(Symbol)
       end
 
@@ -172,19 +181,43 @@ module Rails # :nodoc:
       def each_from(namespaces, base_class: :Type, &block)
         register_pending!
 
-        namespaces = Array.wrap(namespaces)
+        namespaces = namespaces.is_a?(Set) ? namespaces.to_a : Array.wrap(namespaces)
         namespaces += [:base] unless namespaces.include?(:base)
 
         enumerator = Enumerator::Lazy.new(namespaces) do |yielder, *values|
           next unless @index.key?(values.last)
+          iterated = []
 
           # Only iterate over string based types
           @index[values.last][base_class].each do |key, value|
-            yielder << value if key.is_a?(String) && (value = value.call).present?
+            next if iterated.include?(value = value.call) || value.blank?
+            iterated << value
+            yielder << value
           end
         end
 
         block.present? ? enumerator.each(&block) : enumerator
+      end
+
+      # Add a callback that will trigger when a type is registered under the
+      # given set of settings of this method
+      def after_register(name_or_key, base_class: :Type, namespaces: :base, &block)
+        item = fetch(name_or_key,
+          prevent_register: true,
+          base_class: base_class,
+          namespaces: namespaces,
+        )
+
+        return block.call(item) unless item.nil?
+
+        namespaces = namespaces.is_a?(Set) ? namespaces.to_a : Array.wrap(namespaces)
+        position = callbacks[name_or_key].size
+
+        callbacks[name_or_key] << ->(n, b, result) do
+          return unless b === base_class && namespaces.include?(n)
+          block.call(result)
+          position
+        end
       end
 
       def inspect # :nodoc:
@@ -199,6 +232,21 @@ module Rails # :nodoc:
       end
 
       private
+        attr_reader :callbacks
+
+        # Add a item to the index and then trigger the callbacks if any
+        def add(namespace, base_class, key, raw_result)
+          @index[namespace][base_class][key] = raw_result
+          return unless callbacks.key?(key)
+
+          result = nil
+          removeables = callbacks[key].map do |callback|
+            callback.call(namespace, base_class, result ||= raw_result.call)
+          end
+
+          removeables.compact.reverse_each(&callbacks[key].method(:delete_at))
+          callbacks.delete(key) if callbacks[key].empty?
+        end
 
         # A list of classes to prevent the registration, since they might be
         # the source of a fetch
@@ -212,6 +260,8 @@ module Rails # :nodoc:
 
           skip, keep, validate = skip_register.flatten, [], []
           while (klass, source = @pending.shift)
+            next if klass.registered?
+
             skip.include?(klass) \
               ? keep << [klass, source] \
               : validate << klass.register!

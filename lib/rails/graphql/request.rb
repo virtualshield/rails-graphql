@@ -90,7 +90,7 @@ module Rails # :nodoc:
 
       def initialize(schema = nil, namespace: :base)
         @namespace = schema&.namespace || namespace
-        @schema = schema || GraphQL::Schema.find(namespace)
+        @schema = schema || GraphQL::Schema.find!(namespace)
         @extensions = {}
 
         ensure_schema!

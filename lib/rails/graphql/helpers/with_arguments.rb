@@ -18,12 +18,9 @@ module Rails # :nodoc:
         module ClassMethods # :nodoc: all
           def inherited(subclass)
             super if defined? super
-            return if @arguments.blank?
+            return if arguments.empty?
 
-            new_arguments = @arguments.transform_values do |item|
-              item.dup.tap { |x| x.instance_variable_set(:@owner, subclass) }
-            end
-
+            new_arguments = Helpers.dup_all_with_owner(arguments.transform_values, subclass)
             subclass.instance_variable_set(:@arguments, new_arguments)
           end
         end
@@ -37,16 +34,14 @@ module Rails # :nodoc:
               The given "#{object.inspect}" is not a valid Argument object.
             MSG
 
-            [object.name, object]
+            [object.name, Helpers.dup_with_owner(object, self)]
           end.to_h
         end
 
         def initialize_copy(orig)
           super
 
-          @arguments = orig.arguments.transform_values do |item|
-            item.dup.tap { |x| x.instance_variable_set(:@owner, self) }
-          end
+          @arguments = Helpers.dup_all_with_owner(orig.arguments.transform_values, self)
         end
 
         # Mostly for correct inheritance on instances
@@ -59,7 +54,7 @@ module Rails # :nodoc:
           xargs[:owner] = self
           object = GraphQL::Argument.new(name, base_type, **xargs)
 
-          raise ArgumentError, <<~MSG.squish if has_argument?(object.name)
+          raise DuplicatedError, <<~MSG.squish if has_argument?(object.name)
             The #{name.inspect} argument is already defined and can't be redefined.
           MSG
 

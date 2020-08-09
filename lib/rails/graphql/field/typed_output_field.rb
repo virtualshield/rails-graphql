@@ -8,6 +8,12 @@ module Rails # :nodoc:
       include Helpers::WithValidator
       include Field::TypedField
 
+      def initialize(*args, method_name: nil, **xargs, &block)
+        super(*args, **xargs, &block)
+
+        @method_name = method_name.to_s.underscore.to_sym unless method_name.nil?
+      end
+
       # Check if the field can be resolved from Active Record
       def from_ar?(ar_object)
         result = super
@@ -41,7 +47,7 @@ module Rails # :nodoc:
 
         super(value, :field, **xargs)
       rescue ValidationError => error
-        raise InvalidOutputError, error.message
+        raise InvalidValueError, error.message
       end
 
       # Checks if the default value of the field is valid

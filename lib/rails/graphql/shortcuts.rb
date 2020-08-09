@@ -7,7 +7,6 @@ module GraphQL
     Directive:          '::Rails::GraphQL::Directive',
     Field:              '::Rails::GraphQL::Field',
     Mutation:           '::Rails::GraphQL::Mutation',
-    ProxyField:         '::Rails::GraphQL::ProxyField',
     Request:            '::Rails::GraphQL::Request',
     Schema:             '::Rails::GraphQL::Schema',
     Source:             '::Rails::GraphQL::Source',
@@ -20,6 +19,9 @@ module GraphQL
     Union:              '::Rails::GraphQL::Type::Union',
 
     AssignedObject:     '::Rails::GraphQL::Type::Object::AssignedObject',
+
+    ProxyField:         '::Rails::GraphQL::Field::ProxyField',
+    AssociationField:   '::Rails::GraphQL::Field::AssociationField',
 
     ActiveRecordSource: '::Rails::GraphQL::Source::ActiveRecordSource',
     ActiveRecordInput:  '::Rails::GraphQL::Type::Input::ActiveRecordInput',

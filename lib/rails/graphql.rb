@@ -60,7 +60,6 @@ module Rails # :nodoc:
       autoload :Directive
       autoload :Field
       autoload :Mutation
-      autoload :ProxyField
       autoload :Schema
       autoload :Type
 
@@ -71,7 +70,6 @@ module Rails # :nodoc:
     class << self
       delegate :type_map, to: 'Rails::GraphQL::Core'
 
-      ##
       # Initiate a simple config object. It also supports a block which
       # simplifies bulk configuration.
       # See Also https://github.com/rails/rails/blob/master/activesupport/lib/active_support/ordered_options.rb
@@ -87,7 +85,13 @@ module Rails # :nodoc:
         @config
       end
 
-      ##
+      # A centralized way to access the logger from any point in the code
+      def logger
+        Schema.logger || @logger ||= begin
+          ActiveSupport::TaggedLogging.new(ActiveSupport::Logger.new(STDOUT))
+        end
+      end
+
       # Simple import configurations defined using rails +config.graphql+ to
       # easy-to-use accessors on the
       # {Core}[rdoc-ref:Rails::GraphQL::Core] class.
@@ -95,7 +99,17 @@ module Rails # :nodoc:
         config.each { |k, v| Core.send "#{k}=", v }
       end
 
-      ##
+      # Find the key associated with the given +adapter_name+
+      def ar_adapter_key(adapter_name)
+        Core.ar_adapters[adapter_name]
+      end
+
+      # This is a little helper to require ActiveRecord adapter specific
+      # configurations
+      def enable_ar_adapter(adapter_name)
+        require_relative("graphql/adapters/#{ar_adapter_key(adapter_name)}_settings")
+      end
+
       # Turn the given object into its string representation as GraphQl
       # See {ToGQL}[rdoc-ref:Rails::GraphQL::ToGQL] class.
       def to_gql(object, **xargs)
@@ -104,7 +118,6 @@ module Rails # :nodoc:
 
       alias to_graphql to_gql
 
-      ##
       # Returns a set instance with uniq directives from the given list.
       # If the same directive class is given twice, it will raise an exception,
       # since they must be uniq within a list of directives.
@@ -130,7 +143,7 @@ module Rails # :nodoc:
           MSG
 
           invalid = others.present? && (others.any? { |k| k.class.eql?(item.class) })
-          raise ArgumentError, <<~MSG.squish if invalid
+          raise DuplicatedError, <<~MSG.squish if invalid
             A @#{item.gql_name} directive have already been provided.
           MSG
 

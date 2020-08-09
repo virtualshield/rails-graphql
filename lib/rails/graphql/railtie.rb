@@ -33,7 +33,13 @@ module Rails # :nodoc:
       end
 
       initializer 'graphql.logger' do
-        ActiveSupport.on_load(:graphql) { self.logger ||= ::Rails.logger }
+        ActiveSupport.on_load(:graphql) do
+          if ::Rails.logger.respond_to?(:tagged)
+            self.logger = ::Rails.logger
+          else
+            self.logger = ActiveSupport::TaggedLogging.new(::Rails.logger)
+          end
+        end
       end
 
       initializer 'graphql.set_configs' do |app|

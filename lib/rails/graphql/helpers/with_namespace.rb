@@ -9,17 +9,17 @@ module Rails # :nodoc:
       module WithNamespace
         # Returns the list of defined namespaces
         def namespaces
-          @namespaces || superclass.try(:namespaces) || @namespaces || Set.new
+          @namespaces || superclass.try(:namespaces) || Set.new
         end
 
         # Set or overwrite the list of namespaces
-        def namespace(*list)
+        def set_namespace(*list)
           @namespaces = normalize_namespaces(list).to_set
         end
 
         # Add more namespaces to the list already defined. If the super class
         # has already defined namespaces, the extend that list.
-        def add_namespace(*list)
+        def namespace(*list)
           @namespaces = (superclass.try(:namespaces)&.dup || Set.new) \
             unless defined?(@namespaces)
 

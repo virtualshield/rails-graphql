@@ -11,21 +11,29 @@ module Rails # :nodoc:
         set_ar_type! :time
 
         desc <<~MSG
-          The Time scalar type represents a number of seconds and milliseconds.
-          A distance in time since regardless of the day and the timezone.
+          The Time scalar type that represents a distance in time using hours,
+          minutes, seconds, and miliseconds.
         MSG
 
+        # A +base_object+ helps to identify what methods are actually available
+        # to work as resolvers
+        class_attribute :precision, instance_writer: false, default: 6
+
         class << self
+          def valid_input?(value)
+            super && value.match?(/\d+:\d\d(:\d\d(\.\d+)?)?/)
+          end
+
           def valid_output?(value)
             value.respond_to?(:to_time)
           end
 
           def to_hash(value)
-            super(value.to_time.change(year: 2000, day: 1, month: 1, offset: 0) - EPOCH)
+            value.to_time.strftime('%%T.%%%dN' % precision)
           end
 
           def deserialize(value)
-            EPOCH + to_hash(value)
+            '2000-01-01 ' + value.to_time
           end
         end
       end

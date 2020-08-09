@@ -50,7 +50,7 @@ module Rails # :nodoc:
 
         # Helper to start writing as array
         def write_array(value, &block)
-          raise InvalidOutputError, <<~MSG.squish unless value.respond_to?(:each)
+          raise InvalidValueError, <<~MSG.squish unless value.respond_to?(:each)
             The #{gql_name} field is excepting an array
             but got an "#{value.class.name}" instead.
           MSG
@@ -109,6 +109,9 @@ module Rails # :nodoc:
           # Write a value based on a Object type
           def write_object(value)
             type_klass.valid_member?(value) ? write_selection : raise_invalid_member!
+          rescue
+            binding.pry
+            raise
           end
 
           # Write a value with the correct serialize mode. Validate the output

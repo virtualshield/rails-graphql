@@ -23,6 +23,8 @@ module Rails # :nodoc:
       # to work as resolvers
       class_attribute :base_object, instance_writer: false, default: false
 
+      self.abstract = true
+
       class << self
         # Returns the base type of the class. It will be one of the classes
         # defined on +Type::KINDS+
@@ -80,9 +82,7 @@ module Rails # :nodoc:
             Type::Object.eager_load!
             Type::Scalar.eager_load!
 
-            # Source.eager_load!
-            # Source.build_pending!
-
+            Source.eager_load!
             TypeMap.loaded! :Type
           end
         end

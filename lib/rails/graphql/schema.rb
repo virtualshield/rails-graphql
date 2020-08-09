@@ -43,6 +43,10 @@ module Rails # :nodoc:
         alias all_events all_directive_events
         alias all_listeners all_directive_listeners
 
+        def kind # :nodoc:
+          :schema
+        end
+
         # Mark the given class to be pending of registration
         def inherited(subclass)
           super if defined? super
@@ -52,8 +56,15 @@ module Rails # :nodoc:
         end
 
         # :singleton-method:
-        # Find the schema associated to the given namespace
+        # Use a soft mode to find a schema associated with a namespace
         def find(namespace)
+          eager_load!
+          descendants.find { |schema| schema.namespace === namespace }
+        end
+
+        # :singleton-method:
+        # Find the schema associated to the given namespace
+        def find!(namespace)
           organize!
           schemas[namespace.to_sym]
         end
@@ -64,25 +75,35 @@ module Rails # :nodoc:
         end
 
         # Find a given +type+ associated with the schema
-        def find_type(type)
-          @@type_map.fetch(type, namespaces: namespaces)
+        def find_type(type, **xargs)
+          xargs[:base_class] = :Type
+          xargs[:namespaces] = namespaces
+          @@type_map.fetch(type, **xargs)
         end
 
         # Find a given +type+ associated with the schema. It will raise an
         # exception if the +type+ can not be found
-        def find_type!(type)
-          @@type_map.fetch!(type, namespaces: namespaces)
+        def find_type!(type, **xargs)
+          xargs[:base_class] = :Type
+          xargs[:namespaces] = namespaces
+          @@type_map.fetch!(type, **xargs)
         end
 
         # Find a given +directive+ associated with the schema. It will raise an
         # exception if the +directive+ can not be found
-        def find_directive!(directive)
-          @@type_map.fetch!(directive, base_class: :Directive, namespaces: namespaces)
+        def find_directive!(directive, **xargs)
+          xargs[:base_class] = :Directive
+          xargs[:namespaces] = namespaces
+          @@type_map.fetch!(directive, **xargs)
         end
 
         # Describe a schema as a GraphQL string
         def to_gql(**xargs)
           ToGQL.describe(self, **xargs)
+        end
+
+        def eager_load! # :nodoc:
+          # build_pending!
         end
 
         protected
@@ -154,6 +175,7 @@ module Rails # :nodoc:
                 "#{klass.name}" class defined at: #{source}.
               MSG
 
+              klass.validate!
               schemas[klass.namespace] = klass
             end
           end

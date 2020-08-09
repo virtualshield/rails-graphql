@@ -9,6 +9,7 @@ module Rails # :nodoc:
     # proxies, ensuring that it still kepps the main ownership of the objects
     class Source
       extend ActiveSupport::Autoload
+
       extend Helpers::InheritedCollection
       extend Helpers::WithSchemaFields
       extend Helpers::WithAssignment
@@ -42,7 +43,10 @@ module Rails # :nodoc:
       # set the order of the execution of the hooks while validating the hooks
       # callbacks using the +on+ method.
       class_attribute :hook_names, instance_writer: false,
-        default: %i[object input query mutation subscription].to_set
+        default: %i[enum object input query mutation subscription].to_set
+
+      # The list of hooks defined in order to describe a source
+      inherited_collection :hooks, instance_reader: false, type: :hash_array
 
       # The name of the class to be used as superclass for the generate GraphQL
       # object type of this source
@@ -54,8 +58,12 @@ module Rails # :nodoc:
       class_attribute :input_class, instance_writer: false,
         default: '::Rails::GraphQL::Type::Input'
 
-      # The list of hooks defined in order to describe a source
-      inherited_collection :hooks, instance_reader: false, type: :hash_array
+      # Mark if the objects created from this source will build fields for
+      # associations associated to the object
+      class_attribute :with_associations, instance_writer: false, default: true
+
+      # A list of fields to skip when performing shared methods
+      inherited_collection :skip_fields, instance_reader: false
 
       self.abstract = true
 
@@ -64,6 +72,17 @@ module Rails # :nodoc:
 
         delegate :field, :proxy_field, :overwrite_field, :[], :field?,
           :field_names, to: :object
+
+        alias gql_name name
+
+        def kind # :nodoc:
+          :source
+        end
+
+        # A little helper to identify sources
+        def source?
+          true
+        end
 
         # Get the main name of the source
         def base_name
@@ -97,13 +116,8 @@ module Rails # :nodoc:
         # {InheritedCollection}[rdoc-ref:Rails::GraphQL::Helpers::InheritedCollection]
         # which provides the support for a nil +key+
         def all_hooks(key = nil)
-          if key.nil?
-            (superclass.try(:all_hooks) || {}).merge(hooks) do |_, l_value, r_value|
-              l_value + r_value
-            end
-          else
-            (superclass.try(:all_hooks, key) || []) + hooks[key]
-          end
+          return super if key.nil?
+          (superclass.try(:all_hooks, key) || []) + hooks[key]
         end
 
         # Return the GraphQL object type associated with the source. It will
@@ -112,15 +126,19 @@ module Rails # :nodoc:
         # currect class
         def object
           @object ||= begin
-            klass = Class.new(object_class.constantize)
+            super_klass = object_class.constantize
+
+            klass = Class.new(super_klass)
             klass.add_namespace(*namespaces)
+            klass.owner = self if klass.respond_to?(:owner=)
 
             if respond_to?(:assigned_class, true) && assigned_class.present?
               klass.instance_variable_set(:@assigned_to, assigned_class.name)
               klass.instance_variable_set(:@assigned_class, assigned_class)
             end
 
-            gql_module.const_set("#{base_name}Object", klass)
+            suffix = super_klass.kind === :interface ? 'Interface' : 'Object'
+            gql_module.const_set("#{base_name}#{suffix}", klass)
           end
         end
 
@@ -132,6 +150,7 @@ module Rails # :nodoc:
           @input ||= begin
             klass = Class.new(input_class.constantize)
             klass.add_namespace(*namespaces)
+            klass.owner = self if klass.respond_to?(:owner=)
 
             if respond_to?(:assigned_class, true) && assigned_class.present?
               klass.instance_variable_set(:@assigned_to, assigned_class.name)
@@ -171,7 +190,32 @@ module Rails # :nodoc:
           end.compact.to_h
         end
 
+        def eager_load! # :nodoc:
+          super
+
+          build_pending!
+        end
+
         protected
+
+          # Find a given +type+ on the same namespaces of the source. It will
+          # raise an exception if the +type+ can not be found
+          def find_type!(type, **xargs)
+            xargs[:base_class] = :Type
+            xargs[:namespaces] = namespaces
+            GraphQL.type_map.fetch!(type, **xargs)
+          end
+
+          # A helper method to create an enum type
+          def create_enum(enum_name, values)
+            enumerator = values.each_pair if values.respond_to?(:each_pair)
+            enumerator ||= values.each.with_index
+
+            Schema.enum("#{gql_module.name}::#{enum_name.classify}") do
+              indexed! if enumerator.first.last.is_a?(Numeric)
+              enumerator.sort_by(&:last).map(&:first).each(&method(:add))
+            end
+          end
 
           # Add a new description hook. You can use +throw :done+ and skip
           # parent hooks. If the class is already built, then execute the hook.
@@ -224,6 +268,11 @@ module Rails # :nodoc:
             @@pending ||= {}
           end
 
+          # Check if there are pending sources to be built
+          def pending?
+            pending.any?
+          end
+
           # Build the pending sources
           def build_pending!
             while (klass, _ = pending.shift)
@@ -233,7 +282,7 @@ module Rails # :nodoc:
 
           # Return the module where the GraphQL types should be created at
           def gql_module
-            name.starts_with?('GraphQL::') ? name[9..-1].constantize : ::GraphQL
+            name.starts_with?('GraphQL::') ? module_parent : ::GraphQL
           end
 
           # Find all classes that inherits from this class that are abstract,
@@ -264,6 +313,7 @@ module Rails # :nodoc:
           end
 
           {
+            enum:         'self',
             object:       'object',
             input:        'input',
             query:        format('schema_scoped_config(self, %s)', ':query'),

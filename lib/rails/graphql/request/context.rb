@@ -8,14 +8,6 @@ module Rails # :nodoc:
       # This class is used as context for the response while processing fields,
       # objects, or any data that it's going to be placed on the response
       class Context
-        class CurrentValue < ActiveSupport::ProxyObject
-          delegate_missing_to '@stack.first'
-
-          def initialize(stack)
-            @stack = stack
-          end
-        end
-
         delegate :strategy, :stack, to: :request
         delegate :memo, to: :operation
 
@@ -25,7 +17,7 @@ module Rails # :nodoc:
           @stack = []
           @request = request
           @operation = operation
-          @current = CurrentValue.new(@stack)
+          @current = Helpers::AttributeDelegator.new(self, :current_value, cache: false)
         end
 
         # Add, exec, and then remove the value from the stack
@@ -46,10 +38,18 @@ module Rails # :nodoc:
           @stack[1..-1]
         end
 
+        # Get the current value, which basically means basically the first item
+        # on the current stafck
+        def current_value
+          @stack[0]
+        end
+
         # Change the current value, either form hits or the actual value
         def override_value(other)
           @stack[0] = other
         end
+
+        alias current_value= override_value
       end
     end
   end

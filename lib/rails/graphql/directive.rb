@@ -34,7 +34,13 @@ module Rails # :nodoc:
       EXECUTION_LOCATIONS  = VALID_LOCATIONS[0..6].freeze
       DEFINITION_LOCATIONS = VALID_LOCATIONS[7..17].freeze
 
+      self.abstract = true
+
       class << self
+        def kind # :nodoc
+          :directive
+        end
+
         def gql_name # :nodoc:
           return @gql_name if defined?(@gql_name)
           @gql_name = super.camelize(:lower)
@@ -94,6 +100,8 @@ module Rails # :nodoc:
             super if defined? super
 
             method_name = subclass.name.demodulize
+
+            subclass.abstract = false
             subclass.module_parent.define_singleton_method(method_name) do |*args, &block|
               subclass.new(*args, &block)
             end
@@ -144,21 +152,13 @@ module Rails # :nodoc:
         options.any?(&event.method(:on?))
       end
 
-      attr_reader :owner, :args
+      attr_reader :args
 
       def initialize(args = nil, **xargs)
         @args = args || OpenStruct.new(xargs.transform_keys { |key| key.to_s.underscore })
         @args.freeze
+
         validate! if args.nil?
-      end
-
-      # Once the directive is correctly prepared, we need to assign the owner
-      def assing_owner!(owner)
-        raise ArgumentError, <<~MSG.squish if defined?(@owner)
-          Owner already assigned for @#{gql_name} directive.
-        MSG
-
-        @owner = owner
       end
 
       # When fetching all the events, embed the actual instance as the context
@@ -171,7 +171,7 @@ module Rails # :nodoc:
 
       # Checks if all the arguments provided to the directive instance are valid
       def validate!(*)
-        invalid = arguments.reject { |name, arg| arg.valid?(@args[name]) }
+        invalid = all_arguments.reject { |name, arg| arg.valid?(@args[name]) }
         return if invalid.empty?
 
         invalid = invalid.map { |name, arg| <<~MSG }
@@ -186,7 +186,7 @@ module Rails # :nodoc:
       end
 
       def inspect # :nodoc:
-        args = arguments.map do |name, arg|
+        args = all_arguments.map do |name, arg|
           "#{arg.gql_name}: #{@args[name].inspect}" unless @args[name].nil?
         end.compact
 
