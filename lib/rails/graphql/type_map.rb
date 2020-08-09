@@ -268,7 +268,7 @@ module Rails # :nodoc:
           end
 
           validate.compact.each(&:call)
-          @pending = keep.presence
+          @pending = keep.presence || []
         rescue DefinitionError => e
           raise e.class, e.message + "\n  Defined at: #{source}"
           @pending = keep + @pending

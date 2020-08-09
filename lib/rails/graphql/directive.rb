@@ -161,6 +161,15 @@ module Rails # :nodoc:
         validate! if args.nil?
       end
 
+      # Once the directive is correctly prepared, we need to assign the owner
+      def assing_owner!(owner)
+        raise ArgumentError, <<~MSG.squish if defined?(@owner)
+          Owner already assigned for @#{gql_name} directive.
+        MSG
+
+        @owner = owner
+      end
+
       # When fetching all the events, embed the actual instance as the context
       # of the callback
       def all_events

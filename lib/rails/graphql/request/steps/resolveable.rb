@@ -109,9 +109,6 @@ module Rails # :nodoc:
           # Write a value based on a Object type
           def write_object(value)
             type_klass.valid_member?(value) ? write_selection : raise_invalid_member!
-          rescue
-            binding.pry
-            raise
           end
 
           # Write a value with the correct serialize mode. Validate the output

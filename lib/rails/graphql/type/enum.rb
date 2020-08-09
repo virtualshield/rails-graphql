@@ -57,14 +57,20 @@ module Rails # :nodoc:
 
           # Transforms the given value to its representation in a Hash object
           def to_hash(value)
-            indexed? && value.is_a?(Numeric) \
-              ? all_values[value] \
-              : value.to_s.underscore.upcase
+            return if value.nil?
+            return value.to_s if value.is_a?(self)
+            return all_values[value] if indexed? && value.is_a?(Numeric)
+            value.to_s.underscore.upcase
           end
 
           # Turn a user input of this given type into an ruby object
           def deserialize(value)
-            value.downcase
+            new(value)
+          end
+
+          # Use the instance as decorator
+          def decorate(value)
+            new(to_hash(value))
           end
 
           # Use this method to add values to the enum type
@@ -119,7 +125,10 @@ module Rails # :nodoc:
           def all_deprecated_values
             @all_deprecated_values ||= begin
               all_value_directives.inject({}) do |list, (value, dirs)|
-                next unless obj = dirs.find { |dir| dir.is_a?(deprecated_klass) }
+                next list unless obj = dirs.find do |dir|
+                  dir.is_a?(deprecated_klass)
+                end
+
                 list.merge(value => obj.args.reason)
               end
             end.freeze
@@ -144,6 +153,60 @@ module Rails # :nodoc:
               Directive::DeprecatedDirective
             end
         end
+
+        attr_reader :value
+
+        delegate :to_s, :inspect, to: :@value
+
+        def initialize(value)
+          @value = value
+        end
+
+        # Use lower canse for symbolized value
+        def to_sym
+          @value.downcase.to_sym
+        end
+
+        # Allow finding the indexed position of the value
+        def to_i
+          self.class.all_values.index(@value)
+        end
+
+        # Checks if the current value is valid
+        def valid?
+          self.class.valid_output?(@value)
+        end
+
+        # Gets all the description of the current value
+        def description
+          @description ||= @value && self.class.all_description[@value]
+        end
+
+        # Gets all the directives associated with the current value
+        def directives
+          @directives ||= @value && self.class.all_directives[@value]
+        end
+
+        # Checks if the current value is marked as deprecated
+        def deprecated?
+          self.class.all_deprecated_values.include?(@value)
+        end
+
+        # Return the deprecated reason
+        def deprecated_reason
+          deprecated_directive&.args&.reason
+        end
+
+        private
+
+          # Find and store the directive that marked the current value as
+          # deprecated
+          def deprecated_directive
+            @deprecated_directive ||= directives.find do |dir|
+              dir.is_a?(Directive::DeprecatedDirective)
+            end
+          end
+
       end
     end
   end

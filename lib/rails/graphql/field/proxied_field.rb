@@ -87,7 +87,7 @@ module Rails # :nodoc:
       end
 
       def all_events # :nodoc:
-        Helpers::InheritedCollection::LazyValue.new do
+        Helpers::Helpers::AttributeDelegator.new do
           Helpers::InheritedCollection.merge_hash_array(field.all_events, super)
         end
       end

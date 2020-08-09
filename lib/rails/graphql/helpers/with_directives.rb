@@ -91,7 +91,7 @@ module Rails # :nodoc:
 
         # Get the list of events from all directives
         def all_directive_events
-          InheritedCollection::LazyValue.new do
+          Helpers::AttributeDelegator.new do
             all_directives.map(&:all_events).inject({}) do |lhash, rhash|
               InheritedCollection.merge_hash_array(lhash, rhash)
             end

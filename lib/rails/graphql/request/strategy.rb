@@ -75,13 +75,15 @@ module Rails # :nodoc:
 
         # Resolve a value for a given object, It uses the +args+ to prevent
         # problems with nil values.
-        def resolve(field, *args, array: false, &block)
+        def resolve(field, *args, array: false, decorate: false, &block)
           data_for(args, field) if args.size.zero?
           args << Event.trigger(:resolve, field, self, &field.resolver) \
             if field.try(:dynamic_resolver?)
 
           # Now we have a value to set on the context
-          @context.stacked(args.last) do |current|
+          value = args.last
+          value = field.decorate(value) if decorate
+          @context.stacked(value) do |current|
             if !array
               block.call(current)
               # Necessary call #itself to loose the dynamic reference

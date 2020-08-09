@@ -62,6 +62,11 @@ module Rails # :nodoc:
           false
         end
 
+        # A little helper to instanteate the type if necessary
+        def decorate(value)
+          value
+        end
+
         # Checks if a given method can act as resolver
         def gql_resolver?(method_name)
           ref_object = self

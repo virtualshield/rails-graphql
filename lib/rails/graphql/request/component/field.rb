@@ -13,6 +13,7 @@ module Rails # :nodoc:
 
         DATA_PARTS = %i[arguments]
 
+        delegate :decorate, to: :type_klass
         delegate :operation, :variables, to: :parent
         delegate :method_name, :resolver, :type_klass, :leaf_type?,
           :dynamic_resolver?, to: :field
@@ -151,7 +152,7 @@ module Rails # :nodoc:
 
           # Resolve the value of the field for a single information
           def resolve_one(*args)
-            strategy.resolve(self, *args) do |value|
+            strategy.resolve(self, *args, decorate: true) do |value|
               yield value if block_given?
               trigger_event(:finalize)
             end

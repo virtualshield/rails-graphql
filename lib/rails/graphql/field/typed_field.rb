@@ -56,6 +56,10 @@ module Rails # :nodoc:
         )
       end
 
+      def all_directives # :nodoc:
+        super + type_klass.all_directives
+      end
+
       # Checks if the type of the field is valid
       def validate!(*)
         super if defined? super
