@@ -40,8 +40,6 @@ module Rails # :nodoc:
 
       class << self
         alias namespaces namespace
-        alias all_events all_directive_events
-        alias all_listeners all_directive_listeners
 
         def kind # :nodoc:
           :schema

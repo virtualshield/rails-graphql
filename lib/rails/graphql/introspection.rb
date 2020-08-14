@@ -30,7 +30,7 @@ module Rails # :nodoc:
 
         Helpers::WithSchemaFields::SCHEMA_FIELD_TYPES.each do |type, name|
           Core.type_map.register_alias(name, namespace: namespace) do
-            result = subclass.public_send("#{type}_type")
+            result = public_send("#{type}_type")
             type.eql?(:query) || result.fields.present? ? result : nil
           end
         end

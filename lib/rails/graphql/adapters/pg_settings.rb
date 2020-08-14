@@ -4,7 +4,7 @@ module Rails # :nodoc:
   module GraphQL # :nodoc:
 
     # Based on:
-    # SELECT t.oid, t.typname, format_type(t.oid, NULL)
+    # SELECT t.oid, t.typname, format_type(t.oid, NULL) AS sql_type
     # FROM pg_type t
     # WHERE typtype = 'b'
     #   AND typcategory IN ('B', 'D', 'G', 'I', 'N', 'S', 'T', 'V')
@@ -38,8 +38,6 @@ module Rails # :nodoc:
             type = find_type!('pg:' + type_name.gsub(/(\(|\[).*/, ''), fallback: :string)
 
             options = { array: type_name.include?('[]') }
-            options[:null] = !(!column.null || presence_validator?(column.name))
-
             yield column.name, type, options
           end
         end

@@ -4,8 +4,8 @@ module Rails # :nodoc:
   module GraphQL # :nodoc:
     # = GraphQL Input Field
     #
-    # An input field works the same way as an argument, and they are pretty much
-    # equivalent. The main difference between an argument and a field input is
+    # An input field works the same way as an argument and they are pretty much
+    # equivalent. The main difference between an argument and a input field is
     # that input fields holds object-like values and they can be inherited.
     # Arguments can hold object-like values only when their type is associated
     # with an InputField.
@@ -16,7 +16,6 @@ module Rails # :nodoc:
     # * <tt>:directives</tt> - The list of directives associated with the value
     #   (defaults to nil).
     class Field::InputField < Field
-      include Helpers::WithValidator
       include Field::TypedField
 
       attr_reader :default
@@ -29,8 +28,7 @@ module Rails # :nodoc:
         @default = default
       end
 
-      # Override with exception
-      def configure
+      def configure # :nodoc:
         raise ArgumentError, 'Input fields can\'t be further configured using blocks'
       end
 
@@ -39,27 +37,19 @@ module Rails # :nodoc:
         !default.nil?
       end
 
-      # Turn the default value into a JSON string representation
-      def default_to_json
-        to_json(default)
-      end
-
       # This checks if a given serialized value is valid for this field
-      def valid_input?(value)
-        return false if disabled?
+      def valid_input?(value, deep: true)
+        return false unless super
         return null? if value.nil?
-        return valid_input_array?(value) if array?
+        return valid_input_array?(value, deep) if array?
+
+        return true unless leaf_type? || deep
         type_klass.valid_input?(value)
       end
 
-      # Turn the given value into an ruby representation of it
-      def deserialize(value)
-        value.nil? ? default : super
-      end
-
-      # Trigger the exception based value validator
-      def validate_output!(value)
-        super(value, :field)
+      # Return the default value if the given +value+ is nil
+      def deserialize(value = nil)
+        value.nil? ? @default : super
       end
 
       # Checks if the default value of the field is valid
@@ -70,24 +60,26 @@ module Rails # :nodoc:
           The "#{type_klass.gql_name}" is not a valid input type.
         MSG
 
-        raise ArgumentError, <<~MSG.squish unless default.nil? || valid?(default)
+        raise ArgumentError, <<~MSG.squish unless default.nil? || valid_input?(default)
           The given default value "#{default.inspect}" is not valid for this field.
         MSG
-
-        nil # No exception already means valid
-      end
-
-      def inspect # :nodoc:
-        result = super
-        result += " = #{default_to_json}" if default?
-        result
       end
 
       protected
 
-        def valid_input_array?(value)
+        # Check if the given +value+ is a valid array as input
+        def valid_input_array?(value, deep)
           return false unless value.is_a?(Array)
-          value.all? { |val| (val.nil? && nullable?) || type_klass.valid_input?(val) }
+
+          value.all? do |value|
+            (val.nil? && nullable?) || (leaf_type? || !deep) ||
+              type_klass.valid_input?(value)
+          end
+        end
+
+        # Display the default value when it is present for inspection
+        def inspect_default_value
+          " = #{to_hash.inspect}" if default?
         end
     end
   end

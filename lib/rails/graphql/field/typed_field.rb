@@ -5,25 +5,34 @@ module Rails # :nodoc:
     # This is a helper module that basically works with fields that have an
     # assigned type value
     module Field::TypedField
+      module Proxied # :nodoc: all
+        delegate :type, :type_klass, to: :field
+      end
+
       attr_reader :type
 
       delegate :input_type?, :output_type?, :leaf_type?, :kind, to: :type_klass
 
       def initialize(name, type, *args, **xargs, &block)
-        super(name, *args, **xargs, &block)
-
         if type.is_a?(Module) && type < GraphQL::Type
           @type_klass = type
           @type = type.name
         else
           @type = type.to_s.underscore.to_sym
         end
+
+        super(name, *args, **xargs, &block)
       end
 
       def initialize_copy(*)
         super
 
         @type_klass = nil
+      end
+
+      # Check if types are compatible
+      def =~(other)
+        other.is_a?(Field::TypedField) && other.type_klass =~ type_klass && super
       end
 
       # Sometimes the owner does not designate this, but it is safe to assume it
@@ -43,21 +52,22 @@ module Rails # :nodoc:
         is_a?(klass) || type_klass <= klass
       end
 
-      # Check if types are compatible
-      def =~(other)
-        other.type_klass == type_klass && super
-      end
-
       # Return the class of the type object
       def type_klass
         @type_klass ||= GraphQL.type_map.fetch!(type,
-          namespaces: namespaces,
           prevent_register: owner,
+          namespaces: namespaces,
         )
       end
 
-      def all_directives # :nodoc:
-        super + type_klass.all_directives
+      # Add the listeners from the associated type
+      def all_listeners
+        super + type_klass.all_listeners
+      end
+
+      # Add the events from the associated type
+      def all_events
+        Helpers::InheritedCollection.merge_hash_array(super, type_klass.all_events)
       end
 
       # Checks if the type of the field is valid
@@ -75,13 +85,12 @@ module Rails # :nodoc:
         raise ArgumentError, <<~MSG.squish unless valid_type
           The "#{type_klass.base_type}" is not accepted in this context.
         MSG
-
-        nil # No exception already means valid
       end
 
       protected
 
-        def inspect_type # :nodoc:
+        # Little helper that shows the type of the field
+        def inspect_type
           result = ': '
           result += '[' if array?
           result += type_klass.gql_name
@@ -89,6 +98,11 @@ module Rails # :nodoc:
           result += ']' if array?
           result += '!' unless null?
           result
+        end
+
+        def proxied # :nodoc:
+          super if defined? super
+          extend Field::TypedField::Proxied
         end
     end
   end

@@ -18,13 +18,9 @@ module Rails # :nodoc:
     class TypeMap
       FILTER_REGISTER_TRACE = /((inherited|initialize)'$|schema\.rb:\d+)/.freeze
 
-
       # Store all the base classes and if they were eager loaded by the type map
-      mattr_accessor :base_classes, instance_writer: false, default: {
-        Directive: false,
-        Mutation:  false,
-        Type:      false,
-      }
+      mattr_accessor :base_classes, instance_writer: false,
+        default: { Directive: false, Type: false }
 
       def self.loaded!(base_class)
         base_classes[base_class] = true
@@ -60,13 +56,10 @@ module Rails # :nodoc:
 
       # Find if a given object is already defined. If +exclusive+ is set to
       # +false+, then it won't check the +:base+ namespace
-      def object_exist?(object, exclusive: false)
-        base_class = find_base_class(object)
-        exist?(object.gql_name,
-          base_class: base_class,
-          namespaces: object.namespaces,
-          exclusive: exclusive,
-        )
+      def object_exist?(object, **xargs)
+        xargs[:base_class] = find_base_class(object)
+        xargs[:namespaces] ||= object.namespaces
+        exist?(object.gql_name, **xargs)
       end
 
       # Same as +fetch+ but it will raise an exception or retry depending if the

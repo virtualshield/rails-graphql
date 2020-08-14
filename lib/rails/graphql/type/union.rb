@@ -71,8 +71,6 @@ module Rails # :nodoc:
             raise ArgumentError, <<~MSG.squish unless size.eql?(1)
               All the members of the union must contain the same base class.
             MSG
-
-            nil # No exception already means valid
           end
 
           def inspect # :nodoc:

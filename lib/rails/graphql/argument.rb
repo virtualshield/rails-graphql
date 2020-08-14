@@ -86,9 +86,9 @@ module Rails # :nodoc:
       def =~(other)
         return false unless other.is_a?(Argument)
         other.type_klass == type_klass &&
-          (other.null? == null? || other.null? && !null?) &&
           other.array? == array? &&
-          other.nullable? == nullable?
+          (other.null? == null? || other.null? && !null?) &&
+          (other.nullable? == nullable? || other.nullable? && !nullable?)
       end
 
       # Return the class of the type object
@@ -129,19 +129,20 @@ module Rails # :nodoc:
         !@default.nil?
       end
 
-      # Turn the default value into a JSON string representation
-      def default_to_hash
-        to_hash(@default)
-      end
-
       # Transforms the given value to its representation in a JSON string
-      def to_json(value)
-        to_hash(value).inspect
+      def to_json(value = nil)
+        value = @default if value.nil?
+
+        return 'null' if value.nil?
+        return type_klass.to_json(value) unless array?
+        value.map { |part| type_klass.to_json(part) }
       end
 
       # Turn the given value into a JSON string representation
-      def to_hash(value)
-        return @default if value.nil?
+      def to_hash(value = nil)
+        value = @default if value.nil?
+
+        return if value.nil?
         return type_klass.to_hash(value) unless array?
         value.map { |part| type_klass.to_hash(part) }
       end
@@ -181,8 +182,6 @@ module Rails # :nodoc:
         raise ArgumentError, <<~MSG.squish unless default.nil? || valid?(default)
           The given default value "#{default.inspect}" is not valid for this argument.
         MSG
-
-        nil # No exception already means valid
       end
 
       # This allows combining arguments
@@ -199,7 +198,7 @@ module Rails # :nodoc:
         result += '!' if array? && !nullable?
         result += ']' if array?
         result += '!' unless null?
-        result += " = #{default.inspect}" if default_value?
+        result += " = #{to_hash.inspect}" if default_value?
         result
       end
 

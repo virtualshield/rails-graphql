@@ -122,7 +122,7 @@ module Rails # :nodoc:
           if @with_descriptions
             field = o.instance_variable_get(:@field)
             collector << '# Association of '
-            collector << field.owner.gql_name
+            collector << field.owner.name
             collector << '["'
             collector << field.gql_name
             collector << '"]'
@@ -138,7 +138,7 @@ module Rails # :nodoc:
           if @with_descriptions
             field = o.instance_variable_get(:@field)
             collector << '# Proxy of '
-            collector << field.owner.gql_name
+            collector << field.owner.name
             collector << '["'
             collector << field.gql_name
             collector << '"]'
@@ -338,7 +338,7 @@ module Rails # :nodoc:
           collector << '!' unless o.null?
 
           if o.try(:default_value?)
-            collector << ' = ' << o.default_to_hash.inspect
+            collector << ' = ' << o.to_json
           end
         end
 

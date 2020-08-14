@@ -48,6 +48,7 @@ module Rails # :nodoc:
     autoload :Collectors
 
     eager_autoload do
+      autoload :Callback
       autoload :Core
       autoload :Event
       autoload :Native
@@ -56,15 +57,13 @@ module Rails # :nodoc:
       autoload :TypeMap
 
       autoload :Argument
-      autoload :Callback
       autoload :Directive
       autoload :Field
-      autoload :Mutation
+      autoload :Introspection
       autoload :Schema
       autoload :Type
 
       autoload :GraphiQL
-      autoload :Introspection
     end
 
     class << self

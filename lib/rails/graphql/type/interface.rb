@@ -17,14 +17,7 @@ module Rails # :nodoc:
 
         setup! output: true
 
-        self.field_types = [Field::OutputField].freeze
-        self.valid_field_types = [
-          Type::Enum,
-          Type::Interface,
-          Type::Object,
-          Type::Scalar,
-          Type::Union,
-        ].freeze
+        self.field_type = Field::OutputField
 
         # The purpose of instantiating an interface is to have access to its
         # public methods. It then runs from the strategy perspective, pointing

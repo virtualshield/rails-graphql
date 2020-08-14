@@ -13,12 +13,11 @@ module Rails # :nodoc:
 
         class ScopedConfig < Struct.new(:source, :type) # :nodoc: all
           ALIASES = {
-            fields:            :fields_for,
-            safe_field:        :safe_add_field,
-            field:             :add_field,
-            proxy_field:       :add_proxy_field,
-            association_field: :add_association_field,
-            field?:            :has_field?,
+            fields:      :fields_for,
+            safe_field:  :safe_add_field,
+            field:       :add_field,
+            proxy_field: :add_proxy_field,
+            field?:      :has_field?,
           }.freeze
 
           def arg(*args, **xargs, &block)
@@ -50,14 +49,9 @@ module Rails # :nodoc:
         end
 
         # Only add the field if it is not already defined
-        def safe_add_field(type, *args, of_type: nil, **xargs, &block)
-          check_name = xargs[:as] || xargs[:alias] || args.first
-
-          return if (check_name.is_a?(Symbol) || check_name.is_a?(String)) &&
-            has_field?(type, check_name)
-
+        def safe_add_field(*args, of_type: nil, **xargs, &block)
           method_name = of_type.nil? ? :add_field : "add_#{of_type}_field"
-          public_send(method_name, type, *args, **xargs, &block)
+          public_send(method_name, *args, **xargs, &block)
         rescue DuplicatedError
           # Do not do anything if it is duplicated
         end
@@ -80,33 +74,19 @@ module Rails # :nodoc:
 
         # Add a new field to the list but use a proxy instead of a hard copy of
         # a given +field+
-        def add_proxy_field(type, field, **xargs)
-          raise ArgumentError, <<~MSG.squish unless field.is_a?(GraphQL::Field::Core)
+        def add_proxy_field(type, field, *args, **xargs)
+          raise ArgumentError, <<~MSG.squish unless field.is_a?(GraphQL::Field)
             The #{field.class.name} is not a valid field.
           MSG
 
           xargs[:owner] = self
-          object = Field::ProxyField.new(field, **xargs)
+          object = field.to_proxy(*args, **xargs, &block)
           raise DuplicatedError, <<~MSG.squish if has_field?(type, object.name)
             The #{field.name.inspect} field is already defined on #{type} fields
             and cannot be replaced.
           MSG
 
           fields_for(type)[object.name] = object
-        end
-
-        # Add a new field to the list but use a association field, which has
-        # dynamic activation
-        def add_association_field(type, *args, **xargs, &block)
-          xargs[:owner] = self
-          xargs[:group] = type
-          object = Field::AssociationField.new(*args, **xargs, &block)
-          raise DuplicatedError, <<~MSG.squish if field?(object.name || object)
-            The #{field.name ? field.name.inspect : 'association'}
-            field is already defined and can't be replaced.
-          MSG
-
-          fields_for(type)[object.name || object] = object
         end
 
         # Find a field and then change some flexible attributes of it
@@ -173,8 +153,6 @@ module Rails # :nodoc:
             next unless instance_variable_defined?("@#{kind}_fields")
             instance_variable_get("@#{kind}_fields")&.each_value(&:validate!)
           end
-
-          nil # No exception already means valid
         end
 
         SCHEMA_FIELD_TYPES.each_key do |kind|

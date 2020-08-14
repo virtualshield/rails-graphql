@@ -9,8 +9,17 @@ module Rails # :nodoc:
       include Helpers::WithEvents
       include Helpers::WithCallbacks
 
-      event_types %i[prepare finalize]
-      expose_events!
+      module Proxied # :nodoc: all
+        def resolver
+          super || field.resolver
+        end
+
+        def dynamic_resolver?
+          super || field.dynamic_resolver?
+        end
+      end
+
+      event_types :prepare, :finalize, expose: true
 
       alias before_resolve prepare
       alias after_resolve finalize
@@ -54,6 +63,8 @@ module Rails # :nodoc:
       def validate!(*)
         super if defined? super
 
+        # Store this result for performance purposes
+        @dynamic_resolver = dynamic_resolver?
         invalid = @events&.each_value&.reject do |callback|
           callback.block.is_a?(Proc) || callable?(callback.block)
         end
@@ -62,11 +73,6 @@ module Rails # :nodoc:
           The "#{owner.name}" class does not define the following methods needed
           for performing hooks: #{invalid.map(&:block).to_sentence}.
         MSG
-
-        # Store this result for performance purposes
-        @dynamic_resolver = dynamic_resolver?
-
-        nil # No exception already means valid
       end
 
       protected
@@ -74,6 +80,11 @@ module Rails # :nodoc:
         # Chedck if a given +method_name+ is callable from the owner perspective
         def callable?(method_name)
           owner.is_a?(Class) && owner.try(:gql_resolver?, method_name)
+        end
+
+        def proxied # :nodoc:
+          super if defined? super
+          extend Field::ResolvedField::Proxied
         end
     end
 

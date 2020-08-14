@@ -37,6 +37,8 @@ module Rails # :nodoc:
           (other.is_a?(Module) ? other : other.class) <= self
         end
 
+        alias of_type? =~
+
         # Return the base type in a symbolized way
         def kind
           base_type.name.demodulize.underscore.to_sym

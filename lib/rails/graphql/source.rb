@@ -73,15 +73,8 @@ module Rails # :nodoc:
         delegate :field, :proxy_field, :overwrite_field, :[], :field?,
           :field_names, to: :object
 
-        alias gql_name name
-
         def kind # :nodoc:
           :source
-        end
-
-        # A little helper to identify sources
-        def source?
-          true
         end
 
         # Get the main name of the source
@@ -260,6 +253,11 @@ module Rails # :nodoc:
             hook_names += names.map { |hook_name| hook_name.to_s.singularize.to_sym }
           end
 
+          # Return the module where the GraphQL types should be created at
+          def gql_module
+            name.starts_with?('GraphQL::') ? module_parent : ::GraphQL
+          end
+
         private
 
           # The list of pending sources to be built asscoaited to where they
@@ -280,18 +278,13 @@ module Rails # :nodoc:
             end
           end
 
-          # Return the module where the GraphQL types should be created at
-          def gql_module
-            name.starts_with?('GraphQL::') ? module_parent : ::GraphQL
-          end
-
-          # Find all classes that inherits from this class that are abstract,
-          # meaning that they are a base source
+          # Find all classes that inherits from source that are abstract,
+          # meaning that they are a base sources
           def base_sources
-            @base_sources ||= begin
+            @@base_sources ||= begin
               eager_load!
 
-              enum = ObjectSpace.each_object(singleton_class) \
+              enum = ObjectSpace.each_object(GraphQL::Source) \
                 rescue ObjectSpace.each_object(Class) # JRuby 9.0.4.0 and earlier
 
               enum.inject(Set.new) do |list, klass|

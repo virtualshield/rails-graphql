@@ -14,6 +14,8 @@ module Rails # :nodoc:
 
           indent
           yield
+
+          @val.last.pop while @val.last.last.blank?
           unindent
 
           @val.pop(2) if blank?(-2)

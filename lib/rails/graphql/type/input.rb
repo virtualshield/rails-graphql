@@ -19,8 +19,12 @@ module Rails # :nodoc:
           autoload :AssignedInput
         end
 
-        self.field_types = [Field::InputField].freeze
-        self.valid_field_types = [Type::Enum, Type::Input, Type::Scalar].freeze
+        self.field_type = Field::InputField
+        self.valid_field_types = [
+          Type::Enum,
+          Type::Input,
+          Type::Scalar,
+        ].freeze
 
         class << self
           # A little override on the name of the object due to the suffix config
@@ -40,6 +44,7 @@ module Rails # :nodoc:
             value = value.to_h if value.respond_to?(:to_h)
             return false unless value.is_a?(Hash)
 
+            fields = enabled_fields
             value = build_defaults.merge(value)
             return false unless value.size.eql?(fields.size)
 
@@ -52,25 +57,16 @@ module Rails # :nodoc:
             value = {} unless value.is_a?(Hash)
             value = build_defaults.merge(value)
 
-            new **fields.transform_values do |field|
+            new **enabled_fields.transform_values do |field|
               field.deserialize(value[field.gql_name])
             end
           end
 
           # Build a hash with the default values for each of the given fields
           def build_defaults
-            values = fields.each_value.map(&:default)
-            fields.values.map(&:gql_name).zip(values).to_h
-          end
-
-          # A small helper to turn the input into an input field
-          def as_field
-            return unless respond_to?(:owner) && owner.present?
-
-            @as_field ||= begin
-              field_name = gql_name.delete_sufix('Input').underscore
-              Field::InputField.new(field_name, self, owner: owner, desc: description)
-            end
+            enabled_fields.each_value.map do |field|
+              field[field.gql_name, field.default]
+            end.to_h
           end
 
           def inspect # :nodoc:
@@ -104,8 +100,6 @@ module Rails # :nodoc:
           raise InvalidValueError, <<~MSG.squish
             Invalid value provided to #{gql_name} field: #{errors.to_sentence}.
           MSG
-
-          nil # No exception already means valid
         end
       end
     end

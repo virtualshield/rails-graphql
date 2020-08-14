@@ -14,6 +14,8 @@ module Rails # :nodoc:
         class_attribute :owner, instance_writer: false
 
         class << self
+          delegate :to_proxy, to: :owner
+
           # This class will be able to be resolved from a query point of view if
           # all the requested fields (which are non-object) can also be resolved
           # from active record

@@ -4,39 +4,44 @@ module Rails # :nodoc:
   module GraphQL # :nodoc:
     # = GraphQL Proxied Field
     #
-    # A little shared helper that allows a correct "proxylization" of a field
-    # that behaves as a proxy
+    # Proxied fields are a soft way to copy a real field. The good part is that
+    # if the field changes for any reason all its copies will change as well.
+    #
+    # The owner of a proxy field is different from the owner of the actual field
+    # but that doesn't affect the field operations.
+    #
+    # Proxied field also supports aliases, which helps implementing independent
+    # fields and then providing them as proxy to other objects.
+    #
+    # Proxies can be created from any kind of input
+    #
+    # ==== Options
+    #
+    # It accepts all the options of any other type of field plus the following
+    #
+    # * <tt>:owner</tt> - The main object that this field belongs to.
+    # * <tt>:as</tt> - The actual name to be used on the field while assigning
+    #   the proxy (defaults to nil).
+    # * <tt>:alias</tt> - Same as the +:as+ key (defaults to nil).
     module Field::ProxiedField
-      delegate :input_type?, :output_type?, :leaf_type?, :from_ar?, :from_ar,
-        :array?, :nullable?, :internal?, :valid_input?, :valid_output?,
-        :to_json, :to_hash, :deserialize, :valid?, to: :field
-
       delegate_missing_to :field
+      delegate :leaf_type?, :from_ar?, :from_ar, :array?, :internal?,
+        :valid_input?, :valid_output?, :to_json, :to_hash, :deserialize, :valid?,
+        to: :field
 
-      def self.included(other)
-        other.extend(ClassMethods)
+      Field.proxyable_methods %w[name gql_name method_name resolver description
+        null? nullable? enabled?], klass: self
+
+      def initialize(field, owner: , **xargs, &block)
+        @field = field
+        @owner = owner
+
+        apply_changes(**xargs, &block)
       end
 
-      module ClassMethods
-        # Change the value to true
-        def proxy?
-          true
-        end
-
-        protected
-
-          # A helper to define methods that allows overrides by the proxy
-          def overrideable_methods(*list, allow_nil: false)
-            list.flatten.each do |method_name|
-              ivar = '@' + method_name.delete_suffix('?')
-              accessor = 'field' + (allow_nil ? '&.' : '.') + method_name
-              class_eval <<~RUBY, __FILE__, __LINE__ + 1
-                def #{method_name}
-                  defined?(#{ivar}) ? #{ivar} : #{accessor}
-                end
-              RUBY
-            end
-          end
+      # Once this module is added then the field becomes a proxy
+      def proxy?
+        true
       end
 
       # Allow chaging most of the general kind-independent initialize settings
@@ -50,8 +55,6 @@ module Rails # :nodoc:
 
         @directives = GraphQL.directives_to_set(xargs[:directives], source: self) \
           if xargs.key?(:directives)
-
-        @method_name = xargs[:method_name] if xargs.key?(:method_name)
 
         @desc    = xargs[:desc]&.strip_heredoc&.chomp if xargs.key?(:desc)
         @enabled = xargs.fetch(:enabled, !xargs.fetch(:disabled, false)) \
@@ -74,30 +77,18 @@ module Rails # :nodoc:
         super unless non_interface_proxy!('enable')
       end
 
-      def all_arguments # :nodoc:
-        field.arguments.merge(super)
-      end
-
       def all_directives # :nodoc:
-        field.all_directives + ((super if defined? super) || Set.new)
+        super + field.all_directives
       end
 
-      def all_listeners # :nodoc:
-        field.all_listeners + super
-      end
-
-      def all_events # :nodoc:
-        Helpers::Helpers::AttributeDelegator.new do
-          Helpers::InheritedCollection.merge_hash_array(field.all_events, super)
-        end
-      end
-
-      def has_argument?(name) # :nodoc:
-        super || field.has_argument?(name)
-      end
-
-      def dynamic_resolver? # :nodoc:
-        super || field.dynamic_resolver?
+      # It is important to ensure that the proxied field is also valid. If the
+      # proxied owner is registered, then it is safe to assume that it is valid
+      def validate!(*)
+        super if defined? super
+        field.validate! unless GraphQL.type_map.object_exist?(proxied_owner,
+          namespaces: namespaces,
+          exclusive: true,
+        )
       end
 
       protected
@@ -111,13 +102,23 @@ module Rails # :nodoc:
         def non_interface_proxy!(action)
           raise ::ArgymentError, <<~MSG.squish if interface_proxy?
             Unable to #{action} the "#{gql_name}" field because it is
-            associated to the #{field.owner.gql_name} interface.
+            associated to the #{field.owner.name} interface.
           MSG
         end
 
         # Checks if the proxy is based on an interface field
         def interface_proxy?
           field.owner.try(:interface?)
+        end
+
+        # Display the source of the proxy for inspection
+        def inspect_source
+          "@source=#{proxied_owner.name}[:#{field.name}] [proxied]"
+        end
+
+        # This is trigerred when the field is proxied
+        def proxied
+          super if defined? super
         end
     end
   end

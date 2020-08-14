@@ -34,8 +34,8 @@ module Rails # :nodoc:
         # Instanteate the assigned class with the arguments plus any other
         # necessary +extra+ arguments
         def instantiate(**extra)
-          extra.reverse_merge!(args.to_h)
-          @record = assigned_class.new(**extra)
+          attributes = extra.reverse_merge(args.to_h)
+          @record = assigned_class.new(**attributes)
         end
       end
     end

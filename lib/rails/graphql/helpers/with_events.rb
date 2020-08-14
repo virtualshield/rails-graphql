@@ -16,8 +16,8 @@ module Rails # :nodoc:
 
         def self.included(other)
           other.extend(WithEvents::FixedTypes)
+          other.delegate(:event_types, to: :class)
 
-          other.define_method(:event_types) { self.class.event_types }
           other.define_method(:events) { @events ||= Hash.new { |h, k| h[k] = [] } }
           other.define_method(:listeners) { @listeners ||= Set.new }
         end
@@ -25,20 +25,40 @@ module Rails # :nodoc:
         # Helper module to define static list of valid event types
         module FixedTypes
           # Set or get the list of possible event types when attaching events
-          def event_types(*list)
-            list.blank? ? @event_types : @event_types =
-              list.flatten.compact.map(&:to_sym).freeze
+          def event_types(*list, append: false, expose: false)
+            return @event_types.presence || superclass.try(:event_types) if list.blank?
+
+            list = event_types if append
+            list += list.flatten.compact.map(&:to_sym)
+            @event_types = list.uniq.freeze
+            expose_events! if expose
+            @event_types
           end
+
+          protected
+
+            # Auxiliar method that creates easy-accessible callback assignment
+            def expose_events!
+              event_types.each do |event_name|
+                next if method_defined?(event_name)
+                define_method(event_name) do |*args, **xargs, &block|
+                  on(event_name, *args, **xargs, &block)
+                end
+              end
+            end
         end
 
         # Mostly for correct inheritance on instances
         def all_events
-          @events || {}
+          current = (@events || {})
+          return current unless defined? super
+          Helpers::InheritedCollection.merge_hash_array(current, super)
         end
 
         # Mostly for correct inheritance on instances
         def all_listeners
-          @listeners || Set.new
+          current = (@listeners || Set.new)
+          defined?(super) ? (current + super) : current
         end
 
         # Add a new event listener for the given +event_name+. It is possible

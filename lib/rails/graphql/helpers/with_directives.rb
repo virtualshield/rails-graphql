@@ -84,15 +84,21 @@ module Rails # :nodoc:
 
         alias has_directive? using?
 
-        # Get the list of listeners from all directives
-        def all_directive_listeners
-          all_directives.map(&:all_listeners).reduce(:+) || Set.new
+        # Override the +all_listeners+ method since callbacks can eventually be
+        # attached to objects that have directives, which then they need to
+        # be combined
+        def all_listeners
+          current = all_directives.map(&:all_listeners).reduce(:+) || Set.new
+          (defined?(super) ? super : Set.new) + current
         end
 
-        # Get the list of events from all directives
-        def all_directive_events
+        # Override the +all_events+ method since callbacks can eventually be
+        # attached to objects that have directives, which then they need to
+        # be combined
+        def all_events
           Helpers::AttributeDelegator.new do
-            all_directives.map(&:all_events).inject({}) do |lhash, rhash|
+            base = defined?(super) ? super : {}
+            all_directives.map(&:all_events).inject(base) do |lhash, rhash|
               InheritedCollection.merge_hash_array(lhash, rhash)
             end
           end
@@ -104,8 +110,6 @@ module Rails # :nodoc:
 
           @directives&.each(&:validate!)
           @directives&.freeze
-
-          nil # No exception already means valid
         end
 
         private

@@ -140,16 +140,16 @@ module Rails # :nodoc:
         end
       end
 
-      event_filter(:during, array_sanitizer) do |options, event|
-        options.include?(event[:phase])
-      end
-
       event_filter(:for, object_sanitizer) do |options, event|
-        options.any?(&event.method(:for?))
+        options.any?(&event.source.method(:of_type?))
       end
 
       event_filter(:on, object_sanitizer) do |options, event|
-        options.any?(&event.method(:on?))
+        event.respond_to?(:on?) && options.any?(&event.method(:on?))
+      end
+
+      event_filter(:during, array_sanitizer) do |options, event|
+        event.key?(:phase) && options.include?(event[:phase])
       end
 
       attr_reader :args
@@ -190,8 +190,6 @@ module Rails # :nodoc:
         raise ArgumentError, <<~MSG.squish
           Invalid usage of @#{gql_name} directive: #{invalid.to_sentence}.
         MSG
-
-        nil # No exception already means valid
       end
 
       def inspect # :nodoc:

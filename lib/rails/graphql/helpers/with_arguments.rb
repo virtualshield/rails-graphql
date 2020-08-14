@@ -26,22 +26,26 @@ module Rails # :nodoc:
         end
 
         def initialize(*args, arguments: nil, **xargs, &block)
-          super(*args, **xargs, &block)
-          return if arguments.nil?
-
           @arguments = Array.wrap(arguments).map do |object|
             raise ArgumentError, <<~MSG.squish unless object.is_a?(Argument)
               The given "#{object.inspect}" is not a valid Argument object.
             MSG
 
             [object.name, Helpers.dup_with_owner(object, self)]
-          end.to_h
+          end.to_h unless arguments.nil?
+
+          super(*args, **xargs, &block)
         end
 
         def initialize_copy(orig)
           super
 
           @arguments = Helpers.dup_all_with_owner(orig.arguments.transform_values, self)
+        end
+
+        # Check if all the arguments are compatible
+        def =~(other)
+          super && other.respond_to?(:all_arguments) && match_arguments?(other)
         end
 
         # Mostly for correct inheritance on instances
@@ -81,9 +85,21 @@ module Rails # :nodoc:
 
           @arguments&.each_value(&:validate!)
           @arguments&.freeze
-
-          nil # No exception already means valid
         end
+
+        protected
+
+          # Show all the arguments as their inspect version
+          def inspect_arguments
+            args = all_arguments.each_value.map(&:inspect)
+            args.presence && "(#{args.join(', ')})"
+          end
+
+          # Check the equivalency of arguments
+          def match_arguments?(other)
+            l_args, r_args = all_arguments, other.all_arguments
+            l_args.size <= r_args.size && l_args.all? { |key, arg| arg =~ r_args[key] }
+          end
       end
     end
   end

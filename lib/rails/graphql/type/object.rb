@@ -14,7 +14,7 @@ module Rails # :nodoc:
 
         setup! output: true
 
-        self.field_types = [Field::OutputField].freeze
+        self.field_type = Field::OutputField
         self.valid_field_types = [
           Type::Enum,
           Type::Interface,
