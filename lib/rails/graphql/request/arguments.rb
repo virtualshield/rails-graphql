@@ -16,6 +16,8 @@ module Rails # :nodoc:
         THREAD_KEY = :_rails_graphql_operation
         LAZY_LOADER = ->(key, object) { object.variables[key] }.curry
 
+        delegate :key?, to: :@table
+
         class << self
           # Easy access to the easy loader method
           def lazy

@@ -68,7 +68,8 @@ module Rails # :nodoc:
           object.instance_variable_set(:@event, event)
 
           block = object.method(@block)
-          block.call(**collect_parameters(event, block, xargs_only: true))
+          args, xargs = collect_parameters(event, block)
+          block.call(*args, **xargs)
         ensure
           object.instance_variable_set(:@event, nil)
         end
@@ -81,29 +82,23 @@ module Rails # :nodoc:
 
         # Read the arguments needed for a block then collect them from the
         # event and return the execution args
-        def collect_parameters(event, block = @block, xargs_only: false)
-          args_source = event.send(:args_source)
-          return {} if xargs_only && !args_source
-
-          args_source ||= event
-          result = block.parameters.inject([[], {}]) do |result, (type, name)|
+        def collect_parameters(event, block = @block)
+          idx = -1
+          args_source = event.send(:args_source) || event
+          start_args = [@pre_args.deep_dup, @pre_xargs.deep_dup]
+          # TODO: Maybe we need to turn procs into lambdas so the optional
+          # arguments doesn't suffer any kind of change
+          block.parameters.inject(start_args) do |result, (type, name)|
             case type
-            when :req
-              next if xargs_only
-              result[0] << event.parameter(name)
-            when :opt
-              next if xargs_only
-              result[0] << event.parameter(name) if event.parameter?(name)
+            when :opt, :req
+              idx += 1
+              result[0][idx] ||= event.parameter(name) if event.parameter?(name)
             when :keyreq
-              result[1][name] = args_source[name]
-            when :key
               result[1][name] = args_source[name] if args_source.key?(name)
             end
 
             result
           end
-
-          xargs_only ? result[1] : result
         end
     end
   end
