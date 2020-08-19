@@ -58,8 +58,8 @@ module Rails # :nodoc:
 
           # Fragments always resolve selection unstacked on response, meaning
           # that its fields will be set in the same level as the parent
-          def unstacked_selection?
-            true
+          def stacked_selection?
+            false
           end
 
           # Perform the organization step
@@ -83,7 +83,7 @@ module Rails # :nodoc:
 
           # This will just trigger the selection resolver
           def resolve_then(&block)
-            super(block) { write_selection(@current_object) }
+            super(block) { resolve_fields(@current_object) }
           end
 
         private

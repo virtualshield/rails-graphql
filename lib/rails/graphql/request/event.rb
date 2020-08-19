@@ -10,8 +10,7 @@ module Rails # :nodoc:
       class Event < GraphQL::Event
         OBJECT_BASED_READERS = %i[fragment operation spread]
 
-        delegate :schema, :errors, to: :request
-        delegate :context, to: :strategy
+        delegate :schema, :errors, :context, to: :request
         delegate :memo, to: :object
 
         attr_reader :strategy, :request, :index
@@ -35,7 +34,17 @@ module Rails # :nodoc:
 
         # Provide a way to access the current field value
         def current_value
-          strategy.context&.current&.itself
+          resolver&.current_value
+        end
+
+        # Provide a way to set the current value
+        def current_value=(value)
+          resolver&.override_value(value)
+        end
+
+        # Return the strategy context as the resolver
+        def resolver
+          strategy.context
         end
 
         # Return the actual field when the source is a request field

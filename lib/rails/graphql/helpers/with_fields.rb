@@ -12,19 +12,19 @@ module Rails # :nodoc:
       # related to the base type, but it's closer associated with the strategy
       # used to handle them.
       module WithFields
-        def self.extended(other)
-          other.extend(WithFields::ClassMethods)
-          other.define_singleton_method(:fields) { @fields ||= Concurrent::Map.new }
-          other.class_attribute(:field_type, instance_writer: false)
-          other.class_attribute(:valid_field_types, instance_writer: false, default: [])
-        end
-
         module ClassMethods # :nodoc: all
           def inherited(subclass)
             super if defined? super
             return unless defined?(@fields)
             fields.each_value(&subclass.method(:proxy_field))
           end
+        end
+
+        def self.extended(other) # :nodoc:
+          other.extend(WithFields::ClassMethods)
+          other.define_singleton_method(:fields) { @fields ||= Concurrent::Map.new }
+          other.class_attribute(:field_type, instance_writer: false)
+          other.class_attribute(:valid_field_types, instance_writer: false, default: [])
         end
 
         # Check if the field is already defined before actually creating it

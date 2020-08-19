@@ -73,23 +73,32 @@ module Rails # :nodoc:
           request.stacked(object, &block)
         end
 
+        # When a +field+ has a perform step, run it under the context of the
+        # prepared value from the data pool
+        def perform(field)
+          context.stacked(@data_pool[field]) do |current|
+            safe_store_data(field, Event.trigger(:perform, field, self, &field.performer))
+          end
+        end
+
         # Resolve a value for a given object, It uses the +args+ to prevent
         # problems with nil values.
         def resolve(field, *args, array: false, decorate: false, &block)
-          data_for(args, field) if args.size.zero?
-          args << Event.trigger(:resolve, field, self, &field.resolver) \
-            if field.try(:dynamic_resolver?)
+          if args.size.zero?
+            data_for(args, field)
+            args << Event.trigger(:resolve, field, self, &field.resolver) \
+              if field.try(:dynamic_resolver?)
+          end
 
           # Now we have a value to set on the context
           value = args.last
           value = field.decorate(value) if decorate
-          @context.stacked(value) do |current|
+          context.stacked(value) do |current|
             if !array
               block.call(current)
-              # Necessary call #itself to loose the dynamic reference
-              field.write_value(current.itself)
+              field.write_value(current)
             else
-              field.resolve_with_array!(current, &block)
+              field.write_array(current, &block)
             end
           end
         end
@@ -130,6 +139,16 @@ module Rails # :nodoc:
           object.all_listeners.each do |event_name|
             listeners[event_name] << object
           end
+        end
+
+        # Store a given resolve +value+ for a given +field+
+        def store_data(field, value)
+          @data_pool[field] = value
+        end
+
+        # Only store a given +value+ for a given +field+ if it is not set yet
+        def safe_store_data(field, value)
+          @data_pool[field] ||= value
         end
 
         protected
@@ -177,7 +196,7 @@ module Rails # :nodoc:
             return result << @data_pool[field] if @data_pool.key?(field)
             return if field.entry_point?
 
-            current, key = @context.current, field.method_name
+            current, key = context.current_value, field.method_name
             return result << current.public_send(key) if current.respond_to?(key)
             result << current[key] if current.respond_to?(:[]) && current.key?(key)
           end

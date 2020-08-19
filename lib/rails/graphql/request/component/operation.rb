@@ -43,9 +43,9 @@ module Rails # :nodoc:
         end
 
         # Query is default behavior, so it doesn't need a whole class
-        Query = Class.new(self) { redefine_singleton_method(:query?) { true } }
+        Query    = Class.new(self) { redefine_singleton_method(:query?) { true } }
+        Mutation = Class.new(self) { redefine_singleton_method(:mutation?) { true } }
 
-        autoload :Mutation
         autoload :Subscription
 
         DATA_PARTS = %i[variables]
@@ -65,7 +65,7 @@ module Rails # :nodoc:
 
           super(node, data)
 
-          check_duplicated_operation!
+          check_invalid_operation!
         end
 
         # The list of fields comes from the +fields_for+ of the same type as
@@ -116,14 +116,19 @@ module Rails # :nodoc:
           def organize_then(&block)
             super(block) do
               parse_variables
-              parse_directives
+              parse_directives(type)
               parse_selection
             end
           end
 
           # Resolve all the fields
           def resolve
-            invalid? ? resolve_invalid : resolve_then { resolve_fields }
+            resolve_then { resolve_fields }
+          end
+
+          # Don't stack over response when the operation doesn't have a name
+          def stacked_selection?
+            name.present?
           end
 
           # Name used for debug purposes
@@ -145,19 +150,27 @@ module Rails # :nodoc:
           end
 
           # If there is another operation with the same name already defined,
-          # raise an error
-          def check_duplicated_operation!
-            return unless request.operations.key?(name)
+          # raise an error. If an anonymous was started, then any other
+          # operatios is invalid.
+          def check_invalid_operation!
+            if request.operations.key?(nil)
+              invalidate!
 
-            invalidate!
+              request.report_node_error(<<~MSG.squish, @node)
+                Unable to process the operation #{display_name} when the document
+                contain multiple anonymous operations.
+              MSG
+            elsif request.operations.key?(name)
+              invalidate!
 
-            other_node = request.operations[name].instance_variable_get(:@node)
-            location = GraphQL::Native.get_location(other_node)
+              other_node = request.operations[name].instance_variable_get(:@node)
+              location = GraphQL::Native.get_location(other_node)
 
-            request.report_node_error(<<~MSG.squish, @node)
-              Duplicated operation named "#{name}" defined on
-              line #{location.begin_line}:#{location.begin_column}
-            MSG
+              request.report_node_error(<<~MSG.squish, @node)
+                Duplicated operation named "#{name}" defined on
+                line #{location.begin_line}:#{location.begin_column}.
+              MSG
+            end
           end
       end
     end

@@ -8,6 +8,7 @@ module Rails # :nodoc:
       # This class holds information about a given field that should be
       # collected from the source of where it was requested.
       class Component::Field < Component
+        include ValueWriters
         include SelectionSet
         include Directives
 
@@ -15,7 +16,7 @@ module Rails # :nodoc:
 
         delegate :decorate, to: :type_klass
         delegate :operation, :variables, to: :parent
-        delegate :method_name, :resolver, :type_klass, :leaf_type?,
+        delegate :method_name, :resolver, :performer, :type_klass, :leaf_type?,
           :dynamic_resolver?, to: :field
 
         parent_memoize :request
@@ -101,9 +102,10 @@ module Rails # :nodoc:
         # When the field is invalid, there's no much to do
         # TODO: Maybe add a invalid event trigger here
         def resolve_invalid(error = nil)
+          request.exception_to_error(error, @node) if error.present?
+
           validate_output!(nil)
           response.safe_add(gql_name, nil)
-          request.exception_to_error(error, @node) if error.present?
         rescue InvalidValueError
           raise unless entry_point?
         end
@@ -137,6 +139,7 @@ module Rails # :nodoc:
           # Perform the resolve step
           def resolve_then(&block)
             stacked do
+              strategy.perform(self) if field.is_a?(Field::MutationField)
               send("resolve_#{field.array? ? 'many' : 'one'}", &block)
             rescue StandardError => error
               resolve_invalid(error)
@@ -144,8 +147,8 @@ module Rails # :nodoc:
           end
 
           # Don't stack over response when it's processing as array
-          def unstacked_selection?
-            field.array?
+          def stacked_selection?
+            !field.array?
           end
 
         private
@@ -175,9 +178,7 @@ module Rails # :nodoc:
             listeners = request.cache(:dynamic_listeners)[field] ||= field.all_listeners
             return super unless listeners.include?(event_name)
 
-            event = Event.new(event_name, strategy, **xargs.reverse_merge(phase: :execution))
             callbacks = request.cache(:dynamic_events)[field] ||= field.all_events
-
             old_events, @all_events = @all_events, callbacks
             super
           ensure

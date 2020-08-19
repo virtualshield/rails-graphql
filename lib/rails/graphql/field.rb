@@ -286,8 +286,8 @@ module Rails # :nodoc:
 
           @name = value.to_s.underscore.to_sym
 
-          @gql_name = @name.to_s.camelize(:lower)
-          @gql_name = @gql_name.camelize(:lower).prepend('__') if internal?
+          @gql_name = @name.to_s.delete_prefix('__').camelize(:lower)
+          @gql_name.prepend('__') if internal?
         end
 
         # Helper method to inspect the directives

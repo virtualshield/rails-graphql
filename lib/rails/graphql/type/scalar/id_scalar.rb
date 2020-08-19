@@ -15,14 +15,22 @@ module Rails # :nodoc:
 
         desc <<~DESC
           The ID scalar type represents a unique identifier and it is serialized in the same
-          way as a String.
+          way as a String but it accepts both numeric and string based values as input.
         DESC
 
         class << self
+          def valid_input?(value)
+            super || value.is_a?(Integer)
+          end
+
           def to_hash(value)
             value = value.to_s unless value.is_a?(String)
             value = value.encode(Encoding::UTF_8) unless value.encoding.eql?(Encoding::UTF_8)
             value
+          end
+
+          def deserialize(value)
+            value.to_s
           end
         end
       end

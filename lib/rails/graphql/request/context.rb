@@ -45,8 +45,8 @@ module Rails # :nodoc:
         end
 
         # Change the current value, either form hits or the actual value
-        def override_value(other)
-          @stack[0] = other
+        def override_value(value)
+          @stack[0] = value
         end
 
         alias current_value= override_value

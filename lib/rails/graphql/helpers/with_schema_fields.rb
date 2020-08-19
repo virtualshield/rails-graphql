@@ -11,6 +11,23 @@ module Rails # :nodoc:
           [key, "_#{key.to_s.classify}"]
         end.to_h.freeze
 
+        TYPE_FIELD_CLASS = {
+          query:        'OutputField',
+          mutation:     'MutationField',
+          subscription: 'OutputField',
+        }.freeze
+
+        module ClassMethods # :nodoc: all
+          def inherited(subclass)
+            super if defined? super
+
+            SCHEMA_FIELD_TYPES.each_key do |kind|
+              fields = instance_variable_get("@#{kind}_fields") || {}
+              fields.each_value { |field| subclass.add_proxy_field(kind, field) }
+            end
+          end
+        end
+
         class ScopedConfig < Struct.new(:source, :type) # :nodoc: all
           ALIASES = {
             fields:      :fields_for,
@@ -38,6 +55,10 @@ module Rails # :nodoc:
             end
         end
 
+        def self.extended(other) # :nodoc:
+          other.extend(WithSchemaFields::ClassMethods)
+        end
+
         # A little helper for getting the list of fields of a given type
         def fields_for(type)
           public_send("#{type}_fields")
@@ -60,7 +81,8 @@ module Rails # :nodoc:
         # See {OutputField}[rdoc-ref:Rails::GraphQL::OutputField] class.
         def add_field(type, *args, **xargs, &block)
           xargs[:owner] = self
-          object = Field::OutputField.new(*args, **xargs, &block)
+          klass = Field.const_get(TYPE_FIELD_CLASS[type])
+          object = klass.new(*args, **xargs, &block)
 
           raise DuplicatedError, <<~MSG.squish if has_field?(type, object.name)
             The "#{object.name}" field is already defined on #{type} fields and
@@ -75,8 +97,9 @@ module Rails # :nodoc:
         # Add a new field to the list but use a proxy instead of a hard copy of
         # a given +field+
         def add_proxy_field(type, field, *args, **xargs)
-          raise ArgumentError, <<~MSG.squish unless field.is_a?(GraphQL::Field)
-            The #{field.class.name} is not a valid field.
+          klass = Field.const_get(TYPE_FIELD_CLASS[type])
+          raise ArgumentError, <<~MSG.squish unless field.is_a?(klass)
+            The #{field.class.name} is not a valid field for #{type} fields.
           MSG
 
           xargs[:owner] = self
@@ -155,7 +178,7 @@ module Rails # :nodoc:
           end
         end
 
-        SCHEMA_FIELD_TYPES.each_key do |kind|
+        SCHEMA_FIELD_TYPES.each do |kind, type_name|
           class_eval <<-RUBY, __FILE__, __LINE__ + 1
             def #{kind}_field?(name)
               field?(:#{kind}, name)
@@ -168,7 +191,7 @@ module Rails # :nodoc:
             end
 
             def #{kind}_type_name
-              SCHEMA_FIELD_TYPES[:#{kind}]
+              '#{type_name}'
             end
 
             def #{kind}_type
@@ -177,11 +200,12 @@ module Rails # :nodoc:
                 object?: true,
                 kind_enum: 'OBJECT',
                 fields: @#{kind}_fields || nil,
-                gql_name: #{kind}_type_name,
+                gql_name: '#{type_name}',
                 interfaces: nil,
                 description: nil,
                 interfaces?: false,
-              )
+                internal?: false,
+              ).freeze
             end
           RUBY
         end

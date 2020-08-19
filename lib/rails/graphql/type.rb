@@ -26,6 +26,8 @@ module Rails # :nodoc:
       self.abstract = true
 
       class << self
+        alias internal? spec_object?
+
         # Returns the base type of the class. It will be one of the classes
         # defined on +Type::KINDS+
         def base_type

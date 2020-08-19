@@ -8,6 +8,7 @@ module Rails # :nodoc:
       # Extra component which simulates a field that its only purpose is to
       # return the name of the parent GraphQL object
       class Component::Typename < Component
+        include ValueWriters
         include Directives
 
         delegate :operation, to: :parent

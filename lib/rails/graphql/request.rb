@@ -27,6 +27,7 @@ module Rails # :nodoc:
         autoload_under :helpers do
           autoload :Directives
           autoload :SelectionSet
+          autoload :ValueWriters
         end
 
         autoload_under :extensions do

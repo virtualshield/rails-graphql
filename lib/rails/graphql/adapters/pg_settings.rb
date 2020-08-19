@@ -2,7 +2,6 @@
 
 module Rails # :nodoc:
   module GraphQL # :nodoc:
-
     # Based on:
     # SELECT t.oid, t.typname, format_type(t.oid, NULL) AS sql_type
     # FROM pg_type t
@@ -29,7 +28,7 @@ module Rails # :nodoc:
     type_map.register_alias 'pg:time with time zone',         :time
     type_map.register_alias 'pg:numeric',                     :decimal
 
-    module SourceMethods # :nodoc: all
+    module PG::SourceMethods # :nodoc: all
       protected
 
         def pg_attributes
@@ -43,6 +42,6 @@ module Rails # :nodoc:
         end
     end
 
-    Source::ActiveRecordSource.extend(SourceMethods)
+    Source::ActiveRecordSource.extend(PG::SourceMethods)
   end
 end

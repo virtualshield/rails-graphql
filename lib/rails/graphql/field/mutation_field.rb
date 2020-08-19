@@ -13,23 +13,25 @@ module Rails # :nodoc:
         end
       end
 
-      # Add a block that is executed before the performer but after all the
-      # before performer
+      # Add a block or a callable method that is executed before the resolver
+      # but after all the before resolve
       def perform(*args, **xargs, &block)
         @performer = Callback.new(self, :perform, *args, **xargs, &block)
       end
 
       # Get the performer that can be already defined or used through the
-      # +method_name+
+      # +method_name+ if that is callable
       def performer
-        @performer ||= Callback.new(self, :perform, method_name)
+        @performer ||= callable?(method_name) \
+          ? Callback.new(self, :perform, method_name) \
+          : false
       end
 
       # Ensures that the performer is defined
       def validate!(*)
         super if defined? super
 
-        raise ValidationError, <<~MSG.squish if @performer.nil? && !callable?(method_name)
+        raise ValidationError, <<~MSG.squish unless performer.present?
           The "#{gql_name}" mutation field must have a perform action through a given
           block or a method named #{method_name} on #{owner.class.name}.
         MSG

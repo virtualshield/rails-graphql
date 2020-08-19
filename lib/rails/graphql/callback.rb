@@ -68,7 +68,7 @@ module Rails # :nodoc:
           object.instance_variable_set(:@event, event)
 
           block = object.method(@block)
-          block.call(**collect_parameters(event, block, args_only: true))
+          block.call(**collect_parameters(event, block, xargs_only: true))
         ensure
           object.instance_variable_set(:@event, nil)
         end
@@ -81,18 +81,18 @@ module Rails # :nodoc:
 
         # Read the arguments needed for a block then collect them from the
         # event and return the execution args
-        def collect_parameters(event, block = @block, args_only: false)
+        def collect_parameters(event, block = @block, xargs_only: false)
           args_source = event.send(:args_source)
-          return {} if args_only && !args_source
+          return {} if xargs_only && !args_source
 
           args_source ||= event
           result = block.parameters.inject([[], {}]) do |result, (type, name)|
             case type
             when :req
-              next if args_only
+              next if xargs_only
               result[0] << event.parameter(name)
             when :opt
-              next if args_only
+              next if xargs_only
               result[0] << event.parameter(name) if event.parameter?(name)
             when :keyreq
               result[1][name] = args_source[name]
@@ -103,7 +103,7 @@ module Rails # :nodoc:
             result
           end
 
-          args_only ? result[1] : result
+          xargs_only ? result[1] : result
         end
     end
   end

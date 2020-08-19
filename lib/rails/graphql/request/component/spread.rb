@@ -48,8 +48,8 @@ module Rails # :nodoc:
 
           # Spread always resolve inline selection unstacked on response,
           # meaning that its fields will be set in the same level as the parent
-          def unstacked_selection?
-            true
+          def stacked_selection?
+            false
           end
 
           # Just provide the correct location for directives
@@ -75,8 +75,6 @@ module Rails # :nodoc:
           # Perform the organization step
           def organize_then(&block)
             super(block) do
-              parse_directives
-
               if inline?
                 @type_klass = find_type!(data[:type])
                 parse_selection
@@ -86,6 +84,8 @@ module Rails # :nodoc:
                   The "#{name}" fragment is not defined in this request.
                 MSG
               end
+
+              parse_directives
             end
           end
 
@@ -101,7 +101,7 @@ module Rails # :nodoc:
 
           # This will just trigger the selection resolver
           def resolve_then(&block)
-            super(block) { write_selection(@current_object) }
+            super(block) { resolve_fields(@current_object) }
           end
 
           # Most of the things that are redirected to the fragment needs to run

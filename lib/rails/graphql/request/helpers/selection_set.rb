@@ -54,9 +54,18 @@ module Rails # :nodoc:
             selection.each_value(&:organize!) if selection.any?
           end
 
-          # Trigger the process of resolving the value of all the fields
-          def resolve_fields
-            selection.each_value(&:resolve!) if selection.any?
+          # Trigger the process of resolving the value of all the fields. Since
+          # complex object may or may not be inside an array, this helps to
+          # decide if a new stack should be started or not
+          def resolve_fields(object = nil)
+            return unless selection.any?
+
+            items = selection.each_value
+            items = items.each_with_object(object) unless object.nil?
+            iterator = object.nil? ? :resolve! : :resolve_with!
+
+            return items.each(&iterator) unless stacked_selection?
+            response.with_stack(gql_name) { items.each(&iterator) }
           end
 
         private

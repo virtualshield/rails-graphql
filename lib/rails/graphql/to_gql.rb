@@ -33,14 +33,11 @@ module Rails # :nodoc:
 
         accept(schema, collector).eol
 
-        describe_types = DESCRIBE_TYPES
-        describe_types -= %i[scalar] unless @with_spec
-
         GraphQL.type_map.each_from(schema.namespace, base_class: :Type)
-          .group_by(&:kind).values_at(*describe_types)
+          .group_by(&:kind).values_at(*DESCRIBE_TYPES)
           .each do |items|
             items&.sort_by(&:gql_name)&.each do |item|
-              next if !@with_spec && item.gql_name.start_with?('__')
+              next if !@with_spec && item.internal?
 
               next visit_Rails_GraphQL_Type_Object(item, collector).eol \
                 if item.is_a?(::OpenStruct) && item.object?

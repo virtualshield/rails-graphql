@@ -51,7 +51,7 @@ module Rails # :nodoc:
 
         # Same as +add+ but this always encode the +value+ beforehand.
         def safe_add(key, value)
-          add(key, value.to_json)
+          add(key, value.nil? ? 'null' : value.to_json)
         end
 
         # Mark the start of a new element on the array.

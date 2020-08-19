@@ -9,7 +9,7 @@ module Rails # :nodoc:
     class Event
       attr_reader :source, :data, :name, :object
 
-      delegate :[], :key?, to: :data
+      alias event itself
 
       # List of trigger types used on +trigger+ shortcut
       TRIGGER_TYPES = {
@@ -33,7 +33,7 @@ module Rails # :nodoc:
         @iterator = data.delete(:collect?) ? :map : :each
 
         @name = name
-        @data = data.reverse_merge(event: self)
+        @data = data
         @source = source
         @layers = []
       end
@@ -43,10 +43,14 @@ module Rails # :nodoc:
         respond_to?(name) ? public_send(name) : data[name]
       end
 
+      alias [] parameter
+
       # Check if the event has a given +name+ information
       def parameter?(name)
         respond_to?(name) || key?(name)
       end
+
+      alias key? parameter?
 
       # From the list of all given objects, run the +trigger_object+
       def trigger_all(*objects)

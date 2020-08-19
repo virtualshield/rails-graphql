@@ -90,22 +90,22 @@ module Rails # :nodoc:
 
             errors = []
             source = source.all_arguments if source.respond_to?(:all_arguments)
-            result = values.each_pair.inject({}) do |result, (key, value)|
+            result = source.each_pair.inject({}) do |result, (key, argument)|
               # Check for argument existance
-              raise ArgumentError, <<~MSG.squish unless (argument = source[key]).present?
-                The "#{key}" argument is not defined
+              raise ArgumentError, <<~MSG.squish unless (value = values[key]).present?
+                The "#{key}" argument is not defined.
               MSG
 
               # Pointer means operation variable
               if value.is_a?(::FFI::Pointer)
                 var_name = visitor.node_name(value)
                 raise ArgumentError, <<~MSG.squish unless var_access
-                  Unable to use variable "$#{var_name}" in the current scope
+                  Unable to use variable "$#{var_name}" in the current scope.
                 MSG
 
                 op_vars ||= operation.all_arguments
                 raise ArgumentError, <<~MSG.squish unless (op_var = op_vars[var_name]).present?
-                  The #{operation.log_source} does not define the $#{var_name} variable
+                  The #{operation.log_source} does not define the $#{var_name} variable.
                 MSG
 
                 # When arguments are not equivalent, they can ended up with
@@ -113,18 +113,19 @@ module Rails # :nodoc:
                 # variable value ended up being, it will be valid due to this
                 raise ArgumentError, <<~MSG.squish unless argument =~ op_var
                   The $#{var_name} variable on #{operation.log_source} is not compatible
-                  with "#{key}" argument
+                  with "#{key}" argument.
                 MSG
 
                 operation.used_variables << var_name
                 value = variables[var_name]
               else
-                # Only when the given value is an actual value is when we check
-                # if the given value is actually valid
-                value = argument.deserialize(value)
+                # Only when the given value is an actual value that we check if
+                # it is valid
                 raise ArgumentError, <<~MSG.squish unless argument.valid?(value)
-                  Invalid value provided to "#{key}" argument
+                  Invalid value provided to "#{key}" argument.
                 MSG
+
+                value = argument.deserialize(value)
               end
 
               result[argument.name] = value
@@ -137,7 +138,7 @@ module Rails # :nodoc:
             # Checks for any required arugment that was not provided
             source.each_value do |argument|
               next if result.key?(argument.name) || argument.null?
-              errors << "The \"#{argument.gql_name}\" argument can not be null"
+              errors << "The \"#{argument.gql_name}\" argument can not be null."
             end
 
             return result if errors.blank?
