@@ -17,6 +17,8 @@ module Rails # :nodoc:
           @namespaces = normalize_namespaces(list).to_set
         end
 
+        alias set_namespaces set_namespace
+
         # Add more namespaces to the list already defined. If the super class
         # has already defined namespaces, the extend that list.
         def namespace(*list)

@@ -26,7 +26,7 @@ module Rails # :nodoc:
             value.respond_to?(:to_i) && RANGE.cover?(value.to_i)
           end
 
-          def to_hash(value)
+          def as_json(value)
             value = value.to_i
             value if RANGE.cover?(value)
           end

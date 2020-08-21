@@ -24,7 +24,7 @@ module Rails # :nodoc:
             value.respond_to?(:present?)
           end
 
-          def to_hash(value)
+          def as_json(value)
             value.present?
           end
 

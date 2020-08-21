@@ -39,11 +39,12 @@ module Rails # :nodoc:
       # described by this new abstraction
       class_attribute :abstract, instance_writer: false, default: false
 
-      # List of hook namess used while describing a new source. This basically
+      # List of hook names used while describing a new source. This basically
       # set the order of the execution of the hooks while validating the hooks
-      # callbacks using the +on+ method.
+      # callbacks using the +on+ method. Make sure to kepp the +finish+ hook
+      # always at the end of the list
       class_attribute :hook_names, instance_writer: false,
-        default: %i[enum object input query mutation subscription].to_set
+        default: %i[start object input query mutation finish].to_set
 
       # The list of hooks defined in order to describe a source
       inherited_collection :hooks, instance_reader: false, type: :hash_array
@@ -79,7 +80,7 @@ module Rails # :nodoc:
 
         # Get the main name of the source
         def base_name
-          abstract ? name.demodulize[0..-7] : superclass.base_name
+          name.demodulize[0..-7] unless abstract
         end
 
         # Wait the end of the class in order to create the objects
@@ -101,6 +102,7 @@ module Rails # :nodoc:
         # Using the list of +base_sources+, find the first one that can handle
         # the given +object+
         def find_for(object)
+          object = object.constantize if object.is_a?(String)
           base_sources.reverse_each.find { |source| object <= source.assigned_class }
         end
 
@@ -122,7 +124,7 @@ module Rails # :nodoc:
             super_klass = object_class.constantize
 
             klass = Class.new(super_klass)
-            klass.add_namespace(*namespaces)
+            klass.set_namespaces(*namespaces)
             klass.owner = self if klass.respond_to?(:owner=)
 
             if respond_to?(:assigned_class, true) && assigned_class.present?
@@ -142,7 +144,7 @@ module Rails # :nodoc:
         def input
           @input ||= begin
             klass = Class.new(input_class.constantize)
-            klass.add_namespace(*namespaces)
+            klass.set_namespaces(*namespaces)
             klass.owner = self if klass.respond_to?(:owner=)
 
             if respond_to?(:assigned_class, true) && assigned_class.present?
@@ -170,7 +172,7 @@ module Rails # :nodoc:
 
               list.each_value do |field|
                 next if schema.has_field?(type, field)
-                schema.add_proxy(type, field)
+                schema.add_proxy_field(type, field)
               end
             end
           end
@@ -200,17 +202,17 @@ module Rails # :nodoc:
           end
 
           # A helper method to create an enum type
-          def create_enum(enum_name, values)
+          def create_enum(enum_name, values, **xargs)
             enumerator = values.each_pair if values.respond_to?(:each_pair)
             enumerator ||= values.each.with_index
 
-            Schema.enum("#{gql_module.name}::#{enum_name.classify}") do
+            Schema.enum("#{gql_module.name}::#{enum_name.classify}", **xargs) do
               indexed! if enumerator.first.last.is_a?(Numeric)
               enumerator.sort_by(&:last).map(&:first).each(&method(:add))
             end
           end
 
-          # Add a new description hook. You can use +throw :done+ and skip
+          # Add a new description hook. You can use +throw :skip+ and skip
           # parent hooks. If the class is already built, then execute the hook.
           # Use the +unshift: true+ to add the hook at the beginning of the
           # list, which will then be the last to run
@@ -230,7 +232,7 @@ module Rails # :nodoc:
           def skip(*names)
             names.each do |hook_name|
               hook_name = hook_name.to_s.singularize.to_sym
-              on(hook_name) { throw :done }
+              on(hook_name) { throw :skip }
             end
           end
 
@@ -283,32 +285,35 @@ module Rails # :nodoc:
           def base_sources
             @@base_sources ||= begin
               eager_load!
-
-              enum = ObjectSpace.each_object(GraphQL::Source) \
-                rescue ObjectSpace.each_object(Class) # JRuby 9.0.4.0 and earlier
-
-              enum.inject(Set.new) do |list, klass|
-                klass < GraphQL::Source && klass.abstract? ? list << klass : list
-              end
+              descendants.select(&:abstract?).to_set
             end
           end
 
           # Build all the objects associated with this source
           def build!
             return if built?
+
+            raise DefinitionError, <<~MSG.squish if abstract
+              Abstract source #{name} cannot be built.
+            MSG
+
             @built = true
 
-            hook_names.each do |hook_name|
-              catch(:done) { send("run_#{hook_name}_hooks") }
+            catch(:done) do
+              hook_names.each do |hook_name|
+                break if hook_name === :finish
+                catch(:skip) { send("run_#{hook_name}_hooks") }
+              end
             end
 
-            attach_fields!
+            catch(:skip) { send(:run_finish_hooks) } if respond_to?(:run_finish_hooks, true)
           end
 
           {
-            enum:         'self',
-            object:       'object',
-            input:        'input',
+            start:        'self',
+            finish:       'self',
+            object:       'Helpers::AttributeDelegator.new(self, :object)',
+            input:        'Helpers::AttributeDelegator.new(self, :input)',
             query:        format('schema_scoped_config(self, %s)', ':query'),
             mutation:     format('schema_scoped_config(self, %s)', ':mutation'),
             subscription: format('schema_scoped_config(self, %s)', ':subscription'),

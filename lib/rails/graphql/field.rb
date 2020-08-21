@@ -208,10 +208,10 @@ module Rails # :nodoc:
       end
 
       # Turn the given value into a JSON string representation
-      def to_hash(value)
+      def as_json(value)
         return if value.nil?
-        return type_klass.to_hash(value) unless array?
-        value.map { |part| type_klass.to_hash(part) }
+        return type_klass.as_json(value) unless array?
+        value.map { |part| type_klass.as_json(part) }
       end
 
       # Turn a user input of this given type into an ruby object
@@ -285,9 +285,10 @@ module Rails # :nodoc:
           return if value.blank?
 
           @name = value.to_s.underscore.to_sym
+          @gql_name = @name.to_s.gsub(/^_+/, '').camelize(:lower)
 
-          @gql_name = @name.to_s.delete_prefix('__').camelize(:lower)
           @gql_name.prepend('__') if internal?
+          @gql_name.prepend('_') if @name.start_with?('_')
         end
 
         # Helper method to inspect the directives

@@ -16,7 +16,7 @@ module Rails # :nodoc:
         DESC
 
         class << self
-          def to_hash(value)
+          def as_json(value)
             Base64.encode64(value.to_s).chomp
           end
 

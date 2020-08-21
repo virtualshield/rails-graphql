@@ -56,7 +56,7 @@ module Rails # :nodoc:
         # :singleton-method:
         # Use a soft mode to find a schema associated with a namespace
         def find(namespace)
-          eager_load!
+          # eager_load! # Load schemas defined on Rails application and engines
           descendants.find { |schema| schema.namespace === namespace }
         end
 
@@ -100,10 +100,6 @@ module Rails # :nodoc:
           ToGQL.describe(self, **xargs)
         end
 
-        def eager_load! # :nodoc:
-          # build_pending!
-        end
-
         protected
 
           # TODO: Maybe provide an optional 'Any' scalar
@@ -112,18 +108,18 @@ module Rails # :nodoc:
           # definition of the schema
           GraphQL::Type::KINDS.each do |kind|
             class_eval <<-RUBY, __FILE__, __LINE__ + 1
-              def #{kind.underscore}(name, &block)
-                create_type(name, GraphQL::Type.const_get(:#{kind}), &block)
+              def #{kind.underscore}(name, **xargs, &block)
+                create_type(name, GraphQL::Type.const_get(:#{kind}), **xargs, &block)
               end
             RUBY
           end
 
           # Rewrite the object method to check if it should use an assigned one
-          def object(name_or_object, &block)
+          def object(name_or_object, **xargs, &block)
             return create_type(name_or_object, Type::Object, &block) \
               unless name_or_object.is_a?(Module)
 
-            create_type(name_or_object, Type::Object::AssignedObject) do
+            create_type(name_or_object, Type::Object::AssignedObject, **xargs) do
               self.assigned_to = name_or_object
               class_eval(&block) if block.present?
             end
@@ -131,23 +127,30 @@ module Rails # :nodoc:
 
           # A simpler way to create a new type object without having to create
           # a class in a different file
-          def create_type(name, superclass, &block)
-            suffix = superclass.base_type.name.demodulize
-            create_klass(name, superclass, GraphQL::Type, suffix: suffix, &block)
+          def create_type(name, superclass, **xargs, &block)
+            xargs[:suffix] = superclass.base_type.name.demodulize
+            create_klass(name, superclass, GraphQL::Type, **xargs, &block)
           end
 
           # Helper method to create a single source
-          def source(object, superclass = nil, &block)
+          def source(object, superclass = nil, **xargs, &block)
             superclass ||= GraphQL::Source.find_for!(object)
-            create_klass(object, superclass, GraphQL::Source, suffix: 'Source', &block)
+
+            xargs[:suffix] = 'Source'
+            schema_namespace = namespace
+            create_klass(object, superclass, GraphQL::Source, **xargs) do
+              set_namespace schema_namespace
+              class_eval(&block) if block.present?
+              build!
+            end
           end
 
           # Helper method to create multiple sources with the same type
-          def sources(*list, of_type: nil)
+          def sources(*list, of_type: nil, &block)
             list = list.flatten
 
             of_type ||= GraphQL::Source.find_for!(list.first)
-            list.each { |object| source(object, of_type) }
+            list.each { |object| source(object, of_type, &block) }
           end
 
         private
@@ -183,21 +186,21 @@ module Rails # :nodoc:
           #
           # The +suffix+ option can ensures that the name of the created
           # class ends with a specific suffix.
-          def create_klass(name_or_object, superclass, base_class = nil, suffix: nil, &block)
+          def create_klass(name_or_object, superclass, base_class = nil, **xargs, &block)
             name = name_or_object.is_a?(Module) ? name_or_object.name : name_or_object.to_s
 
             base_module = name.classify.deconstantize
-            base_module.prepend('GraphQL::') unless base_module.starts_with?('GraphQL::')
+            base_module.prepend('GraphQL::') unless base_module =~ /^GraphQL(::|$)/
             base_module = base_module.delete_suffix('::').constantize
 
             klass_name = name.classify.demodulize
-            klass_name += suffix if suffix.present? &&
-              !klass_name.ends_with?(suffix)
+            klass_name += xargs[:suffix] if xargs.key?(:suffix) &&
+              !klass_name.ends_with?(xargs[:suffix])
 
             if base_module.const_defined?(klass_name)
               klass = base_module.const_get(klass_name)
 
-              raise ::ArgumentError, <<~MSG.squish unless klass < superclass
+              raise DuplicatedError, <<~MSG.squish unless !xargs[:once] && klass < superclass
                 A constant named "#{klass_name}" already exists for the
                 "#{base_module.name}" module.
               MSG
@@ -205,7 +208,7 @@ module Rails # :nodoc:
               base_class ||= superclass.ancestors.find { |klass| klass.superclass === Class }
 
               valid = superclass.is_a?(Module) && superclass < base_class
-              raise ::ArgumentError, <<~MSG.squish unless valid
+              raise DefinitionError, <<~MSG.squish unless valid
                 The given "#{superclass}" superclass does not inherites from
                 #{base_class.name} class.
               MSG

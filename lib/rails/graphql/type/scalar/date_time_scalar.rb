@@ -19,7 +19,7 @@ module Rails # :nodoc:
             value.respond_to?(:to_time)
           end
 
-          def to_hash(value)
+          def as_json(value)
             value.to_time.iso8601
           end
 

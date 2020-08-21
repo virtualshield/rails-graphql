@@ -32,6 +32,12 @@ module Rails # :nodoc:
         raise ArgumentError, 'Input fields can\'t be further configured using blocks'
       end
 
+      # Allow change the default value for the input
+      def apply_changes(**xargs, &block)
+        @default = xargs[:default] if xargs.key?(:default)
+        super
+      end
+
       # Checks if a default value was provided
       def default_value?
         !default.nil?

@@ -25,7 +25,7 @@ module Rails # :nodoc:
         module Setup
           # Use the default list of event types when it's not set
           def event_types(*, **)
-            super.presence || DEFAULT_EVENT_TYPES
+            (super if defined? super).presence || DEFAULT_EVENT_TYPES
           end
 
           # Return the list of event filters hooks

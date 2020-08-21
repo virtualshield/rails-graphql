@@ -29,14 +29,6 @@ module Rails # :nodoc:
         end
 
         class ScopedConfig < Struct.new(:source, :type) # :nodoc: all
-          ALIASES = {
-            fields:      :fields_for,
-            safe_field:  :safe_add_field,
-            field:       :add_field,
-            proxy_field: :add_proxy_field,
-            field?:      :has_field?,
-          }.freeze
-
           def arg(*args, **xargs, &block)
             xargs[:owner] ||= source
             GraphQL::Argument.new(*args, **xargs, &block)
@@ -45,13 +37,28 @@ module Rails # :nodoc:
           private
 
             def respond_to_missing?(method_name, include_private = false)
-              method_name = ALIASES[method_name] || method_name
-              source.respond_to?(method_name, include_private) || super
+              schema_methods.key?(method_name) ||
+                source.respond_to?(method_name, include_private) || super
             end
 
             def method_missing(method_name, *args, **xargs, &block)
-              method_name = ALIASES[method_name] || method_name
-              source.send(method_name, type, *args, **xargs, &block)
+              schema_method = schema_methods[method_name]
+              args.unshift(type) unless schema_method.nil?
+              source.send(schema_method || method_name, *args, **xargs, &block)
+            end
+
+            def schema_methods
+              @@schema_methods ||= begin
+                typed_methods = WithSchemaFields.public_instance_methods
+                typed_methods = typed_methods.zip(typed_methods).to_h
+                typed_methods.merge(
+                  fields:      :fields_for,
+                  safe_field:  :safe_add_field,
+                  field:       :add_field,
+                  proxy_field: :add_proxy_field,
+                  field?:      :has_field?,
+                )
+              end
             end
         end
 
@@ -96,7 +103,7 @@ module Rails # :nodoc:
 
         # Add a new field to the list but use a proxy instead of a hard copy of
         # a given +field+
-        def add_proxy_field(type, field, *args, **xargs)
+        def add_proxy_field(type, field, *args, **xargs, &block)
           klass = Field.const_get(TYPE_FIELD_CLASS[type])
           raise ArgumentError, <<~MSG.squish unless field.is_a?(klass)
             The #{field.class.name} is not a valid field for #{type} fields.
@@ -119,9 +126,9 @@ module Rails # :nodoc:
 
         alias overwrite_field change_field
 
-        # Run a configuration block for the given +type+
-        def configure_field(type, &block)
-          schema_scoped_config(self, type).instance_exec(&block)
+        # Run a configuration block for the given field of a given +type+
+        def configure_field(type, object, &block)
+          find_field!(type, object).configure(&block)
         end
 
         # Disable a list of given +fields+ from a given +type+
@@ -162,7 +169,7 @@ module Rails # :nodoc:
         end
 
         # Run a configuration block for the given +type+
-        def config_field(type, &block)
+        def configure_fields(type, &block)
           schema_scoped_config(self, type).instance_exec(&block)
         end
 
@@ -186,7 +193,7 @@ module Rails # :nodoc:
 
             def #{kind}_fields(&block)
               return @#{kind}_fields ||= Concurrent::Map.new if block.nil?
-              config_field(:#{kind}, &block)
+              configure_fields(:#{kind}, &block)
               @#{kind}_fields
             end
 

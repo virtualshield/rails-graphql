@@ -18,7 +18,7 @@ module Rails # :nodoc:
             value.respond_to?(:to_date)
           end
 
-          def to_hash(value)
+          def as_json(value)
             value.to_date.iso8601
           end
 

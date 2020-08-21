@@ -16,7 +16,7 @@ module Rails # :nodoc:
         DESC
 
         class << self
-          def to_hash(value)
+          def as_json(value)
             value = value.to_s unless value.is_a?(String)
             value = value.encode(Encoding::UTF_8) unless value.encoding.eql?(Encoding::UTF_8)
             value

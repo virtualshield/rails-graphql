@@ -76,7 +76,7 @@ module Rails # :nodoc:
           visit_description(o, collector)
           collector << o.gql_name
 
-          visit_arguments(o.arguments, collector)
+          visit_arguments(o.arguments, collector) if o.respond_to?(:arguments)
           collector << ': '
 
           visit_typed_object(o, collector)
@@ -250,7 +250,7 @@ module Rails # :nodoc:
             collector << ', ' if i > 0
             collector << x.gql_name
             collector << ': '
-            collector << x.to_hash(value).inspect
+            collector << x.as_json(value).inspect
           end
           collector << ')'
         end
@@ -335,7 +335,7 @@ module Rails # :nodoc:
           collector << '!' unless o.null?
 
           if o.try(:default_value?)
-            collector << ' = ' << o.to_json
+            collector << ' = ' << o.to_json(o.default)
           end
         end
 

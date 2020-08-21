@@ -85,7 +85,7 @@ module Rails # :nodoc:
             return response.safe_add(gql_name, nil) if value.nil?
 
             # Necessary call #itself to loose the dynamic reference
-            serializer = response.try(:prefer_string?) ? :to_json : :to_hash
+            serializer = response.try(:prefer_string?) ? :to_json : :as_json
             value = type_klass.public_send(serializer, value.itself)
             response.add(gql_name, value)
           end

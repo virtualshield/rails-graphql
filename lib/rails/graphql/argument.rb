@@ -139,15 +139,15 @@ module Rails # :nodoc:
       end
 
       # Turn the given value into a JSON string representation
-      def to_hash(value = nil)
+      def as_json(value = nil)
         value = @default if value.nil?
 
         return if value.nil?
-        return type_klass.to_hash(value) unless array?
-        value.map { |part| type_klass.to_hash(part) }
+        return type_klass.as_json(value) unless array?
+        value.map { |part| type_klass.as_json(part) }
       end
 
-      alias deserialize to_hash
+      alias deserialize as_json
 
       # This checks if a given serialized value is valid for this field
       def valid_input?(value)

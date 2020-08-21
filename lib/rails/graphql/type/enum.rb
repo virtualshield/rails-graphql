@@ -52,11 +52,11 @@ module Rails # :nodoc:
 
           # Transforms the given value to its representation in a JSON string
           def to_json(value)
-            to_hash(value)&.inspect
+            as_json(value)&.inspect
           end
 
           # Transforms the given value to its representation in a Hash object
-          def to_hash(value)
+          def as_json(value)
             return if value.nil?
             return value.to_s if value.is_a?(self)
             return all_values[value] if indexed? && value.is_a?(Numeric)
@@ -86,7 +86,7 @@ module Rails # :nodoc:
           #   See {DeprecatedDirective}[rdoc-ref:Rails::GraphQL::Directive::DeprecatedDirective]
           #   (defaults to false).
           def add(value, desc: nil, directives: nil, deprecated: false)
-            value = to_hash(value)
+            value = as_json(value)
 
             raise ArgumentError, <<~MSG.squish unless value.is_a?(String) && value.present?
               The "#{value}" is invalid.

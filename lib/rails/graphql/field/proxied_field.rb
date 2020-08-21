@@ -26,7 +26,7 @@ module Rails # :nodoc:
     module Field::ProxiedField
       delegate_missing_to :field
       delegate :leaf_type?, :from_ar?, :from_ar, :array?, :internal?,
-        :valid_input?, :valid_output?, :to_json, :to_hash, :deserialize, :valid?,
+        :valid_input?, :valid_output?, :to_json, :as_json, :deserialize, :valid?,
         to: :field
 
       Field.proxyable_methods %w[name gql_name method_name resolver description

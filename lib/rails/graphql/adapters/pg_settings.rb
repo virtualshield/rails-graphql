@@ -32,7 +32,7 @@ module Rails # :nodoc:
       protected
 
         def pg_attributes
-          columns_hash.each_value do |column|
+          model.columns_hash.each_value do |column|
             type_name = column.sql_type_metadata.sql_type
             type = find_type!('pg:' + type_name.gsub(/(\(|\[).*/, ''), fallback: :string)
 

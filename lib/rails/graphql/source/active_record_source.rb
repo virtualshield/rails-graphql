@@ -20,14 +20,16 @@ module Rails # :nodoc:
         "The \"#{value.name}\" is not a valid Active Record model"
       end
 
-      self.object_class = '::Rails::GraphQL::Type::Object::ActiveRecordObject'
       self.input_class = '::Rails::GraphQL::Type::Input::ActiveRecordInput'
       self.abstract = true
 
-      on :enum do
+      on :start do
+        GraphQL.enable_ar_adapter(adapter_name)
         @enums = enums.map do |attribute, setting|
-          [attribute.to_s, create_enum(attribute.to_s, setting)]
-        end.to_h.freeze
+          [attribute.to_s, create_enum(attribute.to_s, setting, once: true)]
+        rescue DuplicatedError
+          next
+        end.compact.to_h.freeze
       end
 
       on :object do
@@ -38,14 +40,34 @@ module Rails # :nodoc:
       on :input do
         build_attribute_fields(self)
         build_reflection_inputs(self)
-        safe_field(:_delete, Type::Scalar::BooleanScalar)
+
+        safe_field(model.inheritance_column, :string, null: false) if object.interface?
+        safe_field(:_delete, :boolean, default: false)
+
+        model.columns_hash.each_value do |column|
+          change_field(column.name, default: column.default) \
+            if column.default.present? && field?(column.name)
+        end
       end
 
       on :query do
+        throw :done if sti_interface?
+
         id_argument = arg(primary_key, Type::Scalar::IdScalar, null: false)
 
         safe_field(plural,   object, full: true)
         safe_field(singular, object, null: false, arguments: id_argument)
+      end
+
+      on :finish do
+        next if sti_interface?
+
+        attach_fields!
+        next if model.base_class == model
+
+        Core.type_map.after_register(model.base_class.name, namespaces: namespaces) do |type|
+          object.implements(type) if type.interface?
+        end
       end
 
       class << self
@@ -62,6 +84,15 @@ module Rails # :nodoc:
         alias model assigned_class
         alias model= assigned_to=
 
+        # Override the object class to identify interfaces due to STI
+        def object_class
+          if sti_interface?
+            '::Rails::GraphQL::Type::Interface'
+          else
+            '::Rails::GraphQL::Type::Object::ActiveRecordObject'
+          end
+        end
+
         # Stores columns associated with enums so that the fields can have a
         # correctly assigned type
         def enums
@@ -74,9 +105,10 @@ module Rails # :nodoc:
           adapter_key = GraphQL.ar_adapter_key(adapter_name)
 
           skip_fields = all_skip_fields.map(&:to_s)
-          skip_fields += [primary_key] unless skip_primary_key
+          skip_fields << model.inheritance_column
+          skip_fields << primary_key unless skip_primary_key
 
-          send("#{adapter_key}_attributes", skip_primary_key) do |attribute, *args|
+          send("#{adapter_key}_attributes") do |attribute, *args|
             yield attribute, *args unless skip_fields.include?(attribute)
           end
         end
@@ -85,7 +117,7 @@ module Rails # :nodoc:
         def each_reflection
           skip_fields = all_skip_fields.map(&:to_s)
           model._reflections.each_value do |reflection|
-            next if skip_fields.include?(attribute)
+            next if skip_fields.include?(reflection.name.to_s)
 
             reflection = model._reflections[reflection.to_s] \
               unless reflection.is_a?(ABSTRACT_REFLECTION)
@@ -99,13 +131,15 @@ module Rails # :nodoc:
           input.as_field
         end
 
-        # Before attaching the fields, ensure to load adapter-specific settings
-        def attach_fields!
-          GraphQL.enable_ar_adapter(adapter_name)
-          super
-        end
-
         protected
+
+          # Check if the given model is consider an interface due to single
+          # table inheritance and the given model is the base class
+          def sti_interface?
+            @sti_interface ||= begin
+              model.has_attribute?(model.inheritance_column) && model.base_class == model
+            end
+          end
 
           # Build all necessary attribute fields into the given +holder+
           def build_attribute_fields(holder)
@@ -119,17 +153,20 @@ module Rails # :nodoc:
           def build_reflection_fields(holder)
             each_reflection do |item|
               next if holder.field?(item.name)
-              Core.type_map.after_register(item.klass, namespaces: namespaces) do |object|
-                options = item_to_options(item)
+              Core.type_map.after_register(item.klass.name, namespaces: namespaces) do |type|
+                next unless (type.object? && type.try(:assigned_to) != item.klass) ||
+                  type.interface?
 
-                if object.is_a?(Source::ActiveRecordSource)
-                  source_name = item.collection? ? object.plural : object.singular
+                options = reflection_to_options(item)
+
+                if type.is_a?(Source::ActiveRecordSource)
+                  source_name = item.collection? ? type.plural : type.singular
                   proxy_options = options.merge(alias: reflection.name, of_type: :proxy)
                   field = holder.safe_field(source, **proxy_options) \
-                    if (source = object.query_fields[source_name]).present?
+                    if (source = type.query_fields[source_name]).present?
                 end
 
-                field ||= holder.field(item.name, object, **options)
+                field ||= holder.field(item.name, type, **options)
                 field.before_resolve(:load_association, item.name)
               end
             end
@@ -144,7 +181,7 @@ module Rails # :nodoc:
               expected_name += 'Input' unless expected_name.ends_with?('Input')
 
               Core.type_map.after_register(expected_name, namespaces: namespaces) do |input|
-                options = item_to_options(reflection)
+                options = reflection_to_options(reflection)
                 options.merge!(alias: "#{reflection.name}_attributes")
                 holder.safe_field(reflection.name, input, **options)
               end
@@ -168,7 +205,7 @@ module Rails # :nodoc:
           # Check if a given +attr_name+ is associated with a presence validator
           # but ignores when there is a default value
           def required?(attr_name)
-            return false if User.columns_hash[attr_name]&.default.present?
+            return false if model.columns_hash[attr_name]&.default.present?
             return false unless model._validators.key?(attr_name.to_sym)
             model._validators[attr_name.to_sym].any?(PRESENCE_VALIDATOR)
           rescue ::ActiveRecord::StatementInvalid

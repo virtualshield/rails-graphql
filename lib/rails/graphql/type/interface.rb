@@ -48,13 +48,14 @@ module Rails # :nodoc:
           # equivalent produces an exception.
           def implemented(object)
             fields.each do |name, field|
-              invalid = object.field?(name) && !(object.fields[name] =~ field)
+              defined = object.field?(name)
+              invalid = defined && !(object.fields[name] =~ field)
               raise ArgumentError, <<~MSG.squish if invalid
                 The "#{object.gql_name}" object already has a "#{field.gql_name}" field and it
                 is not equivalent to the one defined on the "#{gql_name}" interface.
               MSG
 
-              object.proxy_field(field)
+              object.proxy_field(field) unless defined
             end
 
             types << object
