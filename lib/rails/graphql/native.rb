@@ -23,7 +23,7 @@ module Rails # :nodoc:
       require_relative 'native/pointers'
       require_relative 'native/functions'
 
-      attach_function :graphql_parse_string, [:string, :pointer], AstNode
+      attach_function :graphql_parse_string, [:pointer, :pointer], :pointer
 
       attach_function :to_json, :graphql_ast_to_json, [:pointer], :string
 
@@ -38,7 +38,8 @@ module Rails # :nodoc:
       # partially. It will raise an exception if +content+ is invalid.
       def self.parse(content)
         error = Native::ParseError.new
-        result = graphql_parse_string(content.dup, error)
+        content = FFI::MemoryPointer.from_string(content)
+        result = graphql_parse_string(content, error)
         return result if error.empty?
         raise GraphQL::ParseError, error.to_s
       end

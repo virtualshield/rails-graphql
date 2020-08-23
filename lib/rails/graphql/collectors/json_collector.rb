@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Rails # :nodoc:
   module GraphQL # :nodoc:
     module Collectors # :nodoc:
@@ -8,7 +10,7 @@ module Rails # :nodoc:
         def initialize(request)
           @request = request
 
-          @current_value = ''
+          @current_value = String.new
           @stack_value = []
 
           @current_array = false
@@ -16,11 +18,6 @@ module Rails # :nodoc:
 
           @current_plain_array = false
           @stack_plain_array = []
-        end
-
-        # Checks if the collector prefer writing values as string
-        def prefer_string?
-          true
         end
 
         # Shortcut for starting and ending a stack while execute a block.
@@ -46,7 +43,16 @@ module Rails # :nodoc:
         # Add the given +value+ to the given +key+. Ensure to encode the value
         # before calling this function.
         def add(key, value)
-          @current_value << (@current_array ? %(#{value},) : %("#{key}":#{value},))
+          (@current_value << ',') unless @current_value.blank?
+
+          if @current_array
+            @current_value << value
+          else
+            @current_value << '"'
+            @current_value << key.to_s
+            @current_value << '":'
+            @current_value << value.to_s
+          end
         end
 
         # Same as +add+ but this always encode the +value+ beforehand.
@@ -54,18 +60,22 @@ module Rails # :nodoc:
           add(key, value.nil? ? 'null' : value.to_json)
         end
 
+        # Serialize is a helper to call the correct method on types before add
+        def serialize(klass, key, value)
+          add(key, klass.to_json(value))
+        end
+
         # Mark the start of a new element on the array.
         def next
           return unless @stack_array.last === :complex
+          (@stack_value.last << ',') unless @stack_value.last.blank?
           @stack_value.last << to_s
-          @stack_value.last << ','
-          @current_value = ''
+          @current_value = String.new
         end
 
         # Get the current result
         def to_s
-          result = @current_value.delete_suffix(',')
-          @current_array ? "[#{result}]" : "{#{result}}"
+          @current_array ? "[#{@current_value}]" : "{#{@current_value}}"
         end
 
         private
@@ -77,12 +87,12 @@ module Rails # :nodoc:
             @stack_array << @current_array
 
             if as_array && !plain_array
-              @stack_value << ''
+              @stack_value << String.new
               @stack_array << :complex
               as_array = false
             end
 
-            @current_value = ''
+            @current_value = String.new
             @current_array = as_array
           end
 

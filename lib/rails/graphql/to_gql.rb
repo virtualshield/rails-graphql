@@ -76,7 +76,9 @@ module Rails # :nodoc:
           visit_description(o, collector)
           collector << o.gql_name
 
-          visit_arguments(o.arguments, collector) if o.respond_to?(:arguments)
+          visit_arguments(o.all_arguments, collector) \
+            if o.respond_to?(:all_arguments)
+
           collector << ': '
 
           visit_typed_object(o, collector)

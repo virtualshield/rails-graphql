@@ -243,6 +243,9 @@ module Rails # :nodoc:
           parts = err.message.match(/\A(\d+)\.(\d+)(?:-\d+)?: (.*)\z/)
           errors.add(parts[3], line: parts[1], col: parts[2])
         ensure
+          @cache.clear
+          @fragments.clear
+          @operations.clear
           GraphQL::Native.free_node(@document)
           @response.try(:append_errors, errors)
         end

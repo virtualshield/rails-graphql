@@ -46,7 +46,7 @@ module Rails # :nodoc:
       autoload :OutputField
       autoload :MutationField
 
-      delegate :input_type?, :output_type?, :leaf_type?, :proxy?, to: :class
+      delegate :input_type?, :output_type?, :leaf_type?, :proxy?, :mutation?, to: :class
 
       delegate :namespaces, to: :owner
 
@@ -82,6 +82,11 @@ module Rails # :nodoc:
 
         # Checks if the the field is a proxy kind of field
         def proxy?
+          false
+        end
+
+        # Checks if the field is associated with a mutation
+        def mutation?
           false
         end
       end
@@ -272,12 +277,12 @@ module Rails # :nodoc:
 
         # Allow the subclasses to define the extra inspection methods
         def respond_to_missing?(method_name, *)
-          method_name.to_s.start_with?('inspect_') || super
+          method_name.start_with?('inspect_') || super
         end
 
         # Allow the subclasses to define the extra inspection methods
         def method_missing(method_name, *)
-          method_name.to_s.start_with?('inspect_') ? '' : super
+          method_name.start_with?('inspect_') ? '' : super
         end
 
         # Ensures the consistency of the name of the field
@@ -287,8 +292,11 @@ module Rails # :nodoc:
           @name = value.to_s.underscore.to_sym
           @gql_name = @name.to_s.gsub(/^_+/, '').camelize(:lower)
 
-          @gql_name.prepend('__') if internal?
-          @gql_name.prepend('_') if @name.start_with?('_')
+          if internal?
+            @gql_name.prepend('__')
+          elsif @name.start_with?('_')
+            @gql_name.prepend('_')
+          end
         end
 
         # Helper method to inspect the directives

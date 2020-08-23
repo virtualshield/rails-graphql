@@ -47,7 +47,7 @@ module Rails # :nodoc:
 
           # Check if a given value is a valid non-serialized output
           def valid_output?(value)
-            all_values.include?(to_hash(value))
+            all_values.include?(as_json(value))
           end
 
           # Transforms the given value to its representation in a JSON string
@@ -70,7 +70,7 @@ module Rails # :nodoc:
 
           # Use the instance as decorator
           def decorate(value)
-            new(to_hash(value))
+            new(as_json(value))
           end
 
           # Use this method to add values to the enum type

@@ -64,25 +64,23 @@ module Rails # :nodoc:
           type: :set
         )
           attrs.each do |name|
-            ivar = "@#{name}"
-
             module_eval(<<~RUBY, __FILE__, __LINE__ + 1)
               def self.all_#{name}
                 ::Rails::GraphQL::Helpers::AttributeDelegator.new do
-                  defined?(:#{ivar}) \
-                    ? fetch_inherited_#{type}('#{ivar}') \
-                    : #{DEFAULT_TYPES[type]}
+                  @#{name}.nil? \
+                    ? #{DEFAULT_TYPES[type]} \
+                    : fetch_inherited_#{type}('@#{name}')
                 end
               end
 
               def self.#{name}
-                #{ivar} ||= #{DEFAULT_TYPES[type]}
+                @#{name} ||= #{DEFAULT_TYPES[type]}
               end
             RUBY
 
             module_eval(<<~RUBY, __FILE__, __LINE__ + 1) if instance_predicate
               def self.#{name}?
-                #{ivar}.present? || superclass.try(:#{name}?)
+                @#{name}.present? || superclass.try(:#{name}?)
               end
             RUBY
 

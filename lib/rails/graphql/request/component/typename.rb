@@ -47,7 +47,7 @@ module Rails # :nodoc:
 
         # Write the typename information
         def write_value(value)
-          response.add(gql_name, response.try(:prefer_string?) ? value.inspect : value)
+          response.serialize(Type::Scalar::StringScalar, gql_name, value)
         end
 
         protected

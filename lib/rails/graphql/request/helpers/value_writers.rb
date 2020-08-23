@@ -5,11 +5,16 @@ module Rails # :nodoc:
     class Request # :nodoc:
       # A set of helper methods to write a value to the response
       module ValueWriters
+        # TODO: Maybe move this to a setting so it allow extensions
+        KIND_WRITERS = {
+          union:     'write_union',
+          interface: 'write_interface',
+          object:    'write_object',
+        }.freeze
+
         # Write a value to the response
         def write_value(value)
-          writer = 'write_' + field.kind.to_s
-          writer = 'write_leaf' unless respond_to?(writer, true)
-          send(writer, value)
+          send(KIND_WRITERS[field.kind] || 'write_leaf', value)
         end
 
         # Resolve a given value when it is an array
@@ -85,9 +90,7 @@ module Rails # :nodoc:
             return response.safe_add(gql_name, nil) if value.nil?
 
             # Necessary call #itself to loose the dynamic reference
-            serializer = response.try(:prefer_string?) ? :to_json : :as_json
-            value = type_klass.public_send(serializer, value.itself)
-            response.add(gql_name, value)
+            response.serialize(type_klass, gql_name, value.itself)
           end
 
           # Trigger the plain field output validation

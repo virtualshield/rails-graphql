@@ -139,8 +139,8 @@ module Rails # :nodoc:
           # Perform the resolve step
           def resolve_then(&block)
             stacked do
-              strategy.perform(self) if field.is_a?(Field::MutationField)
-              send("resolve_#{field.array? ? 'many' : 'one'}", &block)
+              strategy.perform(self) if field.mutation?
+              send(field.array? ? 'resolve_many' : 'resolve_one', &block)
             rescue StandardError => error
               resolve_invalid(error)
             end
@@ -154,17 +154,20 @@ module Rails # :nodoc:
         private
 
           # Resolve the value of the field for a single information
-          def resolve_one(*args)
-            strategy.resolve(self, *args, decorate: true) do |value|
+          def resolve_one
+            strategy.resolve(self, decorate: true) do |value|
               yield value if block_given?
               trigger_event(:finalize)
             end
           end
 
           # Resolve the field for a list of information
-          def resolve_many(&block)
+          def resolve_many
             strategy.resolve(self, array: true) do |item|
-              resolve_one(item, &block)
+              strategy.resolve(self, item, decorate: true) do |value|
+                yield value if block_given?
+                trigger_event(:finalize)
+              end
             end
           end
 

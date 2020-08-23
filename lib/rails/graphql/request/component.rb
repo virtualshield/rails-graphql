@@ -36,7 +36,7 @@ module Rails # :nodoc:
         attr_reader :data
 
         delegate :schema, :visitor, :response, :strategy, to: :request
-        delegate :find_type!, :find_directive!, to: :strategy
+        delegate :find_type!, :find_directive!, :trigger_event, to: :strategy
         delegate :memo, to: :operation
         delegate :kind, to: :class
 
@@ -79,13 +79,8 @@ module Rails # :nodoc:
           end
 
           # Use the strategy to set the component into the stack
-          def stacked(value = nil, &block)
-            strategy.stacked(value || self, &block)
-          end
-
-          # Trigger an event using the strategy, which has better performance
-          def trigger_event(*args)
-            strategy.trigger_event(*args)
+          def stacked(value = self, &block)
+            strategy.stacked(value, &block)
           end
 
           # Run a given block and ensure to capture exceptions to set them as

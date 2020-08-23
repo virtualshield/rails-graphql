@@ -10,11 +10,6 @@ module Rails # :nodoc:
           @data = {}
         end
 
-        # Checks if the collector prefer writing values as string
-        def prefer_string?
-          false
-        end
-
         # Shortcut for starting and ending a stack while execute a block.
         def with_stack(key, array: false, plain: false)
           return unless block_given?
@@ -33,6 +28,11 @@ module Rails # :nodoc:
         end
 
         alias safe_add add
+
+        # Serialize is a helper to call the correct method on types before add
+        def serialize(klass, key, value)
+          add(key, klass.as_json(value))
+        end
 
         # Mark the start of a new element on the array.
         def next

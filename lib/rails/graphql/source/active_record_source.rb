@@ -51,17 +51,13 @@ module Rails # :nodoc:
       end
 
       on :query do
-        throw :done if sti_interface?
-
-        id_argument = arg(primary_key, Type::Scalar::IdScalar, null: false)
+        id_argument = arg(primary_key, :id, null: false)
 
         safe_field(plural,   object, full: true)
         safe_field(singular, object, null: false, arguments: id_argument)
       end
 
       on :finish do
-        next if sti_interface?
-
         attach_fields!
         next if model.base_class == model
 
@@ -126,11 +122,6 @@ module Rails # :nodoc:
           end
         end
 
-        # Returns the input field that a source represents
-        def input_field
-          input.as_field
-        end
-
         protected
 
           # Check if the given model is consider an interface due to single
@@ -144,6 +135,7 @@ module Rails # :nodoc:
           # Build all necessary attribute fields into the given +holder+
           def build_attribute_fields(holder)
             each_attribute do |key, type, options|
+              type = @enums[key.to_s] if @enums.key?(key.to_s)
               options[:null] = required?(key) unless options.key?(:null)
               holder.field(key, type, **options) unless holder.field?(key)
             end

@@ -7,6 +7,8 @@ module Rails # :nodoc:
     # This is an extension of a normal output field, which just add extra
     # validation and ensurance that the +perform+ step can be executed
     class Field::MutationField < Field::OutputField
+      redefine_singleton_method(:mutation?) { true }
+
       module Proxied # :nodoc: all
         def performer
           super || field.performer
