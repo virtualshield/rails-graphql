@@ -6,12 +6,6 @@ module Rails # :nodoc:
       # Helper module to collect the directives from fragments, operations, and
       # fields.
       module Directives
-        DATA_PARTS = %i[directives]
-
-        # Add the +directives+ to the list of data parts
-        def data_parts
-          defined?(super) ? DATA_PARTS + super : DATA_PARTS
-        end
 
         # Get the list of listeners from all directives
         def all_listeners
@@ -47,7 +41,7 @@ module Rails # :nodoc:
               end
 
               list << instance.new(request.build(Request::Arguments, args))
-            end unless data[:directives].empty?
+            end unless data[:directives].blank?
 
             if list.present?
               event = Event.new(:attach, strategy, self, phase: :execution)

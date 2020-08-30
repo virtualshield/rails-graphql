@@ -30,10 +30,6 @@ module Rails # :nodoc:
           autoload :ValueWriters
         end
 
-        autoload_under :extensions do
-          autoload :Debugger
-        end
-
         autoload :Arguments
         autoload :Component
         autoload :Context
@@ -62,13 +58,6 @@ module Rails # :nodoc:
           result = new(namespace: namespace)
           result.context = context if context.present?
           result.execute(*args, **xargs)
-        end
-
-        # Shortcut for initialize, set context, and debug
-        def debug(*args, namespace: :base, context: {}, **xargs)
-          result = new(namespace: namespace)
-          result.context = context if context.present?
-          result.debug(*args, **xargs)
         end
 
         # Allow accessing component-based objects through the request
@@ -124,12 +113,6 @@ module Rails # :nodoc:
       end
 
       alias perform execute
-
-      # Add the debug extension to the resquest and then normally execute
-      def debug(*args, **xargs)
-        extend(Request::Debugger)
-        execute(*args, **xargs)
-      end
 
       # Build a easy-to-access object representing the current information of
       # the execution to be used on +rescue_with_handler+
@@ -246,6 +229,10 @@ module Rails # :nodoc:
           @cache.clear
           @fragments.clear
           @operations.clear
+
+          @visitor.terminate
+          @visitor = nil
+
           GraphQL::Native.free_node(@document)
           @response.try(:append_errors, errors)
         end

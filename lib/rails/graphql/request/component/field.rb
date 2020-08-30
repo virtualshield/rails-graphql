@@ -12,8 +12,6 @@ module Rails # :nodoc:
         include SelectionSet
         include Directives
 
-        DATA_PARTS = %i[arguments]
-
         delegate :decorate, to: :type_klass
         delegate :operation, :variables, to: :parent
         delegate :method_name, :resolver, :performer, :type_klass, :leaf_type?,
@@ -55,8 +53,11 @@ module Rails # :nodoc:
         # Get and cache all the arguments for the field
         def all_arguments
           request.cache(:arguments)[field] ||= begin
-            result = field.all_arguments
-            result.each_value.map(&:gql_name).zip(result.each_value).to_h
+            if (result = field.all_arguments).any?
+              result.each_value.map(&:gql_name).zip(result.each_value).to_h
+            else
+              {}
+            end
           end
         end
 

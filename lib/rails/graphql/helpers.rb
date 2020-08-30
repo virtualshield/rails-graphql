@@ -22,7 +22,7 @@ module Rails # :nodoc:
 
       # Easy way to duplicate objects and set a new owner
       def self.dup_all_with_owner(enumerator, owner)
-        enumerator.map { |item| dup_with_owner(item, owner) }
+        enumerator.map { |item| dup_with_owner(item, owner) }.presence
       end
 
       # Easy way to duplicate a object and set a new owner

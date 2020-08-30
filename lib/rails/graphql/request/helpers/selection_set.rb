@@ -6,14 +6,7 @@ module Rails # :nodoc:
       # Helper module to collect the fields from fragments, operations, and also
       # other fields.
       module SelectionSet
-        DATA_PARTS = %i[selection]
-
         attr_reader :selection
-
-        # Add the +selection+ to the list of data parts
-        def data_parts
-          defined?(super) ? DATA_PARTS + super : DATA_PARTS
-        end
 
         protected
 
@@ -71,7 +64,7 @@ module Rails # :nodoc:
         private
 
           def add_component(kind, node, data)
-            item_name = data[:alias].presence || data[:name]
+            item_name = data.try(:alias).presence || data[:name]
 
             if kind === :spread
               selection[selection.size] = request.build(Component::Spread, self, node, data)

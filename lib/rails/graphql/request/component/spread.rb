@@ -11,8 +11,6 @@ module Rails # :nodoc:
         include SelectionSet
         include Directives
 
-        DATA_PARTS = %i[type]
-
         delegate :operation, :typename, to: :parent
         delegate :variables, to: :operation
 

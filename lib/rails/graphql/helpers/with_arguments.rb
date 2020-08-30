@@ -12,7 +12,7 @@ module Rails # :nodoc:
         end
 
         def self.included(other)
-          other.define_method(:arguments) { @arguments ||= {} }
+          other.define_method(:arguments) { @arguments || {} }
         end
 
         module ClassMethods # :nodoc: all
@@ -62,7 +62,7 @@ module Rails # :nodoc:
             The #{name.inspect} argument is already defined and can't be redefined.
           MSG
 
-          arguments[object.name] = object
+          (@arguments ||= {})[object.name] = object
         rescue DefinitionError => e
           raise e.class, e.message + "\n  Defined at: #{caller(2)[0]}"
         end

@@ -101,17 +101,17 @@ module Rails # :nodoc:
 
       # Checks if the argument can be null
       def null?
-        @null
+        !!@null
       end
 
       # Checks if the argument can be an array
       def array?
-        @array
+        !!@array
       end
 
       # Checks if the argument can have null elements in the array
       def nullable?
-        @nullable
+        !!@nullable
       end
 
       # Return the description of the argument

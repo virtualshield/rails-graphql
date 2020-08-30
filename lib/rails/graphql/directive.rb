@@ -34,8 +34,6 @@ module Rails # :nodoc:
       EXECUTION_LOCATIONS  = VALID_LOCATIONS[0..6].freeze
       DEFINITION_LOCATIONS = VALID_LOCATIONS[7..17].freeze
 
-      self.abstract = true
-
       class << self
         def kind # :nodoc
           :directive
@@ -97,11 +95,10 @@ module Rails # :nodoc:
           # +Directive.new+, like the +DeprecatedDirective+ can be initialized
           # using +GraphQL::DeprecatedDirective(*args)+
           def inherited(subclass)
+            subclass.abstract = false
             super if defined? super
 
             method_name = subclass.name.demodulize
-
-            subclass.abstract = false
             subclass.module_parent.define_singleton_method(method_name) do |*args, &block|
               subclass.new(*args, &block)
             end
@@ -120,10 +117,12 @@ module Rails # :nodoc:
           end
       end
 
+      self.abstract = true
+
       eager_autoload do
-        autoload :SkipDirective
-        autoload :IncludeDirective
         autoload :DeprecatedDirective
+        autoload :IncludeDirective
+        autoload :SkipDirective
       end
 
       delegate :locations, :gql_name, :all_listeners, to: :class

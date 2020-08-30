@@ -52,7 +52,7 @@ module Rails # :nodoc:
 
         def initialize(node, data)
           @node = node
-          @data = data.slice(*data_parts)
+          @data = data
         end
 
         # Check if the component is in a invalid state
@@ -92,16 +92,6 @@ module Rails # :nodoc:
             stack_path = request.stack_to_path
             stack_path << gql_name if respond_to?(:gql_name) && gql_name.present?
             request.exception_to_error(error, @node, path: stack_path, stage: stage)
-          end
-
-          # List of necessary parts from data in order to process the component
-          def data_parts
-            klass = self.class
-            data_parts = klass.const_defined?(:DATA_PARTS) \
-              ? klass.const_get(:DATA_PARTS) \
-              : []
-
-            defined?(super) ? data_parts + super : data_parts
           end
       end
     end

@@ -12,8 +12,6 @@ module Rails # :nodoc:
         include SelectionSet
         include Directives
 
-        DATA_PARTS = %i[type]
-
         attr_reader :name, :type_klass, :request
 
         alias gql_name name

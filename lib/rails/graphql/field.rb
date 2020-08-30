@@ -147,22 +147,22 @@ module Rails # :nodoc:
 
       # Checks if the argument can be null
       def null?
-        @null
+        !!@null
       end
 
       # Checks if the argument can be an array
       def array?
-        @array
+        !!@array
       end
 
       # Checks if the argument can have null elements in the array
       def nullable?
-        @nullable
+        !!@nullable
       end
 
       # Check if tre field is enabled
       def enabled?
-        @enabled
+        !!@enabled
       end
 
       # Check if tre field is disabled

@@ -50,11 +50,11 @@ module Rails # :nodoc:
                 The "#{arg_name}" argument is already defined for this #{kind}.
               MSG
 
-              extra = data.except(:name, :type).merge(owner: schema)
+              extra = data.to_h.except(:name, :type).merge(owner: schema)
               item = arguments[arg_name] = Argument.new(arg_name, data[:type], **extra)
               item.node = node
               item.validate!
-            end unless data[:variables].empty?
+            end unless data[:variables].blank?
 
             args = request.sanitized_arguments
             args = collect_arguments(self, args, var_access: false) do |errors|
@@ -71,7 +71,7 @@ module Rails # :nodoc:
             visitor.collect_arguments(*data[:arguments]) do |data|
               args[data[:name]] = variable = data[:variable]
               args[data[:name]] = data[:value] if variable.nil? || variable.null?
-            end unless data[:arguments].empty?
+            end unless data[:arguments].blank?
 
             args = collect_arguments(self, args) do |errors|
               "Invalid arguments for #{gql_name} #{kind}: #{errors}."

@@ -56,11 +56,6 @@ module GraphQL
 
     alias perform execute
 
-    # See {Request}[rdoc-ref:Rails::GraphQL::Request]
-    def debug(*args, **xargs)
-      Rails::GraphQL::Request.debug(*args, **xargs)
-    end
-
     # See {CONST_SHORTCUTS}[rdoc-ref:GraphQL::CONST_SHORTCUTS]
     def const_defined?(name, *)
       name = :"ActiveRecord#{name[2..-1]}" if name.start_with?('AR')

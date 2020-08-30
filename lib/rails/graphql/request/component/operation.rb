@@ -43,12 +43,10 @@ module Rails # :nodoc:
         end
 
         # Query is default behavior, so it doesn't need a whole class
-        Query    = Class.new(self) { redefine_singleton_method(:query?) { true } }
+        Query    = Class.new(self) { redefine_singleton_method(:query?)    { true } }
         Mutation = Class.new(self) { redefine_singleton_method(:mutation?) { true } }
 
         autoload :Subscription
-
-        DATA_PARTS = %i[variables]
 
         delegate :type, :query?, :mutation?, :subscription?, to: :class
 

@@ -79,18 +79,12 @@ module Rails # :nodoc:
           names.empty? ? result : result&.dig(*names)
         end
 
-        private
-
-          # When we freeze the arguments, we need to make sure to correctly set
-          # the accessor with the transform method
-          def new_ostruct_member!(name)
-            name = name.to_sym
-            unless singleton_class.method_defined?(name)
-              define_singleton_method(name) { self.class.transform(@table[name]) }
-              define_singleton_method("#{name}=") {|x| modifiable?[name] = x}
-            end
-            name
-          end
+        # Override the freeze method to just freeze the table and do not create
+        # the getters and setter methods
+        def freeze
+          @table.freeze
+          super
+        end
       end
     end
   end
