@@ -15,7 +15,7 @@ module Rails # :nodoc:
         # Get the list of events from all directives and caches it by request
         def all_events
           @all_events ||= directives.map(&:all_events).inject({}) do |lhash, rhash|
-            Helpers::InheritedCollection.merge_hash_array(lhash, rhash)
+            Helpers.merge_hash_array(lhash, rhash)
           end
         end
 

@@ -172,7 +172,7 @@ module Rails # :nodoc:
       # When fetching all the events, embed the actual instance as the context
       # of the callback
       def all_events
-        self.class.all_events.transform_values do |events|
+        @all_events ||= self.class.all_events.transform_values do |events|
           events.map { |item| Callback.set_context(item, self) }
         end
       end

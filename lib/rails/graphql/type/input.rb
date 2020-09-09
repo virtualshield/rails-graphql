@@ -45,28 +45,29 @@ module Rails # :nodoc:
             return false unless value.is_a?(Hash)
 
             fields = enabled_fields
+            value = value.transform_keys { |key| key.to_s.camelize(:lower) }
             value = build_defaults.merge(value)
+
             return false unless value.size.eql?(fields.size)
 
-            fields.each_value.all? { |item| item.valid_input?(value[item.gql_name]) }
+            fields.all? { |item| item.valid_input?(value[item.gql_name]) }
           end
 
           # Turn the given value into an isntance of the input object
           def deserialize(value)
             value = value.to_h if value.respond_to?(:to_h)
             value = {} unless value.is_a?(Hash)
-            value = build_defaults.merge(value)
+            value = enabled_fields.map do |field|
+              next unless value.key?(field.gql_name) || value.key?(field.name)
+              [field.name, field.deserialize(value[field.gql_name] || value[field.name])]
+            end.compact.to_h
 
-            new **enabled_fields.transform_values do |field|
-              field.deserialize(value[field.gql_name])
-            end
+            new(OpenStruct.new(value))
           end
 
           # Build a hash with the default values for each of the given fields
           def build_defaults
-            enabled_fields.each_value.map do |field|
-              field[field.gql_name, field.default]
-            end.to_h
+            enabled_fields.map { |field| [field.gql_name, field.default] }.to_h
           end
 
           def inspect # :nodoc:
@@ -77,6 +78,8 @@ module Rails # :nodoc:
         end
 
         attr_reader :args
+
+        delegate :fields, to: :class
 
         delegate_missing_to :args
 

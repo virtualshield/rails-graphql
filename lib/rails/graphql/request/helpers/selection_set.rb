@@ -47,6 +47,12 @@ module Rails # :nodoc:
             selection.each_value(&:organize!) if selection.any?
           end
 
+          # Find all the fields that have a prepare step and execute them
+          def prepare_fields
+            return unless selection.any?
+            (strategy.listeners[:prepare] & selection.values).each(&:prepare!)
+          end
+
           # Trigger the process of resolving the value of all the fields. Since
           # complex object may or may not be inside an array, this helps to
           # decide if a new stack should be started or not

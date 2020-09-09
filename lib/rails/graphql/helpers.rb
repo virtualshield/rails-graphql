@@ -29,6 +29,11 @@ module Rails # :nodoc:
       def self.dup_with_owner(item, owner)
         item.dup.tap { |x| x.instance_variable_set(:@owner, owner) }
       end
+
+      # Global helper that merge a hash that contains values as arrays
+      def self.merge_hash_array(one, other)
+        one.merge(other) { |_, lval, rval| lval + rval }
+      end
     end
   end
 end

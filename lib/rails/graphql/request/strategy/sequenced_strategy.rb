@@ -16,9 +16,9 @@ module Rails # :nodoc:
         def resolve!
           response.with_stack(:data) do
             operations.each_value do |op|
-              collect_listeners    { op.organize! }
-              collect_data         { op.prepare! }
-              collect_response(op) { op.resolve! }
+              collect_listeners { op.organize! }
+              collect_data      { op.prepare! }
+              collect_response  { op.resolve! }
             end
           end
         end

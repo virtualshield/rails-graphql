@@ -69,6 +69,11 @@ module Rails # :nodoc:
         field.owner
       end
 
+      # Return the proxied field
+      def proxied_field
+        @field
+      end
+
       def disable! # :nodoc:
         super unless non_interface_proxy!('disable')
       end
@@ -78,21 +83,22 @@ module Rails # :nodoc:
       end
 
       def all_directives # :nodoc:
-        super + field.all_directives
+        field.all_directives + super
       end
 
       # It is important to ensure that the proxied field is also valid. If the
       # proxied owner is registered, then it is safe to assume that it is valid
       def validate!(*)
         super if defined? super
-        field.validate! unless GraphQL.type_map.object_exist?(proxied_owner,
+        field.validate! unless GraphQL.type_map.object_exist?(
+          proxied_owner,
           namespaces: namespaces,
           exclusive: true,
         )
       end
 
       protected
-        attr_reader :field
+        alias field proxied_field
 
         def normalize_name(value) # :nodoc:
           super unless value.blank? || non_interface_proxy!('rename')

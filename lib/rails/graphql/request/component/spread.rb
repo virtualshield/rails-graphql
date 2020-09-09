@@ -87,6 +87,12 @@ module Rails # :nodoc:
             end
           end
 
+          # Spread has a special behavior when using a fragment
+          def prepare
+            return super if inline?
+            raise 'Prepare with fragment not implemented yet'
+          end
+
           # Resolve the spread operation
           def resolve
             return if invalid?

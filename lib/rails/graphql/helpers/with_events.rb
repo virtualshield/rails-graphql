@@ -52,7 +52,7 @@ module Rails # :nodoc:
         def all_events
           current = (@events || {})
           return current unless defined? super
-          Helpers::InheritedCollection.merge_hash_array(current, super)
+          Helpers.merge_hash_array(current, super)
         end
 
         # Mostly for correct inheritance on instances
@@ -73,6 +73,9 @@ module Rails # :nodoc:
 
           listeners << event_name
           events[event_name].send(unshift ? :unshift : :push, block)
+        rescue
+          binding.pry
+          raise
         end
       end
     end

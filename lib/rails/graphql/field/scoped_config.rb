@@ -5,8 +5,8 @@ module Rails # :nodoc:
     # Helper class to be used while configuring a field using a block. An
     # instance of this class works as proxy for changes to the actual field.
     class Field::ScopedConfig < Struct.new(:field, :receiver)
-      delegate :argument, :id_argument, :use, :internal?, :disabled?, :enabled?,
-        :disable!, :enable!, to: :field
+      delegate :argument, :ref_argument, :id_argument, :use, :internal?, :disabled?,
+        :enabled?, :disable!, :enable!, to: :field
 
       delegate_missing_to :receiver
 

@@ -27,8 +27,8 @@ module Rails # :nodoc:
   # A very important concept is that Singleton definitions are a direct
   # connection to a {GraphQL Introspection}[http://spec.graphql.org/June2018/#sec-Introspection],
   # meaning that to query the introspection is to query everything defined and
-  # associated with the GraphQL objects, the only exception are arguments and
-  # sometimes directives and fields:
+  # associated with the GraphQL objects, the only exception are arguments,
+  # directives and fields:
   #
   # * <tt>Arguments:</tt> They are strictly associated with the object that
   #   defined it, also arguments with the same name doesn't mean they have the
@@ -36,7 +36,12 @@ module Rails # :nodoc:
   # * <tt>Directives:</tt> A directive definition belongs to the introspection
   #   and is handled in the Singleton extent. They are handled as instance
   #   whenever a definition or an execution uses them.
-  # * <tt>Fields:</tt> TODO: Finish explaining
+  # * <tt>Fields:</tt> Many other types and helper containers holds a serie of
+  #   fields, which means that fields with the same name will probably behave
+  #   differently.
+  #
+  # TODO: Create the concept of MutationSet as a way to group mutations under
+  # the same class but placed onto a reference
   module GraphQL
     extend ActiveSupport::Autoload
 

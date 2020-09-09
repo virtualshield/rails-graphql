@@ -111,12 +111,12 @@ module Rails # :nodoc:
 
         # Get the list of GraphQL names of all the fields difined
         def field_names(enabled_only = true)
-          (enabled_only ? enabled_fields : fields).each_value.map(&:gql_name).compact
+          (enabled_only ? enabled_fields : fields.each_value).map(&:gql_name).compact
         end
 
         # Return a lazy enumerator for enabled fields
         def enabled_fields
-          fields.select { |_, field| field.enabled? }
+          fields.values.select(&:enabled?)
         end
 
         # Validate all the fields to make sure the definition is valid

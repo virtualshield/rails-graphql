@@ -18,7 +18,7 @@ module Rails # :nodoc:
         using Markdown syntax (as specified by [CommonMark](http://commonmark.org/)).
       DESC
 
-      on :organize do |event|
+      on :organized do |event|
         report_for_field(event)
       end
 

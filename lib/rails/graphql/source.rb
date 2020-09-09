@@ -18,6 +18,8 @@ module Rails # :nodoc:
       DEFAULT_NAMESPACES = %i[base].freeze
 
       eager_autoload do
+        autoload :ScopedArguments
+
         autoload :ActiveRecordSource
       end
 
@@ -66,16 +68,27 @@ module Rails # :nodoc:
       # A list of fields to skip when performing shared methods
       inherited_collection :skip_fields, instance_reader: false
 
+      # The purpose of instantiating a source is to have access to its public
+      # methods. It then runs from the strategy perspective, pointing out any
+      # other methods to the manually set event
+      delegate_missing_to :@event
+      attr_reader :event
+
       self.abstract = true
 
       class << self
         attr_reader :schemas
 
         delegate :field, :proxy_field, :overwrite_field, :[], :field?,
-          :field_names, to: :object
+          :field_names, :gql_name, to: :object
 
         def kind # :nodoc:
           :source
+        end
+
+        # Sources are close related to objects, meaning that they are type based
+        def base_type_class
+          :Type
         end
 
         # Get the main name of the source
@@ -120,6 +133,7 @@ module Rails # :nodoc:
         # to the +::GraphQL+ namespace with the addition of any namespace of the
         # currect class
         def object
+          # TODO: Allow finding an already defined object on type map
           @object ||= begin
             super_klass = object_class.constantize
 
@@ -142,6 +156,7 @@ module Rails # :nodoc:
         # to the +::GraphQL+ namespace with the addition of any namespace of the
         # currect class
         def input
+          # TODO: Allow finding an already defined input on type map
           @input ||= begin
             klass = Class.new(input_class.constantize)
             klass.set_namespaces(*namespaces)

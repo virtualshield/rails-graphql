@@ -62,12 +62,12 @@ module Rails # :nodoc:
 
       # Add the listeners from the associated type
       def all_listeners
-        super + type_klass.all_listeners
+        type_klass.all_listeners + super
       end
 
       # Add the events from the associated type
       def all_events
-        Helpers::InheritedCollection.merge_hash_array(super, type_klass.all_events)
+        Helpers.merge_hash_array(type_klass.all_events, super)
       end
 
       # Checks if the type of the field is valid

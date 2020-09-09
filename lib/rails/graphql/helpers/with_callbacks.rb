@@ -9,7 +9,7 @@ module Rails # :nodoc:
       # symbolic methods
       module WithCallbacks
         DEFAULT_EVENT_TYPES = %i[query mutation subscription request attach
-          organize prepare finalize]
+          organized prepared finalize]
 
         def self.extended(other)
           other.extend(WithCallbacks::Setup)

@@ -32,7 +32,7 @@ module Rails # :nodoc:
             stacked do
               block.call
               strategy.add_listener(self)
-              trigger_event(:organize)
+              trigger_event(:organized)
               after_block.call if after_block.present?
             end
           ensure

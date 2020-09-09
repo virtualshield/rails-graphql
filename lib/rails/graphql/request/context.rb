@@ -8,15 +8,10 @@ module Rails # :nodoc:
       # This class is used as context for the response while processing fields,
       # objects, or any data that it's going to be placed on the response
       class Context
-        delegate :strategy, :stack, to: :request
-        delegate :memo, to: :operation
+        attr_reader :current
 
-        attr_reader :request, :operation, :current
-
-        def initialize(request, operation)
+        def initialize
           @stack = []
-          @request = request
-          @operation = operation
           @current = Helpers::AttributeDelegator.new(self, :current_value, cache: false)
         end
 

@@ -46,8 +46,7 @@ module Rails # :nodoc:
         # Override that considers the requested field directives and also the
         # definition field events, both from itself and its directives events
         def all_events
-          @all_events ||= Helpers::InheritedCollection.merge_hash_array(
-            field.all_events, super)
+          @all_events ||= Helpers.merge_hash_array(field.all_events, super)
         end
 
         # Get and cache all the arguments for the field
@@ -135,6 +134,11 @@ module Rails # :nodoc:
               parse_directives
               parse_selection
             end
+          end
+
+          # Perform the prepare step
+          def prepare_then(&block)
+            super { strategy.prepare(self, &block) }
           end
 
           # Perform the resolve step

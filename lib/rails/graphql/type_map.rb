@@ -279,6 +279,8 @@ module Rails # :nodoc:
         # Find the base class of an object, which is basically the class that
         # doesn't inherit any other class (superclass is equal Object)
         def find_base_class(object)
+          return object.base_type_class if object.respond_to?(:base_type_class)
+
           base_class = object
           base_class = base_class.superclass until base_class.superclass === Object
           base_class.name.demodulize.to_sym

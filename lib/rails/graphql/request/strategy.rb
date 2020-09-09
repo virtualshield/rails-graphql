@@ -16,6 +16,9 @@ module Rails # :nodoc:
           autoload :MultiQueryStrategy
         end
 
+        # Configurations for the prepare step
+        PREPARE_XARGS = { object?: true, reverse?: true }.freeze
+
         # The priority of the strategy
         class_attribute :priority, instance_accessor: false, default: 1
 
@@ -81,12 +84,24 @@ module Rails # :nodoc:
           end
         end
 
+        # Execute the prepare step for the given +field+ and execute the given
+        # block using context stack
+        def prepare(field, &block)
+          @data_pool[field] = value = Event.trigger(:prepare, field, self, **PREPARE_XARGS)
+          return context.stacked(value, &block) unless value.nil?
+
+          stack = field.all_events[:prepare].map { |cb| cb.source_location.join(':') }
+          request.report_node_error(<<~MSG.squish, field.node, stack: stack.reverse)
+            It is expected to get a result from the prepare events
+          MSG
+        end
+
         # Resolve a value for a given object, It uses the +args+ to prevent
         # problems with nil values.
         def resolve(field, *args, array: false, decorate: false, &block)
           if args.size.zero?
-            data_for(args, field)
-            args << Event.trigger(:resolve, field, self, &field.resolver) \
+            prepared = data_for(args, field).last
+            args << Event.trigger(:resolve, field, self, prepared: prepared, &field.resolver) \
               if field.try(:dynamic_resolver?)
           end
 
@@ -108,11 +123,11 @@ module Rails # :nodoc:
         def instance_for(klass)
           @objects_pool[klass] ||= begin
             @objects_pool.each_value.find do |value|
-              value < klass
+              value.is_a?(klass)
             end || begin
               instance = klass.new
               instance = DynamicInstance.new(instance) unless klass < GraphQL::Schema ||
-                klass < GraphQL::Types::Object
+                klass < GraphQL::Type::Object
               instance
             end
           end
@@ -148,7 +163,7 @@ module Rails # :nodoc:
 
         # Only store a given +value+ for a given +field+ if it is not set yet
         def safe_store_data(field, value)
-          @data_pool[field] ||= value
+          @data_pool[field] ||= value unless value.nil?
         end
 
         protected
@@ -174,17 +189,17 @@ module Rails # :nodoc:
           # it can load data in a pretty smart way
           def collect_data
             @data_pool = {}
-            if listening_to?(:prepare)
-              yield
-            end
+            @objects_pool = {}
+            @context = request.build(Request::Context)
+
+            # TODO: Create an orchestrator to allow cross query loading
+            yield if listening_to?(:prepare)
           end
 
           # Initiate the response context, named
           # ({Request::Context}[rdoc-ref:Rails::GraphQL::Request::Context])
           # and start collecting results
-          def collect_response(operation)
-            @context = request.build(Request::Context, request, operation)
-            @objects_pool = {}
+          def collect_response
             yield
           ensure
             @context = @objects_pool = @data_pool = @listeners = nil

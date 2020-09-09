@@ -21,6 +21,7 @@ module Rails # :nodoc:
       eager_autoload do
         autoload_under :steps do
           autoload :Organizable
+          autoload :Prepareable
           autoload :Resolveable
         end
 

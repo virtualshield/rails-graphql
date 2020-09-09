@@ -11,11 +11,6 @@ module Rails # :nodoc:
           hash_array: 'Hash.new { |h, k| h[k] = [] }',
         }.freeze
 
-        # Global helper that merge a hash that contains values as arrays
-        def self.merge_hash_array(one, other)
-          one.merge(other) { |_, lval, rval| lval + rval }
-        end
-
         # Declare a class-level attribute whose value is both isolated and also
         # inherited from parent classes. Subclasses can change their own value
         # and it will not impact parent class.
@@ -123,7 +118,7 @@ module Rails # :nodoc:
           def fetch_inherited_hash_array(ivar)
             inherited_ancestors.inject({}) do |result, klass|
               next result if (val = klass.instance_variable_get(ivar)).nil?
-              InheritedCollection.merge_hash_array(result, val)
+              Helpers.merge_hash_array(result, val)
             end
           end
 

@@ -7,7 +7,7 @@ module Rails # :nodoc:
     # This class is responsible for trigerring events. It also contains the
     # +data+ that can be used on the event handlers.
     class Event
-      attr_reader :source, :data, :name, :object
+      attr_reader :source, :data, :name, :object, :last_result
 
       alias event itself
 
@@ -22,7 +22,8 @@ module Rails # :nodoc:
       # Event trigger shortcut that can perform any mode of trigger
       def self.trigger(event_name, object, source, **xargs, &block)
         extra = xargs.slice!(*TRIGGER_TYPES.keys)
-        method_name = xargs.find { |k, v| break TRIGGER_TYPES[k] if v } || :trigger
+        method_name = xargs.find { |k, v| break TRIGGER_TYPES[k] if v } ||
+          xargs.delete(:fallback_trigger!) || :trigger
 
         instance = new(event_name, source, **extra)
         instance.instance_variable_set(:@object, object) if block.present?
@@ -30,7 +31,8 @@ module Rails # :nodoc:
       end
 
       def initialize(name, source, **data)
-        @iterator = data.delete(:collect?) ? :map : :each
+        @collect = data.delete(:collect?)
+        @reverse = data.delete(:reverse?)
 
         @name = name
         @data = data
@@ -47,15 +49,28 @@ module Rails # :nodoc:
 
       # Check if the event has a given +name+ information
       def parameter?(name)
-        respond_to?(name) || key?(name)
+        respond_to?(name) || data.key?(name)
       end
 
       alias key? parameter?
 
+      # Temporarily attach the event into an instance ensuring to set the
+      # previous value back
+      def set_on(instance, &block)
+        old_event = instance.instance_variable_get(:@event)
+        instance.instance_variable_set(:@event, self)
+
+        send_args = block.arity.eql?(1) ? [instance] : []
+        block.call(*send_args)
+      ensure
+        instance.instance_variable_set(:@event, old_event)
+      end
+
       # From the list of all given objects, run the +trigger_object+
       def trigger_all(*objects)
         catchable(:stack) do
-          objects.flatten.send(@iterator, &method(:trigger_object))
+          iterator = @collect ? :map : :each
+          objects.flatten.send(iterator, &method(:trigger_object))
         end
       end
 
@@ -64,18 +79,27 @@ module Rails # :nodoc:
       # in reverse order, so first in first out. Since events can sometimes be
       # cached, using +events+ avoid calculating the +all_events+
       def trigger_object(object, events = nil)
-        @object = object
+        old_items, old_object, old_result, @object = @items, @object, @last_result, object
+
         catchable(:object) do
-          events ||= object.all_events
-          events[name]&.send(@iterator, &method(:trigger))
+          events ||= object.all_events[name]
+          stop if events.blank?
+
+          @items = @reverse ? events.reverse_each : events.each
+          call_next while @items.peek
+        rescue StopIteration
+          # TODO: Make sure that the +@collect+ works
+          return @last_result
         end
       ensure
-        @object = nil
+        @items = old_items
+        @object = old_object
+        @last_result = old_result
       end
 
       # Call a given block and send the event as reference
       def trigger(block)
-        catchable(:item) { block.call(self) }
+        catchable(:item) { @last_result = block.call(self) }
       end
 
       # Stop the execution of an event using a given +layer+. The default is to
@@ -84,6 +108,15 @@ module Rails # :nodoc:
         layer = @layers[layer] if layer.is_a?(Numeric)
         throw(layer || @layers.first, *result)
       end
+
+      # Call the next item on the queue and return its result
+      def call_next
+        trigger(@items.next)
+      rescue StopIteration
+        # Do not do anything when missing next/super
+      end
+
+      alias call_super call_next
 
       private
 

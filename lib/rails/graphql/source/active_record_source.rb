@@ -13,6 +13,8 @@ module Rails # :nodoc:
     # 3. 2 Query fields (ingular and plural)
     # 4. 3 Mutation fields (create, update, destroy)
     class Source::ActiveRecordSource < Source
+      include Source::ScopedArguments
+
       PRESENCE_VALIDATOR = ::ActiveRecord::Validations::PresenceValidator
       ABSTRACT_REFLECTION = ::ActiveRecord::Reflection::AbstractReflection
 
@@ -22,6 +24,8 @@ module Rails # :nodoc:
 
       self.input_class = '::Rails::GraphQL::Type::Input::ActiveRecordInput'
       self.abstract = true
+
+      delegate :primary_key, :singular, :plural, :model, to: :class
 
       on :start do
         GraphQL.enable_ar_adapter(adapter_name)
@@ -38,29 +42,59 @@ module Rails # :nodoc:
       end
 
       on :input do
-        build_attribute_fields(self)
+        extra = { primary_key => { null: true } }
+        build_attribute_fields(self, **extra)
         build_reflection_inputs(self)
 
         safe_field(model.inheritance_column, :string, null: false) if object.interface?
         safe_field(:_delete, :boolean, default: false)
 
+        reference = model.new
         model.columns_hash.each_value do |column|
-          change_field(column.name, default: column.default) \
+          change_field(column.name, default: reference[column.name]) \
             if column.default.present? && field?(column.name)
         end
       end
 
       on :query do
-        id_argument = arg(primary_key, :id, null: false)
+        safe_field(plural, object, full: true) do
+          before_resolve :load_records
+        end
 
-        safe_field(plural,   object, full: true)
-        safe_field(singular, object, null: false, arguments: id_argument)
+        safe_field(singular, object, null: false) do
+          argument primary_key, :id, null: false
+          before_resolve :load_record
+        end
+      end
+
+      on :mutation do
+        safe_field("create_#{singular}", object, null: false) do
+          argument singular, input, null: false
+          perform :create_record
+        end
+
+        safe_field("update_#{singular}", object, null: false) do
+          argument primary_key, :id, null: false
+          argument singular, input, null: false
+          before_resolve :load_record
+          perform :update_record
+        end
+
+        safe_field("delete_#{singular}", :boolean, null: false) do
+          argument primary_key, :id, null: false
+          before_resolve :load_record
+          perform :destroy_record
+        end
       end
 
       on :finish do
         attach_fields!
+        attach_scoped_arguments_to(object.fields)
+        attach_scoped_arguments_to(mutation_fields)
+
         next if model.base_class == model
 
+        # TODO: Allow nested inheritance for setting up implementation
         Core.type_map.after_register(model.base_class.name, namespaces: namespaces) do |type|
           object.implements(type) if type.interface?
         end
@@ -133,11 +167,13 @@ module Rails # :nodoc:
           end
 
           # Build all necessary attribute fields into the given +holder+
-          def build_attribute_fields(holder)
+          def build_attribute_fields(holder, **field_options)
             each_attribute do |key, type, options|
               type = @enums[key.to_s] if @enums.key?(key.to_s)
-              options[:null] = required?(key) unless options.key?(:null)
-              holder.field(key, type, **options) unless holder.field?(key)
+              next if holder.field?(key)
+
+              options[:null] = !required?(key) unless options.key?(:null)
+              holder.field(key, type, **options.merge(field_options[key] || {}))
             end
           end
 
@@ -151,7 +187,7 @@ module Rails # :nodoc:
 
                 options = reflection_to_options(item)
 
-                if type.is_a?(Source::ActiveRecordSource)
+                if type <= Source::ActiveRecordSource
                   source_name = item.collection? ? type.plural : type.singular
                   proxy_options = options.merge(alias: reflection.name, of_type: :proxy)
                   field = holder.safe_field(source, **proxy_options) \
@@ -159,7 +195,9 @@ module Rails # :nodoc:
                 end
 
                 field ||= holder.field(item.name, type, **options)
-                field.before_resolve(:load_association, item.name)
+                field.before_resolve(:preload_association, item.name)
+                field.before_resolve(:build_association_scope, item.name)
+                field.resolve(:parent_owned_records)
               end
             end
           end
@@ -197,6 +235,7 @@ module Rails # :nodoc:
           # Check if a given +attr_name+ is associated with a presence validator
           # but ignores when there is a default value
           def required?(attr_name)
+            return true if attr_name.eql?(primary_key)
             return false if model.columns_hash[attr_name]&.default.present?
             return false unless model._validators.key?(attr_name.to_sym)
             model._validators[attr_name.to_sym].any?(PRESENCE_VALIDATOR)
@@ -204,6 +243,84 @@ module Rails # :nodoc:
             false
           end
       end
+
+      # Prepare to load multiple records from the underlying table
+      def load_records
+        inject_scopes(model.all, :relation)
+      end
+
+      # Prepare to load a single record from the underlying table
+      def load_record
+        load_records.find(event.argument(primary_key))
+      end
+
+      # Get the chain result and preload the records with thre resulting scope
+      def preload_association(association, scope = nil)
+        event.stop(preload(association, scope || event.last_result), layer: :object)
+      end
+
+      # Collect a scope for filters applied to a given association
+      def build_association_scope(association)
+        scope = model._reflect_on_association(association).klass.unscoped
+
+        # Apply proxied injected scopes
+        proxied = event.field.try(:proxied_owner)
+        scope = event.on_instance(proxied) do |instance|
+          instance.inject_scopes(scope, :relation)
+        end if proxied.present? && proxied <= Source::ActiveRecordSource
+
+        # Apply self defined injected scopes
+        inject_scopes(scope, :relation)
+      end
+
+      # Once the records are pre-loaded due to +preload_association+, use the
+      # parent value and the preloader result to get the records
+      def parent_owned_records
+        records = event.data[:prepared]
+        return [] if records.empty?
+
+        records.records_by_owner[current_value.itself]
+      end
+
+      # The perform step for the +create+ based mutation
+      def create_record
+        input_argument.instantiate.tap(&:save!)
+      end
+
+      # The perform step for the +update+ based mutation
+      def update_record
+        current_value.tap { |record| record.update!(**input_attributes) }
+      end
+
+      # The perform step for the +delete+ based mutation
+      def destroy_record
+        !!current_value.destroy!
+      end
+
+      protected
+
+        # Basically get the argument associated to the input
+        def input_argument
+          event.argument(singular)
+        end
+
+        # Get the input argument and return it as model attributes
+        def input_attributes
+          input_argument.args.to_h
+        end
+
+        # Preload the records for a given +association+ using the current value.
+        # It can be further specified with a given +scope+
+        def preload(association, scope = nil)
+          reflection = model._reflect_on_association(association)
+          records = Array.wrap(current_value.itself).compact # Loose the dynamic reference
+          ar_preloader.send(:preloaders_for_reflection, reflection, records, scope).first
+        end
+
+        # Get the cached instance of active record prelaoder
+        def ar_preloader
+          event.request.cache(:ar_preloader) { ::ActiveRecord::Associations::Preloader.new }
+        end
     end
   end
 end

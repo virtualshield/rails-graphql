@@ -14,8 +14,6 @@ module Rails # :nodoc:
         class_attribute :owner, instance_writer: false
 
         class << self
-          delegate :to_proxy, to: :owner
-
           # This class will be able to be resolved from a query point of view if
           # all the requested fields (which are non-object) can also be resolved
           # from active record
@@ -57,17 +55,17 @@ module Rails # :nodoc:
             end
         end
 
-        # Prepare to load a single record from the underlying table
-        def load_record(id)
-        end
+        private
 
-        # Prepare to load multiple records from the underlying table
-        def load_records(ids)
-        end
+          def respond_to_missing?(method_name, include_private = false) # :nodoc:
+            owner.new.respond_to?(method_name, include_private) || super
+          end
 
-        # Prepare the records for a reflection with the given +reflection_name+
-        def load_association(reflection_name)
-        end
+          def method_missing(method_name, *args, **xargs, &block) # :nodoc:
+            event.on_instance(owner) do |obj|
+              obj.public_send(method_name, *args, **xargs, &block)
+            end
+          end
       end
     end
   end

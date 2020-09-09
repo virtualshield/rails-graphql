@@ -147,7 +147,14 @@ module Rails # :nodoc:
         value.map { |part| type_klass.as_json(part) }
       end
 
-      alias deserialize as_json
+      # Turn the given value into a ruby object through deserialization
+      def deserialize(value = nil)
+        value = @default if value.nil?
+
+        return if value.nil?
+        return type_klass.deserialize(value) unless array?
+        value.map { |part| type_klass.deserialize(part) }
+      end
 
       # This checks if a given serialized value is valid for this field
       def valid_input?(value)

@@ -99,7 +99,7 @@ module Rails # :nodoc:
           Helpers::AttributeDelegator.new do
             base = defined?(super) ? super : {}
             all_directives.map(&:all_events).inject(base) do |lhash, rhash|
-              InheritedCollection.merge_hash_array(lhash, rhash)
+              Helpers.merge_hash_array(lhash, rhash)
             end
           end
         end

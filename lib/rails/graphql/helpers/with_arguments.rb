@@ -67,6 +67,22 @@ module Rails # :nodoc:
           raise e.class, e.message + "\n  Defined at: #{caller(2)[0]}"
         end
 
+        # Since arguments' owner are more flexible, their instances can be
+        # directly associated to objects that have argument
+        def ref_argument(object)
+          raise ArgumentError, <<~MSG.squish unless object.is_a?(GraphQL::Argument)
+            The given object #{object.inspect} is not a valid argument.
+          MSG
+
+          raise DuplicatedError, <<~MSG.squish if has_argument?(object.name)
+            The #{object.name.inspect} argument is already defined and can't be redefined.
+          MSG
+
+          (@arguments ||= {})[object.name] = object
+        rescue DefinitionError => e
+          raise e.class, e.message + "\n  Defined at: #{caller(2)[0]}"
+        end
+
         # A short cute for arguments named and typed as id
         def id_argument(*args, **xargs, &block)
           name = args.size >= 1 ? args.shift : :id

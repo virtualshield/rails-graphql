@@ -11,14 +11,15 @@ module Rails # :nodoc:
         OBJECT_BASED_READERS = %i[fragment operation spread]
 
         delegate :schema, :errors, :context, to: :request
-        delegate :memo, to: :object
+        delegate :instance_for, to: :strategy
+        delegate :memo, to: :source
 
         attr_reader :strategy, :request, :index
 
         # Enhance the trigger settings based on the default for a request event
         def self.trigger(event_name, object, *args, **xargs, &block)
           xargs[:phase] ||= :execution
-          xargs[:all?] ||= true unless block.present?
+          xargs[:fallback_trigger!] ||= :trigger_all unless block.present?
           super(event_name, object, *args, **xargs, &block)
         end
 
@@ -62,17 +63,28 @@ module Rails # :nodoc:
           object.of_type?(type)
         end
 
+        # Provide access to field arguments
+        def argument(name)
+          args_source.try(:[], name.to_sym)
+        end
+
+        # A combined helper for +instance_for+ and +set_on+
+        def on_instance(klass, &block)
+          set_on(klass.is_a?(Class) ? instance_for(klass) : klass, &block)
+        end
+
+        alias arg argument
+
         protected
 
           # When performing an event under a field object, the keyed-based
           # parameters of a proc callback will be associated with actual field
           # arguments
           def args_source
-            object.arguments if object.try(:kind) === :field
+            source.arguments if source.try(:kind) === :field
           end
 
         private
-          delegate :instance_for, to: :strategy
 
           # Check for object based readers
           def respond_to_missing?(method_name, *)

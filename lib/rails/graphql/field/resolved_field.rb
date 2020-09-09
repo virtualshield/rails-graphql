@@ -6,10 +6,17 @@ module Rails # :nodoc:
     # and additional configurations in order to resolve a field value during a
     # request
     module Field::ResolvedField
-      include Helpers::WithEvents
-      include Helpers::WithCallbacks
-
       module Proxied # :nodoc: all
+        def all_listeners
+          field.all_listeners + super
+        end
+
+        def all_events
+          Helpers.merge_hash_array(field.all_events, @events || {}).transform_values do |arr|
+            arr.sort_by { |cb| cb.try(:target).is_a?(GraphQL::Field) ? 0 : 1 }
+          end
+        end
+
         def resolver
           super || field.resolver
         end
@@ -19,14 +26,13 @@ module Rails # :nodoc:
         end
       end
 
-      event_types :prepare, :finalize, expose: true
-
-      alias before_resolve prepare
-      alias after_resolve finalize
-
       # Just add the callbacks setup to the field
       def self.included(other)
-        other.extend(Helpers::WithCallbacks::Setup)
+        other.include(Helpers::WithEvents)
+        other.include(Helpers::WithCallbacks)
+        other.event_types(:prepare, :finalize, expose: true)
+        other.alias_method(:before_resolve, :prepare)
+        other.alias_method(:after_resolve, :finalize)
       end
 
       # If the field has a resolver, then it can't be serialized from Active

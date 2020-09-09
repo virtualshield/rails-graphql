@@ -6,8 +6,6 @@ module Rails # :nodoc:
       # This is an extra magic on top of the delegator class from the standard
       # lib that allows fetching a specific property of the delegated object
       class AttributeDelegator < ActiveSupport::ProxyObject
-        delegate_missing_to :__getobj__
-
         def initialize(obj = nil, attribute = nil, cache: true, &block)
           @delegate_sd_attr = attribute
           @delegate_sd_obj = block.presence || obj
@@ -15,6 +13,15 @@ module Rails # :nodoc:
         end
 
         private
+
+          def respond_to_missing?(method_name, include_private = false) # :nodoc:
+            __getobj__.respond_to?(method_name, include_private) || super
+          end
+
+          def method_missing(method_name, *args, **xargs, &block) # :nodoc:
+            return super unless __getobj__.respond_to?(method_name)
+            __getobj__.public_send(method_name, *args, **xargs, &block)
+          end
 
           def __getobj__
             @delegate_cache ? (@delegate_ch_obj ||= __buildobj__) : __buildobj__

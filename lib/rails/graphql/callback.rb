@@ -49,9 +49,19 @@ module Rails # :nodoc:
         block.is_a?(Symbol) ? call_symbol(event) : call_proc(event, context)
       end
 
+      # Get a described source location for the callback
+      def source_location
+        block.is_a?(Proc) ? block.source_location : [
+          "(symbolized-callback/#{target.inspect})",
+          block
+        ]
+      end
+
       # This basically allows the class to be passed as +&block+
       def to_proc
-        method(:call).to_proc
+        method(:call).to_proc.tap do |block|
+          block.define_singleton_method(:source_location, &method(:source_location))
+        end
       end
 
       private
@@ -64,14 +74,11 @@ module Rails # :nodoc:
         # Call the callback block as a symbol
         def call_symbol(event)
           owner = target.try(:proxied_owner) || target.try(:owner) || target
-          object = owner.is_a?(Class) ? event.instance_for(owner) : owner
-          object.instance_variable_set(:@event, event)
-
-          block = object.method(@block)
-          args, xargs = collect_parameters(event, block)
-          block.call(*args, **xargs)
-        ensure
-          object.instance_variable_set(:@event, nil)
+          event.on_instance(owner) do |instance|
+            block = instance.method(@block)
+            args, xargs = collect_parameters(event, block)
+            block.call(*args, **xargs)
+          end
         end
 
         # Call the callback block as a proc

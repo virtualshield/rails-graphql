@@ -13,6 +13,7 @@ module Rails # :nodoc:
         extend ActiveSupport::Autoload
 
         include Request::Organizable
+        include Request::Prepareable
         include Request::Resolveable
 
         class << self

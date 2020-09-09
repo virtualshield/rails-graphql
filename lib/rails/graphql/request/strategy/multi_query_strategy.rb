@@ -26,31 +26,6 @@ module Rails # :nodoc:
           end
         end
 
-        # Executes the strategy in the debug mode
-        def debug!
-          super
-
-          response.with_stack(:data) do
-            for_each_operation do |op|
-              logger.indented("# Organize phase") do
-                collect_listeners { op.debug_organize! }
-              end
-            end
-
-            for_each_operation do |op|
-              logger.indented("# Prepare phase") { op.debug_prepare! }
-            end
-
-            for_each_operation do |op|
-              logger.indented("# Fetch phase") { op.debug_fetch! }
-            end
-
-            for_each_operation do |op|
-              logger.indented("# Resolve phase") { op.debug_resolve! }
-            end
-          end
-        end
-
         private
 
           # Execute a given block for each defined operation
