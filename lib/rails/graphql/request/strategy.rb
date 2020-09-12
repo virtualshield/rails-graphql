@@ -100,7 +100,7 @@ module Rails # :nodoc:
         # problems with nil values.
         def resolve(field, *args, array: false, decorate: false, &block)
           if args.size.zero?
-            prepared = data_for(args, field).last
+            prepared = data_for(args, field)&.last
             args << Event.trigger(:resolve, field, self, prepared: prepared, &field.resolver) \
               if field.try(:dynamic_resolver?)
           end

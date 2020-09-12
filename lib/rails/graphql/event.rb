@@ -22,8 +22,8 @@ module Rails # :nodoc:
       # Event trigger shortcut that can perform any mode of trigger
       def self.trigger(event_name, object, source, **xargs, &block)
         extra = xargs.slice!(*TRIGGER_TYPES.keys)
-        method_name = xargs.find { |k, v| break TRIGGER_TYPES[k] if v } ||
-          xargs.delete(:fallback_trigger!) || :trigger
+        fallback = extra.delete(:fallback_trigger!) || :trigger
+        method_name = xargs.find { |k, v| break TRIGGER_TYPES[k] if v } || fallback
 
         instance = new(event_name, source, **extra)
         instance.instance_variable_set(:@object, object) if block.present?

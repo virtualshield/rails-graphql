@@ -124,7 +124,7 @@ module Rails # :nodoc:
           # logging and introspection purposes
           def all_deprecated_values
             @all_deprecated_values ||= begin
-              all_value_directives.inject({}) do |list, (value, dirs)|
+              all_value_directives.to_a.inject({}) do |list, (value, dirs)|
                 next list unless obj = dirs.find do |dir|
                   dir.is_a?(deprecated_klass)
                 end
