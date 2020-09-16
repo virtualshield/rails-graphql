@@ -3,6 +3,7 @@
 require 'active_model'
 require 'active_support'
 
+require 'active_support/core_ext/module/attribute_accessors_per_thread'
 require 'active_support/core_ext/string/strip'
 
 require 'rails/graphql/version'
@@ -44,15 +45,24 @@ module Rails # :nodoc:
   # the same class but placed onto a reference
   module GraphQL
     extend ActiveSupport::Autoload
+    include ActiveSupport::Configurable
 
     # Stores the version of the GraphQL spec used for this implementation
     SPEC_VERSION = 'June 2018'
+
+    # Runtime registry for request execution time
+    RuntimeRegistry = Class.new { thread_mattr_accessor :gql_runtime }
 
     autoload :ToGQL
     autoload :Helpers
     autoload :Collectors
 
     eager_autoload do
+      autoload_under :railties do
+        autoload :ControllerRuntime
+        autoload :LogSubscriber
+      end
+
       autoload :Callback
       autoload :Core
       autoload :Event
@@ -67,41 +77,14 @@ module Rails # :nodoc:
       autoload :Introspection
       autoload :Schema
       autoload :Type
+    end
 
-      autoload :GraphiQL
+    config_accessor :logger, instance_writer: false do
+      ActiveSupport::TaggedLogging.new(ActiveSupport::Logger.new(STDOUT))
     end
 
     class << self
       delegate :type_map, to: 'Rails::GraphQL::Core'
-
-      # Initiate a simple config object. It also supports a block which
-      # simplifies bulk configuration.
-      # See Also https://github.com/rails/rails/blob/master/activesupport/lib/active_support/ordered_options.rb
-      def config
-        @config ||= begin
-          config = ActiveSupport::OrderedOptions.new
-          config.graphiql = ActiveSupport::OrderedOptions.new
-          config
-        end
-
-        yield(@config) if block_given?
-
-        @config
-      end
-
-      # A centralized way to access the logger from any point in the code
-      def logger
-        Schema.logger || @logger ||= begin
-          ActiveSupport::TaggedLogging.new(ActiveSupport::Logger.new(STDOUT))
-        end
-      end
-
-      # Simple import configurations defined using rails +config.graphql+ to
-      # easy-to-use accessors on the
-      # {Core}[rdoc-ref:Rails::GraphQL::Core] class.
-      def set_configs!
-        config.each { |k, v| Core.send "#{k}=", v }
-      end
 
       # Find the key associated with the given +adapter_name+
       def ar_adapter_key(adapter_name)

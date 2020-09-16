@@ -217,12 +217,14 @@ module Rails # :nodoc:
         # This executes the whole process capturing any exceptions and handling
         # them as defined by the schema
         def execute!(document)
-          @document = GraphQL::Native.parse(document)
-          collect_definitions!
+          log_execution(document) do
+            @document = GraphQL::Native.parse(document)
+            collect_definitions!
 
-          @strategy = find_strategy!
-          @strategy.trigger_event(:request)
-          @strategy.resolve!
+            @strategy = find_strategy!
+            @strategy.trigger_event(:request)
+            @strategy.resolve!
+          end
         rescue ParseError => err
           parts = err.message.match(/\A(\d+)\.(\d+)(?:-\d+)?: (.*)\z/)
           errors.add(parts[3], line: parts[1], col: parts[2])
@@ -284,6 +286,26 @@ module Rails # :nodoc:
           end
         end
 
+        # Log the execution of a GraphQL document
+        def log_execution(document)
+          ActiveSupport::Notifications.instrument('request.graphql') do |payload|
+            yield.tap { log_payload(document, payload) }
+          end
+        end
+
+        # Build the payload to be sent to the log
+        def log_payload(document, data)
+          name = operations.keys.first if operations.size.eql?(1)
+          map_variables = args.to_h if args.each_pair.any?
+
+          data.merge!(
+            name: name,
+            cached: false,
+            document: document,
+            variables: map_variables,
+          )
+        end
+
         # Initialize the class that responsible for storaging the response
         def initialize_response(as, to)
           raise ::ArgumentError, <<~MSG.squish if to.nil?
@@ -312,7 +334,7 @@ module Rails # :nodoc:
             The "#{value.class.name}" is not a valid hash.
           MSG
 
-          value = value.transform_keys(&block) if block.present?
+          value = value.deep_transform_keys(&block) if block.present?
           OpenStruct.new(value)
         end
 

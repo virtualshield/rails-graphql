@@ -6,27 +6,9 @@ module Rails # :nodoc:
     class Railtie < Rails::Railtie # :nodoc:
       config.graphql = GraphQL.config
 
-      # config.action_dispatch.rescue_responses.merge!(
-      #   "ActiveRecord::RecordNotFound"   => :not_found,
-      #   "ActiveRecord::StaleObjectError" => :conflict,
-      #   "ActiveRecord::RecordInvalid"    => :unprocessable_entity,
-      #   "ActiveRecord::RecordNotSaved"   => :unprocessable_entity
-      # )
-
       rake_tasks do
         load 'rails/graphql.rake'
       end
-
-      # # Make it output to STDERR.
-      # console do |app|
-      #   require "active_record/railties/console_sandbox" if app.sandbox?
-      #   require "active_record/base"
-      #   unless ActiveSupport::Logger.logger_outputs_to?(Rails.logger, STDERR, STDOUT)
-      #     console = ActiveSupport::Logger.new(STDERR)
-      #     Rails.logger.extend ActiveSupport::Logger.broadcast console
-      #   end
-      #   ActiveRecord::Base.verbose_query_logs = false
-      # end
 
       runner do
         require 'rails/graphql/schema'
@@ -34,27 +16,29 @@ module Rails # :nodoc:
 
       initializer 'graphql.logger' do
         ActiveSupport.on_load(:graphql) do
+          return if config.logger.present?
           if ::Rails.logger.respond_to?(:tagged)
-            self.logger = ::Rails.logger
+            config.logger = ::Rails.logger
           else
-            self.logger = ActiveSupport::TaggedLogging.new(::Rails.logger)
+            config.logger = ActiveSupport::TaggedLogging.new(::Rails.logger)
           end
         end
       end
 
-      initializer 'graphql.set_configs' do |app|
-        ActiveSupport.on_load(:graphql) do
-          Rails::GraphQL.set_configs!
+      # Expose database runtime to controller for logging.
+      initializer 'graphql.log_runtime' do
+        require 'rails/graphql/controller_runtime'
+        ActiveSupport.on_load(:action_controller) do
+          include GraphQL::ControllerRuntime
         end
       end
 
-      # # Expose database runtime to controller for logging.
-      # initializer "active_record.log_runtime" do
-      #   require "active_record/railties/controller_runtime"
-      #   ActiveSupport.on_load(:action_controller) do
-      #     include ActiveRecord::Railties::ControllerRuntime
-      #   end
-      # end
+      # Backtrace cleaner for removing gem paths
+      initializer 'graphql.backtrace_cleaner' do
+        ActiveSupport.on_load(:graphql) do
+          GraphQL::LogSubscriber.backtrace_cleaner = ::Rails.backtrace_cleaner
+        end
+      end
 
       # initializer "active_record.set_reloader_hooks" do
       #   ActiveSupport.on_load(:active_record) do
