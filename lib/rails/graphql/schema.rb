@@ -21,8 +21,8 @@ module Rails # :nodoc:
       extend Helpers::WithDirectives
       extend GraphQL::Introspection
 
+      include ActiveSupport::Configurable
       include ActiveSupport::Rescuable
-      include GraphQL::Core
 
       # The namespace associated with the schema
       class_attribute :namespace, instance_writer: false, default: :base
@@ -38,7 +38,16 @@ module Rails # :nodoc:
 
       self.directive_location = :schema
 
+      # Imports schema specific configurations
+      configure do |config|
+        %i[enable_string_collector request_strategies].each do |name|
+          config.send("#{name}=", GraphQL.config.send(name))
+        end
+      end
+
       class << self
+        delegate :type_map, :logger, to: '::Rails::GraphQL'
+
         alias namespaces namespace
 
         def kind # :nodoc:
@@ -76,7 +85,7 @@ module Rails # :nodoc:
         def find_type(type, **xargs)
           xargs[:base_class] = :Type
           xargs[:namespaces] = namespaces
-          @@type_map.fetch(type, **xargs)
+          type_map.fetch(type, **xargs)
         end
 
         # Find a given +type+ associated with the schema. It will raise an
@@ -84,7 +93,7 @@ module Rails # :nodoc:
         def find_type!(type, **xargs)
           xargs[:base_class] = :Type
           xargs[:namespaces] = namespaces
-          @@type_map.fetch!(type, **xargs)
+          type_map.fetch!(type, **xargs)
         end
 
         # Find a given +directive+ associated with the schema. It will raise an
@@ -92,7 +101,7 @@ module Rails # :nodoc:
         def find_directive!(directive, **xargs)
           xargs[:base_class] = :Directive
           xargs[:namespaces] = namespaces
-          @@type_map.fetch!(directive, **xargs)
+          type_map.fetch!(directive, **xargs)
         end
 
         # Describe a schema as a GraphQL string
@@ -140,6 +149,12 @@ module Rails # :nodoc:
             schema_namespace = namespace
             create_klass(object, superclass, GraphQL::Source, **xargs) do
               set_namespace schema_namespace
+
+              xargs.each do |key, value|
+                _, segment = key.to_s.split('skip_on_')
+                skip_on segment, value if segment.present?
+              end
+
               class_eval(&block) if block.present?
               build!
             end

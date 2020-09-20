@@ -45,6 +45,7 @@ module Rails # :nodoc:
   # the same class but placed onto a reference
   module GraphQL
     extend ActiveSupport::Autoload
+
     include ActiveSupport::Configurable
 
     # Stores the version of the GraphQL spec used for this implementation
@@ -59,12 +60,13 @@ module Rails # :nodoc:
 
     eager_autoload do
       autoload_under :railties do
+        autoload :BaseGenerator
+        autoload :Controller
         autoload :ControllerRuntime
         autoload :LogSubscriber
       end
 
       autoload :Callback
-      autoload :Core
       autoload :Event
       autoload :Native
       autoload :Request
@@ -79,22 +81,30 @@ module Rails # :nodoc:
       autoload :Type
     end
 
-    config_accessor :logger, instance_writer: false do
-      ActiveSupport::TaggedLogging.new(ActiveSupport::Logger.new(STDOUT))
-    end
-
     class << self
-      delegate :type_map, to: 'Rails::GraphQL::Core'
+      # Access to the type mapper
+      def type_map
+        @@type_map ||= GraphQL::TypeMap.new
+      end
 
       # Find the key associated with the given +adapter_name+
       def ar_adapter_key(adapter_name)
-        Core.ar_adapters[adapter_name]
+        config.ar_adapters[adapter_name]
       end
 
       # This is a little helper to require ActiveRecord adapter specific
       # configurations
       def enable_ar_adapter(adapter_name)
-        require_relative("graphql/adapters/#{ar_adapter_key(adapter_name)}_settings")
+        return if (@@loaded_adapters ||= Set.new).include?(adapter_name)
+
+        path = "adapters/#{ar_adapter_key(adapter_name)}_adapter"
+        $LOAD_PATH.any? do |load_path|
+          next unless load_path =~ /\/app\/graphql$/
+          next unless File.exist?("#{load_path}/#{path}.rb")
+          require "#{load_path}/#{path}"
+        end || require_relative("graphql/#{path}")
+
+        @@loaded_adapters << adapter_name
       end
 
       # Turn the given object into its string representation as GraphQl
@@ -162,6 +172,7 @@ module Rails # :nodoc:
   end
 end
 
+require 'rails/graphql/config'
 require 'rails/graphql/errors'
 require 'rails/graphql/shortcuts'
 require 'rails/graphql/railtie'

@@ -31,7 +31,7 @@ module Rails # :nodoc:
           def gql_name
             return @gql_name if defined?(@gql_name)
 
-            suffix = GraphQL::Core.auto_suffix_input_objects
+            suffix = GraphQL.config.auto_suffix_input_objects
             return super if suffix.blank?
 
             result = super

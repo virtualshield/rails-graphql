@@ -22,9 +22,10 @@ module Rails # :nodoc:
     type_map.register_alias 'pg:money',                       :decimal
     type_map.register_alias 'pg:character',                   :string
     type_map.register_alias 'pg:character varying',           :string
-    type_map.register_alias 'pg:time without time zone',      :time
+    type_map.register_alias 'pg:timestamp',                   :date_time
     type_map.register_alias 'pg:timestamp without time zone', :date_time
     type_map.register_alias 'pg:timestamp with time zone',    :date_time
+    type_map.register_alias 'pg:time without time zone',      :time
     type_map.register_alias 'pg:time with time zone',         :time
     type_map.register_alias 'pg:numeric',                     :decimal
 

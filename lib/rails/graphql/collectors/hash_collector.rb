@@ -48,16 +48,16 @@ module Rails # :nodoc:
           @data[:errors] = errors.to_a
         end
 
+        # Return the generated object
         def to_h
           @data
         end
 
+        # Generate the JSON string result
         def to_s
-          ::JSON.generate(@data)
-          # # TODO: Fix when settings start working correctly
-          # Core.encode_with_active_support? \
-          #   ? ::ActiveSupport::JSON.encode(@data) \
-          #   : ::JSON.generate(@data)
+          GraphQL.config.encode_with_active_support? \
+            ? ::ActiveSupport::JSON.encode(@data) \
+            : ::JSON.generate(@data)
         end
 
         private

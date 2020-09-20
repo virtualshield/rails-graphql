@@ -10,6 +10,8 @@ module Rails # :nodoc:
       attr_reader :event_name, :block, :target, :filters
 
       delegate :event_filters, to: :target
+      delegate :callback_inject_arguments, :callback_inject_named_arguments,
+        to: '::Rails::GraphQL.config'
 
       # Directives need to be contextualized by the given instance as +context+
       def self.set_context(item, context)
@@ -93,19 +95,28 @@ module Rails # :nodoc:
           idx = -1
           args_source = event.send(:args_source) || event
           start_args = [@pre_args.deep_dup, @pre_xargs.deep_dup]
+          return start_args unless inject_arguments?
+
           # TODO: Maybe we need to turn procs into lambdas so the optional
           # arguments doesn't suffer any kind of change
           block.parameters.inject(start_args) do |result, (type, name)|
             case type
             when :opt, :req
               idx += 1
+              next result unless callback_inject_arguments
               result[0][idx] ||= event.parameter(name) if event.parameter?(name)
             when :keyreq
+              next result unless callback_inject_named_arguments
               result[1][name] = args_source[name] if args_source.key?(name)
             end
 
             result
           end
+        end
+
+        # Check if the callback should inject arguments
+        def inject_arguments?
+          callback_inject_arguments || callback_inject_named_arguments
         end
     end
   end

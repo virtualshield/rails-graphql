@@ -39,15 +39,6 @@ module Rails # :nodoc:
         autoload :Strategy
       end
 
-      ##
-      # :singleton-method:
-      # A list of execution strategies. Each application can add their own by
-      # simply append a class name, preferable as string, in this list.
-      mattr_accessor :strategies, instance_writer: false, default: [
-        'Rails::GraphQL::Request::Strategy::MultiQueryStrategy',
-        'Rails::GraphQL::Request::Strategy::SequencedStrategy',
-      ]
-
       attr_reader :schema, :visitor, :operations, :fragments, :errors,
         :args, :response, :strategy, :stack
 
@@ -55,8 +46,8 @@ module Rails # :nodoc:
 
       class << self
         # Shortcut for initialize, set context, and execute
-        def execute(*args, namespace: :base, context: {}, **xargs)
-          result = new(namespace: namespace)
+        def execute(*args, schema: nil, namespace: :base, context: {}, **xargs)
+          result = new(schema, namespace: namespace)
           result.context = context if context.present?
           result.execute(*args, **xargs)
         end
@@ -103,8 +94,8 @@ module Rails # :nodoc:
       end
 
       # Execute a given document with the given arguments
-      def execute(document, args: {}, as: :string, **xargs)
-        reset!(args)
+      def execute(document, as: :string, **xargs)
+        reset!(**xargs)
 
         to = RESPONSE_FORMATS[as]
         @response = initialize_response(as, to)
@@ -203,10 +194,11 @@ module Rails # :nodoc:
         attr_reader :extensions
 
         # Reset principal variables and set the given +args+
-        def reset!(args)
-          @args    = build_ostruct(args).freeze
+        def reset!(args: nil, variables: {}, operation_name: nil)
+          @args    = build_ostruct(args || variables).freeze
           @errors  = Request::Errors.new(self)
           @visitor = GraphQL::Native::Visitor.new
+          @operation_name = operation_name
 
           @stack      = [schema]
           @cache      = {}
@@ -254,7 +246,7 @@ module Rails # :nodoc:
 
         # Find the best strategy to resolve the request
         def find_strategy!
-          klass = strategies.lazy.map do |klass_name|
+          klass = schema.config.request_strategies.lazy.map do |klass_name|
             klass_name.constantize
           end.select do |klass|
             klass.can_resolve?(self)
@@ -295,7 +287,8 @@ module Rails # :nodoc:
 
         # Build the payload to be sent to the log
         def log_payload(document, data)
-          name = operations.keys.first if operations.size.eql?(1)
+          name = @operation_name.presence
+          name ||= operations.keys.first if operations.size.eql?(1)
           map_variables = args.to_h if args.each_pair.any?
 
           data.merge!(
@@ -312,9 +305,7 @@ module Rails # :nodoc:
             The given format #{as.inspect} is not a valid reponse format.
           MSG
 
-          # TODO: Fix the +enable_response_collector+, because it must be a
-          # schema configuration
-          klass = GraphQL::Core.enable_response_collector \
+          klass = schema.config.enable_string_collector \
             ? Collectors::JsonCollector \
             : Collectors::HashCollector
 

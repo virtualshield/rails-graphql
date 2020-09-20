@@ -46,8 +46,9 @@ module Rails # :nodoc:
 
         class << self
           # Plain objects cannot check if a given value is a valid member
-          def valid_member?(_)
-            return false
+          def valid_member?(value)
+            checker = value.is_a?(Hash) ? :key? : :respond_to?
+            fields.values.all? { |field| value.public_send(checker, field.method_name) }
           end
 
           # Check if the other type is equivalent, by checking if the other is

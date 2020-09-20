@@ -5,6 +5,10 @@ require 'active_support/core_ext/module/attr_internal'
 module Rails # :nodoc:
   module GraphQL # :nodoc:
     # = GraphQL Controller Runtime
+    #
+    # Tool that calculates the runtime of a GraphQL operation. This works
+    # similar to how Rails ActiveRecord calculate its execution time while
+    # performing a request.
     module ControllerRuntime
       extend ActiveSupport::Concern
 

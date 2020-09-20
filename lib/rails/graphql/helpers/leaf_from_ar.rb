@@ -6,6 +6,8 @@ module Rails # :nodoc:
       # Helper module allowing leaf values to be collected direct from
       # ActiveRecord. It also helps AR Adapters to define the necessary
       # methods and settings to operate with this extractor.
+      #
+      # TODO: Implement ActiveRecord serialization
       module LeafFromAr
         def self.extended(other)
           # Defines which type exactly represents the scalar type on the
@@ -118,7 +120,7 @@ module Rails # :nodoc:
 
           # Return the list of defined ActiveRecord Adapters
           def ar_adapters
-            GraphQL::Core.ar_adapters
+            GraphQL.config.ar_adapters
           end
 
           # Given the ActiveRecord Object, find the key to compound the method

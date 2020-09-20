@@ -8,6 +8,8 @@ module Rails # :nodoc:
       # The base class for any +ActiveRecord::Base+ class represented as an
       # GraphQL input type
       class Input::ActiveRecordInput < Input::AssignedInput
+        attr_writer :record
+
         self.abstract = true
 
         # AR Inputs can be owned by a source

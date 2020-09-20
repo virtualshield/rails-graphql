@@ -27,6 +27,8 @@ module Rails # :nodoc:
 
       delegate :primary_key, :singular, :plural, :model, to: :class
 
+      skip_on :input, :created_at, :updated_at
+
       on :start do
         GraphQL.enable_ar_adapter(adapter_name)
         @enums = enums.map do |attribute, setting|
@@ -95,7 +97,7 @@ module Rails # :nodoc:
         next if model.base_class == model
 
         # TODO: Allow nested inheritance for setting up implementation
-        Core.type_map.after_register(model.base_class.name, namespaces: namespaces) do |type|
+        type_map_after_register(model.base_class.name) do |type|
           object.implements(type) if type.interface?
         end
       end
@@ -131,10 +133,10 @@ module Rails # :nodoc:
 
         # Iterate over all the attributes, except the primary key, from the
         # model but already set to be imported to GraphQL fields
-        def each_attribute(skip_primary_key = true)
+        def each_attribute(holder, skip_primary_key = true)
           adapter_key = GraphQL.ar_adapter_key(adapter_name)
 
-          skip_fields = all_skip_fields.map(&:to_s)
+          skip_fields = skips_for(holder).map(&:to_s)
           skip_fields << model.inheritance_column
           skip_fields << primary_key unless skip_primary_key
 
@@ -144,8 +146,8 @@ module Rails # :nodoc:
         end
 
         # Iterate over all the model reflections
-        def each_reflection
-          skip_fields = all_skip_fields.map(&:to_s)
+        def each_reflection(holder)
+          skip_fields = skips_for(holder).map(&:to_s)
           model._reflections.each_value do |reflection|
             next if skip_fields.include?(reflection.name.to_s)
 
@@ -168,7 +170,9 @@ module Rails # :nodoc:
 
           # Build all necessary attribute fields into the given +holder+
           def build_attribute_fields(holder, **field_options)
-            each_attribute do |key, type, options|
+            each_attribute(holder) do |key, type, options|
+              next if skip.include?(key)
+
               type = @enums[key.to_s] if @enums.key?(key.to_s)
               next if holder.field?(key)
 
@@ -179,9 +183,9 @@ module Rails # :nodoc:
 
           # Build all necessary reflection fields into the given +holder+
           def build_reflection_fields(holder)
-            each_reflection do |item|
+            each_reflection(holder) do |item|
               next if holder.field?(item.name)
-              Core.type_map.after_register(item.klass.name, namespaces: namespaces) do |type|
+              type_map_after_register(item.klass.name) do |type|
                 next unless (type.object? && type.try(:assigned_to) != item.klass) ||
                   type.interface?
 
@@ -210,7 +214,7 @@ module Rails # :nodoc:
               expected_name = reflection.klass.name.tr(':', '')
               expected_name += 'Input' unless expected_name.ends_with?('Input')
 
-              Core.type_map.after_register(expected_name, namespaces: namespaces) do |input|
+              type_map_after_register(expected_name) do |input|
                 options = reflection_to_options(reflection)
                 options.merge!(alias: "#{reflection.name}_attributes")
                 holder.safe_field(reflection.name, input, **options)
@@ -284,7 +288,7 @@ module Rails # :nodoc:
 
       # The perform step for the +create+ based mutation
       def create_record
-        input_argument.instantiate.tap(&:save!)
+        input_argument.record.tap(&:save!)
       end
 
       # The perform step for the +update+ based mutation

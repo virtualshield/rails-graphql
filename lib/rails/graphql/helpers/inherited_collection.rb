@@ -9,6 +9,7 @@ module Rails # :nodoc:
           set:        'Set.new',
           hash:       '{}',
           hash_array: 'Hash.new { |h, k| h[k] = [] }',
+          hash_set:   'Hash.new { |h, k| h[k] = Set.new }',
         }.freeze
 
         # Declare a class-level attribute whose value is both isolated and also
@@ -62,9 +63,7 @@ module Rails # :nodoc:
             module_eval(<<~RUBY, __FILE__, __LINE__ + 1)
               def self.all_#{name}
                 ::Rails::GraphQL::Helpers::AttributeDelegator.new do
-                  @#{name}.nil? \
-                    ? #{DEFAULT_TYPES[type]} \
-                    : fetch_inherited_#{type}('@#{name}')
+                  fetch_inherited_#{type}('@#{name}')
                 end
               end
 
@@ -92,7 +91,7 @@ module Rails # :nodoc:
           def fetch_inherited_array(ivar)
             inherited_ancestors.inject([]) do |result, klass|
               val = klass.instance_variable_get(ivar)
-              val.nil? ? result : result += val
+              val.blank? ? result : result += val
             end
           end
 
@@ -100,7 +99,7 @@ module Rails # :nodoc:
           def fetch_inherited_set(ivar)
             inherited_ancestors.inject(Set.new) do |result, klass|
               val = klass.instance_variable_get(ivar)
-              val.nil? ? result : result += val
+              val.blank? ? result : result += val
             end
           end
 
@@ -109,15 +108,26 @@ module Rails # :nodoc:
           def fetch_inherited_hash(ivar)
             inherited_ancestors.inject({}) do |result, klass|
               val = klass.instance_variable_get(ivar)
-              val.nil? ? result : result.merge(val)
+              val.blank? ? result : result.merge(val)
             end
           end
 
           # Combine an inherited list of hashes, which also will combine arrays,
           # ensuring that same key items will be combined
           def fetch_inherited_hash_array(ivar)
-            inherited_ancestors.inject({}) do |result, klass|
-              next result if (val = klass.instance_variable_get(ivar)).nil?
+            base_value = Hash.new { |h, k| h[k] = [] }
+            inherited_ancestors.inject(base_value) do |result, klass|
+              next result if (val = klass.instance_variable_get(ivar)).blank?
+              Helpers.merge_hash_array(result, val)
+            end
+          end
+
+          # Combine an inherited list of hashes, which also will combine arrays,
+          # ensuring that same key items will be combined
+          def fetch_inherited_hash_set(ivar)
+            base_value = Hash.new { |h, k| h[k] = Set.new }
+            inherited_ancestors.inject(base_value) do |result, klass|
+              next result if (val = klass.instance_variable_get(ivar)).blank?
               Helpers.merge_hash_array(result, val)
             end
           end
@@ -126,9 +136,8 @@ module Rails # :nodoc:
 
           # Return a list of all the ancestor classes up until object
           def inherited_ancestors
-            @inherited_ancestors ||= [self].tap do |list|
-              list.unshift(list.first.superclass) \
-                until list.first.superclass === Object
+            [self].tap do |list|
+              list.unshift(list.first.superclass) until list.first.superclass === Object
             end
           end
       end

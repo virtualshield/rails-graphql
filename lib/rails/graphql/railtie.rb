@@ -11,9 +11,10 @@ module Rails # :nodoc:
       end
 
       runner do
-        require 'rails/graphql/schema'
+        require_relative './schema'
       end
 
+      # Ensure a valid logger
       initializer 'graphql.logger' do
         ActiveSupport.on_load(:graphql) do
           return if config.logger.present?
@@ -27,7 +28,7 @@ module Rails # :nodoc:
 
       # Expose database runtime to controller for logging.
       initializer 'graphql.log_runtime' do
-        require 'rails/graphql/controller_runtime'
+        require_relative './railties/controller_runtime'
         ActiveSupport.on_load(:action_controller) do
           include GraphQL::ControllerRuntime
         end
@@ -35,8 +36,28 @@ module Rails # :nodoc:
 
       # Backtrace cleaner for removing gem paths
       initializer 'graphql.backtrace_cleaner' do
+        require_relative './railties/log_subscriber'
         ActiveSupport.on_load(:graphql) do
           GraphQL::LogSubscriber.backtrace_cleaner = ::Rails.backtrace_cleaner
+        end
+      end
+
+      # Add reloader ability for files under 'app/graphql'
+      # TODO: Maybe improve to use rails auto loader
+      initializer 'graphql.reloader' do
+        ActiveSupport::Reloader.to_prepare do
+          Object.send(:remove_const, :GraphQL) if Object.const_defined?(:GraphQL)
+          # BUG: Fix problem with reloader and type_map
+          # Rails::GraphQL.type_map.clear
+
+          load "#{__dir__}/shortcuts.rb"
+
+          $LOAD_PATH.each do |path|
+            next unless path =~ /\/app\/graphql$/
+            Dir.glob("#{path}/**/*.rb").each(&method(:load))
+          end
+
+          GraphQL::Source.send(:build_pending!)
         end
       end
 

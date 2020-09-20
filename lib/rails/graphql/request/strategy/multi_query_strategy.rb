@@ -12,17 +12,15 @@ module Rails # :nodoc:
         self.priority = 10
 
         def self.can_resolve?(request) # :nodoc:
-          false
-          # request.operations.values.all?(&:query?)
+          request.operations.values.all?(&:query?)
         end
 
         # Executes the strategy in the normal mode
         def resolve!
           response.with_stack(:data) do
             for_each_operation { |op| collect_listeners { op.organize! } }
-            for_each_operation(&:prepare!)
-            for_each_operation(&:fetch!)
-            for_each_operation(&:resolve!)
+            for_each_operation { |op| collect_data      { op.prepare!  } }
+            for_each_operation { |op| collect_response  { op.resolve!  } }
           end
         end
 

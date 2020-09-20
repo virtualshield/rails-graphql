@@ -2,7 +2,10 @@
 
 module Rails # :nodoc:
   module GraphQL # :nodoc:
-    # = GraphQL Controller Runtime
+    # = GraphQL Log Subscriber
+    #
+    # This is the log tracker that workds the same way as ActiveRecord when it
+    # has to report on logs that a query was performed.
     class LogSubscriber < ::ActiveSupport::LogSubscriber # :nodoc: all
       class_attribute :backtrace_cleaner, default: ActiveSupport::BacktraceCleaner.new
 
@@ -35,13 +38,13 @@ module Rails # :nodoc:
       private
 
         def logger
-          GraphQL::Schema.logger
+          GraphQL.config.logger
         end
 
         def debug(*)
           return unless super
 
-          log_query_source if GraphQL::Schema.verbose_logs
+          log_query_source if GraphQL.config.verbose_logs
         end
 
         def log_query_source

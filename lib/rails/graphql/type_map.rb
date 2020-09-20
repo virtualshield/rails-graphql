@@ -22,6 +22,8 @@ module Rails # :nodoc:
       mattr_accessor :base_classes, instance_writer: false,
         default: { Directive: false, Type: false }
 
+      delegate :clear, to: :@index
+
       def self.loaded!(base_class)
         base_classes[base_class] = true
       end

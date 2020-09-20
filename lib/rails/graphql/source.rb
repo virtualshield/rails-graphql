@@ -68,6 +68,9 @@ module Rails # :nodoc:
       # A list of fields to skip when performing shared methods
       inherited_collection :skip_fields, instance_reader: false
 
+      # A list of fields to skip but segmented by holder source
+      inherited_collection :segmented_skip_fields, instance_reader: false, type: :hash_set
+
       # The purpose of instantiating a source is to have access to its public
       # methods. It then runs from the strategy perspective, pointing out any
       # other methods to the manually set event
@@ -216,6 +219,14 @@ module Rails # :nodoc:
             GraphQL.type_map.fetch!(type, **xargs)
           end
 
+          # A little bypass to the actual type map after register method which
+          # just add the namesapace by default
+          # See {TypeMap#after_register}[rdoc-ref:Rails::GraphQL::TypeMap#after_register]
+          def type_map_after_register(*args, **xargs, &block)
+            xargs[:namespaces] ||= namespaces
+            GraphQL.type_map.after_register(*args, **xargs, &block)
+          end
+
           # A helper method to create an enum type
           def create_enum(enum_name, values, **xargs)
             enumerator = values.each_pair if values.respond_to?(:each_pair)
@@ -225,6 +236,11 @@ module Rails # :nodoc:
               indexed! if enumerator.first.last.is_a?(Numeric)
               enumerator.sort_by(&:last).map(&:first).each(&method(:add))
             end
+          end
+
+          # Add fields to be skipped on the given +source+ as the segment
+          def skip_on(source, *fields)
+            segmented_skip_fields[source] += fields.flatten.compact.map(&:to_sym).to_set
           end
 
           # Add a new description hook. You can use +throw :skip+ and skip
@@ -273,6 +289,14 @@ module Rails # :nodoc:
           # Return the module where the GraphQL types should be created at
           def gql_module
             name.starts_with?('GraphQL::') ? module_parent : ::GraphQL
+          end
+
+          # Get the list of fields to be skipped from the given +holder+ as the
+          # segment source
+          def skips_for(holder)
+            segment = holder.kind
+            segment = :input if segment.eql?(:input_object)
+            all_skip_fields + all_segmented_skip_fields[segment]
           end
 
         private
