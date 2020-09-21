@@ -1,3 +1,4 @@
+require 'minitest/autorun'
 require 'minitest/reporters'
 require 'rails-graphql'
 

@@ -20,7 +20,7 @@ Rake::TestTask.new(:test) do |t|
   t.libs << 'test'
   t.warning = true
   t.verbose = true
-  t.test_files = Dir.glob("test/cases/**/*_test.rb")
+  t.test_files = Dir.glob("test/graphql/**/*_test.rb")
 end
 
 RDoc::Task.new(:rdoc) do |rdoc|
