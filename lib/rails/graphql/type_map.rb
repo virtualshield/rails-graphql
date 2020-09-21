@@ -20,48 +20,52 @@ module Rails # :nodoc:
 
       # Store all the base classes and if they were eager loaded by the type map
       mattr_accessor :base_classes, instance_writer: false,
-        default: { Directive: false, Type: false }
-
-      delegate :clear, to: :@index
+        default: { Directive: false, Type: false, Schema: false, }
 
       def self.loaded!(base_class)
         base_classes[base_class] = true
       end
 
-      def initialize
-        @objects = 0  # Number of types and directives defined
-        @aliases = 0  # Number of symbolized aliases
+      # Reset the state of the type mapper
+      def reset!
+        @objects = 0 # Number of types and directives defined
+        @aliases = 0 # Number of symbolized aliases
 
-        # Registerable classes that are pending registration with their given
-        # source location
         @pending = []
         @callbacks = Hash.new { |h, k| h[k] = [] }
+        @skip_register = nil
 
         @index = Concurrent::Map.new do |h, key|                  # Namespaces
           base_class = Concurrent::Map.new do |h, key|            # Base classes
-            ensue_base_class!(key)
+            ensure_base_class!(key)
             h.fetch_or_store(key, Concurrent::Map.new)            # Items
           end
 
           h.fetch_or_store(key, base_class)
         end
+
+        @checkpoint.map(&:register!) if defined?(@checkpoint)
       end
 
-      # Checks if a given key or name is already defined under the same base
-      # class and namespace. If +exclusive+ is set to +false+, then it won't
-      # check the +:base+ namespace when not found on the given namespace.
-      def exist?(name_or_key, base_class: :Type, namespaces: :base, exclusive: false)
-        namespaces = namespaces.is_a?(Set) ? namespaces.to_a : Array.wrap(namespaces)
-        namespaces += [:base] unless exclusive
-        namespaces.any? { |namespace| @index[namespace][base_class].key?(name_or_key) }
+      alias initialize reset!
+
+      # Save or restore a checkpoint that can the type map can be reseted to
+      def use_checkpoint!
+        return reset! if defined?(@checkpoint)
+
+        register_pending!
+        @checkpoint = objects
       end
 
-      # Find if a given object is already defined. If +exclusive+ is set to
-      # +false+, then it won't check the +:base+ namespace
-      def object_exist?(object, **xargs)
-        xargs[:base_class] = find_base_class(object)
-        xargs[:namespaces] ||= object.namespaces
-        exist?(object.gql_name, **xargs)
+      # Get the list of all registred objects
+      def objects(base_classes: nil, namespaces: nil)
+        (Array.wrap(namespaces).presence || @index).values.map do |bases|
+          (Array.wrap(base_classes).presence || bases).values.map do |items|
+            items.values.map(&:call)
+          end
+        end.flatten.compact.uniq.select do |obj|
+          obj.respond_to?(:register!)
+        end
       end
 
       # Same as +fetch+ but it will raise an exception or retry depending if the
@@ -96,7 +100,7 @@ module Rails # :nodoc:
         possibilities += Array.wrap(xargs[:fallback]) if xargs.key?(:fallback)
 
         catch :found do
-          namespaces.find do |namespace|
+          namespaces.uniq.find do |namespace|
             possibilities.find do |item|
               result = dig(namespace, xargs.fetch(:base_class, :Type), key_or_name)
               throw :found, result unless result.nil?
@@ -107,7 +111,25 @@ module Rails # :nodoc:
         skip_register.pop
       end
 
+      # Checks if a given key or name is already defined under the same base
+      # class and namespace. If +exclusive+ is set to +false+, then it won't
+      # check the +:base+ namespace when not found on the given namespace.
+      def exist?(name_or_key, base_class: :Type, namespaces: :base, exclusive: false)
+        namespaces = namespaces.is_a?(Set) ? namespaces.to_a : Array.wrap(namespaces)
+        namespaces += [:base] unless exclusive
+        namespaces.uniq.any? { |namespace| @index[namespace][base_class].key?(name_or_key) }
+      end
+
+      # Find if a given object is already defined. If +exclusive+ is set to
+      # +false+, then it won't check the +:base+ namespace
+      def object_exist?(object, **xargs)
+        xargs[:base_class] = find_base_class(object)
+        xargs[:namespaces] ||= object.namespaces
+        exist?(object, **xargs)
+      end
+
       # Mark the given object to be registered later, when a fetch is triggered
+      # TODO: Improve this with a Backtracer Cleaner
       def postpone_registration(object)
         source = caller(3).find { |item| !(item =~ FILTER_REGISTER_TRACE) }
         @pending << [object, source]
@@ -119,7 +141,7 @@ module Rails # :nodoc:
         namespaces = object.namespaces.to_a
         base_namespace = namespaces.shift || :base
         base_class = find_base_class(object)
-        ensue_base_class!(base_class)
+        ensure_base_class!(base_class)
 
         # Cache the name, the key, and the alias proc
         object_name = object.gql_name
@@ -132,8 +154,8 @@ module Rails # :nodoc:
           )
         end
 
-        # Update counters
-        @aliases += namespaces.size + object.aliases.size
+        # Update counters (2 per ns, 1 per alias, 1 named alias)
+        @aliases += (namespaces.size * 2) + object.aliases.size + 1
         @objects += 1
 
         # Register the main type object
@@ -156,12 +178,13 @@ module Rails # :nodoc:
       # Register an item alias. Either provide a block that trigger the fetch
       # method to return that item, or a key from the same namespace and base
       # class
-      def register_alias(name_or_key, key = nil, base_class: :Type, namespace: :base, &block)
+      def register_alias(name_or_key, key = nil, base_class: :Type, namespace: nil, &block)
         raise ArgumentError, <<~MSG.squish unless key.nil? ^ block.nil?
           Provide either a key or a block in order to register an alias.
         MSG
 
-        ensue_base_class!(base_class)
+        ensure_base_class!(base_class)
+        namespace ||= :base
 
         block ||= -> do
           fetch(key, base_class: base_class, namespaces: [namespace], exclusive: true)
@@ -179,7 +202,7 @@ module Rails # :nodoc:
         namespaces = namespaces.is_a?(Set) ? namespaces.to_a : Array.wrap(namespaces)
         namespaces += [:base] unless namespaces.include?(:base)
 
-        enumerator = Enumerator::Lazy.new(namespaces) do |yielder, *values|
+        enumerator = Enumerator::Lazy.new(namespaces.uniq) do |yielder, *values|
           next unless @index.key?(values.last)
           iterated = []
 
@@ -289,7 +312,7 @@ module Rails # :nodoc:
         end
 
         # Make sure that the given key is a valid base class key
-        def ensue_base_class!(key)
+        def ensure_base_class!(key)
           raise ArgumentError, <<~MSG.squish unless base_classes.keys.include?(key)
             Unsupported base class "#{key.inspect}".
           MSG

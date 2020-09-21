@@ -19,16 +19,11 @@ module Rails # :nodoc:
     class Schema
       extend Helpers::WithSchemaFields
       extend Helpers::WithDirectives
+      extend Helpers::Registerable
       extend GraphQL::Introspection
 
       include ActiveSupport::Configurable
       include ActiveSupport::Rescuable
-
-      # The namespace associated with the schema
-      class_attribute :namespace, instance_writer: false, default: :base
-
-      # The given description of the schema
-      class_attribute :description, instance_writer: false
 
       # The purpose of instantiating an schema is to have access to its
       # public methods. It then runs from the strategy perspective, pointing
@@ -36,6 +31,8 @@ module Rails # :nodoc:
       delegate_missing_to :@event
       attr_reader :event
 
+      self.abstract = true
+      self.spec_object = true
       self.directive_location = :schema
 
       # Imports schema specific configurations
@@ -48,32 +45,80 @@ module Rails # :nodoc:
       class << self
         delegate :type_map, :logger, to: '::Rails::GraphQL'
 
-        alias namespaces namespace
+        # Mark the given class to be pending of registration
+        def inherited(subclass)
+          subclass.spec_object = false
+          subclass.abstract = false
+          super if defined? super
+        end
 
+        # :singleton-method:
+        # Since there are only one schema per namespace, the name is constant
+        def gql_name
+          'schema'
+        end
+
+        alias graphql_name gql_name
+
+        # :singleton-method:
+        # Since there is only one schema per namespace, then both kind and
+        # to_sym, which is used to register, are the same
         def kind # :nodoc:
           :schema
         end
 
-        # Mark the given class to be pending of registration
-        def inherited(subclass)
-          super if defined? super
-          pending[subclass] ||= caller(1).find do |item|
-            !item.end_with?("`inherited'")
-          end
-        end
+        alias to_sym kind
 
         # :singleton-method:
         # Use a soft mode to find a schema associated with a namespace
         def find(namespace)
-          # eager_load! # Load schemas defined on Rails application and engines
-          descendants.find { |schema| schema.namespace === namespace }
+          type_map.fetch(:schema,
+            namespaces: namespace,
+            base_class: :Schema,
+            exclusive: true,
+          )
         end
 
         # :singleton-method:
         # Find the schema associated to the given namespace
         def find!(namespace)
-          organize!
-          schemas[namespace.to_sym]
+          type_map.fetch!(:schema,
+            namespaces: namespace,
+            base_class: :Schema,
+            exclusive: true,
+          )
+        end
+
+        # Schemas are assigned to a single namespace
+        def set_namespace(*list)
+          super(list.first)
+        end
+
+        # Schemas are assigned to a single namespace and not inherited
+        def namespace(*list)
+          list.blank? ? namespaces.first || :base : set_namespace(*list)
+        end
+
+        # Check if the class is already registered in the typemap
+        def registered?
+          type_map.object_exist?(self, exclusive: true)
+        end
+
+        # The process to register a class and it's name on the index
+        def register!
+          return if self == GraphQL::Schema
+          return type_map.register(self).method(:validate!) unless registered?
+
+          current = type_map.fetch(:schema,
+            namespaces: namespace,
+            base_class: :Schema,
+            exclusive: true,
+          )
+
+          raise ArgumentError, <<~MSG.squish
+            The #{namespace.inspect} namespace is already assigned to "#{current.name}".
+            Please change the namespace for "#{klass.name}" class.
+          MSG
         end
 
         # Checks if a given method can act as resolver
@@ -169,32 +214,6 @@ module Rails # :nodoc:
           end
 
         private
-
-          # The list of schemas keyd by their corresponding namespace
-          def schemas
-            @@schemas ||= {}
-          end
-
-          # The list of pending schames to be registered asscoaited to where
-          # they were defined
-          def pending
-            @@pending ||= {}
-          end
-
-          # Organize the pending classes into their specific namespace to easy
-          # identification and also ensuring a single schema per namespace
-          def organize!
-            while (klass, source = pending.shift)
-              raise ArgumentError, <<~MSG.squish if schemas.key?(klass.namespace)
-                The #{klass.namespace.inspect} namespace is already assigned to
-                "#{schemas[klass.namespace].name}". Please change the value for
-                "#{klass.name}" class defined at: #{source}.
-              MSG
-
-              klass.validate!
-              schemas[klass.namespace] = klass
-            end
-          end
 
           # Helper to create objects that are actually classes of a given
           # +superclass+ ensuring that it inherits from +base_class+.

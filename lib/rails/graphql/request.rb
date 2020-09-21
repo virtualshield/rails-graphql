@@ -70,9 +70,10 @@ module Rails # :nodoc:
         end
       end
 
+      # Forces the schema to be registered on type map before moving forward
       def initialize(schema = nil, namespace: :base)
         @namespace = schema&.namespace || namespace
-        @schema = schema || GraphQL::Schema.find!(namespace)
+        @schema = GraphQL::Schema.find!(@namespace)
         @extensions = {}
 
         ensure_schema!

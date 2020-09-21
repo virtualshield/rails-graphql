@@ -62,7 +62,7 @@ module Rails # :nodoc:
           end
 
           def inspect # :nodoc:
-            fields = @fields.each_value.map(&:inspect)
+            fields = @fields.values.map(&:inspect)
             fields = fields.presence && "{#{fields.join(', ')}}"
             "#<GraphQL::Interface #{gql_name} #{fields}>"
           end

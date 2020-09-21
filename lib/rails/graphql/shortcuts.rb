@@ -59,13 +59,13 @@ module GraphQL
 
     # See {CONST_SHORTCUTS}[rdoc-ref:GraphQL::CONST_SHORTCUTS]
     def const_defined?(name, *)
-      name = :"ActiveRecord#{name[2..-1]}" if name.start_with?('AR')
+      name = :"ActiveRecord#{name[2..-1]}" if name[0..1] === 'AR'
       CONST_SHORTCUTS.key?(name) || super
     end
 
     # See {CONST_SHORTCUTS}[rdoc-ref:GraphQL::CONST_SHORTCUTS]
     def const_missing(name)
-      name = :"ActiveRecord#{name[2..-1]}" if name.start_with?('AR')
+      name = :"ActiveRecord#{name[2..-1]}" if name[0..1] === 'AR'
       return resolved[name] if resolved.key?(name)
       return super unless CONST_SHORTCUTS.key?(name)
       resolved[name] = CONST_SHORTCUTS[name].constantize

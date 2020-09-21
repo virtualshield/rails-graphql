@@ -112,11 +112,13 @@ module Rails # :nodoc:
             end
           end
 
+          # Right now we can't use Hash with default proc for equivalency due to
+          # a bug on Ruby https://bugs.ruby-lang.org/issues/17181
+
           # Combine an inherited list of hashes, which also will combine arrays,
           # ensuring that same key items will be combined
           def fetch_inherited_hash_array(ivar)
-            base_value = Hash.new { |h, k| h[k] = [] }
-            inherited_ancestors.inject(base_value) do |result, klass|
+            inherited_ancestors.inject({}) do |result, klass|
               next result if (val = klass.instance_variable_get(ivar)).blank?
               Helpers.merge_hash_array(result, val)
             end
@@ -125,8 +127,7 @@ module Rails # :nodoc:
           # Combine an inherited list of hashes, which also will combine arrays,
           # ensuring that same key items will be combined
           def fetch_inherited_hash_set(ivar)
-            base_value = Hash.new { |h, k| h[k] = Set.new }
-            inherited_ancestors.inject(base_value) do |result, klass|
+            inherited_ancestors.inject({}) do |result, klass|
               next result if (val = klass.instance_variable_get(ivar)).blank?
               Helpers.merge_hash_array(result, val)
             end

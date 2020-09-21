@@ -12,21 +12,25 @@ module Rails # :nodoc:
     class ToGQL < Arel::Visitors::Visitor
       DESCRIBE_TYPES = %i[scalar enum input_object interface union object].freeze
 
-      def self.compile(node, **xargs) # :nodoc:
+      # Trigger a new compile process
+      def self.compile(node, **xargs)
         new.compile(node, **xargs)
       end
 
-      def self.describe(schema, **xargs) # :nodoc:
+      # Trigger a new describe process
+      def self.describe(schema, **xargs)
         new.describe(schema, **xargs)
       end
 
-      def compile(node, collector = nil, with_descriptions: true) # :nodoc:
+      # Describe the given +node+ as GraphQL
+      def compile(node, collector = nil, with_descriptions: true)
         collector ||= Collectors::IdentedCollector.new
         @with_descriptions = with_descriptions
         accept(node, collector).value
       end
 
-      def describe(schema, collector = nil, with_descriptions: true, with_spec: nil) # :nodoc:
+      # Describe the given +schema+ as GraphQL, with all types and directives
+      def describe(schema, collector = nil, with_descriptions: true, with_spec: nil)
         collector ||= Collectors::IdentedCollector.new
         @with_descriptions = with_descriptions
         @with_spec = with_spec.nil? ? schema.introspection? : with_spec
@@ -52,7 +56,7 @@ module Rails # :nodoc:
             accept(item, collector).eol
           end
 
-        collector.value
+        collector.value.chomp
       end
 
       # Keep visitors in an alphabetical order, but leave instances at the end

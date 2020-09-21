@@ -34,5 +34,3 @@ module Rails # :nodoc:
     end
   end
 end
-
-# GraphQL.type_map.register_alias(assigned_class) { klass }

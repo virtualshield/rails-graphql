@@ -296,7 +296,8 @@ module Rails # :nodoc:
           def skips_for(holder)
             segment = holder.kind
             segment = :input if segment.eql?(:input_object)
-            all_skip_fields + all_segmented_skip_fields[segment]
+            segmented = all_segmented_skip_fields[segment]
+            segmented.present? ? all_skip_fields + segmented : all_skip_fields
           end
 
         private

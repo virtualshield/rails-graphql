@@ -6,7 +6,7 @@ module Rails # :nodoc:
     # assigned type value
     module Field::TypedField
       module Proxied # :nodoc: all
-        delegate :type, :type_klass, to: :field
+        delegate :type, to: :field
       end
 
       attr_reader :type
@@ -16,7 +16,7 @@ module Rails # :nodoc:
       def initialize(name, type, *args, **xargs, &block)
         if type.is_a?(Module) && type < GraphQL::Type
           @type_klass = type
-          @type = type.name
+          @type = type.to_sym
         else
           @type = type.to_s.underscore.to_sym
         end

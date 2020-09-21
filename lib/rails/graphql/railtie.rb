@@ -45,16 +45,18 @@ module Rails # :nodoc:
       # Add reloader ability for files under 'app/graphql'
       # TODO: Maybe improve to use rails auto loader
       initializer 'graphql.reloader' do
+        Rails::GraphQL.eager_load!
         ActiveSupport::Reloader.to_prepare do
+          Rails::GraphQL.type_map.use_checkpoint!
+          Rails::GraphQL.reload_ar_adapters!
+
           Object.send(:remove_const, :GraphQL) if Object.const_defined?(:GraphQL)
-          # BUG: Fix problem with reloader and type_map
-          # Rails::GraphQL.type_map.clear
 
           load "#{__dir__}/shortcuts.rb"
 
           $LOAD_PATH.each do |path|
             next unless path =~ /\/app\/graphql$/
-            Dir.glob("#{path}/**/*.rb").each(&method(:load))
+            Dir.glob("#{path}/**/*.rb").sort.each(&method(:load))
           end
 
           GraphQL::Source.send(:build_pending!)

@@ -10,12 +10,12 @@ module Rails # :nodoc:
 
           subclass.query_fields do
             field(:__schema, '__Schema', null: false) do
-              resolve { |schema| schema }
+              resolve { event.schema }
             end
 
             field(:__type, '__Type') do
               argument(:name, :string, null: false)
-              resolve { |schema, name:| schema.find_type!(name) }
+              resolve { event.schema.find_type(event.argument(:name)) }
             end
           end
 

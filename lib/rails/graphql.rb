@@ -101,10 +101,17 @@ module Rails # :nodoc:
         $LOAD_PATH.any? do |load_path|
           next unless load_path =~ /\/app\/graphql$/
           next unless File.exist?("#{load_path}/#{path}.rb")
-          require "#{load_path}/#{path}"
-        end || require_relative("graphql/#{path}")
+          load "#{load_path}/#{path}.rb"
+        end || load("#{__dir__}/graphql/#{path}.rb")
 
         @@loaded_adapters << adapter_name
+      end
+
+      # Due to reloader process, adapter settings need to be reloaded
+      def reload_ar_adapters!
+        return unless defined?(@@loaded_adapters)
+        adapters, @@loaded_adapters = @@loaded_adapters, Set.new
+        adapters.map(&method(:enable_ar_adapter))
       end
 
       # Turn the given object into its string representation as GraphQl
