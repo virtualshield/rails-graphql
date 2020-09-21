@@ -1,9 +1,16 @@
 # frozen_string_literal: true
 
+require 'rails/railtie'
+require 'action_controller'
+require 'action_controller/railtie'
+
 module Rails # :nodoc:
   module GraphQL # :nodoc:
     # = Rails GraphQL Railtie
+    #
+    # Rails integration and configuration
     class Railtie < Rails::Railtie # :nodoc:
+      config.eager_load_namespaces << Rails::GraphQL
       config.graphql = GraphQL.config
 
       rake_tasks do
