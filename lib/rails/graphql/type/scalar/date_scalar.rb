@@ -11,7 +11,7 @@ module Rails # :nodoc:
 
         class << self
           def valid_input?(value)
-            super && (Date.iso8601(value) rescue false)
+            super && !!(Date.iso8601(value) rescue false)
           end
 
           def valid_output?(value)

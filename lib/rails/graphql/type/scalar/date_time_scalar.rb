@@ -12,7 +12,7 @@ module Rails # :nodoc:
 
         class << self
           def valid_input?(value)
-            super && (Time.iso8601(value) rescue false)
+            super && !!(Time.iso8601(value) rescue false)
           end
 
           def valid_output?(value)
