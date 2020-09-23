@@ -21,7 +21,7 @@ module Rails # :nodoc:
 
         class << self
           def valid_input?(value)
-            super && value.match?(/\d+:\d\d(:\d\d(\.\d+)?)?/)
+            value.match?(/\d+:\d\d(:\d\d(\.\d+)?)?/)
           end
 
           def valid_output?(value)
@@ -33,7 +33,7 @@ module Rails # :nodoc:
           end
 
           def deserialize(value)
-            '2000-01-01 ' + value.to_time
+            "#{EPOCH.to_date.iso8601} #{value}".to_time
           end
         end
       end

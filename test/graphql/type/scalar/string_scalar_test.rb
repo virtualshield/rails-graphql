@@ -6,6 +6,7 @@ class StringScalarTest < GraphQL::TestCase
   def test_as_json_integer_to_string
     assert_equal(DESCRIBED_CLASS.as_json(1), '1')
   end
+
   def test_as_json_nil_to_string
     assert_equal(DESCRIBED_CLASS.as_json(nil), '')
   end
