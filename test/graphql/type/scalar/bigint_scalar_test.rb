@@ -3,66 +3,32 @@ require 'config'
 DESCRIBED_CLASS = Rails::GraphQL::Type::Scalar::BigintScalar
 
 class BigintScalarTest < GraphQL::TestCase
-  def test_valid_input_regex_plus
-    assert_equal(DESCRIBED_CLASS.valid_input?('+123'), true)
+  def test_valid_input_ask
+    assert_equal(true, DESCRIBED_CLASS.valid_input?('123456789101112131415161718192021222324252627282930'))
+    assert_equal(true, DESCRIBED_CLASS.valid_input?('+123'))
+    assert_equal(true, DESCRIBED_CLASS.valid_input?('-123'))
+    assert_equal(false, DESCRIBED_CLASS.valid_input?(1))
+    assert_equal(false, DESCRIBED_CLASS.valid_input?('12.0'))
+    assert_equal(false, DESCRIBED_CLASS.valid_input?('1abc'))
+    assert_equal(false, DESCRIBED_CLASS.valid_input?(nil))
   end
 
-  def test_valid_input_regex_negative
-    assert_equal(DESCRIBED_CLASS.valid_input?('-123'), true)
+  def test_valid_output_ask
+    assert_equal(true, DESCRIBED_CLASS.valid_output?(1))
+    assert_equal(true, DESCRIBED_CLASS.valid_output?('abc'))
+    assert_equal(true, DESCRIBED_CLASS.valid_output?(nil))
+    assert_equal(false, DESCRIBED_CLASS.valid_output?([1,'abc']))
   end
 
-  def test_valid_input_regex_number
-    assert_equal(DESCRIBED_CLASS.valid_input?(1), false)
+  def test_as_json
+    assert_equal('1', DESCRIBED_CLASS.as_json(1))
+    assert_equal('0', DESCRIBED_CLASS.as_json(nil))
+    assert_equal('0', DESCRIBED_CLASS.as_json('a'))
   end
 
-  def test_valid_input_regex_float
-    assert_equal(DESCRIBED_CLASS.valid_input?('12,0'), false)
-  end
-
-  def test_valid_input_regex_text
-    assert_equal(DESCRIBED_CLASS.valid_input?('1abc'), false)
-  end
-
-  def test_valid_input_regex_nil
-    assert_equal(DESCRIBED_CLASS.valid_input?(nil), false)
-  end
-
-  def test_valid_output_int_is_int
-    assert_equal(DESCRIBED_CLASS.valid_output?(1), true)
-  end
-
-  def test_valid_output_string_is_int
-    assert_equal(DESCRIBED_CLASS.valid_output?('abc'), true)
-  end
-
-  def test_valid_output_nil_is_int
-    assert_equal(DESCRIBED_CLASS.valid_output?(nil), true)
-  end
-
-  def test_valid_output_array_is_int
-    assert_equal(DESCRIBED_CLASS.valid_output?([1,'abc']), false)
-  end
-
-  def test_as_json_integer_to_string
-    assert_equal(DESCRIBED_CLASS.as_json(1), '1')
-  end
-  def test_as_json_nil_to_string
-    assert_equal(DESCRIBED_CLASS.as_json(nil), '0')
-  end
-
-  def test_as_json_string_to_string
-    assert_equal(DESCRIBED_CLASS.as_json('a'), '0')
-  end
-
-  def test_deserialize_int_to_int
-    assert_equal(DESCRIBED_CLASS.deserialize(1), 1)
-  end
-
-  def test_deserialize_string_to_int
-    assert_equal(DESCRIBED_CLASS.deserialize('a'), 0)
-  end
-
-  def test_deserialize_nil_to_int
-    assert_equal(DESCRIBED_CLASS.deserialize(nil), 0)
+  def test_deserialize
+    assert_equal(1, DESCRIBED_CLASS.deserialize(1))
+    assert_equal(0, DESCRIBED_CLASS.deserialize('a'))
+    assert_equal(0, DESCRIBED_CLASS.deserialize(nil))
   end
 end

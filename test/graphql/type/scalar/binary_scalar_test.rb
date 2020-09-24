@@ -3,19 +3,13 @@ require 'config'
 DESCRIBED_CLASS = Rails::GraphQL::Type::Scalar::BinaryScalar
 
 class BinaryScalarTest < GraphQL::TestCase
-  def test_as_json_integer_to_string
-    assert_equal(DESCRIBED_CLASS.as_json(1), 'MQ==')
+  def test_as_json
+    assert_equal('MQ==', DESCRIBED_CLASS.as_json(1))
+    assert_equal('YQ==', DESCRIBED_CLASS.as_json('a'))
+    assert_equal('', DESCRIBED_CLASS.as_json(nil))
   end
 
-  def test_as_json_nil_to_string
-    assert_equal(DESCRIBED_CLASS.as_json(nil), '')
-  end
-
-  def test_as_json_string_to_string
-    assert_equal(DESCRIBED_CLASS.as_json('a'), 'YQ==')
-  end
-
-  def test_deserialize_is_class
+  def test_deserialize
     assert_kind_of(ActiveModel::Type::Binary::Data, DESCRIBED_CLASS.deserialize(File.read("test/assets/luke.jpg")))
   end
 end
