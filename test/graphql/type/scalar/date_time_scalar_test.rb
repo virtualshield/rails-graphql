@@ -6,16 +6,16 @@ class DateTimeScalarTest < GraphQL::TestCase
   def test_valid_input_ask
     datetime = Time.now.strftime('%Y-%m-%dT%H:%M:%S.%L%z')
 
+    assert(DESCRIBED_CLASS.valid_input?(datetime))
     assert_equal(false, DESCRIBED_CLASS.valid_input?(1))
     assert_equal(false, DESCRIBED_CLASS.valid_input?('abc'))
     assert_equal(false, DESCRIBED_CLASS.valid_input?(nil))
-    assert_equal(true, DESCRIBED_CLASS.valid_input?(datetime))
   end
 
   def test_valid_output_ask
+    assert(DESCRIBED_CLASS.valid_output?('abc'))
     assert_equal(false, DESCRIBED_CLASS.valid_output?(1))
     assert_equal(false, DESCRIBED_CLASS.valid_output?(nil))
-    assert_equal(true, DESCRIBED_CLASS.valid_output?('abc'))
   end
 
   def test_as_json

@@ -4,9 +4,9 @@ DESCRIBED_CLASS = Rails::GraphQL::Type::Scalar::BigintScalar
 
 class BigintScalarTest < GraphQL::TestCase
   def test_valid_input_ask
-    assert_equal(true, DESCRIBED_CLASS.valid_input?('123456789101112131415161718192021222324252627282930'))
-    assert_equal(true, DESCRIBED_CLASS.valid_input?('+123'))
-    assert_equal(true, DESCRIBED_CLASS.valid_input?('-123'))
+    assert(DESCRIBED_CLASS.valid_input?('123456789101112131415161718192021222324252627282930'))
+    assert(DESCRIBED_CLASS.valid_input?('+123'))
+    assert(DESCRIBED_CLASS.valid_input?('-123'))
     assert_equal(false, DESCRIBED_CLASS.valid_input?(1))
     assert_equal(false, DESCRIBED_CLASS.valid_input?('12.0'))
     assert_equal(false, DESCRIBED_CLASS.valid_input?('1abc'))
@@ -14,9 +14,9 @@ class BigintScalarTest < GraphQL::TestCase
   end
 
   def test_valid_output_ask
-    assert_equal(true, DESCRIBED_CLASS.valid_output?(1))
-    assert_equal(true, DESCRIBED_CLASS.valid_output?('abc'))
-    assert_equal(true, DESCRIBED_CLASS.valid_output?(nil))
+    assert(DESCRIBED_CLASS.valid_output?(1))
+    assert(DESCRIBED_CLASS.valid_output?('abc'))
+    assert(DESCRIBED_CLASS.valid_output?(nil))
     assert_equal(false, DESCRIBED_CLASS.valid_output?([1,'abc']))
   end
 

@@ -4,15 +4,15 @@ GraphQL::TestScalar = Class.new(Rails::GraphQL::Type::Scalar)
 
 class ScalarTest < GraphQL::TestCase
   def test_valid_input_ask
+    assert(GraphQL::TestScalar.valid_input?("abc"))
     assert_equal(false, GraphQL::TestScalar.valid_input?(1))
     assert_equal(false, GraphQL::TestScalar.valid_input?(nil))
-    assert_equal(true, GraphQL::TestScalar.valid_input?("abc"))
   end
 
   def test_valid_output_ask
-    assert_equal(true, GraphQL::TestScalar.valid_output?(1))
-    assert_equal(true, GraphQL::TestScalar.valid_output?(nil))
-    assert_equal(true, GraphQL::TestScalar.valid_output?("abc"))
+    assert(GraphQL::TestScalar.valid_output?(1))
+    assert(GraphQL::TestScalar.valid_output?(nil))
+    assert(GraphQL::TestScalar.valid_output?("abc"))
   end
 
 

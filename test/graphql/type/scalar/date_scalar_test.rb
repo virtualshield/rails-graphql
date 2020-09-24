@@ -4,15 +4,15 @@ DESCRIBED_CLASS = Rails::GraphQL::Type::Scalar::DateScalar
 
 class DateScalarTest < GraphQL::TestCase
   def test_valid_input_ask
+    assert(DESCRIBED_CLASS.valid_input?('2020-02-02'))
     assert_equal(false, DESCRIBED_CLASS.valid_input?(1))
     assert_equal(false, DESCRIBED_CLASS.valid_input?('abc'))
     assert_equal(false, DESCRIBED_CLASS.valid_input?(nil))
-    assert_equal(true, DESCRIBED_CLASS.valid_input?('2020-02-02'))
   end
 
   def test_valid_output_ask
-    assert_equal(true, DESCRIBED_CLASS.valid_output?('abc'))
-    assert_equal(true, DESCRIBED_CLASS.valid_output?('2020-02-02'))
+    assert(DESCRIBED_CLASS.valid_output?('abc'))
+    assert(DESCRIBED_CLASS.valid_output?('2020-02-02'))
     assert_equal(false, DESCRIBED_CLASS.valid_output?(nil))
     assert_equal(false, DESCRIBED_CLASS.valid_output?(1))
   end
