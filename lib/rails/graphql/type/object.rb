@@ -45,9 +45,11 @@ module Rails # :nodoc:
         attr_reader :event
 
         class << self
-          # Plain objects cannot check if a given value is a valid member
+          # Plain objects can check if a given value is a valid member
           def valid_member?(value)
             checker = value.is_a?(Hash) ? :key? : :respond_to?
+            # BUG: It doesn't work with string-based hash
+            value = value.with_indifferent_access if value.is_a?(Hash)
             fields.values.all? { |field| value.public_send(checker, field.method_name) }
           end
 

@@ -3,7 +3,7 @@ require 'config'
 DESCRIBED_CLASS = Rails::GraphQL::Type::Scalar::StringScalar
 
 class StringScalarTest < GraphQL::TestCase
-  def test_as_json_ask
+  def test_as_json
     str = 'Sample'.encode(Encoding::ISO_8859_1)
     result = DESCRIBED_CLASS.as_json(str)
     assert_equal(DESCRIBED_CLASS.as_json(1), '1')

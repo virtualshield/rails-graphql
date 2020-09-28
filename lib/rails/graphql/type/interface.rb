@@ -26,6 +26,8 @@ module Rails # :nodoc:
         attr_reader :event
 
         class << self
+          # TODO: Use inherited attribute for types
+
           # Stores the list of types associated with the interface so it can
           # be used during the execution step to find the right object type
           def types
@@ -34,7 +36,7 @@ module Rails # :nodoc:
 
           # Get the list of all inherited-aware associated types
           def all_types
-            (superclass.try(:all_types) || []) + (@types&.to_a || [])
+            (superclass.try(:all_types) || Set.new) + (@types || Set.new)
           end
 
           # Check if the other type is equivalent, by checking if the other is

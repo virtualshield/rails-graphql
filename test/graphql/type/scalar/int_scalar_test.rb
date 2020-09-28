@@ -11,13 +11,13 @@ class IntScalarTest < GraphQL::TestCase
     assert_equal(false, DESCRIBED_CLASS.valid_input?('2147483649'))
   end
 
-  def test_valid_output_with_ask
+  def test_valid_output_ask
     assert_equal(true, DESCRIBED_CLASS.valid_output?(12345))
     assert_equal(false, DESCRIBED_CLASS.valid_output?(2147483649))
     assert_equal(false, DESCRIBED_CLASS.valid_output?('2147483649'))
   end
 
-  def test_as_json_ask
+  def test_as_json
     assert_equal(123, DESCRIBED_CLASS.as_json(123))
     assert_nil(nil, DESCRIBED_CLASS.as_json(2147483649))
   end

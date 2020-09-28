@@ -1,6 +1,7 @@
 require 'minitest/autorun'
 require 'minitest/reporters'
 require 'rails-graphql'
+require 'pry'
 
 Minitest::Reporters.use!(Minitest::Reporters::SpecReporter.new)
 
