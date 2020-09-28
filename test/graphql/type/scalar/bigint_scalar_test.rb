@@ -7,17 +7,17 @@ class BigintScalarTest < GraphQL::TestCase
     assert(DESCRIBED_CLASS.valid_input?('123456789101112131415161718192021222324252627282930'))
     assert(DESCRIBED_CLASS.valid_input?('+123'))
     assert(DESCRIBED_CLASS.valid_input?('-123'))
-    assert_equal(false, DESCRIBED_CLASS.valid_input?(1))
-    assert_equal(false, DESCRIBED_CLASS.valid_input?('12.0'))
-    assert_equal(false, DESCRIBED_CLASS.valid_input?('1abc'))
-    assert_equal(false, DESCRIBED_CLASS.valid_input?(nil))
+    refute(DESCRIBED_CLASS.valid_input?(1))
+    refute(DESCRIBED_CLASS.valid_input?('12.0'))
+    refute(DESCRIBED_CLASS.valid_input?('1abc'))
+    refute(DESCRIBED_CLASS.valid_input?(nil))
   end
 
   def test_valid_output_ask
     assert(DESCRIBED_CLASS.valid_output?(1))
     assert(DESCRIBED_CLASS.valid_output?('abc'))
     assert(DESCRIBED_CLASS.valid_output?(nil))
-    assert_equal(false, DESCRIBED_CLASS.valid_output?([1,'abc']))
+    refute(DESCRIBED_CLASS.valid_output?([1,'abc']))
   end
 
   def test_as_json

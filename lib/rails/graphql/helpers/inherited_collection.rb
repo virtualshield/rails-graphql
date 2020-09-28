@@ -90,6 +90,7 @@ module Rails # :nodoc:
           # Combine an inherited list of arrays
           def fetch_inherited_array(ivar)
             inherited_ancestors.inject([]) do |result, klass|
+              next result unless klass.instance_variable_defined?(ivar)
               val = klass.instance_variable_get(ivar)
               val.blank? ? result : result += val
             end
@@ -98,6 +99,7 @@ module Rails # :nodoc:
           # Combine an inherited list of set objects
           def fetch_inherited_set(ivar)
             inherited_ancestors.inject(Set.new) do |result, klass|
+              next result unless klass.instance_variable_defined?(ivar)
               val = klass.instance_variable_get(ivar)
               val.blank? ? result : result += val
             end
@@ -107,6 +109,7 @@ module Rails # :nodoc:
           # value, which means that keys might be replaced
           def fetch_inherited_hash(ivar)
             inherited_ancestors.inject({}) do |result, klass|
+              next result unless klass.instance_variable_defined?(ivar)
               val = klass.instance_variable_get(ivar)
               val.blank? ? result : result.merge(val)
             end
@@ -119,7 +122,8 @@ module Rails # :nodoc:
           # ensuring that same key items will be combined
           def fetch_inherited_hash_array(ivar)
             inherited_ancestors.inject({}) do |result, klass|
-              next result if (val = klass.instance_variable_get(ivar)).blank?
+              next result unless klass.instance_variable_defined?(ivar)
+              val = klass.instance_variable_get(ivar)
               Helpers.merge_hash_array(result, val)
             end
           end

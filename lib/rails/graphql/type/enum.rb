@@ -59,18 +59,19 @@ module Rails # :nodoc:
           def as_json(value)
             return if value.nil?
             return value.to_s if value.is_a?(self)
-            return all_values[value] if indexed? && value.is_a?(Numeric)
+            # BUG: Set doesn`t seem to have [] method, but converting to array is not ideal
+            return all_values.to_a[value] if indexed? && value.is_a?(Numeric)
             value.to_s.underscore.upcase
           end
 
           # Turn a user input of this given type into an ruby object
           def deserialize(value)
-            new(value)
+            new(value) if valid_input?(value)
           end
 
           # Use the instance as decorator
           def decorate(value)
-            new(as_json(value))
+            deserialize(as_json(value))
           end
 
           # Use this method to add values to the enum type
@@ -86,12 +87,11 @@ module Rails # :nodoc:
           #   See {DeprecatedDirective}[rdoc-ref:Rails::GraphQL::Directive::DeprecatedDirective]
           #   (defaults to false).
           def add(value, desc: nil, directives: nil, deprecated: false)
-            value = as_json(value)
-
             raise ArgumentError, <<~MSG.squish unless value.is_a?(String) && value.present?
               The "#{value}" is invalid.
             MSG
 
+            value = value.upcase
             raise ArgumentError, <<~MSG.squish if all_values.include?(value)
               The "#{value}" is already defined for #{gql_name} enum.
             MSG
@@ -117,7 +117,7 @@ module Rails # :nodoc:
               The provided #{item_or_symbol.inspect} is not a valid directive.
             MSG
 
-            value_directives[to_hash(value)]&.any? { |item| item.is_a?(directive) }
+            !!value_directives[as_json(value)]&.any? { |item| item.is_a?(directive) }
           end
 
           # Build a hash with deprecated values and their respective reason for
@@ -162,7 +162,7 @@ module Rails # :nodoc:
           @value = value
         end
 
-        # Use lower canse for symbolized value
+        # Use lower case for symbolized value
         def to_sym
           @value.downcase.to_sym
         end
@@ -179,12 +179,12 @@ module Rails # :nodoc:
 
         # Gets all the description of the current value
         def description
-          @description ||= @value && self.class.all_description[@value]
+          @description ||= @value && self.class.all_value_description[@value]
         end
 
         # Gets all the directives associated with the current value
         def directives
-          @directives ||= @value && self.class.all_directives[@value]
+          @directives ||= @value && self.class.all_value_directives[@value]
         end
 
         # Checks if the current value is marked as deprecated
@@ -206,7 +206,6 @@ module Rails # :nodoc:
               dir.is_a?(Directive::DeprecatedDirective)
             end
           end
-
       end
     end
   end

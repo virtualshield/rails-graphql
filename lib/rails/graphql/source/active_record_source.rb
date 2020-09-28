@@ -283,7 +283,7 @@ module Rails # :nodoc:
         records = event.data[:prepared]
         return [] if records.empty?
 
-        records.records_by_owner[current_value.itself]
+        records#.records_by_owner[current_value.itself]
       end
 
       # The perform step for the +create+ based mutation
