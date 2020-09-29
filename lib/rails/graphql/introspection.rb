@@ -10,7 +10,7 @@ module Rails # :nodoc:
 
           subclass.query_fields do
             field(:__schema, '__Schema', null: false) do
-              resolve { event.schema }
+              resolve { |event| event.schema }
             end
 
             field(:__type, '__Type') do

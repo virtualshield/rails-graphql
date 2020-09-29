@@ -8,6 +8,10 @@ module Rails # :nodoc:
         self.assigned_to = 'Rails::GraphQL::Type'
         self.spec_object = true
 
+        def self.valid_member?(value)
+          value.is_a?(OpenStruct) ? value.try(:object?) : super
+        end
+
         rename! '__Type'
 
         desc <<~DESC

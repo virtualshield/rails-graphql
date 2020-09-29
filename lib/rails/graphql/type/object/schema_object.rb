@@ -18,41 +18,34 @@ module Rails # :nodoc:
           determines the place in the type system where those operations begin.
         DESC
 
-        field :types,             '__Type',      full: true
+        field :types,             '__Type',      full: true, method_name: :read_types
         field :query_type,        '__Type',      null: false
         field :mutation_type,     '__Type'
         field :subscription_type, '__Type'
-        field :directives,        '__Directive', full: true
+        field :directives,        '__Directive', full: true, method_name: :read_directives
 
-        def types
-          read_type_map(:Type)
+        # TODO: make it work for lazy enumerator
+        def read_types
+          event.schema.types(base_class: :Type).force
         end
 
-        def directives
-          read_type_map(:Directive)
+        # TODO: it only works after eager_load!
+        def read_directives
+          Directive.eager_load!
+          event.schema.types(base_class: :Directive).force
         end
 
         def query_type
-          query_type
+          event.current_value.query_type
         end
 
         def mutation_type
-          mutation_type
+          event.current_value.mutation_type
         end
 
         def subscription_type
-          subscription_type
+          event.current_value.subscription_type
         end
-
-        private
-
-          def read_type_map(base_class)
-            result = type_map.send(:dig, namespace, base_class).values.map(&:call).uniq
-            result += type_map.send(:dig, :base, base_class).values.map(&:call).uniq \
-              unless namespace === :base
-
-            result
-          end
       end
     end
   end

@@ -89,6 +89,10 @@ module Rails # :nodoc:
           )
         end
 
+        def types(base_class: :Type, &block)
+          type_map.each_from(namespace, base_class: base_class, &block)
+        end
+
         # Schemas are assigned to a single namespace
         def set_namespace(*list)
           super(list.first)
