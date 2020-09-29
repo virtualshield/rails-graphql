@@ -9,7 +9,7 @@ module Rails # :nodoc:
     # = Rails GraphQL Railtie
     #
     # Rails integration and configuration
-    class Railtie < Rails::Railtie # :nodoc:
+    class Railtie < Rails::Railtie
       config.eager_load_namespaces << Rails::GraphQL
       config.graphql = GraphQL.config
 

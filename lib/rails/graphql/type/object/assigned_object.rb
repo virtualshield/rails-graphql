@@ -17,7 +17,8 @@ module Rails # :nodoc:
         class << self
           # Check if a given value is a valid non-serialized output
           def valid_member?(value)
-            assigned_to.present? && value.is_a?(assigned_class)
+            return false unless assigned_to.present?
+            value.is_a?(Module) ? value <= assigned_class : value.is_a?(assigned_class)
           end
 
           # After a successfully registration, add the assigned class to the

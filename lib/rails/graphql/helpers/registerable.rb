@@ -9,8 +9,6 @@ module Rails # :nodoc:
       module Registerable
         NAME_EXP = /GraphQL::(?:Type::\w+::|Directive::)?([:\w]+)[A-Z][A-Za-z]+\z/.freeze
 
-        delegate :gql_name, to: :class
-
         # Here we define a couple of attributes used by registration
         def self.extended(other)
           other.extend(Registerable::ClassMethods)
