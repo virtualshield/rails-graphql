@@ -122,15 +122,6 @@ module Rails # :nodoc:
           base_sources.reverse_each.find { |source| object <= source.assigned_class }
         end
 
-        # Get all merged hooks for a given +key+. It overrides the original
-        # +all_hooks+ from
-        # {InheritedCollection}[rdoc-ref:Rails::GraphQL::Helpers::InheritedCollection]
-        # which provides the support for a nil +key+
-        def all_hooks(key = nil)
-          return super if key.nil?
-          (superclass.try(:all_hooks, key) || []) + hooks[key]
-        end
-
         # Return the GraphQL object type associated with the source. It will
         # create one if it's not defined yet. The created class will be added
         # to the +::GraphQL+ namespace with the addition of any namespace of the
@@ -176,7 +167,7 @@ module Rails # :nodoc:
 
         # Check if the object was already built
         def built?
-          !!@built
+          defined?(@built) && !!@built
         end
 
         # Attach all defined schema fields into the schemas using the namespaces

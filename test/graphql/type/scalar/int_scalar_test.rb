@@ -1,20 +1,22 @@
 require 'config'
 
-DESCRIBED_CLASS = Rails::GraphQL::Type::Scalar::IntScalar
-
 class IntScalarTest < GraphQL::TestCase
+  DESCRIBED_CLASS = Rails::GraphQL::Type::Scalar::IntScalar
+
   def test_valid_input_ask
-    assert_equal(true, DESCRIBED_CLASS.valid_input?(12345))
-    assert_equal(false, DESCRIBED_CLASS.valid_input?(12.0))
-    assert_equal(true, DESCRIBED_CLASS.valid_input?(2147483647))
-    assert_equal(false, DESCRIBED_CLASS.valid_input?(2147483649))
-    assert_equal(false, DESCRIBED_CLASS.valid_input?('2147483649'))
+    assert(DESCRIBED_CLASS.valid_input?(12345))
+    assert(DESCRIBED_CLASS.valid_input?(2147483647))
+
+    refute(DESCRIBED_CLASS.valid_input?(12.0))
+    refute(DESCRIBED_CLASS.valid_input?(2147483649))
+    refute(DESCRIBED_CLASS.valid_input?('2147483649'))
   end
 
   def test_valid_output_ask
-    assert_equal(true, DESCRIBED_CLASS.valid_output?(12345))
-    assert_equal(false, DESCRIBED_CLASS.valid_output?(2147483649))
-    assert_equal(false, DESCRIBED_CLASS.valid_output?('2147483649'))
+    assert(DESCRIBED_CLASS.valid_output?(12345))
+
+    refute(DESCRIBED_CLASS.valid_output?(2147483649))
+    refute(DESCRIBED_CLASS.valid_output?('2147483649'))
   end
 
   def test_as_json

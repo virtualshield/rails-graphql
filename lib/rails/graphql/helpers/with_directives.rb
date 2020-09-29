@@ -14,11 +14,8 @@ module Rails # :nodoc:
 
         def self.included(other)
           other.extend(WithDirectives::DirectiveLocation)
-
           other.define_method(:directives) { @directives ||= Set.new }
-
           other.class_attribute(:directive_location, instance_writer: false)
-          other.delegate(:directive_location, to: :class)
         end
 
         def initialize_copy(orig)
@@ -108,8 +105,9 @@ module Rails # :nodoc:
         def validate!(*)
           super if defined? super
 
-          @directives&.each(&:validate!)
-          @directives&.freeze
+          return unless defined? @directives
+          @directives.each(&:validate!)
+          @directives.freeze
         end
 
         private

@@ -16,7 +16,7 @@ module Rails # :nodoc:
           end
 
           def valid_output?(value)
-            value.respond_to?(:to_time)
+            value.respond_to?(:to_time) && !!value.to_time
           end
 
           def as_json(value)

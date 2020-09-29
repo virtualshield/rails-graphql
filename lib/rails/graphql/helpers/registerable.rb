@@ -7,7 +7,7 @@ module Rails # :nodoc:
       # registering the objects to the type map, which also checks for the
       # uniqueness of the name of things.
       module Registerable
-        NAME_EXP = /GraphQL::(?:Type::\w+::|Directive::)?([:\w]+)[A-Z][A-Za-z]+\z/.freeze
+        NAME_EXP = /GraphQL::(?:Type::\w+::|Directive::)?([:\w]+?)([A-Z][a-z]+)?\z/.freeze
 
         # Here we define a couple of attributes used by registration
         def self.extended(other)
@@ -61,7 +61,7 @@ module Rails # :nodoc:
 
         # Return the name of the object as a GraphQL name
         def gql_name
-          @gql_name ||= name.match(NAME_EXP)[1].tr(':', '')
+          @gql_name ||= (name.match(NAME_EXP)[1].tr(':', '') unless anonymous?)
         end
 
         alias graphql_name gql_name
@@ -73,9 +73,12 @@ module Rails # :nodoc:
 
         # Get or set a list of aliases for this object
         def aliases(*list)
-          return (@aliases || Set.new) if list.empty?
-          (@aliases ||= Set.new).merge list.flatten.map do |item|
-            item.to_s.underscore.to_sym
+          if list.empty?
+            defined?(@aliases) ? @aliases : Set.new
+          else
+            (@aliases ||= Set.new).merge list.flatten.map do |item|
+              item.to_s.underscore.to_sym
+            end
           end
         end
 

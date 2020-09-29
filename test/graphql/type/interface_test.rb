@@ -1,68 +1,58 @@
 require 'config'
 
-GraphQL::TestObject = Class.new(Rails::GraphQL::Type::Interface)
-
 class InterfaceTest < GraphQL::TestCase
+  DESCRIBED_CLASS = Class.new(Rails::GraphQL::Type::Interface)
+
   def test_all_types
-    assert_equal([], GraphQL::TestObject.all_types.to_a)
+    assert_instance_of(Set, DESCRIBED_CLASS.all_types)
 
-    GraphQL::TestObject.types << :a
-    assert_equal([:a], GraphQL::TestObject.all_types.to_a)
+    DESCRIBED_CLASS.types << :a
+    assert_equal(Set[:a], DESCRIBED_CLASS.all_types)
 
-    other_class = Class.new(GraphQL::TestObject)
+    other_class = Class.new(DESCRIBED_CLASS)
     other_class.types << :b
-    assert_equal([:a, :b], other_class.all_types.to_a)
+    assert_equal(Set[:a, :b], other_class.all_types)
 
-    GraphQL::TestObject.instance_variable_set(:@types, Set.new)
+    DESCRIBED_CLASS.instance_variable_set(:@types, Set.new)
   end
 
-
   def test_equivalence
-    test_object = OpenStruct.new(object?: true)
-    test_object.define_singleton_method(:implements?) { |*| true }
-    assert(GraphQL::TestObject =~ test_object)
-    test_object[:object?] = false
-    refute(GraphQL::TestObject =~ test_object)
+    test_object = double(object?: true, implements?: ->(*) { true })
+    assert(DESCRIBED_CLASS =~ test_object)
 
-    test_object.define_singleton_method(:implements?) { |*| false }
-    refute(GraphQL::TestObject =~ test_object)
-    test_object[:object?] = true
-    refute(GraphQL::TestObject =~ test_object)
+    test_object = double(object?: false, implements?: ->(*) { true })
+    refute(DESCRIBED_CLASS =~ test_object)
+
+    test_object = double(object?: true, implements?: ->(*) { false })
+    refute(DESCRIBED_CLASS =~ test_object)
+
+    test_object = double(object?: false, implements?: ->(*) { false })
+    refute(DESCRIBED_CLASS =~ test_object)
   end
 
   def test_implemented
-    GraphQL::TestObject.stub(:gql_name, 'test') do
-      GraphQL::TestObject.stub(:fields, {}) do
-        object = OpenStruct.new(gql_name: 'baz')
-        object.define_singleton_method(:field?) { |*| false }
-        object.define_singleton_method(:proxy_field) { |*| }
-        result = check_types { GraphQL::TestObject.implemented(object) }
-        assert_equal([object], result)
+    DESCRIBED_CLASS.stub(:gql_name, 'test') do
+      DESCRIBED_CLASS.stub(:fields, {}) do
+        object = double(gql_name: 'baz', field?: ->(*) { false }, proxy_field: -> {})
+        assert_equal(Set[object], implemented_types(object))
       end
 
-      GraphQL::TestObject.stub(:fields, { 'a' => 'b' }) do
-        object = OpenStruct.new(gql_name: 'baz', fields: { 'a' => /b/ })
-        object.define_singleton_method(:field?) { |*| true }
-        result = check_types { GraphQL::TestObject.implemented(object) }
-        assert_equal([object], result)
+      DESCRIBED_CLASS.stub(:fields, { 'a' => 'b' }) do
+        object = double(gql_name: 'baz', field?: ->(*) { true }, fields: { 'a' => /b/ })
+        assert_equal(Set[object], implemented_types(object))
       end
 
-      fields = { 'a' => OpenStruct.new(gql_name: 'a') }
-      GraphQL::TestObject.stub(:fields, fields) do
-        object = OpenStruct.new(gql_name: 'baz', fields: { 'a' => 'b' })
-        object.define_singleton_method(:field?) { |*| true }
-        assert_raises(StandardError) { GraphQL::TestObject.implemented(object) }
+      fields = { 'a' => double(gql_name: 'a') }
+      DESCRIBED_CLASS.stub(:fields, fields) do
+        object = double(gql_name: 'baz', field?: ->(*) { true }, fields: { 'a' => 'b' })
+        assert_raises(StandardError) { DESCRIBED_CLASS.implemented(object) }
       end
     end
   end
 
-  def check_types
-    yield
-    result = GraphQL::TestObject.instance_variable_get(:@types)
-    GraphQL::TestObject.instance_variable_set(:@types, Set.new)
-    result.to_a
+  def implemented_types(object)
+    DESCRIBED_CLASS.get_reset_ivar(:@types) do
+      DESCRIBED_CLASS.implemented(object)
+    end
   end
-
-  # def inspect
-  # end
 end

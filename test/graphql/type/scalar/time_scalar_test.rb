@@ -1,22 +1,24 @@
 require 'config'
 
-DESCRIBED_CLASS = Rails::GraphQL::Type::Scalar::TimeScalar
-
 class TimeScalarTest < GraphQL::TestCase
+  DESCRIBED_CLASS = Rails::GraphQL::Type::Scalar::TimeScalar
+
   def test_valid_input_ask
-    assert_equal(true, DESCRIBED_CLASS.valid_input?('1:12'))
-    assert_equal(true, DESCRIBED_CLASS.valid_input?('12:12'))
-    assert_equal(true, DESCRIBED_CLASS.valid_input?('123:12'))
-    assert_equal(true, DESCRIBED_CLASS.valid_input?('12:12:12'))
-    assert_equal(true, DESCRIBED_CLASS.valid_input?('12:12:12.123'))
-    assert_equal(false, DESCRIBED_CLASS.valid_input?('foo'))
+    assert(DESCRIBED_CLASS.valid_input?('1:12'))
+    assert(DESCRIBED_CLASS.valid_input?('12:12'))
+    assert(DESCRIBED_CLASS.valid_input?('123:12'))
+    assert(DESCRIBED_CLASS.valid_input?('12:12:12'))
+    assert(DESCRIBED_CLASS.valid_input?('12:12:12.123'))
+
+    refute(DESCRIBED_CLASS.valid_input?('foo'))
   end
 
   def test_valid_output_ask
-    assert_equal(true, DESCRIBED_CLASS.valid_output?('12:12'.to_time))
-    assert_equal(true, DESCRIBED_CLASS.valid_output?(DateTime.current))
-    assert_equal(true, DESCRIBED_CLASS.valid_output?(Time.current))
-    assert_equal(false, DESCRIBED_CLASS.valid_output?('foo'.to_time))
+    assert(DESCRIBED_CLASS.valid_output?('12:12'.to_time))
+    assert(DESCRIBED_CLASS.valid_output?(DateTime.current))
+    assert(DESCRIBED_CLASS.valid_output?(Time.current))
+
+    refute(DESCRIBED_CLASS.valid_output?('foo'.to_time))
   end
 
   def test_as_json
@@ -26,7 +28,9 @@ class TimeScalarTest < GraphQL::TestCase
   end
 
   def test_deserialize
-    assert_kind_of(Time, DESCRIBED_CLASS.deserialize('01:00'))
-    assert_equal("2000-01-01 01:00:00 -0200".to_time, DESCRIBED_CLASS.deserialize('01:00'))
+    Time.use_zone('UTC') do
+      assert_kind_of(Time, DESCRIBED_CLASS.deserialize('01:00'))
+      assert_equal('2000-01-01 01:00:00 -0000'.to_time, DESCRIBED_CLASS.deserialize('01:00'))
+    end
   end
 end

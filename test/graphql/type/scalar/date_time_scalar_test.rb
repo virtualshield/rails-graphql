@@ -1,19 +1,20 @@
 require 'config'
 
-DESCRIBED_CLASS = Rails::GraphQL::Type::Scalar::DateTimeScalar
-
 class DateTimeScalarTest < GraphQL::TestCase
-  def test_valid_input_ask
-    datetime = Time.now.strftime('%Y-%m-%dT%H:%M:%S.%L%z')
+  DESCRIBED_CLASS = Rails::GraphQL::Type::Scalar::DateTimeScalar
 
-    assert(DESCRIBED_CLASS.valid_input?(datetime))
+  def test_valid_input_ask
+    assert(DESCRIBED_CLASS.valid_input?(Time.now.iso8601))
+
     refute(DESCRIBED_CLASS.valid_input?(1))
     refute(DESCRIBED_CLASS.valid_input?('abc'))
     refute(DESCRIBED_CLASS.valid_input?(nil))
   end
 
   def test_valid_output_ask
-    assert(DESCRIBED_CLASS.valid_output?('abc'))
+    assert(DESCRIBED_CLASS.valid_output?(Time.now))
+
+    refute(DESCRIBED_CLASS.valid_output?('abc'))
     refute(DESCRIBED_CLASS.valid_output?(1))
     refute(DESCRIBED_CLASS.valid_output?(nil))
   end

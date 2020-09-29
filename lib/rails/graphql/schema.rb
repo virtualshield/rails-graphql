@@ -165,7 +165,7 @@ module Rails # :nodoc:
 
           # Generate the helper methods to easily create types within the
           # definition of the schema
-          GraphQL::Type::KINDS.each do |kind|
+          (GraphQL::Type::KINDS - %w[Object]).each do |kind|
             class_eval <<-RUBY, __FILE__, __LINE__ + 1
               def #{kind.underscore}(name, **xargs, &block)
                 create_type(name, GraphQL::Type.const_get(:#{kind}), **xargs, &block)

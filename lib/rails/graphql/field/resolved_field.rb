@@ -61,8 +61,13 @@ module Rails # :nodoc:
 
       # Check if the field has a dynamic resolver
       def dynamic_resolver?
-        defined?(@dynamic_resolver) ? @dynamic_resolver :
-          @resolver.present? || callable?(method_name)
+        if defined?(@dynamic_resolver)
+          @dynamic_resolver
+        elsif defined?(@resolver)
+          @resolver.present?
+        else
+          callable?(method_name)
+        end
       end
 
       # Checks if all the named callbacks can actually be called
@@ -71,7 +76,9 @@ module Rails # :nodoc:
 
         # Store this result for performance purposes
         @dynamic_resolver = dynamic_resolver?
-        invalid = @events&.each_value&.reject do |callback|
+        return unless defined? @events
+
+        invalid = @events.each_value.reject do |callback|
           callback.block.is_a?(Proc) || callable?(callback.block)
         end
 

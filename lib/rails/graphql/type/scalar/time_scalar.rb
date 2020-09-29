@@ -33,7 +33,7 @@ module Rails # :nodoc:
           end
 
           def deserialize(value)
-            "#{EPOCH.to_date.iso8601} #{value}".to_time
+            "#{EPOCH.to_date.iso8601} #{value} UTC".to_time
           end
         end
       end

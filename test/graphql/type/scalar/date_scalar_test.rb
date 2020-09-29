@@ -1,18 +1,20 @@
 require 'config'
 
-DESCRIBED_CLASS = Rails::GraphQL::Type::Scalar::DateScalar
-
 class DateScalarTest < GraphQL::TestCase
+  DESCRIBED_CLASS = Rails::GraphQL::Type::Scalar::DateScalar
+
   def test_valid_input_ask
     assert(DESCRIBED_CLASS.valid_input?('2020-02-02'))
+
     refute(DESCRIBED_CLASS.valid_input?(1))
     refute(DESCRIBED_CLASS.valid_input?('abc'))
     refute(DESCRIBED_CLASS.valid_input?(nil))
   end
 
   def test_valid_output_ask
-    assert(DESCRIBED_CLASS.valid_output?('abc'))
     assert(DESCRIBED_CLASS.valid_output?('2020-02-02'))
+
+    refute(DESCRIBED_CLASS.valid_output?('abc'))
     refute(DESCRIBED_CLASS.valid_output?(nil))
     refute(DESCRIBED_CLASS.valid_output?(1))
   end

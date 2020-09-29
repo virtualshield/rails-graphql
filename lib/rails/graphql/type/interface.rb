@@ -36,7 +36,7 @@ module Rails # :nodoc:
 
           # Get the list of all inherited-aware associated types
           def all_types
-            (superclass.try(:all_types) || Set.new) + (@types || Set.new)
+            (superclass.try(:all_types) || Set.new) + (defined?(@types) ? @types : Set.new)
           end
 
           # Check if the other type is equivalent, by checking if the other is

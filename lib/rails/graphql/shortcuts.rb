@@ -42,8 +42,8 @@ module GraphQL
   DIRECTIVE_SHORTCUTS = %i[DeprecatedDirective IncludeDirective SkipDirective]
 
   class << self
-    delegate :to_gql, :to_graphql, :type_map, to: 'Rails::GraphQL'
-    delegate *DIRECTIVE_SHORTCUTS, to: 'Rails::GraphQL::Directive'
+    delegate(:to_gql, :to_graphql, :type_map, to: 'Rails::GraphQL')
+    delegate(*DIRECTIVE_SHORTCUTS, to: 'Rails::GraphQL::Directive')
 
     # See {Request}[rdoc-ref:Rails::GraphQL::Request]
     def request(*args, **xargs)

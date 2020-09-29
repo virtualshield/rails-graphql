@@ -98,6 +98,7 @@ module Rails # :nodoc:
             subclass.abstract = false
             super if defined? super
 
+            return if subclass.anonymous?
             method_name = subclass.name.demodulize
             subclass.module_parent.define_singleton_method(method_name) do |*args, &block|
               subclass.new(*args, &block)
@@ -125,7 +126,7 @@ module Rails # :nodoc:
         autoload :SkipDirective
       end
 
-      delegate :locations, :gql_name, :all_listeners, to: :class
+      delegate :locations, :gql_name, to: :class
 
       array_sanitizer = ->(setting) do
         Array.wrap(setting)

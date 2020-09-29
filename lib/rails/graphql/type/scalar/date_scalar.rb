@@ -11,11 +11,15 @@ module Rails # :nodoc:
 
         class << self
           def valid_input?(value)
-            super && !!(Date.iso8601(value) rescue false)
+            super && !!Date.iso8601(value)
+          rescue Date::Error
+            false
           end
 
           def valid_output?(value)
-            value.respond_to?(:to_date)
+            value.respond_to?(:to_date) && !!value.to_date
+          rescue Date::Error
+            false
           end
 
           def as_json(value)

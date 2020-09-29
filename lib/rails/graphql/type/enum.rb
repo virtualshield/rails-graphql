@@ -37,7 +37,7 @@ module Rails # :nodoc:
 
           # Checks if the enum was marked as indexed
           def indexed?
-            @indexed.present?
+            defined?(@indexed) && @indexed.present?
           end
 
           # Check if a given value is a valid non-deserialized input
@@ -59,8 +59,7 @@ module Rails # :nodoc:
           def as_json(value)
             return if value.nil?
             return value.to_s if value.is_a?(self)
-            # BUG: Set doesn`t seem to have [] method, but converting to array is not ideal
-            return all_values.to_a[value] if indexed? && value.is_a?(Numeric)
+            return all_values.drop(value).first if indexed? && value.is_a?(Numeric)
             value.to_s.underscore.upcase
           end
 
@@ -136,7 +135,7 @@ module Rails # :nodoc:
 
           # This returns the field directives and all value directives
           def all_directives
-            super + all_value_directives.each_value.reduce(:+)
+            all_value_directives.each_value.reduce(:+)
           end
 
           def inspect # :nodoc:
@@ -169,7 +168,7 @@ module Rails # :nodoc:
 
         # Allow finding the indexed position of the value
         def to_i
-          self.class.all_values.index(@value)
+          self.class.all_values.find_index(@value)
         end
 
         # Checks if the current value is valid

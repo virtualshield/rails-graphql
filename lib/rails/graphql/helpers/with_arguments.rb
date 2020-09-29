@@ -92,15 +92,16 @@ module Rails # :nodoc:
 
         # Check if a given +name+ is already defined on the list of arguments
         def has_argument?(name)
-          @arguments&.key?(name)
+          defined?(@arguments) && @arguments.key?(name)
         end
 
         # Validate all the arguments to make sure the definition is valid
         def validate!(*)
           super if defined? super
 
-          @arguments&.each_value(&:validate!)
-          @arguments&.freeze
+          return unless defined? @arguments
+          @arguments.each_value(&:validate!)
+          @arguments.freeze
         end
 
         protected
