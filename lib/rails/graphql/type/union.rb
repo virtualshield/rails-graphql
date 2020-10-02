@@ -55,7 +55,7 @@ module Rails # :nodoc:
               A union cannot contain members of different base classes.
             MSG
 
-            members.merge(others)
+            members.concat(others)
           end
 
           # Check if the union definition is valid

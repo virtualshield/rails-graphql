@@ -50,6 +50,22 @@ class InterfaceTest < GraphQL::TestCase
     end
   end
 
+  def test_inspect
+    DESCRIBED_CLASS.stub(:gql_name, 'foo') do
+      DESCRIBED_CLASS.stub_ivar(:@fields, {}) do
+        assert_equal('#<GraphQL::Interface foo>', DESCRIBED_CLASS.inspect)
+      end
+
+      DESCRIBED_CLASS.stub_ivar(:@fields, { 'a' => 'a' }) do
+        assert_equal('#<GraphQL::Interface foo {"a"}>', DESCRIBED_CLASS.inspect)
+      end
+
+      DESCRIBED_CLASS.stub_ivar(:@fields, { 'a' => 'a', 'b' => 'b' }) do
+        assert_equal('#<GraphQL::Interface foo {"a", "b"}>', DESCRIBED_CLASS.inspect)
+      end
+    end
+  end
+
   def implemented_types(object)
     DESCRIBED_CLASS.get_reset_ivar(:@types) do
       DESCRIBED_CLASS.implemented(object)

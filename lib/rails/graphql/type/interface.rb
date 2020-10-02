@@ -65,8 +65,8 @@ module Rails # :nodoc:
 
           def inspect # :nodoc:
             fields = @fields.values.map(&:inspect)
-            fields = fields.presence && "{#{fields.join(', ')}}"
-            "#<GraphQL::Interface #{gql_name} #{fields}>"
+            fields = fields.presence && " {#{fields.join(', ')}}"
+            "#<GraphQL::Interface #{gql_name}#{fields}>"
           end
 
           # Check if the given object is properly implementing this interface

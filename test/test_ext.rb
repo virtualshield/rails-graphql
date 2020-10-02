@@ -7,7 +7,8 @@ class Object < BasicObject
     remove_instance_variable(name)
   end
 
-  def get_reset_ivar(name)
+  def get_reset_ivar(name, *extra)
+    instance_variable_set(name, extra.first) if extra.any?
     yield
     instance_variable_get(name).tap { remove_instance_variable(name) }
   end
