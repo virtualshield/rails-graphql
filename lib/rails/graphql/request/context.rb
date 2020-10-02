@@ -25,7 +25,7 @@ module Rails # :nodoc:
 
         # Find the parent object
         def parent
-          @stack.second
+          @stack[1]
         end
 
         # Get all ancestors objects
