@@ -38,6 +38,8 @@ module Rails # :nodoc:
           resolver&.current_value
         end
 
+        alias current current_value
+
         # Provide a way to set the current value
         def current_value=(value)
           resolver&.override_value(value)

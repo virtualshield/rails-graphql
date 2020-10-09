@@ -66,24 +66,27 @@ module Rails # :nodoc:
         field :of_type,        '__Type',
           desc: 'NON_NULL and LIST only'
 
-        def fields
-          return unless object? || interface?
+        def fields(include_deprecated: false)
+          return [] unless current.object? || current.interface?
 
-          list = fields.each_value
+          list = current.fields.values
           list = list.reject { |field| field.using?(:deprecated) } \
-            unless args.include_deprecated
+            unless include_deprecated
 
           list
         end
 
-        def enum_values
-          descs = all_value_description
-          deprecated = all_deprecated_values
+        def enum_values(include_deprecated: false)
+          return [] unless current.enum?
 
-          list = all_values.lazy
+          descs = current.all_value_description
+          deprecated = current.all_deprecated_values
+
+          list = current.all_values.lazy
           list = list.reject { |value| deprecated.key?(value) } \
-            unless args.include_deprecated
+            unless include_deprecated
 
+          # TODO: fix lazy enum
           list.map do |value|
             OpenStruct.new(
               name: value,
@@ -91,7 +94,7 @@ module Rails # :nodoc:
               is_deprecated: deprecated.key?(value),
               deprecation_reason: deprecated[value],
             )
-          end
+          end.force
         end
 
         def possible_types
@@ -100,7 +103,8 @@ module Rails # :nodoc:
         end
 
         def input_fields
-          fields.each_value if input?
+          return [] unless current.input?
+          current.fields.values
         end
 
         def of_type
