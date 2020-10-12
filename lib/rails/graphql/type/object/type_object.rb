@@ -98,16 +98,13 @@ module Rails # :nodoc:
         end
 
         def possible_types
-          return objects if interface?
-          return all_members if union?
+          return current.all_types if current.interface?
+          current.union? ? current.all_members : []
         end
 
         def input_fields
           return [] unless current.input?
           current.fields.values
-        end
-
-        def of_type
         end
       end
     end
