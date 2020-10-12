@@ -89,6 +89,7 @@ module Rails # :nodoc:
           )
         end
 
+        # Find all types that are available for the current schema
         def types(base_class: :Type, &block)
           type_map.each_from(namespace, base_class: base_class, &block)
         end

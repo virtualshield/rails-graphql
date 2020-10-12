@@ -34,18 +34,6 @@ module Rails # :nodoc:
           Directive.eager_load!
           event.schema.types(base_class: :Directive).force
         end
-
-        def query_type
-          event.current_value.query_type
-        end
-
-        def mutation_type
-          event.current_value.mutation_type
-        end
-
-        def subscription_type
-          event.current_value.subscription_type
-        end
       end
     end
   end

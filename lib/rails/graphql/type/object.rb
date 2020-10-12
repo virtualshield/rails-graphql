@@ -36,7 +36,7 @@ module Rails # :nodoc:
         end
 
         # Define the methods for accessing the interfaces of the object
-        inherited_collection :interfaces
+        inherited_collection :interfaces, instance_reader: false
 
         # The purpose of instantiating an object is to have access to its
         # public methods. It then runs from the strategy perspective, pointing
@@ -99,6 +99,12 @@ module Rails # :nodoc:
               MSG
             end
         end
+
+        protected
+
+          def deprecated_directive
+            GraphQL::Directive::DeprecatedDirective
+          end
       end
     end
   end

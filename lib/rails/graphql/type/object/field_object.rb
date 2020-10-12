@@ -8,6 +8,8 @@ module Rails # :nodoc:
         self.assigned_to = 'Rails::GraphQL::Field'
         self.spec_object = true
 
+        delegate :fake_type_object, to: 'Object::TypeObject'
+
         rename! '__Field'
 
         desc <<~DESC
@@ -16,29 +18,35 @@ module Rails # :nodoc:
           a value of a specific type.
         DESC
 
-        field :name,               :string,        null: false
+        field :name,               :string,        null: false, method_name: :gql_name
         field :description,        :string
         field :args,               '__InputValue', full: true
-        field :type,               '__Type',       null: false,
-              method_name: :build_type
+        field :type,               '__Type',       null: false, method_name: :build_type
         field :is_deprecated,      :boolean,       null: false
         field :deprecation_reason, :string
 
-        FAKE_TYPES = {
-          list: { kind: :list, name: 'List', object?: true,  description: '...' },
-          non_null: { kind: :non_null, name: 'NON Null', object?: true, description: '...'}
-        }.freeze
-
         def build_type
           result = current.type_klass
-          result = fake_type_object(:non_null, result) if current.nullable?
-          result = fake_type_object(:list, result)     if current.array?
-          result = fake_type_object(:non_null, result) if current.null?
+
+          if current.array?
+            result = fake_type_object(:non_null, result) unless current.nullable?
+            result = fake_type_object(:list,     result)
+          end
+
+          result = fake_type_object(:non_null, result) unless current.null?
           result
         end
 
-        def fake_type_object(type, subtype)
-          OpenStruct.new(**FAKE_TYPES[type].merge(of_type: subtype))
+        def args
+          all_arguments.values
+        end
+
+        def is_deprecated
+          current.using?(deprecated_directive)
+        end
+
+        def deprecation_reason
+          current.all_directives.find { |item| item.is_a?(deprecated_directive) }&.args&.reason
         end
       end
     end
