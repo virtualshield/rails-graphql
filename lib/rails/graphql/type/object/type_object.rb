@@ -5,8 +5,33 @@ module Rails # :nodoc:
     class Type # :nodoc:
       # The introspection object for any kind of type
       class Object::TypeObject < Object::AssignedObject
+        FAKE_TYPES = {
+          list:     {
+            kind: :list,
+            kind_enum: 'LIST',
+            name: 'List',
+            object?: true,
+            description: nil,
+          },
+          non_null: {
+            kind: :non_null,
+            kind_enum: 'NON_NULL',
+            name: 'Non-Null',
+            object?: true,
+            description: nil,
+          },
+        }.freeze
+
         self.assigned_to = 'Rails::GraphQL::Type'
         self.spec_object = true
+
+        def self.valid_member?(value)
+          value.is_a?(OpenStruct) ? value.try(:object?) : super
+        end
+
+        def self.fake_type_object(type, subtype)
+          OpenStruct.new(**FAKE_TYPES[type].merge(of_type: subtype))
+        end
 
         rename! '__Type'
 
@@ -46,7 +71,7 @@ module Rails # :nodoc:
         end
 
         field :interfaces,     '__Type',       array: true, nullable: false,
-          method_name: :all_interfaces, desc: 'OBJECT only'
+          desc: 'OBJECT only'
 
         field :possible_types, '__Type',       array: true, nullable: false,
           desc: 'INTERFACE and UNION only'
@@ -62,24 +87,27 @@ module Rails # :nodoc:
         field :of_type,        '__Type',
           desc: 'NON_NULL and LIST only'
 
-        def fields
-          return unless object? || interface?
+        def fields(include_deprecated:)
+          return [] unless current.object? || current.interface?
 
-          list = fields.each_value
-          list = list.reject { |field| field.using?(:deprecated) } \
-            unless args.include_deprecated
+          list = current.fields.values
+          list = list.reject { |field| field.using?(deprecated_directive) } \
+            unless include_deprecated
 
           list
         end
 
-        def enum_values
+        def enum_values(include_deprecated:)
+          return [] unless current.enum?
+
           descs = all_value_description
           deprecated = all_deprecated_values
 
           list = all_values.lazy
           list = list.reject { |value| deprecated.key?(value) } \
-            unless args.include_deprecated
+            unless include_deprecated
 
+          # TODO: fix lazy enum
           list.map do |value|
             OpenStruct.new(
               name: value,
@@ -87,19 +115,21 @@ module Rails # :nodoc:
               is_deprecated: deprecated.key?(value),
               deprecation_reason: deprecated[value],
             )
-          end
+          end.force
+        end
+
+        def interfaces
+          return [] unless current.object?
+          current.all_interfaces || []
         end
 
         def possible_types
-          return objects if interface?
-          return all_members if union?
+          return all_types if current.interface?
+          current.union? ? all_members : []
         end
 
         def input_fields
-          fields.each_value if input?
-        end
-
-        def of_type
+          current.input? ? current.fields.values : []
         end
       end
     end

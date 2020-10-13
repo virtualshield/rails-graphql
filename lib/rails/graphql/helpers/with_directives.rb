@@ -74,7 +74,7 @@ module Rails # :nodoc:
 
         # Check wheter a given directive is being used
         def using?(item_or_symbol)
-          directive = directive.is_a?(Symbol) ? fetch!(item_or_symbol) : item_or_symbol
+          directive = item_or_symbol.is_a?(Symbol) ? fetch!(item_or_symbol) : item_or_symbol
           raise ArgumentError, <<~MSG.squish unless directive < GraphQL::Directive
             The provided #{item_or_symbol.inspect} is not a valid directive.
           MSG

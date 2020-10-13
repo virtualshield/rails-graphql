@@ -213,7 +213,8 @@ module Rails # :nodoc:
 
             current, key = context.current_value, field.method_name
             return result << current.public_send(key) if current.respond_to?(key)
-            result << current[key] if current.respond_to?(:[]) && current.key?(key)
+
+            result << current[key] if current.respond_to?(:key?) && current.key?(key)
           end
 
         private

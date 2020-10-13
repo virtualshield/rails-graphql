@@ -14,6 +14,7 @@ module Rails # :nodoc:
 
         # Write a value to the response
         def write_value(value)
+          return write_leaf(value) if value.nil?
           send(KIND_WRITERS[field.kind] || 'write_leaf', value)
         end
 
