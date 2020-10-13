@@ -86,7 +86,7 @@ module Rails # :nodoc:
         # Call the callback block as a proc
         def call_proc(event, context = nil)
           args, xargs = collect_parameters(event)
-          (context || event.source).instance_exec(*args, **xargs, &block)
+          (context || event).instance_exec(*args, **xargs, &block)
         end
 
         # Read the arguments needed for a block then collect them from the

@@ -38,6 +38,8 @@ module Rails # :nodoc:
           resolver&.current_value
         end
 
+        alias current current_value
+
         # Provide a way to set the current value
         def current_value=(value)
           resolver&.override_value(value)
@@ -87,15 +89,22 @@ module Rails # :nodoc:
         private
 
           # Check for object based readers
-          def respond_to_missing?(method_name, *)
-            OBJECT_BASED_READERS.include?(method_name) || super
+          def respond_to_missing?(method_name, include_private = false)
+            OBJECT_BASED_READERS.include?(method_name) ||
+              current_value&.respond_to?(method_name, include_private) ||
+              super
           end
 
           # If the +method_name+ matches the kind of the current +object+, then
           # it will return the object
-          def method_missing(method_name, *)
-            return super unless OBJECT_BASED_READERS.include?(method_name)
-            return object if object.kind === method_name
+          def method_missing(method_name, *args, **xargs, &block)
+            if OBJECT_BASED_READERS.include?(method_name)
+              object if object.kind === method_name
+            elsif current_value&.respond_to?(method_name)
+              current_value&.public_send(method_name, *args, **xargs, &block)
+            else
+              super
+            end
           end
       end
     end

@@ -157,7 +157,7 @@ module Rails # :nodoc:
 
       # Convert the current stack into a error path ignoring the schema
       def stack_to_path
-        stack.map do |item|
+        stack[0..-2].map do |item|
           item.is_a?(Numeric) ? item : item.try(:gql_name)
         end.compact.reverse
       end

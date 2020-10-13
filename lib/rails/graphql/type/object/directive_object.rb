@@ -24,6 +24,10 @@ module Rails # :nodoc:
         field :description, :string
         field :locations,   '__DirectiveLocation', full: true
         field :args,        '__InputValue',        full: true
+
+        def args
+          all_arguments.values
+        end
       end
     end
   end
