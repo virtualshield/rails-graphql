@@ -41,11 +41,6 @@ module Rails # :nodoc:
         owner.try(:valid_field_types) || Type::Object.valid_field_types
       end
 
-      # Check if the field is an internal one
-      def internal?
-        super && type_klass.spec_object
-      end
-
       # A little extension of the +is_a?+ method that allows checking it using
       # the +type_klass+
       def of_type?(klass)

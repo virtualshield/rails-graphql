@@ -1,6 +1,6 @@
 require 'config'
 
-class GraphQL_TypeTest < GraphQL::TestCase
+class GraphQL_SchemaTest < GraphQL::TestCase
   DESCRIBED_CLASS = Class.new(Rails::GraphQL::Schema)
 
   def test_gql_name
