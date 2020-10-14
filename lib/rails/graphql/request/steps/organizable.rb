@@ -90,8 +90,8 @@ module Rails # :nodoc:
 
             errors = []
             source = source.all_arguments if source.respond_to?(:all_arguments)
-            result = source.each_pair.inject({}) do |result, (key, argument)|
-              next result unless values.key?(key)
+            result = source.each_pair.each_with_object({}) do |(key, argument), result|
+              next unless values.key?(key)
               value = values[key]
 
               # Pointer means operation variable
@@ -115,7 +115,7 @@ module Rails # :nodoc:
                 MSG
 
                 operation.used_variables << var_name
-                next result unless variables.key?(var_name)
+                next unless variables.key?(var_name)
                 value = variables[var_name]
               else
                 # Only when the given value is an actual value that we check if
@@ -128,10 +128,8 @@ module Rails # :nodoc:
               end
 
               result[argument.name] = value
-              result
             rescue ArgumentError => error
               errors << error.message
-              result
             end
 
             # Checks for any required arugment that was not provided

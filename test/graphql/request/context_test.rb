@@ -1,6 +1,6 @@
 require 'config'
 
-class ContextTest < GraphQL::TestCase
+class GraphQL_Request_ContextTest < GraphQL::TestCase
   DESCRIBED_CLASS = Class.new(Rails::GraphQL::Request::Context)
 
   def test_stacked

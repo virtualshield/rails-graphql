@@ -29,18 +29,20 @@ module Rails # :nodoc:
     type_map.register_alias 'pg:time with time zone',         :time
     type_map.register_alias 'pg:numeric',                     :decimal
 
-    module PG::SourceMethods # :nodoc: all
-      protected
+    module PG # :nodoc: all
+      module SourceMethods
+        protected
 
-        def pg_attributes
-          model.columns_hash.each_value do |column|
-            type_name = column.sql_type_metadata.sql_type
-            type = find_type!('pg:' + type_name.gsub(/(\(|\[).*/, ''), fallback: :string)
+          def pg_attributes
+            model.columns_hash.each_value do |column|
+              type_name = column.sql_type_metadata.sql_type
+              type = find_type!('pg:' + type_name.gsub(/(\(|\[).*/, ''), fallback: :string)
 
-            options = { array: type_name.include?('[]') }
-            yield column.name, type, options
+              options = { array: type_name.include?('[]') }
+              yield column.name, type, options
+            end
           end
-        end
+      end
     end
 
     Source::ActiveRecordSource.extend(PG::SourceMethods)

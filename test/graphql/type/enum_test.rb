@@ -1,13 +1,13 @@
 require 'config'
 
-class EnumTest < GraphQL::TestCase
+class GraphQL_Type_EnumTest < GraphQL::TestCase
   DESCRIBED_CLASS = Class.new(Rails::GraphQL::Type::Enum)
   %w[A B C].each(&DESCRIBED_CLASS.method(:add))
 
   def test_indexed
-    refute(DESCRIBED_CLASS.indexed?)
+    refute_predicate(DESCRIBED_CLASS, :indexed?)
     DESCRIBED_CLASS.indexed!
-    assert(DESCRIBED_CLASS.indexed?)
+    assert_predicate(DESCRIBED_CLASS, :indexed?)
     DESCRIBED_CLASS.remove_instance_variable(:@indexed)
   end
 

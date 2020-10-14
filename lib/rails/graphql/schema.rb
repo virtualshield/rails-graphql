@@ -101,7 +101,7 @@ module Rails # :nodoc:
 
         # Schemas are assigned to a single namespace and not inherited
         def namespace(*list)
-          list.blank? ? namespaces.first || :base : set_namespace(*list)
+          list.blank? ? (namespaces.first || :base) : set_namespace(*list)
         end
 
         # Check if the class is already registered in the typemap
@@ -180,7 +180,7 @@ module Rails # :nodoc:
 
             create_type(name_or_object, Type::Object::AssignedObject, **xargs) do
               self.assigned_to = name_or_object
-              class_eval(&block) if block.present?
+              instance_exec(&block) if block.present?
             end
           end
 
@@ -205,7 +205,7 @@ module Rails # :nodoc:
                 skip_on segment, value if segment.present?
               end
 
-              class_eval(&block) if block.present?
+              instance_exec(&block) if block.present?
               build!
             end
           end
@@ -255,7 +255,7 @@ module Rails # :nodoc:
               klass = base_module.const_set(klass_name, Class.new(superclass))
             end
 
-            klass.class_eval(&block) if block.present?
+            klass.instance_exec(&block) if block.present?
             klass
           end
       end

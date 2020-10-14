@@ -1,6 +1,6 @@
 require 'config'
 
-class ObjectTest < GraphQL::TestCase
+class GraphQL_Type_ObjectTest < GraphQL::TestCase
   DESCRIBED_CLASS = Class.new(Rails::GraphQL::Type::Object)
 
   def test_valid_member_ask
@@ -29,13 +29,13 @@ class ObjectTest < GraphQL::TestCase
 
   def test_equivalence
     DESCRIBED_CLASS.stub(:implements?, true) do
-      assert(DESCRIBED_CLASS =~ double(interface?: true))
-      refute(DESCRIBED_CLASS =~ double(interface?: false))
+      assert_operator(DESCRIBED_CLASS, :=~, double(interface?: true))
+      refute_operator(DESCRIBED_CLASS, :=~, double(interface?: false))
     end
 
     DESCRIBED_CLASS.stub(:implements?, false) do
-      refute(DESCRIBED_CLASS =~ double(interface?: true))
-      refute(DESCRIBED_CLASS =~ double(interface?: false))
+      refute_operator(DESCRIBED_CLASS, :=~, double(interface?: true))
+      refute_operator(DESCRIBED_CLASS, :=~, double(interface?: false))
     end
   end
 

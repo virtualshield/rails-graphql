@@ -1,6 +1,6 @@
 require 'config'
 
-class IdScalarTest < GraphQL::TestCase
+class GraphQL_Type_Scalar_IdScalarTest < GraphQL::TestCase
   DESCRIBED_CLASS = Rails::GraphQL::Type::Scalar::IdScalar
 
   def test_valid_input_ask

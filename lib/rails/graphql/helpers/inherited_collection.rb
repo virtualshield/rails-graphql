@@ -74,7 +74,7 @@ module Rails # :nodoc:
 
             module_eval(<<~RUBY, __FILE__, __LINE__ + 1) if instance_predicate
               def self.#{name}?
-                @#{name}.present? || superclass.try(:#{name}?)
+                defined?(@#{name}) || superclass.try(:#{name}?)
               end
             RUBY
 
@@ -89,29 +89,29 @@ module Rails # :nodoc:
 
           # Combine an inherited list of arrays
           def fetch_inherited_array(ivar)
-            inherited_ancestors.inject([]) do |result, klass|
+            inherited_ancestors.each_with_object([]) do |klass, result|
               next result unless klass.instance_variable_defined?(ivar)
               val = klass.instance_variable_get(ivar)
-              val.blank? ? result : result += val
+              result.merge(val) unless val.blank?
             end
           end
 
           # Combine an inherited list of set objects
           def fetch_inherited_set(ivar)
-            inherited_ancestors.inject(Set.new) do |result, klass|
+            inherited_ancestors.each_with_object(Set.new) do |klass, result|
               next result unless klass.instance_variable_defined?(ivar)
               val = klass.instance_variable_get(ivar)
-              val.blank? ? result : result += val
+              result.merge(val) unless val.blank?
             end
           end
 
           # Combine an inherited list of hashes but keeping only the most recent
           # value, which means that keys might be replaced
           def fetch_inherited_hash(ivar)
-            inherited_ancestors.inject({}) do |result, klass|
+            inherited_ancestors.each_with_object({}) do |klass, result|
               next result unless klass.instance_variable_defined?(ivar)
               val = klass.instance_variable_get(ivar)
-              val.blank? ? result : result.merge(val)
+              result.merge!(val) unless val.blank?
             end
           end
 

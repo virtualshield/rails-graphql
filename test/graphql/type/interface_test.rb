@@ -1,6 +1,6 @@
 require 'config'
 
-class InterfaceTest < GraphQL::TestCase
+class GraphQL_Type_InterfaceTest < GraphQL::TestCase
   DESCRIBED_CLASS = Class.new(Rails::GraphQL::Type::Interface)
 
   def test_all_types
@@ -18,16 +18,16 @@ class InterfaceTest < GraphQL::TestCase
 
   def test_equivalence
     test_object = double(object?: true, implements?: ->(*) { true })
-    assert(DESCRIBED_CLASS =~ test_object)
+    assert_operator(DESCRIBED_CLASS, :=~, test_object)
 
     test_object = double(object?: false, implements?: ->(*) { true })
-    refute(DESCRIBED_CLASS =~ test_object)
+    refute_operator(DESCRIBED_CLASS, :=~, test_object)
 
     test_object = double(object?: true, implements?: ->(*) { false })
-    refute(DESCRIBED_CLASS =~ test_object)
+    refute_operator(DESCRIBED_CLASS, :=~, test_object)
 
     test_object = double(object?: false, implements?: ->(*) { false })
-    refute(DESCRIBED_CLASS =~ test_object)
+    refute_operator(DESCRIBED_CLASS, :=~, test_object)
   end
 
   def test_implemented
@@ -67,8 +67,6 @@ class InterfaceTest < GraphQL::TestCase
   end
 
   def implemented_types(object)
-    DESCRIBED_CLASS.get_reset_ivar(:@types) do
-      DESCRIBED_CLASS.implemented(object)
-    end
+    DESCRIBED_CLASS.get_reset_ivar(:@types) { implemented(object) }
   end
 end

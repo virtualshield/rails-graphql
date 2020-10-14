@@ -1,6 +1,6 @@
 require 'config'
 
-class DateTimeScalarTest < GraphQL::TestCase
+class GraphQL_Type_Scalar_DateTimeScalarTest < GraphQL::TestCase
   DESCRIBED_CLASS = Rails::GraphQL::Type::Scalar::DateTimeScalar
 
   def test_valid_input_ask

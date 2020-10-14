@@ -10,11 +10,16 @@ Minitest::Reporters.use!(Minitest::Reporters::SpecReporter.new)
 module GraphQL
   class TestCase < Minitest::Test
     PASSTHROUGH = ->(x, *) { x }
+    PASSALLTHROUGH = ->(*x) { x }
 
     protected
 
       def passthrough
         PASSTHROUGH
+      end
+
+      def passallthrough
+        PASSALLTHROUGH
       end
 
       def double(base = Object.new, **xargs)

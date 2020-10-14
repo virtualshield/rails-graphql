@@ -96,7 +96,7 @@ module Rails # :nodoc:
 
         # Get the main name of the source
         def base_name
-          name.demodulize[0..-7] unless abstract
+          name.demodulize[0..-7] unless abstract?
         end
 
         # Wait the end of the class in order to create the objects

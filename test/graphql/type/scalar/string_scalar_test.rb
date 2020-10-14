@@ -1,6 +1,6 @@
 require 'config'
 
-class StringScalarTest < GraphQL::TestCase
+class GraphQL_Type_Scalar_StringScalarTest < GraphQL::TestCase
   DESCRIBED_CLASS = Rails::GraphQL::Type::Scalar::StringScalar
 
   def test_as_json

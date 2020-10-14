@@ -141,7 +141,7 @@ module Rails # :nodoc:
           ))
         end
 
-        Array.wrap(list).inject(Set.new) do |result, item|
+        Array.wrap(list).each_with_object(Set.new) do |item, result|
           raise ArgumentError, <<~MSG.squish unless item.kind_of?(GraphQL::Directive)
             The "#{item.class}" is not a valid directive.
           MSG

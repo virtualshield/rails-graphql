@@ -99,7 +99,7 @@ module Rails # :nodoc:
 
           # TODO: Maybe we need to turn procs into lambdas so the optional
           # arguments doesn't suffer any kind of change
-          block.parameters.inject(start_args) do |result, (type, name)|
+          block.parameters.each_with_object(start_args) do |(type, name), result|
             case type
             when :opt, :req
               idx += 1
@@ -109,8 +109,6 @@ module Rails # :nodoc:
               next result unless callback_inject_named_arguments
               result[1][name] = args_source[name] if args_source.key?(name)
             end
-
-            result
           end
         end
 

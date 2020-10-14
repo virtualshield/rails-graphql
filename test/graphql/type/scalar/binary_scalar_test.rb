@@ -1,6 +1,6 @@
 require 'config'
 
-class BinaryScalarTest < GraphQL::TestCase
+class GraphQL_Type_Scalar_BinaryScalarTest < GraphQL::TestCase
   DESCRIBED_CLASS = Rails::GraphQL::Type::Scalar::BinaryScalar
   FILE_PATH = Pathname.new(__dir__).join('../../../assets/luke.jpg')
 

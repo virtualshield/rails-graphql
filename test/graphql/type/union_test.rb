@@ -1,6 +1,6 @@
 require 'config'
 
-class InterfaceTest < GraphQL::TestCase
+class GraphQL_Type_UnionTest < GraphQL::TestCase
   DESCRIBED_CLASS = Class.new(Rails::GraphQL::Type::Union)
 
   def test_of_kind
@@ -13,13 +13,15 @@ class InterfaceTest < GraphQL::TestCase
   def test_equivalence
     test_object = 'a'
     DESCRIBED_CLASS.stub(:all_members, [/a/]) do
-      assert(DESCRIBED_CLASS =~ test_object)
+      assert_operator(DESCRIBED_CLASS, :=~, test_object)
     end
+
     DESCRIBED_CLASS.stub(:all_members, []) do
-      refute(DESCRIBED_CLASS =~ test_object)
+      refute_operator(DESCRIBED_CLASS, :=~, test_object)
     end
+
     DESCRIBED_CLASS.stub(:all_members, [/b/]) do
-      refute(DESCRIBED_CLASS =~ test_object)
+      refute_operator(DESCRIBED_CLASS, :=~, test_object)
     end
   end
 
@@ -32,13 +34,13 @@ class InterfaceTest < GraphQL::TestCase
     assert_raises(StandardError) { DESCRIBED_CLASS.append(object) }
     assert_raises(StandardError) { DESCRIBED_CLASS.append(object, object2) }
 
-    result = DESCRIBED_CLASS.get_reset_ivar(:@members, [object]) { DESCRIBED_CLASS.append(object) }
+    result = DESCRIBED_CLASS.get_reset_ivar(:@members, [object]) { append(object) }
     assert_equal([object, object] , result)
 
     stubbed_type_map(:fetch) do
       object = double(base_type: 'a', is_a?: -> (*) { true } )
       DESCRIBED_CLASS.stub(:members?, true) do
-        result = DESCRIBED_CLASS.get_reset_ivar(:@members, [object]) { DESCRIBED_CLASS.append(object) }
+        result = DESCRIBED_CLASS.get_reset_ivar(:@members, [object]) { append(object) }
         assert_equal([object, object] , result)
       end
     end

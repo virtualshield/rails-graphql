@@ -1,6 +1,6 @@
 require 'config'
 
-class ScalarTest < GraphQL::TestCase
+class GraphQL_Type_ScalarTest < GraphQL::TestCase
   DESCRIBED_CLASS = Class.new(Rails::GraphQL::Type::Scalar)
 
   def test_valid_input_ask

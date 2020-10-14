@@ -1,6 +1,6 @@
 require 'config'
 
-class TimeScalarTest < GraphQL::TestCase
+class GraphQL_Type_Scalar_TimeScalarTest < GraphQL::TestCase
   DESCRIBED_CLASS = Rails::GraphQL::Type::Scalar::TimeScalar
 
   def test_valid_input_ask

@@ -17,12 +17,14 @@ module Rails # :nodoc:
       eager_autoload { KINDS.each { |kind| autoload kind.to_sym } }
 
       delegate :base_type, :kind, :kind_enum, :input_type?, :output_type?,
-        :leaf_type?, :extension?, to: :class
+        :leaf_type?, to: :class, prefix: :gql
 
       # A +base_object+ helps to identify what methods are actually available
       # to work as resolvers
       class_attribute :base_object, instance_writer: false, default: false
 
+      self.spec_object = true
+      self.base_object = true
       self.abstract = true
 
       class << self
@@ -74,7 +76,7 @@ module Rails # :nodoc:
         # Checks if a given method can act as resolver
         def gql_resolver?(method_name)
           ref_object = self
-          ref_object = ref_object.superclass until ref_object.base_object
+          ref_object = ref_object.superclass until ref_object.base_object?
           (instance_methods - ref_object.instance_methods).include?(method_name)
         end
 

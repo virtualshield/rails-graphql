@@ -1,6 +1,6 @@
 require 'config'
 
-class BigintScalarTest < GraphQL::TestCase
+class GraphQL_Type_Scalar_BigintScalarTest < GraphQL::TestCase
   DESCRIBED_CLASS = Rails::GraphQL::Type::Scalar::BigintScalar
   LARGE_VALUE = 123456789101112131415161718192021222324252627282930
 

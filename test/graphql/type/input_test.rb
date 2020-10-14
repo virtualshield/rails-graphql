@@ -1,6 +1,6 @@
 require 'config'
 
-class InputTest < GraphQL::TestCase
+class GraphQL_Type_InputTest < GraphQL::TestCase
   DESCRIBED_CLASS = Class.new(Rails::GraphQL::Type::Input)
   OTHER_CLASS = Class.new(Rails::GraphQL::Type::Input)
 
