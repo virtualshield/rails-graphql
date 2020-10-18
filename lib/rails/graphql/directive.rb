@@ -157,8 +157,6 @@ module Rails # :nodoc:
       def initialize(args = nil, **xargs)
         @args = args || OpenStruct.new(xargs.transform_keys { |key| key.to_s.underscore })
         @args.freeze
-
-        validate! if args.nil?
       end
 
       # Once the directive is correctly prepared, we need to assign the owner

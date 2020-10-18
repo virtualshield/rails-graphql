@@ -10,6 +10,7 @@ module Rails # :nodoc:
       # See http://spec.graphql.org/June2018/#ObjectTypeDefinition
       class Object < Type
         extend ActiveSupport::Autoload
+        extend Helpers::WithAssignment
         extend Helpers::WithFields
 
         setup! output: true
@@ -24,9 +25,6 @@ module Rails # :nodoc:
         ].freeze
 
         eager_autoload do
-          autoload :ActiveRecordObject
-          autoload :AssignedObject
-
           autoload :DirectiveObject
           autoload :EnumValueObject
           autoload :FieldObject
@@ -47,8 +45,8 @@ module Rails # :nodoc:
         class << self
           # Plain objects can check if a given value is a valid member
           def valid_member?(value)
+            return true if valid_assignment?(value)
             checker = value.is_a?(Hash) ? :key? : :respond_to?
-            # BUG: It doesn't work with string-based hash
             value = value.with_indifferent_access if value.is_a?(Hash)
             fields.values.all? { |field| value.public_send(checker, field.method_name) }
           end

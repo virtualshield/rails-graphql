@@ -13,6 +13,7 @@ module Rails # :nodoc:
       # all the fields for its composition and does the validating and
       # serializing process.
       class Interface < Type
+        extend Helpers::WithAssignment
         extend Helpers::WithFields
 
         setup! output: true

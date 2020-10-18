@@ -25,9 +25,8 @@ module Rails # :nodoc:
     # * <tt>:alias</tt> - Same as the +:as+ key (defaults to nil).
     module Field::ProxiedField
       delegate_missing_to :field
-      delegate :leaf_type?, :from_ar?, :from_ar, :array?, :internal?,
-        :valid_input?, :valid_output?, :to_json, :as_json, :deserialize, :valid?,
-        to: :field
+      delegate :leaf_type?, :array?, :internal?, :valid_input?, :valid_output?,
+        :to_json, :as_json, :deserialize, :valid?, to: :field
 
       Field.proxyable_methods %w[name gql_name method_name resolver description
         null? nullable? enabled?], klass: self

@@ -172,6 +172,7 @@ module Rails # :nodoc:
 
         def visit_Rails_GraphQL_Type_Input(o, collector)
           visit_description(o, collector)
+          visit_assignment(o, collector)
           collector << 'input '
           collector << o.gql_name
           visit_directives(o.directives, collector)
@@ -183,6 +184,7 @@ module Rails # :nodoc:
 
         def visit_Rails_GraphQL_Type_Interface(o, collector)
           visit_description(o, collector)
+          visit_assignment(o, collector)
           collector << 'interface '
           collector << o.gql_name
           visit_directives(o.directives, collector)
@@ -194,6 +196,7 @@ module Rails # :nodoc:
 
         def visit_Rails_GraphQL_Type_Object(o, collector)
           visit_description(o, collector)
+          visit_assignment(o, collector)
           collector << 'type '
           collector << o.gql_name
 
@@ -230,17 +233,6 @@ module Rails # :nodoc:
           collector << ' = '
           collector << o.members.map(&:gql_name).join(' | ')
           collector.eol
-        end
-
-        def visit_Rails_GraphQL_Type_Object_AssignedObject(o, collector)
-          if @with_descriptions
-            collector << '# Assigned to '
-            collector << o.assigned_to
-            collector << ' class'
-            collector.eol
-          end
-
-          visit_Rails_GraphQL_Type_Object(o, collector)
         end
 
         def visit_Rails_GraphQL_Directive_Instance(o, collector)
@@ -287,6 +279,15 @@ module Rails # :nodoc:
 
           collector.eol.unindent if indented
           collector << ')'
+        end
+
+        def visit_assignment(o, collector)
+          return unless @with_descriptions && o.assigned?
+
+          collector << '# Assigned to '
+          collector << o.assigned_to
+          collector << ' class'
+          collector.eol
         end
 
         def visit_description(o, collector)

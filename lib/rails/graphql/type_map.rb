@@ -276,7 +276,10 @@ module Rails # :nodoc:
         def register_pending!
           return if @pending.blank?
 
-          skip, keep, validate = skip_register.flatten, [], []
+          skip = skip_register.flatten
+          keep = []
+          validate = []
+
           while (klass, source = @pending.shift)
             next if klass.registered?
 
@@ -286,10 +289,10 @@ module Rails # :nodoc:
           end
 
           validate.compact.each(&:call)
-          @pending = keep.presence || []
         rescue DefinitionError => e
           raise e.class, e.message + "\n  Defined at: #{source}"
-          @pending = keep + @pending
+        ensure
+          @pending += keep unless keep.nil?
         end
 
         # Since concurrent map doesn't implement this method, use this to

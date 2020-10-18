@@ -51,13 +51,13 @@ module Rails # :nodoc:
       # The list of hooks defined in order to describe a source
       inherited_collection :hooks, instance_reader: false, type: :hash_array
 
-      # The name of the class to be used as superclass for the generate GraphQL
-      # object type of this source
+      # The name of the class (or the class itself) to be used as superclass for
+      # the generate GraphQL object type of this source
       class_attribute :object_class, instance_writer: false,
         default: '::Rails::GraphQL::Type::Object'
 
-      # The name of the class to be used as superclass for the generate GraphQL
-      # input type of this source
+      # The name of the class (or the class itself) to be used as superclass for
+      # the generate GraphQL input type of this source
       class_attribute :input_class, instance_writer: false,
         default: '::Rails::GraphQL::Type::Input'
 
@@ -102,6 +102,8 @@ module Rails # :nodoc:
         # Wait the end of the class in order to create the objects
         def inherited(subclass)
           subclass.abstract = false
+          super if defined? super
+
           pending[subclass] ||= caller(1).find do |item|
             !item.end_with?("`inherited'")
           end
@@ -127,22 +129,7 @@ module Rails # :nodoc:
         # to the +::GraphQL+ namespace with the addition of any namespace of the
         # currect class
         def object
-          # TODO: Allow finding an already defined object on type map
-          @object ||= begin
-            super_klass = object_class.constantize
-
-            klass = Class.new(super_klass)
-            klass.set_namespaces(*namespaces)
-            klass.owner = self if klass.respond_to?(:owner=)
-
-            if respond_to?(:assigned_class, true) && assigned_class.present?
-              klass.instance_variable_set(:@assigned_to, assigned_class.name)
-              klass.instance_variable_set(:@assigned_class, assigned_class)
-            end
-
-            suffix = super_klass.kind === :interface ? 'Interface' : 'Object'
-            gql_module.const_set("#{base_name}#{suffix}", klass)
-          end
+          @object ||= create_type(superclass: object_class)
         end
 
         # Return the GraphQL input type associated with the source. It will
@@ -150,19 +137,7 @@ module Rails # :nodoc:
         # to the +::GraphQL+ namespace with the addition of any namespace of the
         # currect class
         def input
-          # TODO: Allow finding an already defined input on type map
-          @input ||= begin
-            klass = Class.new(input_class.constantize)
-            klass.set_namespaces(*namespaces)
-            klass.owner = self if klass.respond_to?(:owner=)
-
-            if respond_to?(:assigned_class, true) && assigned_class.present?
-              klass.instance_variable_set(:@assigned_to, assigned_class.name)
-              klass.instance_variable_set(:@assigned_class, assigned_class)
-            end
-
-            gql_module.const_set("#{base_name}Input", klass)
-          end
+          @input ||= create_type(superclass: input_class)
         end
 
         # Check if the object was already built
@@ -219,13 +194,40 @@ module Rails # :nodoc:
           end
 
           # A helper method to create an enum type
-          def create_enum(enum_name, values, **xargs)
+          def create_enum(enum_name, values, **xargs, &block)
             enumerator = values.each_pair if values.respond_to?(:each_pair)
             enumerator ||= values.each.with_index
 
-            Schema.enum("#{gql_module.name}::#{enum_name.classify}", **xargs) do
+            xargs = xargs.reverse_merge(once: true)
+            create_type(:enum, as: enum_name.classify, **xargs) do
               indexed! if enumerator.first.last.is_a?(Numeric)
               enumerator.sort_by(&:last).map(&:first).each(&method(:add))
+            end
+          end
+
+          # Helper method to create a class based on the given type and allows
+          # several other settings to be executed on it
+          def create_type(type = nil, **xargs, &block)
+            name = "#{gql_module.name}::#{xargs.delete(:as) || base_name}"
+            superclass = xargs.delete(:superclass)
+            with_owner = xargs.delete(:with_owner)
+
+            if superclass.nil?
+              superclass = type.to_s.classify
+            elsif superclass.is_a?(String)
+              superclass = superclass.constantize
+            end
+
+            source = self
+            Schema.send(:create_type, name, superclass, **xargs) do
+              include Helpers::WithOwner if with_owner
+              set_namespaces(*source.namespaces)
+
+              instance_exec(&block) if block.present?
+
+              self.owner ||= source if respond_to?(:owner=)
+              self.assigned_to ||= source.safe_assigned_class \
+                if source.assigned? && is_a?(Helpers::WithAssignment)
             end
           end
 
@@ -352,7 +354,7 @@ module Rails # :nodoc:
             class_eval <<-RUBY, __FILE__, __LINE__ + 1
               def run_#{key}_hooks(list = nil)
                 source_config = Source::ScopedConfig.new(self, #{object})
-                Array.wrap(list.presence || all_hooks(:#{key})).reverse_each do |block|
+                Array.wrap(list.presence || all_hooks[:#{key}]).reverse_each do |block|
                   source_config.instance_exec(&block)
                 end
               end

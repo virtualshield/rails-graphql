@@ -5,8 +5,6 @@ module Rails # :nodoc:
     class Type # :nodoc:
       # Date uses a ISO 8601 string to exchange the value.
       class Scalar::DateScalar < Scalar
-        set_ar_type! :date
-
         desc 'The Date scalar type represents a ISO 8601 string value.'
 
         class << self

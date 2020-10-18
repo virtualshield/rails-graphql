@@ -165,30 +165,12 @@ module Rails # :nodoc:
 
           # Generate the helper methods to easily create types within the
           # definition of the schema
-          (GraphQL::Type::KINDS - %w[Object]).each do |kind|
+          GraphQL::Type::KINDS.each do |kind|
             class_eval <<-RUBY, __FILE__, __LINE__ + 1
               def #{kind.underscore}(name, **xargs, &block)
-                create_type(name, GraphQL::Type.const_get(:#{kind}), **xargs, &block)
+                create_type(name, :#{kind}, **xargs, &block)
               end
             RUBY
-          end
-
-          # Rewrite the object method to check if it should use an assigned one
-          def object(name_or_object, **xargs, &block)
-            return create_type(name_or_object, Type::Object, &block) \
-              unless name_or_object.is_a?(Module)
-
-            create_type(name_or_object, Type::Object::AssignedObject, **xargs) do
-              self.assigned_to = name_or_object
-              instance_exec(&block) if block.present?
-            end
-          end
-
-          # A simpler way to create a new type object without having to create
-          # a class in a different file
-          def create_type(name, superclass, **xargs, &block)
-            xargs[:suffix] = superclass.base_type.name.demodulize
-            create_klass(name, superclass, GraphQL::Type, **xargs, &block)
           end
 
           # Helper method to create a single source
@@ -216,6 +198,15 @@ module Rails # :nodoc:
 
             of_type ||= GraphQL::Source.find_for!(list.first)
             list.each { |object| source(object, of_type, &block) }
+          end
+
+          # A simpler way to create a new type object without having to create
+          # a class in a different file
+          def create_type(name, superclass, **xargs, &block)
+            superclass = GraphQL::Type.const_get(superclass) unless superclass.is_a?(Module)
+            xargs[:suffix] ||= superclass.base_type.name.demodulize
+
+            create_klass(name, superclass, GraphQL::Type, **xargs, &block)
           end
 
         private
@@ -254,6 +245,10 @@ module Rails # :nodoc:
 
               klass = base_module.const_set(klass_name, Class.new(superclass))
             end
+
+            klass.abstract = xargs[:abstract] if xargs.key?(:abstract)
+            klass.assigned_to = name_or_object if name_or_object.is_a?(Module) &&
+              klass.is_a?(Helpers::WithAssignment)
 
             klass.instance_exec(&block) if block.present?
             klass

@@ -10,10 +10,8 @@ module Rails # :nodoc:
       # See http://spec.graphql.org/June2018/#EnumTypeDefinition
       class Enum < Type
         extend ActiveSupport::Autoload
-        extend Helpers::LeafFromAr
 
         setup! leaf: true, input: true, output: true
-        set_ar_type! :enum
 
         eager_autoload do
           autoload :DirectiveLocationEnum

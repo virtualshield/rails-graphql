@@ -62,10 +62,11 @@ class GraphQL_Type_InputTest < GraphQL::TestCase
     field = double(gql_name: 'a', name: 'b', deserialize: passthrough)
     value = [['a', 'atest'], ['b', 'btest']]
     value2 = [['c', 'atest']]
+
     DESCRIBED_CLASS.stub(:enabled_fields, [field]) do
       result = DESCRIBED_CLASS.deserialize(value)
       assert_instance_of(DESCRIBED_CLASS, result)
-      assert_equal('atest', result.b)
+      assert_equal('atest', result[:b])
 
       assert(DESCRIBED_CLASS.deserialize(value2).to_h.blank?)
       assert(DESCRIBED_CLASS.deserialize('test').to_h.blank?)

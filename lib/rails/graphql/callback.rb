@@ -92,22 +92,22 @@ module Rails # :nodoc:
         # Read the arguments needed for a block then collect them from the
         # event and return the execution args
         def collect_parameters(event, block = @block)
-          idx = -1
           args_source = event.send(:args_source) || event
           start_args = [@pre_args.deep_dup, @pre_xargs.deep_dup]
           return start_args unless inject_arguments?
 
           # TODO: Maybe we need to turn procs into lambdas so the optional
           # arguments doesn't suffer any kind of change
+          idx = -1
           block.parameters.each_with_object(start_args) do |(type, name), result|
             case type
             when :opt, :req
               idx += 1
-              next result unless callback_inject_arguments
+              next unless callback_inject_arguments
               result[0][idx] ||= event.parameter(name) if event.parameter?(name)
-            when :keyreq
-              next result unless callback_inject_named_arguments
-              result[1][name] = args_source[name] if args_source.key?(name)
+            when :key, :keyreq
+              next unless callback_inject_named_arguments
+              result[1][name] ||= args_source[name] if args_source.key?(name)
             end
           end
         end

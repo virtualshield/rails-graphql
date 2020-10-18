@@ -89,7 +89,6 @@ module Rails # :nodoc:
           # Due to inheritance
           if self.eql?(GraphQL::Type)
             Type::Enum.eager_load!
-            Type::Input.eager_load!
             Type::Object.eager_load!
             Type::Scalar.eager_load!
 

@@ -49,21 +49,6 @@ module Rails # :nodoc:
         super && match_arguments?(other)
       end
 
-      # Check if the field can be resolved from Active Record
-      def from_ar?(ar_object)
-        result = super
-        return result unless result.nil?
-        type_klass.from_ar?(ar_object, method_name)
-      end
-
-      # Add the attribute name using +method_name+ before calling +from_ar+ on
-      # the +type_klass+, then add the alias to the +name+ of the field
-      def from_ar(ar_object)
-        result = super
-        return result unless result.nil?
-        type_klass.from_ar(ar_object, method_name)&.as(name)
-      end
-
       # Checks if a given unserialized value is valid for this field
       def valid_output?(value, deep: true)
         return false unless super

@@ -15,7 +15,6 @@ module Rails # :nodoc:
       # when serializing to hash, which indicates if a cast is necessary or not.
       class Scalar < Type
         extend ActiveSupport::Autoload
-        extend Helpers::LeafFromAr
 
         setup! leaf: true, input: true, output: true
 

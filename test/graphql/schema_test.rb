@@ -119,36 +119,23 @@ class GraphQL_SchemaTest < GraphQL::TestCase
 
   def test_kinds
     DESCRIBED_CLASS.stub(:create_type, passallthrough) do
-      assert_equal([:some, type_const::Scalar],    DESCRIBED_CLASS.send(:scalar,    :some))
-      assert_equal([:some, type_const::Interface], DESCRIBED_CLASS.send(:interface, :some))
-      assert_equal([:some, type_const::Union],     DESCRIBED_CLASS.send(:union,     :some))
-      assert_equal([:some, type_const::Enum],      DESCRIBED_CLASS.send(:enum,      :some))
-      assert_equal([:some, type_const::Input],     DESCRIBED_CLASS.send(:input,     :some))
-    end
-  end
-
-  def test_object
-    DESCRIBED_CLASS.stub(:create_type, passallthrough) do
-      object_const = type_const::Object
-      assert_equal([:some, object_const],                 DESCRIBED_CLASS.send(:object, :some))
-      assert_equal([Class, object_const::AssignedObject], DESCRIBED_CLASS.send(:object, Class))
-    end
-
-    block_collector = ->(*, &block) { OpenStruct.new.tap { |x| x.instance_exec(&block) } }
-    DESCRIBED_CLASS.stub(:create_type, block_collector) do
-      result = DESCRIBED_CLASS.send(:object, Class)
-      assert_equal({ assigned_to: Class }, result.to_h)
-
-      result = DESCRIBED_CLASS.send(:object, Class) { self.other = 2 }
-      assert_equal({ assigned_to: Class, other: 2 }, result.to_h)
+      assert_equal([:some, :Enum],      DESCRIBED_CLASS.send(:enum,      :some))
+      assert_equal([:some, :Input],     DESCRIBED_CLASS.send(:input,     :some))
+      assert_equal([:some, :Interface], DESCRIBED_CLASS.send(:interface, :some))
+      assert_equal([:some, :Object],    DESCRIBED_CLASS.send(:object,    :some))
+      assert_equal([:some, :Scalar],    DESCRIBED_CLASS.send(:scalar,    :some))
+      assert_equal([:some, :Union],     DESCRIBED_CLASS.send(:union,     :some))
     end
   end
 
   def test_create_type
     DESCRIBED_CLASS.stub(:create_klass, passallthrough) do
-      other = double(base_type: double(name: 'A::Sample'))
+      other = double(Module.new, base_type: double(name: 'A::Sample'))
       result = [:some, other, type_const, { suffix: 'Sample' }]
       assert_equal(result, DESCRIBED_CLASS.send(:create_type, :some, other))
+
+      result = [:some, type_const::Scalar, type_const, { suffix: 'Scalar' }]
+      assert_equal(result, DESCRIBED_CLASS.send(:create_type, :some, :Scalar))
     end
   end
 

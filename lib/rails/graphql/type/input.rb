@@ -9,15 +9,10 @@ module Rails # :nodoc:
       # scalars, enums, or other input objects.
       # See http://spec.graphql.org/June2018/#InputObjectTypeDefinition
       class Input < Type
-        extend ActiveSupport::Autoload
+        extend Helpers::WithAssignment
         extend Helpers::WithFields
 
         setup! kind: :input_object, input: true
-
-        eager_autoload do
-          autoload :ActiveRecordInput
-          autoload :AssignedInput
-        end
 
         self.field_type = Field::InputField
         self.valid_field_types = [
@@ -78,16 +73,28 @@ module Rails # :nodoc:
         end
 
         attr_reader :args
+        attr_writer :resource
 
         delegate :fields, to: :class
+        delegate :[], to: :args
 
-        delegate_missing_to :args
+        delegate_missing_to :resource
 
         def initialize(args = nil, **xargs)
           @args = args || OpenStruct.new(xargs.transform_keys { |key| key.to_s.underscore })
           @args.freeze
 
           validate! if args.nil?
+        end
+
+        # If the input is assigned to a class, then initialize it with the
+        # received arguments. It also accepts extra arguments for inheritance
+        # purposes
+        def resource(*args, **xargs, &block)
+          @resource ||= (klass = safe_assigned_class).nil? ? nil : begin
+            xargs = xargs.reverse_merge(args.to_h)
+            klass.new(*args, **xargs, &block)
+          end
         end
 
         # Checks if all the values provided to the input instance are valid

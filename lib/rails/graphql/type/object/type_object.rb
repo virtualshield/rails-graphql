@@ -4,7 +4,7 @@ module Rails # :nodoc:
   module GraphQL # :nodoc:
     class Type # :nodoc:
       # The introspection object for any kind of type
-      class Object::TypeObject < Object::AssignedObject
+      class Object::TypeObject < Object
         FAKE_TYPES = {
           list:     {
             kind: :list,

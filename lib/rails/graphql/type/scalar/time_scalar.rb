@@ -8,8 +8,6 @@ module Rails # :nodoc:
       class Scalar::TimeScalar < Scalar::FloatScalar
         EPOCH = Time.utc(2000, 1, 1)
 
-        set_ar_type! :time
-
         desc <<~MSG
           The Time scalar type that represents a distance in time using hours,
           minutes, seconds, and miliseconds.

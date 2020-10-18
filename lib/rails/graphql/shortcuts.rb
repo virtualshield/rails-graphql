@@ -19,14 +19,10 @@ module GraphQL
     Scalar:             '::Rails::GraphQL::Type::Scalar',
     Union:              '::Rails::GraphQL::Type::Union',
 
-    AssignedObject:     '::Rails::GraphQL::Type::Object::AssignedObject',
-
     ProxyField:         '::Rails::GraphQL::Field::ProxyField',
     AssociationField:   '::Rails::GraphQL::Field::AssociationField',
 
     ActiveRecordSource: '::Rails::GraphQL::Source::ActiveRecordSource',
-    ActiveRecordInput:  '::Rails::GraphQL::Type::Input::ActiveRecordInput',
-    ActiveRecordObject: '::Rails::GraphQL::Type::Object::ActiveRecordObject',
   }.freeze
 
   # List of directive shortcuts, which are basically the shortcut of another

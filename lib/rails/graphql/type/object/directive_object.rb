@@ -4,7 +4,7 @@ module Rails # :nodoc:
   module GraphQL # :nodoc:
     class Type # :nodoc:
       # The introspection object for directives
-      class Object::DirectiveObject < Object::AssignedObject
+      class Object::DirectiveObject < Object
         self.assigned_to = 'Rails::GraphQL::Directive'
         self.spec_object = true
 

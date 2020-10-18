@@ -9,7 +9,6 @@ module Rails # :nodoc:
       # See http://spec.graphql.org/June2018/#sec-Int
       class Scalar::IntScalar < Scalar
         self.spec_object = true
-        set_ar_type! :integer
         aliases :integer
 
         desc 'The Int scalar type represents a signed 32‐bit numeric non‐fractional value.'

@@ -33,7 +33,7 @@ module Rails # :nodoc:
 
           def __current_object__ # :nodoc:
             event = __getobj__.instance_variable_get(:@event)
-            return if event.blank? || (object = event.source.try(:current_object)).blank?
+            return if event.nil? || (object = event.source.try(:current_object)).nil?
             event.strategy.instance_for(object)
           end
       end

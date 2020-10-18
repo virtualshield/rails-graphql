@@ -57,13 +57,16 @@ module Rails # :nodoc:
       # Temporarily attach the event into an instance ensuring to set the
       # previous value back
       def set_on(instance, &block)
-        old_event = instance.instance_variable_get(:@event)
-        instance.instance_variable_set(:@event, self)
-
         send_args = block.arity.eql?(1) ? [instance] : []
-        block.call(*send_args)
-      ensure
-        instance.instance_variable_set(:@event, old_event)
+        old_event = instance.instance_variable_get(:@event)
+        return block.call(*send_args) if old_event === self
+
+        begin
+          instance.instance_variable_set(:@event, self)
+          block.call(*send_args)
+        ensure
+          instance.instance_variable_set(:@event, old_event)
+        end
       end
 
       # From the list of all given objects, run the +trigger_object+

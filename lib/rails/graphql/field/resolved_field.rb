@@ -35,18 +35,6 @@ module Rails # :nodoc:
         other.alias_method(:after_resolve, :finalize)
       end
 
-      # If the field has a resolver, then it can't be serialized from Active
-      # Record
-      def from_ar?(*)
-        dynamic_resolver? ? false : super
-      end
-
-      # If the field has a resolver, then it can't be serialized from Active
-      # Record
-      def from_ar(*)
-        dynamic_resolver? ? false : super
-      end
-
       # Add a block that is performed while resolving a value of a field
       def resolve(*args, **xargs, &block)
         @resolver = Callback.new(self, :resolve, *args, **xargs, &block)
