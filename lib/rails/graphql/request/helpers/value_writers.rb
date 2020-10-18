@@ -19,9 +19,9 @@ module Rails # :nodoc:
         end
 
         # Resolve a given value when it is an array
-        def write_array(value, &block)
-          write_array!(value) do |item, idx|
-            stacked(idx) do
+        def write_array(value, idx = -1, &block)
+          write_array!(value) do |item|
+            stacked(idx += 1) do
               block.call(item, idx)
               response.next
             rescue StandardError => error
@@ -48,7 +48,7 @@ module Rails # :nodoc:
 
           @writing_array = true
           response.with_stack(field.gql_name, array: true, plain: leaf_type?) do
-            value.each.with_index(&block)
+            value.each(&block)
           end
         ensure
           @writing_array = nil

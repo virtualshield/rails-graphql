@@ -14,8 +14,6 @@ module Rails # :nodoc:
 
         attr_reader :name, :type_klass, :request
 
-        alias gql_name name
-
         def initialize(request, node, data)
           @name = data[:name]
           @request = request
@@ -89,12 +87,12 @@ module Rails # :nodoc:
           # Check if the field was assigned correctly to an output field
           def check_assignment!
             raise ExecutionError, <<~MSG.squish unless type_klass.output_type?
-              Unable to assing #{type_klass.gql_name} to "#{gql_name}" fragment because
+              Unable to assing #{type_klass.gql_name} to "#{name}" fragment because
               it is not a output type.
             MSG
 
             raise ExecutionError, <<~MSG.squish if type_klass.leaf_type?
-              Unable to assing #{type_klass.gql_name} to "#{gql_name}" fragment because
+              Unable to assing #{type_klass.gql_name} to "#{name}" fragment because
               a "#{type_klass.kind}" type can not be the source of a fragmnet.
             MSG
           end

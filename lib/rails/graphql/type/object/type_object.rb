@@ -90,7 +90,7 @@ module Rails # :nodoc:
         def fields(include_deprecated:)
           return [] unless current.object? || current.interface?
 
-          list = current.fields.values
+          list = current.fields.enum_for(:each_value)
           list = list.reject { |field| field.using?(deprecated_directive) } \
             unless include_deprecated
 
@@ -107,7 +107,6 @@ module Rails # :nodoc:
           list = list.reject { |value| deprecated.key?(value) } \
             unless include_deprecated
 
-          # TODO: fix lazy enum
           list.map do |value|
             OpenStruct.new(
               name: value,
@@ -115,7 +114,7 @@ module Rails # :nodoc:
               is_deprecated: deprecated.key?(value),
               deprecation_reason: deprecated[value],
             )
-          end.force
+          end
         end
 
         def interfaces
@@ -129,7 +128,7 @@ module Rails # :nodoc:
         end
 
         def input_fields
-          current.input? ? current.fields.values : []
+          current.input? ? current.fields.enum_for(:each_value) : []
         end
       end
     end
