@@ -14,10 +14,6 @@ module Rails # :nodoc:
           __current_object__&.instance_variable_set(ivar, value)
         end
 
-        def method(method_name)
-          __current_object__&.method(method_name) || __getobj__.method(method_name)
-        end
-
         private
 
           def respond_to_missing?(method_name, include_private = false) # :nodoc:
