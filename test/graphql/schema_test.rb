@@ -168,7 +168,8 @@ class GraphQL_SchemaTest < GraphQL::TestCase
   end
 
   def test_create_klass
-    skip 'Needs testing'
+    new_klass = DESCRIBED_CLASS.send :create_klass, 'Test', Class.new(type_const::Enum)
+    assert(new_klass < type_const::Enum)
   end
 
   protected
