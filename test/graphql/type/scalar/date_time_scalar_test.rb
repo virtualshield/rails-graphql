@@ -20,7 +20,7 @@ class GraphQL_Type_Scalar_DateTimeScalarTest < GraphQL::TestCase
   end
 
   def test_as_json
-    assert_equal('2020-02-02T00:00:00-03:00', DESCRIBED_CLASS.as_json('2020-02-02'))
+    assert_equal(Time.strptime('2020-02-02', '%Y-%m-%d'), DESCRIBED_CLASS.as_json('2020-02-02'))
   end
 
   def test_deserialize

@@ -73,11 +73,27 @@ class GraphQL_SourceTest < GraphQL::TestCase
   end
 
   def test_attach_fields_bang
-    skip 'Needs testing'
+    schema = Class.new Rails::GraphQL::Schema
+    DESCRIBED_CLASS.stub(:schemas, { base: schema } ) do
+      DESCRIBED_CLASS.stub(:query_fields, { a: :a_val }) do
+        DESCRIBED_CLASS.stub(:mutation_fields, { a: :a_val }) do
+          DESCRIBED_CLASS.stub(:subscription_fields, { a: :a_val }) do
+            schema.stub(:add_proxy_field, passthrough) do
+              assert_predicate(DESCRIBED_CLASS, :attach_fields!)
+            end
+          end
+        end
+      end
+    end
   end
 
   def test_refresh_schemas_bang
-    skip 'Needs testing'
+    DESCRIBED_CLASS.stub(:namespaces, [:base]) do
+      schema = Class.new Rails::GraphQL::Schema
+      Rails::GraphQL::Schema.stub(:find, schema) do
+        assert_equal({ base: schema }, DESCRIBED_CLASS.refresh_schemas!)
+      end
+    end
   end
 
   def test_find_type_bang
@@ -107,10 +123,12 @@ class GraphQL_SourceTest < GraphQL::TestCase
   end
 
   def test_create_enum
-    skip 'Needs testing'
+    enum = DESCRIBED_CLASS.send(:create_enum, 'test', { 'value' => 0 }, once: true)
+    assert_equal "GraphQL::TestEnum", enum.name
+    assert_equal Set['VALUE'], enum.values
   end
 
-  def test_create_enum
+  def test_skip_on
     hash_list = Hash.new { |h, k| h[k] = Set.new }
 
     DESCRIBED_CLASS.stub(:segmented_skip_fields, -> { hash_list }) do
@@ -121,23 +139,37 @@ class GraphQL_SourceTest < GraphQL::TestCase
   end
 
   def test_on
-    skip 'Needs testing'
+    refute_empty DESCRIBED_CLASS.send(:on, :start) { nil }
   end
 
   def test_skip
-    skip 'Needs testing'
+    assert_throws :skip do
+      DESCRIBED_CLASS.send(:skip, :start)
+      DESCRIBED_CLASS.hooks[:start].map(&:call)
+    end
   end
 
   def test_override
-    skip 'Needs testing'
+    DESCRIBED_CLASS.send(:override, :start) { puts 'test' }
+    refute_empty DESCRIBED_CLASS.hooks[:start]
   end
 
   def test_disable
-    skip 'Needs testing'
+    DESCRIBED_CLASS.stub(:hook_names, Set[:start]) do
+      DESCRIBED_CLASS.send(:on, :start) { puts 'test' }
+      DESCRIBED_CLASS.send :disable, :start
+      assert_empty DESCRIBED_CLASS.hooks[:start]
+    end
   end
 
   def test_enable
-    skip 'Needs testing'
+    DESCRIBED_CLASS.stub(:hook_names, Set[:start]) do
+      DESCRIBED_CLASS.send(:on, :start) { puts 'test' }
+      DESCRIBED_CLASS.send :disable, :start
+      assert_empty DESCRIBED_CLASS.hooks[:start]
+      DESCRIBED_CLASS.send :enable, :start
+      refute_empty DESCRIBED_CLASS.hooks[:start]
+    end
   end
 
   def test_gql_module
@@ -151,7 +183,11 @@ class GraphQL_SourceTest < GraphQL::TestCase
   end
 
   def test_skips_for
-    skip 'Needs testing'
+    DESCRIBED_CLASS.stub(:all_segmented_skip_fields, { input: Set[:created_at] }) do
+      DESCRIBED_CLASS.stub(:all_skip_fields, Set[]) do
+        assert_equal Set[:created_at], DESCRIBED_CLASS.send(:skips_for, OpenStruct.new(kind: :input_object))
+      end
+    end
   end
 
   def test_pending_ask
@@ -162,11 +198,27 @@ class GraphQL_SourceTest < GraphQL::TestCase
   end
 
   def test_build_pending_bang
-    skip 'Needs testing'
+    pending_class = DESCRIBED_CLASS::ActiveRecordSource
+    DESCRIBED_CLASS.stub(:pending, { pending_class => 'test'}) do
+      assert_nil DESCRIBED_CLASS.send :build_pending!
+    end
   end
 
   def test_build_bang
-    skip 'Needs testing'
+    DESCRIBED_CLASS.stub_ivar(:@built, true) do
+      assert_nil DESCRIBED_CLASS.send :build!
+    end
+
+    DESCRIBED_CLASS.stub(:abstract, true) do
+      assert_raises(StandardError) { DESCRIBED_CLASS.send :build! }
+    end
+
+    DESCRIBED_CLASS.stub(:hook_names, Set[:start]) do
+      flag = true
+      DESCRIBED_CLASS.send(:on, :start) { flag = false }
+      DESCRIBED_CLASS.send :build!
+      refute flag
+    end
   end
 
   def test_run_hooks
