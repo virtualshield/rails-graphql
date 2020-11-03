@@ -27,6 +27,7 @@ jobs:
     - run: sudo apt-get install libsqlite3-dev -y
       if: ${{ matrix.os  == 'ubuntu-18.04' }}
     - run: bundle install
-    - run: bundle exec rake tasks -f tasks/libgraphqlparser.rb precompile:parser
+    # - run: bundle exec rake tasks -f tasks/libgraphqlparser.rb precompile:parser
+    - run: bundle exec appraisal install
     - run: bundle exec rake tasks -f tasks/libgraphqlparser.rb compile
     - run: bundle exec rake
