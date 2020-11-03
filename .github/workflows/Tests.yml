@@ -24,6 +24,7 @@ jobs:
       with:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true
+    - run: apt-get install libsqlite3-dev -y
     - run: bundle install
     - run: bundle exec rake tasks -f tasks/libgraphqlparser.rb precompile:parser
     - run: bundle exec rake tasks -f tasks/libgraphqlparser.rb compile

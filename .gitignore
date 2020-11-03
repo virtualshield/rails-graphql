@@ -24,6 +24,6 @@ test/version_tmp/
 tmp/
 .ruby-version
 .ruby-gemset
-gemfiles/*.lock
+gemfiles/*
 vendor/
 .vscode
