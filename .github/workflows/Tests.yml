@@ -23,7 +23,7 @@ jobs:
     - uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
-        bundler-cache: true
+        bundler-cache: false
     - run: sudo apt-get install libsqlite3-dev -y
       if: ${{ matrix.os  == 'ubuntu-18.04' }}
     - run: bundle install
