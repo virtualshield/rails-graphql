@@ -15,7 +15,8 @@ jobs:
       fail-fast: false
       matrix:
           os: [ubuntu-18.04, macos-latest]
-          ruby: [2.5, 2.6, 2.7, head]
+          ruby: [2.7, head]
+          # ruby: [2.5, 2.6, 2.7, head]
     steps:
     - uses: actions/checkout@v2
       with:
@@ -25,10 +26,9 @@ jobs:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: false
     - run: sudo apt-get install libsqlite3-dev -y
-      if: ${{ matrix.os  == 'ubuntu-18.04' }}
+      if: ${{ matrix.os == 'ubuntu-18.04' }}
     - run: bundle version
     - run: bundle install
-    # - run: bundle exec rake tasks -f tasks/libgraphqlparser.rb precompile:parser
     - run: bundle exec appraisal install
     - run: bundle exec rake tasks -f tasks/libgraphqlparser.rb compile
     - run: bundle exec rake
