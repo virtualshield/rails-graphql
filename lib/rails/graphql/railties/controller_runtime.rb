@@ -15,12 +15,13 @@ module Rails # :nodoc:
       module ClassMethods # :nodoc: all
         def log_process_action(payload)
           messages, gql_runtime = super, payload[:gql_runtime]
-          messages << ("GraphQL: %.1fms" % gql_runtime.to_f) if gql_runtime
+          messages << format('GraphQL: %.1fms', gql_runtime.to_f) if gql_runtime
           messages
         end
       end
 
       private
+
         attr_internal :gql_runtime
 
         def process_action(*)
@@ -31,7 +32,8 @@ module Rails # :nodoc:
         def append_info_to_payload(payload)
           super
 
-          payload[:gql_runtime] = LogSubscriber.runtime if (LogSubscriber.runtime || 0) > 0
+          payload[:gql_runtime] = LogSubscriber.runtime \
+            if (LogSubscriber.runtime || 0).positive?
         end
     end
   end

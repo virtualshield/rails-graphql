@@ -23,7 +23,7 @@ module Rails # :nodoc:
         # The purpose of instantiating an interface is to have access to its
         # public methods. It then runs from the strategy perspective, pointing
         # out any other methods to the manually set event
-        delegate_missing_to :@event
+        delegate_missing_to :event
         attr_reader :event
 
         class << self
@@ -52,7 +52,7 @@ module Rails # :nodoc:
           def implemented(object)
             fields.each do |name, field|
               defined = object.field?(name)
-              invalid = defined && !(object.fields[name] =~ field)
+              invalid = defined && object.fields[name] !~ field
               raise ArgumentError, <<~MSG.squish if invalid
                 The "#{object.gql_name}" object already has a "#{field.gql_name}" field and it
                 is not equivalent to the one defined on the "#{gql_name}" interface.

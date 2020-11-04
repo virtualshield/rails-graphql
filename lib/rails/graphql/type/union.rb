@@ -20,7 +20,7 @@ module Rails # :nodoc:
         # The purpose of instantiating an interface is to have access to its
         # public methods. It then runs from the strategy perspective, pointing
         # out any other methods to the manually set event
-        delegate_missing_to :@event
+        delegate_missing_to :event
         attr_reader :event
 
         class << self

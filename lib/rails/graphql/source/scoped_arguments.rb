@@ -31,10 +31,10 @@ module Rails # :nodoc:
         end
       end
 
-      module ClassMethods
+      module ClassMethods # :nodoc:
         # Return the list of scoped params defined
         def scoped_arguments
-          @scoped_arguments || {}
+          defined?(@scoped_arguments) ? @scoped_arguments : {}
         end
 
         protected

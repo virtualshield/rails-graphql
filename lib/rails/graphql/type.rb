@@ -87,14 +87,14 @@ module Rails # :nodoc:
           super
 
           # Due to inheritance
-          if self.eql?(GraphQL::Type)
-            Type::Enum.eager_load!
-            Type::Object.eager_load!
-            Type::Scalar.eager_load!
+          return unless eql?(GraphQL::Type)
 
-            Source.eager_load!
-            TypeMap.loaded! :Type
-          end
+          Type::Enum.eager_load!
+          Type::Object.eager_load!
+          Type::Scalar.eager_load!
+
+          Source.eager_load!
+          TypeMap.loaded! :Type
         end
 
         protected

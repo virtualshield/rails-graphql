@@ -6,7 +6,7 @@ module Rails # :nodoc:
     #
     # A module to help generators to operate
     module BaseGenerator
-      TEMPALTES_PATH = '../../../generators/graphql/templates'.freeze
+      TEMPALTES_PATH = '../../../generators/graphql/templates'
 
       def self.included(base)
         base.send(:namespace, "graphql:#{base.name.demodulize.underscore[0..-11]}")

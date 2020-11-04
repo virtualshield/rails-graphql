@@ -18,18 +18,24 @@ module Rails # :nodoc:
               resolve { schema.find_type(argument(:name)) }
             end
           end
-
-          Helpers::WithSchemaFields::SCHEMA_FIELD_TYPES.each do |type, name|
-            GraphQL.type_map.register_alias(name, namespace: subclass.namespace) do
-              result = subclass.public_send("#{type}_type")
-              type.eql?(:query) || result.fields.present? ? result : nil
-            end
-          end
         end
       end
 
       def self.extended(other) # :nodoc:
         other.extend(Introspection::ClassMethods)
+      end
+
+      # When register is called, add introspection fields?
+      def register!(*)
+        super if defined? super
+        return unless introspection?
+
+        Helpers::WithSchemaFields::SCHEMA_FIELD_TYPES.each do |type, name|
+          GraphQL.type_map.register_alias(name, namespace: namespace) do
+            result = public_send("#{type}_type")
+            type.eql?(:query) || result.fields.present? ? result : nil
+          end
+        end
       end
 
       # Check if the schema has introspection enabled

@@ -28,8 +28,11 @@ module Rails # :nodoc:
           end
 
           def __current_object__ # :nodoc:
+            return unless __getobj__.instance_variable_defined?(:@event)
+
             event = __getobj__.instance_variable_get(:@event)
             return if event.nil? || (object = event.source.try(:current_object)).nil?
+
             event.strategy.instance_for(object)
           end
       end

@@ -61,7 +61,7 @@ module Rails # :nodoc:
               "Invalid arguments for #{log_source}: #{errors}."
             end
 
-            @variables = args.stringify_keys.freeze
+            @variables = args.freeze
             @arguments.freeze
           end
 
@@ -85,12 +85,11 @@ module Rails # :nodoc:
           # responds to +all_arguments+. The +block+ is called when something
           # goes wrong to collect a formatted message.
           def collect_arguments(source, values, var_access: true, &block)
-            op_source = nil
             op_vars = nil
 
             errors = []
             source = source.all_arguments if source.respond_to?(:all_arguments)
-            result = source.each_pair.each_with_object({}) do |(key, argument), result|
+            result = source.each_pair.each_with_object({}) do |(key, argument), hash|
               next unless values.key?(key)
               value = values[key]
 
@@ -115,8 +114,8 @@ module Rails # :nodoc:
                 MSG
 
                 operation.used_variables << var_name
-                next unless variables.key?(var_name)
-                value = variables[var_name]
+                next unless variables.key?(op_var.name)
+                value = variables[op_var.name]
               else
                 # Only when the given value is an actual value that we check if
                 # it is valid
@@ -127,7 +126,7 @@ module Rails # :nodoc:
                 value = argument.deserialize(value)
               end
 
-              result[argument.name] = value
+              hash[argument.name] = value
             rescue ArgumentError => error
               errors << error.message
             end

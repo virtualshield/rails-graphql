@@ -77,9 +77,9 @@ module Rails # :nodoc:
         def valid_input_array?(value, deep)
           return false unless value.is_a?(Array)
 
-          value.all? do |value|
+          value.all? do |val|
             (val.nil? && nullable?) || (leaf_type? || !deep) ||
-              type_klass.valid_input?(value)
+              type_klass.valid_input?(val)
           end
         end
 

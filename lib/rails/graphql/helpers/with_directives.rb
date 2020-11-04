@@ -44,7 +44,7 @@ module Rails # :nodoc:
 
         # Mostly for correct inheritance on instances
         def all_directives
-          @directives || Set.new
+          defined?(@directives) ? @directives : Set.new
         end
 
         # Use this method to assign directives to the given definition. You can

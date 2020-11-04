@@ -55,7 +55,7 @@ module Rails # :nodoc:
       class << self
         # A small shared helper method that allows field information to be
         # proxied
-        def proxyable_methods(*list, klass: , allow_nil: false)
+        def proxyable_methods(*list, klass:, allow_nil: false)
           list = list.flatten.compact.map do |method_name|
             ivar = '@' + method_name.delete_suffix('?')
             accessor = 'field' + (allow_nil ? '&.' : '.') + method_name
@@ -91,7 +91,7 @@ module Rails # :nodoc:
         end
       end
 
-      def initialize(name, owner: , **xargs, &block)
+      def initialize(name, owner:, **xargs, &block)
         @owner = owner
         normalize_name(name)
 
@@ -187,7 +187,7 @@ module Rails # :nodoc:
 
       # Checks if a description was provided
       def description?
-        !!@desc
+        defined?(@desc) && !!@desc
       end
 
       # Check if the field is an internal one

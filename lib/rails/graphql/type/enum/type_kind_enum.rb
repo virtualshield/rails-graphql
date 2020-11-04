@@ -42,7 +42,6 @@ module Rails # :nodoc:
           a specific type.
         DESC
 
-
         add 'LIST', desc: <<~DESC
           A GraphQL list is a special collection type which declares the type of
           each item in the List (referred to as the item type of the list).

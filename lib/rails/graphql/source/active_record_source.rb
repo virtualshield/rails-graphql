@@ -27,7 +27,7 @@ module Rails # :nodoc:
 
       %i[object interface input].each do |type|
         settings = { abstract: true, with_owner: true }
-        self.send("#{type}_class=", create_type(type, **settings))
+        send("#{type}_class=", create_type(type, **settings))
       end
 
       self.abstract = true
@@ -176,17 +176,21 @@ module Rails # :nodoc:
       # Once the records are pre-loaded due to +preload_association+, use the
       # parent value and the preloader result to get the records
       def parent_owned_records(collection_result = false)
-        event.data[:prepared]&.records_by_owner[current_value] || ([] if collection_result)
+        if !!(data = event.data[:prepared])
+          data.records_by_owner[current_value]
+        else
+          collection_result ? [] : nil
+        end
       end
 
       # The perform step for the +create+ based mutation
       def create_record
-        input_argument.record.tap(&:save!)
+        input_argument.resource.tap(&:save!)
       end
 
       # The perform step for the +update+ based mutation
       def update_record
-        current_value.tap { |record| record.update!(**input_attributes) }
+        current_value.tap { |record| record.update!(**input_argument.params) }
       end
 
       # The perform step for the +delete+ based mutation
@@ -199,11 +203,6 @@ module Rails # :nodoc:
         # Basically get the argument associated to the input
         def input_argument
           event.argument(singular)
-        end
-
-        # Get the input argument and return it as model attributes
-        def input_attributes
-          input_argument.args.to_h
         end
 
         # Preload the records for a given +association+ using the current value.

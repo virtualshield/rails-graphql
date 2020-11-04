@@ -1,7 +1,7 @@
 require 'config'
 
 class GraphQL_SchemaTest < GraphQL::TestCase
-  DESCRIBED_CLASS = Class.new(Rails::GraphQL::Schema)
+  DESCRIBED_CLASS = unmapped_class(Rails::GraphQL::Schema)
 
   def test_gql_name
     assert_equal('schema', DESCRIBED_CLASS.gql_name)
@@ -168,18 +168,19 @@ class GraphQL_SchemaTest < GraphQL::TestCase
   end
 
   def test_create_klass
-    new_klass = DESCRIBED_CLASS.send :create_klass, 'Test', Class.new(type_const::Enum)
+    skip 'Needs branching testing'
+    new_klass = DESCRIBED_CLASS.send :create_klass, 'Test', unmapped_class(type_const::Enum)
     assert(new_klass < type_const::Enum)
   end
 
   protected
 
     def type_const
-      Rails::GraphQL::Type
+      ::Rails::GraphQL::Type
     end
 
     def source_const
-      Rails::GraphQL::Source
+      ::Rails::GraphQL::Source
     end
 
     def collect_all_through

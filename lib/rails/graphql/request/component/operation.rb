@@ -85,7 +85,7 @@ module Rails # :nodoc:
 
         # Add a empty entry if the operation has a name
         def resolve_invalid
-          response.safe_add(name, nil) if name.present?
+          response.safe_add(name, nil) if stacked_selection?
         end
 
         # Stores all the used arguments to report not used ones
@@ -125,8 +125,10 @@ module Rails # :nodoc:
           end
 
           # Don't stack over response when the operation doesn't have a name
+          # TODO: As per spec, when an operation has variables, it should not
+          # be stacked
           def stacked_selection?
-            name.present?
+            name.present? && request.operations.size > 1
           end
 
           # Name used for debug purposes

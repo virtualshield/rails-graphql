@@ -112,7 +112,6 @@ module Rails # :nodoc:
               line #{location.begin_line}:#{location.begin_column}
             MSG
           end
-
       end
     end
   end

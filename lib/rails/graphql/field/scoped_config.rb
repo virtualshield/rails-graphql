@@ -4,7 +4,7 @@ module Rails # :nodoc:
   module GraphQL # :nodoc:
     # Helper class to be used while configuring a field using a block. An
     # instance of this class works as proxy for changes to the actual field.
-    class Field::ScopedConfig < Struct.new(:field, :receiver)
+    Field::ScopedConfig = Struct.new(:field, :receiver) do
       delegate :argument, :ref_argument, :id_argument, :use, :internal?, :disabled?,
         :enabled?, :disable!, :enable!, to: :field
 

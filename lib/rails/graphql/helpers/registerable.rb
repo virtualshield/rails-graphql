@@ -42,7 +42,7 @@ module Rails # :nodoc:
 
           # The process to register a class and it's name on the index
           def register!
-            return if abstract?
+            return if abstract? || gql_name.blank?
 
             raise DuplicatedError, <<~MSG.squish if registered?
               The "#{gql_name}" is already defined, the only way to change its
@@ -55,20 +55,23 @@ module Rails # :nodoc:
               spec can have a name starting with "__".
             MSG
 
+            super if defined? super
             GraphQL.type_map.register(self).method(:validate!)
           end
         end
 
         # Return the name of the object as a GraphQL name
         def gql_name
-          @gql_name ||= (name.match(NAME_EXP)[1].tr(':', '') unless anonymous?)
+          @gql_name ||= begin
+            name.match(NAME_EXP).try(:[], 1)&.tr(':', '')
+          end unless anonymous?
         end
 
         alias graphql_name gql_name
 
         # Return the name of the object as a symbol
         def to_sym
-          @gql_key ||= gql_name.underscore.to_sym
+          @gql_key ||= gql_name&.underscore&.to_sym
         end
 
         # Get or set a list of aliases for this object

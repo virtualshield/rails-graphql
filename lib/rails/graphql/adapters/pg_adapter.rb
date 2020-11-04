@@ -13,7 +13,7 @@ module Rails # :nodoc:
     type_map.register_alias 'pg:date',                        :date
 
     type_map.register_alias 'pg:char',                        :string
-    type_map.register_alias 'pg:bigint',                      :id
+    type_map.register_alias 'pg:bigint',                      :bigint
     type_map.register_alias 'pg:smallint',                    :int
     type_map.register_alias 'pg:text',                        :string
     type_map.register_alias 'pg:oid',                         :int

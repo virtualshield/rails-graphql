@@ -27,7 +27,7 @@ module Rails # :nodoc:
           end
 
           def as_json(value)
-            value.to_time.strftime('%%T.%%%dN' % precision)
+            value.to_time.strftime(format('%%T.%%%dN', precision))
           end
 
           def deserialize(value)

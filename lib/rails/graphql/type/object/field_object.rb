@@ -22,7 +22,7 @@ module Rails # :nodoc:
         field :description,        :string
         field :args,               '__InputValue', full: true
         field :type,               '__Type',       null: false, method_name: :build_type
-        field :is_deprecated,      :boolean,       null: false
+        field :is_deprecated,      :boolean,       null: false, method_name: :deprecated?
         field :deprecation_reason, :string
 
         def build_type
@@ -41,7 +41,7 @@ module Rails # :nodoc:
           all_arguments.values
         end
 
-        def is_deprecated
+        def deprecated?
           current.using?(deprecated_directive)
         end
 

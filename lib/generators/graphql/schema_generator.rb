@@ -4,7 +4,7 @@ require 'rails/generators/base'
 
 module GraphQL
   module Generators
-    class SchemaGenerator < Rails::Generators::Base
+    class SchemaGenerator < Rails::Generators::Base # :nodoc:
       include Rails::GraphQL::BaseGenerator
 
       desc 'Add a new GraphQL schema'

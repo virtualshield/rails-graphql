@@ -12,7 +12,9 @@ module Rails # :nodoc:
         end
 
         def self.included(other)
-          other.define_method(:arguments) { @arguments || {} }
+          other.define_method(:arguments) do
+            defined?(@arguments) ? @arguments : {}
+          end
         end
 
         module ClassMethods # :nodoc: all
@@ -50,7 +52,7 @@ module Rails # :nodoc:
 
         # Mostly for correct inheritance on instances
         def all_arguments
-          @arguments || {}
+          defined?(@arguments) ? @arguments : {}
         end
 
         # See {Argument}[rdoc-ref:Rails::GraphQL::Argument] class.

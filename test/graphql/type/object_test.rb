@@ -1,7 +1,7 @@
 require 'config'
 
 class GraphQL_Type_ObjectTest < GraphQL::TestCase
-  DESCRIBED_CLASS = Class.new(Rails::GraphQL::Type::Object)
+  DESCRIBED_CLASS = unmapped_class(Rails::GraphQL::Type::Object)
 
   def test_valid_member_ask
     fields = {
@@ -82,7 +82,7 @@ class GraphQL_Type_ObjectTest < GraphQL::TestCase
   def test_find_interface_bang
     assert_raises(StandardError) { DESCRIBED_CLASS.send(:find_interface!, 1) }
 
-    fake_interface = Class.new(Rails::GraphQL::Type::Interface)
+    fake_interface = unmapped_class(Rails::GraphQL::Type::Interface)
     assert_equal(fake_interface, DESCRIBED_CLASS.send(:find_interface!, fake_interface))
 
     stubbed_type_map do

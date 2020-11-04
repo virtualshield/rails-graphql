@@ -79,15 +79,20 @@ module Rails # :nodoc:
         # When a +field+ has a perform step, run it under the context of the
         # prepared value from the data pool
         def perform(field)
-          context.stacked(@data_pool[field]) do |current|
-            safe_store_data(field, Event.trigger(:perform, field, self, &field.performer))
+          context.stacked(@data_pool[field]) do
+            safe_store_data(field) do
+              Event.trigger(:perform, field, self, &field.performer)
+            end
           end
         end
 
         # Execute the prepare step for the given +field+ and execute the given
         # block using context stack
         def prepare(field, &block)
-          @data_pool[field] = value = Event.trigger(:prepare, field, self, **PREPARE_XARGS)
+          value = safe_store_data(field) do
+            Event.trigger(:prepare, field, self, **PREPARE_XARGS)
+          end
+
           return context.stacked(value, &block) unless value.nil?
 
           stack = field.all_events[:prepare].map { |cb| cb.source_location.join(':') }
@@ -99,11 +104,11 @@ module Rails # :nodoc:
         # Resolve a value for a given object, It uses the +args+ to prevent
         # problems with nil values.
         def resolve(field, *args, array: false, decorate: false, &block)
-          if args.size.zero?
+          rescue_with_handler(field: field) do
             prepared = data_for(args, field)&.last
-            args << Event.trigger(:resolve, field, self, prepared: prepared, &field.resolver) \
-              if field.try(:dynamic_resolver?)
-          end
+            args << Event.trigger(:resolve, field, self, prepared: prepared,
+              &field.resolver) if field.try(:dynamic_resolver?)
+          end if args.size.zero?
 
           # Now we have a value to set on the context
           value = args.last
@@ -116,6 +121,14 @@ module Rails # :nodoc:
               field.write_array(current, &block)
             end
           end
+        end
+
+        # Safe trigger an event and ensure to send any exception to the request
+        # handler
+        def rescue_with_handler(**extra)
+          yield
+        rescue => error
+          request.rescue_with_handler(error, **extra)
         end
 
         # Check if the given class is in the pool, or add a new instance to the
@@ -162,8 +175,11 @@ module Rails # :nodoc:
         end
 
         # Only store a given +value+ for a given +field+ if it is not set yet
-        def safe_store_data(field, value)
-          @data_pool[field] ||= value unless value.nil?
+        def safe_store_data(field, value = nil)
+          rescue_with_handler(field: field) do
+            value ||= yield if block_given?
+            @data_pool[field] ||= value unless value.nil?
+          end
         end
 
         protected

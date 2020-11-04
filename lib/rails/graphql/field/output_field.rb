@@ -61,10 +61,6 @@ module Rails # :nodoc:
 
       # Trigger the exception based value validator
       def validate_output!(value, **xargs)
-        raise DisabledFieldError, <<~MSG.squish if disabled?
-          The "#{gql_name}" field is disabled.
-        MSG
-
         super(value, :field, **xargs)
       rescue ValidationError => error
         raise InvalidValueError, error.message
@@ -85,9 +81,9 @@ module Rails # :nodoc:
         def valid_output_array?(value, deep)
           return false unless value.is_a?(Enumerable)
 
-          value.all? do |value|
+          value.all? do |val|
             (val.nil? && nullable?) || (leaf_type? || !deep) ||
-              type_klass.valid_output?(value)
+              type_klass.valid_output?(val)
           end
         end
 

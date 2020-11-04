@@ -1,7 +1,7 @@
 require 'config'
 
 class GraphQL_Type_InterfaceTest < GraphQL::TestCase
-  DESCRIBED_CLASS = Class.new(Rails::GraphQL::Type::Interface)
+  DESCRIBED_CLASS = unmapped_class(Rails::GraphQL::Type::Interface)
 
   def test_all_types
     assert_instance_of(Set, DESCRIBED_CLASS.all_types)
@@ -9,7 +9,7 @@ class GraphQL_Type_InterfaceTest < GraphQL::TestCase
     DESCRIBED_CLASS.types << :a
     assert_equal(Set[:a], DESCRIBED_CLASS.all_types)
 
-    other_class = Class.new(DESCRIBED_CLASS)
+    other_class = unmapped_class(DESCRIBED_CLASS)
     other_class.types << :b
     assert_equal(Set[:a, :b], other_class.all_types)
 

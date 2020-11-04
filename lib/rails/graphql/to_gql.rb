@@ -2,6 +2,7 @@
 
 require 'arel/visitors/visitor'
 
+# rubocop:disable Naming/MethodParameterName, Naming/MethodName
 module Rails # :nodoc:
   module GraphQL # :nodoc:
     # = GraphQL ToGQL
@@ -203,7 +204,7 @@ module Rails # :nodoc:
           if o.interfaces?
             collector << ' implements '
             o.all_interfaces.each_with_index do |x, i|
-              collector << ' & ' if i > 0
+              collector << ' & ' if i.positive?
               collector << x.gql_name
             end
           end
@@ -245,7 +246,7 @@ module Rails # :nodoc:
             value = o.args[x.name] if value.nil?
             next if value.nil?
 
-            collector << ', ' if i > 0
+            collector << ', ' if i.positive?
             collector << x.gql_name
             collector << ': '
             collector << x.as_json(value).inspect
@@ -268,10 +269,10 @@ module Rails # :nodoc:
           collector.eol.indent if indented
 
           list.each_value.with_index do |x, i|
-            if i > 0
+            if i.positive?
               collector << ', '
               collector.eol if indented
-              collector.eol if @with_descriptions
+              collector.eol if @with_descriptions && x.description?
             end
 
             visit_Rails_GraphQL_Argument_Instance(x, collector)
@@ -340,10 +341,7 @@ module Rails # :nodoc:
           end
 
           collector << '!' unless o.null?
-
-          if o.try(:default_value?)
-            collector << ' = ' << o.to_json(o.default)
-          end
+          collector << ' = ' << o.to_json(o.default) if o.try(:default_value?)
         end
 
         def visit(object, collector = nil) # :nodoc:
@@ -356,9 +354,10 @@ module Rails # :nodoc:
           end
         rescue ::NoMethodError => e
           raise e if respond_to?(dispatch_method, true)
-          superklass = object_class.ancestors.find { |klass|
+          superklass = object_class.ancestors.find do |klass|
             respond_to?(dispatch[klass], true)
-          }
+          end
+
           raise(::TypeError, "Cannot visit #{object_class}") unless superklass
           dispatch[object_class] = dispatch[superklass]
           retry
@@ -366,3 +365,4 @@ module Rails # :nodoc:
     end
   end
 end
+# rubocop:enable Naming/MethodParameterName, Naming/MethodName

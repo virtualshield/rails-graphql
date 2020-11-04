@@ -2,6 +2,9 @@
 
 module Rails # :nodoc:
   module GraphQL # :nodoc:
+    # = GraphQL Spec Skip Directive
+    #
+    # Allow skipping fields given an +if+ condition
     class Directive::SkipDirective < Directive
       self.spec_object = true
 

@@ -1,8 +1,8 @@
 require 'config'
 
 class GraphQL_Type_InputTest < GraphQL::TestCase
-  DESCRIBED_CLASS = Class.new(Rails::GraphQL::Type::Input)
-  OTHER_CLASS = Class.new(Rails::GraphQL::Type::Input)
+  DESCRIBED_CLASS = unmapped_class(Rails::GraphQL::Type::Input)
+  OTHER_CLASS = unmapped_class(Rails::GraphQL::Type::Input)
 
   def test_gql_name
     DESCRIBED_CLASS.stub_ivar(:@gql_name, 'sample') do
@@ -10,7 +10,7 @@ class GraphQL_Type_InputTest < GraphQL::TestCase
     end
 
     DESCRIBED_CLASS.stub(:name, 'GraphQL::TestInput') do
-      other = Class.new(Rails::GraphQL::Type::Input)
+      other = unmapped_class(Rails::GraphQL::Type::Input)
       other.stub(:name, 'GraphQL::Other') do
         stubbed_config(:auto_suffix_input_objects) do
           assert_equal('Test', DESCRIBED_CLASS.gql_name)

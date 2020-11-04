@@ -9,7 +9,7 @@ module Rails # :nodoc:
       # symbolic methods
       module WithCallbacks
         DEFAULT_EVENT_TYPES = %i[query mutation subscription request attach
-          organized prepared finalize]
+          organized prepared finalize].freeze
 
         def self.extended(other)
           other.extend(WithCallbacks::Setup)
@@ -30,7 +30,8 @@ module Rails # :nodoc:
 
           # Return the list of event filters hooks
           def event_filters
-            @event_filters || superclass.try(:event_filters) || {}
+            return @event_filters if defined? @event_filters
+            superclass.try(:event_filters) || {}
           end
 
           protected

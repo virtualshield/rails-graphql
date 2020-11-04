@@ -30,7 +30,7 @@ module Rails # :nodoc:
             return super if suffix.blank?
 
             result = super
-            result += suffix unless result.end_with?(suffix)
+            result += suffix if result && !result.end_with?(suffix)
             @gql_name = result
           end
 
@@ -92,9 +92,14 @@ module Rails # :nodoc:
         # purposes
         def resource(*args, **xargs, &block)
           @resource ||= (klass = safe_assigned_class).nil? ? nil : begin
-            xargs = xargs.reverse_merge(args.to_h)
+            xargs = xargs.reverse_merge(params)
             klass.new(*args, **xargs, &block)
           end
+        end
+
+        # Just return the arguments as an hash
+        def params
+          parametrize(self)
         end
 
         # Checks if all the values provided to the input instance are valid
@@ -111,6 +116,18 @@ module Rails # :nodoc:
             Invalid value provided to #{gql_name} field: #{errors.to_sentence}.
           MSG
         end
+
+        private
+
+          # Make sure to turn inputs into params
+          def parametrize(input)
+            case input
+            when Type::Input then parametrize(input.args.to_h)
+            when Array       then input.map(&method(:parametrize))
+            when Hash        then input.transform_values(&method(:parametrize))
+            else input
+            end
+          end
       end
     end
   end

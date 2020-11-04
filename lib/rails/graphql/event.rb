@@ -17,7 +17,7 @@ module Rails # :nodoc:
         stack?: :trigger_all,
         object?: :trigger_object,
         single?: :trigger,
-      }
+      }.freeze
 
       # Event trigger shortcut that can perform any mode of trigger
       def self.trigger(event_name, object, source, **xargs, &block)
@@ -58,7 +58,9 @@ module Rails # :nodoc:
       # previous value back
       def set_on(instance, &block)
         send_args = block.arity.eql?(1) ? [instance] : []
-        old_event = instance.instance_variable_get(:@event)
+        old_event = instance.instance_variable_get(:@event) \
+          if instance.instance_variable_defined?(:@event)
+
         return block.call(*send_args) if old_event === self
 
         begin
@@ -82,6 +84,10 @@ module Rails # :nodoc:
       # in reverse order, so first in first out. Since events can sometimes be
       # cached, using +events+ avoid calculating the +all_events+
       def trigger_object(object, events = nil)
+        @items ||= nil
+        @object ||= nil
+        @last_result ||= nil
+
         old_items, old_object, old_result, @object = @items, @object, @last_result, object
 
         catchable(:object) do

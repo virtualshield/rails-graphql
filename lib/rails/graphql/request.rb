@@ -132,9 +132,10 @@ module Rails # :nodoc:
 
       # A little helper to report an error on a given node
       def report_node_error(message, node, **xargs)
+        node = node.instance_variable_get(:@node) if node.is_a?(Request::Component)
         location = GraphQL::Native.get_location(node)
-        xargs[:col] ||= location.begin_column
-        xargs[:line] ||= location.begin_line
+
+        xargs[:locations] ||= location.to_errors unless xargs.key?(:line)
         report_error(message, **xargs)
       end
 
@@ -192,6 +193,7 @@ module Rails # :nodoc:
       end
 
       private
+
         attr_reader :extensions
 
         # Reset principal variables and set the given +args+
@@ -229,7 +231,7 @@ module Rails # :nodoc:
           @visitor.terminate
           @visitor = nil
 
-          GraphQL::Native.free_node(@document)
+          GraphQL::Native.free_node(@document) if defined?(@document)
           @response.try(:append_errors, errors)
         end
 
@@ -247,10 +249,8 @@ module Rails # :nodoc:
 
         # Find the best strategy to resolve the request
         def find_strategy!
-          klass = schema.config.request_strategies.lazy.map do |klass_name|
-            klass_name.constantize
-          end.select do |klass|
-            klass.can_resolve?(self)
+          klass = schema.config.request_strategies.lazy.map(&:constantize).select do |k|
+            k.can_resolve?(self)
           end.max_by(&:priority)
           build(klass, self)
         end
@@ -266,8 +266,8 @@ module Rails # :nodoc:
 
               # Find the related request class to extend
               klass = const_name === 'Request' ? self.class : begin
-                const_name.split('_').inject(self.class) do |klass, next_const|
-                  klass.const_defined?(next_const) ? klass.const_get(next_const) : break
+                const_name.split('_').inject(self.class) do |k, next_const|
+                  k.const_defined?(next_const) ? k.const_get(next_const) : break
                 end
               end
 
@@ -301,9 +301,9 @@ module Rails # :nodoc:
         end
 
         # Initialize the class that responsible for storaging the response
-        def initialize_response(as, to)
+        def initialize_response(as_format, to)
           raise ::ArgumentError, <<~MSG.squish if to.nil?
-            The given format #{as.inspect} is not a valid reponse format.
+            The given format #{as_format.inspect} is not a valid reponse format.
           MSG
 
           klass = schema.config.enable_string_collector \
@@ -322,7 +322,7 @@ module Rails # :nodoc:
         # Little helper to build an +OpenStruct+ ensure the given +value+ is a
         # +Hash+. It can also +transform_keys+ with the given block
         def build_ostruct(value, &block)
-          raise ::ArgumentError, <<~MSG.squish unless value.kind_of?(Hash)
+          raise ::ArgumentError, <<~MSG.squish unless value.is_a?(Hash)
             The "#{value.class.name}" is not a valid hash.
           MSG
 

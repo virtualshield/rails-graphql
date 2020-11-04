@@ -2,6 +2,9 @@
 
 module Rails # :nodoc:
   module GraphQL # :nodoc:
+    # = GraphQL Spec Include Directive
+    #
+    # Allow including fields only +if+ condition is true
     class Directive::IncludeDirective < Directive
       self.spec_object = true
 

@@ -24,4 +24,5 @@ test/version_tmp/
 tmp/
 .ruby-version
 .ruby-gemset
+.ruby-env
 gemfiles/*.lock

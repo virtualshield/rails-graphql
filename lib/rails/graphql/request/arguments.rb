@@ -63,10 +63,12 @@ module Rails # :nodoc:
           self
         end
 
+        # rubocop:disable Style/MissingRespondToMissing
         # Transform the value before returning
         def method_missing(*)
           self.class.transform(super)
         end
+        # rubocop:enable Style/MissingRespondToMissing
 
         # Transform the value before returning
         def [](*)

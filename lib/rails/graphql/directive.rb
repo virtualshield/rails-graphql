@@ -71,7 +71,7 @@ module Rails # :nodoc:
         end
 
         def inspect # :nodoc:
-          return "#<GraphQL::Directive>" if self.eql?(GraphQL::Directive)
+          return '#<GraphQL::Directive>' if eql?(GraphQL::Directive)
 
           args = arguments.each_value.map(&:inspect)
           args = args.presence && "(#{args.join(', ')})"
@@ -181,7 +181,7 @@ module Rails # :nodoc:
         invalid = all_arguments.reject { |name, arg| arg.valid?(@args[name]) }
         return if invalid.empty?
 
-        invalid = invalid.map { |name, arg| <<~MSG }
+        invalid = invalid.map { |name, _| <<~MSG }
           Invalid value "#{@args[name].inspect}" for #{name} argument.
         MSG
 

@@ -92,7 +92,7 @@ module Rails # :nodoc:
             invalidate! if invalidate
             stack_path = request.stack_to_path
             stack_path << gql_name if respond_to?(:gql_name) && gql_name.present?
-            request.exception_to_error(error, @node, path: stack_path, stage: stage)
+            request.exception_to_error(error, @node, path: stack_path, stage: stage.to_s)
           end
       end
     end

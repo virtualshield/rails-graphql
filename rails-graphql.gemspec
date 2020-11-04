@@ -42,5 +42,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rake-compiler', '~> 1.1.0'
   s.add_development_dependency 'rake-compiler-dock', '~> 1.0.1'
   s.add_development_dependency 'rdoc', '~> 6.2.1'
-  s.add_development_dependency 'rubocop', '~> 0.84.0'
+  s.add_development_dependency 'simplecov', '~> 0.19.1'
+  s.add_development_dependency 'sqlite3', '~> 1.4'
 end

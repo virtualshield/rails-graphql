@@ -99,7 +99,7 @@ module Rails # :nodoc:
 
         path = "adapters/#{ar_adapter_key(adapter_name)}_adapter"
         $LOAD_PATH.any? do |load_path|
-          next unless load_path.to_s =~ /\/app\/graphql$/
+          next unless load_path.to_s =~ %r{\/app\/graphql$}
           next unless File.exist?("#{load_path}/#{path}.rb")
           load "#{load_path}/#{path}.rb"
         end || load("#{__dir__}/graphql/#{path}.rb")

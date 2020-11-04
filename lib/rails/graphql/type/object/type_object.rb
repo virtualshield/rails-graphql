@@ -6,7 +6,7 @@ module Rails # :nodoc:
       # The introspection object for any kind of type
       class Object::TypeObject < Object
         FAKE_TYPES = {
-          list:     {
+          list: {
             kind: :list,
             kind_enum: 'LIST',
             name: 'List',

@@ -10,8 +10,6 @@ end
 require 'rdoc/task'
 require 'rake/testtask'
 
-require_relative 'test/config'
-
 require_relative 'tasks/libgraphqlparser'
 
 task default: :test
@@ -20,7 +18,7 @@ Rake::TestTask.new(:test) do |t|
   t.libs << 'test'
   t.warning = true
   t.verbose = true
-  t.test_files = Dir.glob("test/graphql/**/*_test.rb")
+  t.test_files = Dir.glob("test/**/*_test.rb")
 end
 
 RDoc::Task.new(:rdoc) do |rdoc|

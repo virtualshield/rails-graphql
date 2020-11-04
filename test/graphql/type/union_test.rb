@@ -1,7 +1,7 @@
 require 'config'
 
 class GraphQL_Type_UnionTest < GraphQL::TestCase
-  DESCRIBED_CLASS = Class.new(Rails::GraphQL::Type::Union)
+  DESCRIBED_CLASS = unmapped_class(Rails::GraphQL::Type::Union)
 
   def test_of_kind
     field = double(base_type: 'a')
@@ -28,7 +28,7 @@ class GraphQL_Type_UnionTest < GraphQL::TestCase
   def test_append
     assert_nil(DESCRIBED_CLASS.append)
 
-    object = double(base_type: Rails::GraphQL::Type::Object)
+    object = double(base_type: ::Rails::GraphQL::Type::Object)
     object2 = double(base_type: 'a')
 
     assert_raises(StandardError) { DESCRIBED_CLASS.append(object) }

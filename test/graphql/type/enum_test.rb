@@ -1,7 +1,7 @@
 require 'config'
 
 class GraphQL_Type_EnumTest < GraphQL::TestCase
-  DESCRIBED_CLASS = Class.new(Rails::GraphQL::Type::Enum)
+  DESCRIBED_CLASS = unmapped_class(Rails::GraphQL::Type::Enum)
   %w[A B C].each(&DESCRIBED_CLASS.method(:add))
 
   def test_indexed
@@ -96,8 +96,8 @@ class GraphQL_Type_EnumTest < GraphQL::TestCase
   def test_value_using_ask
     assert_raises(StandardError) { DESCRIBED_CLASS.value_using?(nil, DESCRIBED_CLASS) }
 
-    test_directive    = Class.new(Rails::GraphQL::Directive)
-    missing_directive = Class.new(Rails::GraphQL::Directive)
+    test_directive    = unmapped_class(Rails::GraphQL::Directive)
+    missing_directive = unmapped_class(Rails::GraphQL::Directive)
     test_values = { 'B' => [], 'C' => [test_directive.new] }
 
     DESCRIBED_CLASS.stub(:as_json, passthrough) do
@@ -130,7 +130,7 @@ class GraphQL_Type_EnumTest < GraphQL::TestCase
   end
 
   def test_all_directives
-    test_class_1 = Class.new(Rails::GraphQL::Type::Enum)
+    test_class_1 = unmapped_class(Rails::GraphQL::Type::Enum)
     test_class_1.stub(:all_value_directives, { 'A' => Set[1, 2] }) do
       result = test_class_1.all_directives
       assert_kind_of(Set, result)

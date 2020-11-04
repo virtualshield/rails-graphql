@@ -181,7 +181,7 @@ module Rails # :nodoc:
           # the event is stopped for the object, then it doesn't proceed to the
           # strategy implementation, ensuring compatibility
           def trigger_event(event_name, **xargs)
-            return super if @current_object.nil?
+            return super if !defined?(@current_object) || @current_object.nil?
 
             listeners = request.cache(:dynamic_listeners)[field] ||= field.all_listeners
             return super unless listeners.include?(event_name)
@@ -208,6 +208,11 @@ module Rails # :nodoc:
             raise FieldError, <<~MSG.squish if field.leaf_type? && !empty_selection
               The "#{gql_name}" was assigned to the #{type_klass.gql_name} which
               is a leaf type and does not have nested fields.
+            MSG
+
+            raise FieldError, <<~MSG.squish if !field.leaf_type? && empty_selection
+              The "#{gql_name}" was assigned to the #{type_klass.gql_name} which
+              is not a leaf type and requires a selection of fields.
             MSG
 
             raise DisabledFieldError, <<~MSG.squish if field.disabled?

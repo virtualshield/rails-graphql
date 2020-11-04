@@ -10,7 +10,7 @@ class GraphQL_TypeTest < GraphQL::TestCase
     assert_predicate(DESCRIBED_CLASS, :base_object?)
     assert_predicate(DESCRIBED_CLASS, :abstract?)
 
-    other_class = Class.new(DESCRIBED_CLASS)
+    other_class = unmapped_class(DESCRIBED_CLASS)
     assert_equal(DESCRIBED_CLASS, other_class.base_type)
     assert_predicate(other_class, :described_class?)
     refute_predicate(other_class, :spec_object?)
@@ -45,7 +45,7 @@ class GraphQL_TypeTest < GraphQL::TestCase
 
       assert(DESCRIBED_CLASS.gql_resolver?(:calculate))
 
-      other_class = Class.new(DESCRIBED_CLASS)
+      other_class = unmapped_class(DESCRIBED_CLASS)
       assert(other_class.gql_resolver?(:calculate))
 
       other_class.stub(:base_object?, true) do

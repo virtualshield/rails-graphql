@@ -4,7 +4,7 @@ require 'rails/generators/base'
 
 module GraphQL
   module Generators
-    class ControllerGenerator < Rails::Generators::Base
+    class ControllerGenerator < Rails::Generators::Base # :nodoc:
       include Rails::GraphQL::BaseGenerator
 
       desc 'Add a new controller that operates with GraphQL'

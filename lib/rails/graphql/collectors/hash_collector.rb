@@ -45,7 +45,7 @@ module Rails # :nodoc:
         # request process
         def append_errors(errors)
           return if errors.empty?
-          @data[:errors] = errors.to_a
+          @data['errors'] = errors.to_a
         end
 
         # Return the generated object

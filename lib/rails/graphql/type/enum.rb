@@ -103,9 +103,9 @@ module Rails # :nodoc:
               source: self,
             )
 
-            self.values << value
-            self.value_description[value] = desc unless desc.nil?
-            self.value_directives[value] = directives
+            values << value
+            value_description[value] = desc unless desc.nil?
+            value_directives[value] = directives
           end
 
           # Check if a given +value+ is using a +directive+
@@ -122,11 +122,8 @@ module Rails # :nodoc:
           def all_deprecated_values
             @all_deprecated_values ||= begin
               all_value_directives.to_a.inject({}) do |list, (value, dirs)|
-                next list unless obj = dirs.find do |dir|
-                  dir.is_a?(deprecated_klass)
-                end
-
-                list.merge(value => obj.args.reason)
+                obj = dirs.find { |dir| dir.is_a?(deprecated_klass) }
+                obj ? list.merge(value => obj.args.reason) : list
               end
             end.freeze
           end

@@ -43,7 +43,7 @@ module Rails # :nodoc:
       def initialize(
         name,
         type,
-        owner: ,
+        owner:,
         null: true,
         full: false,
         array: false,

@@ -1,0 +1,423 @@
+schema {
+  query: _Query
+  mutation: _Mutation
+}
+
+"""
+The Bigint scalar type represents a signed numeric non‐fractional value.
+It can go beyond the Int 32‐bit limit, but it's exchanged as a string.
+"""
+scalar Bigint
+
+"""
+The Binary scalar type represents a Base64 string.
+Normally used to share files and uploads.
+"""
+scalar Binary
+
+"The Boolean scalar type represents true or false."
+scalar Boolean
+
+"The Date scalar type represents a ISO 8601 string value."
+scalar Date
+
+"The DateTime scalar type represents a ISO 8601 string value."
+scalar DateTime
+
+"""
+The Decimal scalar type represents signed fractional values with extra precision.
+The values are exchange as string.
+"""
+scalar Decimal
+
+"The Float scalar type represents signed double‐precision fractional values."
+scalar Float
+
+"""
+The ID scalar type represents a unique identifier and it is serialized in the same
+way as a String but it accepts both numeric and string based values as input.
+"""
+scalar ID
+
+"The Int scalar type represents a signed 32‐bit numeric non‐fractional value."
+scalar Int
+
+"""
+The String scalar type represents textual data, represented as UTF‐8 character
+sequences.
+"""
+scalar String
+
+"""
+The Time scalar type that represents a distance in time using hours,
+minutes, seconds, and miliseconds.
+"""
+scalar Time
+
+"The valid locations that a directive may be placed."
+enum __DirectiveLocation {
+  "Mark as a executable directive usable on query objects."
+  QUERY
+  
+  "Mark as a executable directive usable on mutation objects."
+  MUTATION
+  
+  "Mark as a executable directive usable on subscription objects."
+  SUBSCRIPTION
+  
+  "Mark as a executable directive usable on field objects."
+  FIELD
+  
+  "Mark as a executable directive usable on fragment definition objects."
+  FRAGMENT_DEFINITION
+  
+  "Mark as a executable directive usable on fragment spread objects."
+  FRAGMENT_SPREAD
+  
+  "Mark as a executable directive usable on inline fragment objects."
+  INLINE_FRAGMENT
+  
+  "Mark as a type system directive usable on schema definitions."
+  SCHEMA
+  
+  "Mark as a type system directive usable on scalar definitions."
+  SCALAR
+  
+  "Mark as a type system directive usable on object definitions."
+  OBJECT
+  
+  "Mark as a type system directive usable on field definitions."
+  FIELD_DEFINITION
+  
+  "Mark as a type system directive usable on argument definitions."
+  ARGUMENT_DEFINITION
+  
+  "Mark as a type system directive usable on interface definitions."
+  INTERFACE
+  
+  "Mark as a type system directive usable on union definitions."
+  UNION
+  
+  "Mark as a type system directive usable on enum definitions."
+  ENUM
+  
+  "Mark as a type system directive usable on enum value definitions."
+  ENUM_VALUE
+  
+  "Mark as a type system directive usable on input object definitions."
+  INPUT_OBJECT
+  
+  "Mark as a type system directive usable on input field definitions."
+  INPUT_FIELD_DEFINITION
+}
+
+"""
+The fundamental unit of any GraphQL Schema is the type.
+This enum enlist all the valid base types.
+"""
+enum __TypeKind {
+  "Scalar types represent primitive leaf values in a GraphQL type system.\n"
+  SCALAR
+  
+  "Objects represent a list of named fields, each of which yield a value of a\nspecific type.\n"
+  OBJECT
+  
+  "Interfaces represent a list of named fields and their types.\n"
+  INTERFACE
+  
+  "Unions represent an object that could be one of a list of GraphQL Object types.\n"
+  UNION
+  
+  "Enum types, like scalar types, also represent leaf values in a GraphQL\ntype system. However Enum types describe the set of possible values.\n"
+  ENUM
+  
+  "Objects represent a list of named fields, each of which yield a value of\na specific type.\n"
+  INPUT_OBJECT
+  
+  "A GraphQL list is a special collection type which declares the type of\neach item in the List (referred to as the item type of the list).\n"
+  LIST
+  
+  "This type wraps an underlying type, and this type acts identically to that wrapped\ntype, with the exception that null is not a valid response for the wrapping type.\n"
+  NON_NULL
+}
+
+# Assigned to LiteBase class
+input LiteBaseInput {
+  id: ID
+  
+  factionId: ID
+  
+  name: String
+  
+  planet: String
+  
+  _delete: Boolean = false
+}
+
+# Assigned to LiteFaction class
+input LiteFactionInput {
+  id: ID
+  
+  name: String
+  
+  _delete: Boolean = false
+  
+  basesAttributes: [LiteBaseInput!]
+  
+  shipsAttributes: [LiteShipInput!]
+}
+
+# Assigned to LiteShip class
+input LiteShipInput {
+  id: ID
+  
+  factionId: ID
+  
+  name: String
+  
+  _delete: Boolean = false
+}
+
+# Assigned to LiteBase class
+type LiteBase {
+  id: ID!
+  
+  factionId: ID
+  
+  name: String
+  
+  planet: String
+  
+  faction: LiteFaction
+}
+
+# Assigned to LiteFaction class
+type LiteFaction {
+  id: ID!
+  
+  name: String
+  
+  bases: [LiteBase!]!
+  
+  ships: [LiteShip!]!
+}
+
+# Assigned to LiteShip class
+type LiteShip {
+  id: ID!
+  
+  factionId: ID
+  
+  name: String
+  
+  faction: LiteFaction
+}
+
+type _Mutation {
+  createLiteFaction(liteFaction: LiteFactionInput!): LiteFaction!
+  
+  updateLiteFaction(id: ID!, liteFaction: LiteFactionInput!): LiteFaction!
+  
+  deleteLiteFaction(id: ID!): Boolean!
+  
+  createLiteBase(liteBase: LiteBaseInput!): LiteBase!
+  
+  updateLiteBase(id: ID!, liteBase: LiteBaseInput!): LiteBase!
+  
+  deleteLiteBase(id: ID!): Boolean!
+  
+  createLiteShip(liteShip: LiteShipInput!): LiteShip!
+  
+  updateLiteShip(id: ID!, liteShip: LiteShipInput!): LiteShip!
+  
+  deleteLiteShip(id: ID!): Boolean!
+}
+
+type _Query {
+  __schema: __Schema!
+  
+  __type(name: String!): __Type
+  
+  liteFactions: [LiteFaction!]!
+  
+  liteFaction(id: ID!): LiteFaction!
+  
+  liteBases: [LiteBase!]!
+  
+  liteBase(id: ID!): LiteBase!
+  
+  liteShips: [LiteShip!]!
+  
+  liteShip(id: ID!): LiteShip!
+}
+
+"""
+Directives provide a way to describe alternate runtime execution
+and type validation behavior in a GraphQL document.
+
+In some cases, you need to provide options to alter GraphQL’s execution
+behavior in ways field arguments will not suffice, such as conditionally
+including or skipping a field. Directives provide this by describing
+additional information to the executor.
+"""
+# Assigned to Rails::GraphQL::Directive class
+type __Directive {
+  name: String!
+  
+  description: String
+  
+  locations: [__DirectiveLocation!]!
+  
+  args: [__InputValue!]!
+}
+
+"""
+One of the values of an Enum object. It is unique within the Enum set
+of values. It's a string representation, not a numeric representation,
+of a value kept as all caps (ie. ONE_VALUE).
+"""
+type __EnumValue {
+  name: String!
+  
+  description: String
+  
+  isDeprecated: Boolean!
+  
+  deprecationReason: String
+}
+
+"""
+Fields are the elements that compose both Objects and Interfaces. Each
+field in these other objects may contain arguments and always yields
+a value of a specific type.
+"""
+# Assigned to Rails::GraphQL::Field class
+type __Field {
+  name: String!
+  
+  description: String
+  
+  args: [__InputValue!]!
+  
+  type: __Type!
+  
+  isDeprecated: Boolean!
+  
+  deprecationReason: String
+}
+
+"""
+Alongside with scalars and enums, input value objects allow the user
+to provide values to arguments on fields and directives. Different
+from those, input values accepts a list of keyed values, instead of
+a single value.
+"""
+# Assigned to Rails::GraphQL::Field::InputField class
+type __InputValue {
+  name: String!
+  
+  description: String
+  
+  type: __Type!
+  
+  defaultValue: String
+}
+
+"""
+A GraphQL service’s collective type system capabilities are referred
+to as that service’s "schema". A schema is defined in terms of the
+types and directives it supports as well as the root operation types
+for each kind of operation: query, mutation, and subscription; this
+determines the place in the type system where those operations begin.
+"""
+# Assigned to Rails::GraphQL::Schema class
+type __Schema {
+  types: [__Type!]!
+  
+  queryType: __Type!
+  
+  mutationType: __Type
+  
+  subscriptionType: __Type
+  
+  directives: [__Directive!]!
+}
+
+"""
+The fundamental unit of any GraphQL Schema is the type. There are six
+kinds of named type definitions in GraphQL, and two wrapping types.
+
+The most basic type is a +Scalar+. A scalar represents a primitive value,
+like a string or an integer.
+
++Scalars+ and +Enums+ form the leaves in response trees; the intermediate
+levels are +Object+ types, which define a set of fields.
+
+An +Interface+ defines a list of fields; +Object+ types that implement
+that interface are guaranteed to implement those fields.
+
+A +Union+ defines a list of possible types; similar to interfaces,
+whenever the type system claims a union will be returned, one of the
+possible types will be returned.
+
+Finally, oftentimes it is useful to provide complex structs as inputs
+to GraphQL field arguments or variables; the +Input Object+ type allows
+the schema to define exactly what data is expected.
+"""
+# Assigned to Rails::GraphQL::Type class
+type __Type {
+  kind: __TypeKind!
+  
+  name: String
+  
+  description: String
+  
+  "OBJECT and INTERFACE only"
+  fields(includeDeprecated: Boolean = false): [__Field!]
+  
+  "OBJECT only"
+  interfaces: [__Type!]
+  
+  "INTERFACE and UNION only"
+  possibleTypes: [__Type!]
+  
+  "ENUM only"
+  enumValues(includeDeprecated: Boolean = false): [__EnumValue!]
+  
+  "INPUT_OBJECT only"
+  inputFields: [__InputValue!]
+  
+  "NON_NULL and LIST only"
+  ofType: __Type
+}
+
+"""
+Indicate deprecated portions of a GraphQL service’s schema, such as deprecated
+fields on a type or deprecated enum values.
+"""
+directive @deprecated(
+
+  """
+  Explain why the underlying element was marked as deprecated. If possible,
+indicate what element should be used instead. This description is formatted
+using Markdown syntax (as specified by [CommonMark](http://commonmark.org/)).
+  """
+  reason: String
+  
+) on FIELD_DEFINITION | ENUM_VALUE
+
+"Allows for conditional inclusion during execution as described by the if argument."
+directive @include(
+
+  "When false, the underlying element will be automatically marked as null."
+  if: Boolean!
+  
+) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Allows for conditional exclusion during execution as described by the if argument."
+directive @skip(
+
+  "When true, the underlying element will be automatically marked as null."
+  if: Boolean!
+  
+) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT

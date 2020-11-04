@@ -96,7 +96,6 @@ module Rails # :nodoc:
           klass = "::GraphQL::#{app_class.send(source_name)}Schema".constantize
           self.class.gql_schema = klass
         end
-
     end
   end
 end

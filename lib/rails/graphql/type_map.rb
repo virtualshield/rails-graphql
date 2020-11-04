@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'concurrent/map'
+require 'active_support/core_ext/class/subclasses'
 
 module Rails # :nodoc:
   module GraphQL # :nodoc:
@@ -19,8 +20,12 @@ module Rails # :nodoc:
       FILTER_REGISTER_TRACE = /((inherited|initialize)'$|schema\.rb:\d+)/.freeze
 
       # Store all the base classes and if they were eager loaded by the type map
-      mattr_accessor :base_classes, instance_writer: false,
-        default: { Directive: false, Type: false, Schema: false, }
+      # Be aware of the order because hard reset is based in this order
+      mattr_accessor :base_classes, instance_writer: false, default: {
+        Type: false,
+        Directive: false,
+        Schema: false,
+      }
 
       def self.loaded!(base_class)
         base_classes[base_class] = true
@@ -29,19 +34,18 @@ module Rails # :nodoc:
       # Reset the state of the type mapper
       def reset!
         @objects = 0 # Number of types and directives defined
-        @aliases = 0 # Number of symbolized aliases
 
         @pending = []
         @callbacks = Hash.new { |h, k| h[k] = [] }
         @skip_register = nil
 
-        @index = Concurrent::Map.new do |h, key|                  # Namespaces
-          base_class = Concurrent::Map.new do |h, key|            # Base classes
-            ensure_base_class!(key)
-            h.fetch_or_store(key, Concurrent::Map.new)            # Items
+        @index = Concurrent::Map.new do |h1, key1|                # Namespaces
+          base_class = Concurrent::Map.new do |h2, key2|          # Base classes
+            ensure_base_class!(key2)
+            h2.fetch_or_store(key2, Concurrent::Map.new)          # Items
           end
 
-          h.fetch_or_store(key, base_class)
+          h1.fetch_or_store(key1, base_class)
         end
 
         @checkpoint.map(&:register!) if defined?(@checkpoint)
@@ -49,7 +53,19 @@ module Rails # :nodoc:
 
       alias initialize reset!
 
+      # This will do a full reset of the type map, re-registering all the
+      # descendant classes for all the base classes
+      def hard_reset!
+        remove_instance_variable(:@checkpoint) if defined?(@checkpoint)
+
+        reset!
+        base_classes.each_key do |base_class|
+          GraphQL.const_get(base_class).descendants.each(&:register!)
+        end
+      end
+
       # Save or restore a checkpoint that can the type map can be reseted to
+      # TODO: With hard reset, we might not need checkpoint anymore
       def use_checkpoint!
         return reset! if defined?(@checkpoint)
 
@@ -59,10 +75,11 @@ module Rails # :nodoc:
 
       # Get the list of all registred objects
       def objects(base_classes: nil, namespaces: nil)
-        (Array.wrap(namespaces).presence || @index).values.map do |bases|
-          (Array.wrap(base_classes).presence || bases).values.map do |items|
-            items.values.map(&:call)
-          end
+        (Array.wrap(namespaces).presence || @index.keys).map do |namespace|
+          (Array.wrap(base_classes).presence || @index[namespace].keys).map do |base_class|
+            @index[namespace][base_class].values.map(&:call) \
+              if @index[namespace].key?(base_class)
+          end if @index.key?(namespace)
         end.flatten.compact.uniq.select do |obj|
           obj.respond_to?(:register!)
         end
@@ -99,14 +116,12 @@ module Rails # :nodoc:
         possibilities = Array.wrap(key_or_name)
         possibilities += Array.wrap(xargs[:fallback]) if xargs.key?(:fallback)
 
-        catch :found do
-          namespaces.uniq.find do |namespace|
-            possibilities.find do |item|
-              result = dig(namespace, xargs.fetch(:base_class, :Type), key_or_name)
-              throw :found, result unless result.nil?
-            end
+        namespaces.uniq.find do |namespace|
+          possibilities.find do |item|
+            result = dig(namespace, xargs.fetch(:base_class, :Type), item)
+            return result.call unless result.nil?
           end
-        end&.call
+        end
       ensure
         skip_register.pop
       end
@@ -117,7 +132,7 @@ module Rails # :nodoc:
       def exist?(name_or_key, base_class: :Type, namespaces: :base, exclusive: false)
         namespaces = namespaces.is_a?(Set) ? namespaces.to_a : Array.wrap(namespaces)
         namespaces += [:base] unless exclusive
-        namespaces.uniq.any? { |namespace| @index[namespace][base_class].key?(name_or_key) }
+        namespaces.uniq.any? { |namespace| dig(namespace, base_class, name_or_key).present? }
       end
 
       # Find if a given object is already defined. If +exclusive+ is set to
@@ -131,14 +146,16 @@ module Rails # :nodoc:
       # Mark the given object to be registered later, when a fetch is triggered
       # TODO: Improve this with a Backtracer Cleaner
       def postpone_registration(object)
-        source = caller(3).find { |item| !(item =~ FILTER_REGISTER_TRACE) }
+        source = caller(3).find { |item| item !~ FILTER_REGISTER_TRACE }
         @pending << [object, source]
       end
 
       # Register a given object, which must be a class where the namespaces and
       # the base class can be inferred
       def register(object)
-        namespaces = object.namespaces.to_a
+        namespaces = object.namespaces.dup
+        namespaces = namespaces.is_a?(Set) ? namespaces.to_a : Array.wrap(namespaces)
+
         base_namespace = namespaces.shift || :base
         base_class = find_base_class(object)
         ensure_base_class!(base_class)
@@ -154,60 +171,63 @@ module Rails # :nodoc:
           )
         end
 
-        # Update counters (2 per ns, 1 per alias, 1 named alias)
-        @aliases += (namespaces.size * 2) + object.aliases.size + 1
-        @objects += 1
-
         # Register the main type object
         add(base_namespace, base_class, object_key, -> { object })
 
         # Register all the aliases plus the object name
-        [object_name, *object.aliases].each do |alias_name|
+        aliases = object.try(:aliases) || []
+        [object_name, *aliases].each do |alias_name|
           add(base_namespace, base_class, alias_name, alias_proc)
         end
 
         # For each remaining namespace, register a key and a name alias
-        namespaces.product([object_key, object_name]) do |(namespace, key_or_name)|
+        namespaces.product([object_key, object_name, *aliases]) do |(namespace, key_or_name)|
           add(namespace, base_class, key_or_name, alias_proc)
         end
 
         # Return the object for chain purposes
+        @objects += 1
         object
       end
 
       # Register an item alias. Either provide a block that trigger the fetch
       # method to return that item, or a key from the same namespace and base
       # class
-      def register_alias(name_or_key, key = nil, base_class: :Type, namespace: nil, &block)
+      def register_alias(name_or_key, key = nil, **xargs, &block)
         raise ArgumentError, <<~MSG.squish unless key.nil? ^ block.nil?
           Provide either a key or a block in order to register an alias.
         MSG
 
+        base_class = xargs.delete(:base_class) || :Type
         ensure_base_class!(base_class)
-        namespace ||= :base
+
+        namespaces = xargs.delete(:namespaces) || []
+        namespaces = namespaces.to_a if namespaces.is_a?(Set)
+        namespaces << xargs.delete(:namespace)
+
+        namespaces = namespaces.compact.presence || [:base]
 
         block ||= -> do
-          fetch(key, base_class: base_class, namespaces: [namespace], exclusive: true)
+          fetch(key, base_class: base_class, namespaces: namespaces, exclusive: true)
         end
 
-        add(namespace, base_class, name_or_key, block)
-        @aliases += 1 if name_or_key.is_a?(Symbol)
+        namespaces.each { |ns| add(ns, base_class, name_or_key, block) }
       end
 
       # Iterate over the types of the given +base_class+ that are defined on the
       # given +namespaces+.
-      def each_from(namespaces, base_class: :Type, &block)
+      def each_from(namespaces, base_class: :Type, exclusive: false, &block)
         register_pending!
 
         namespaces = namespaces.is_a?(Set) ? namespaces.to_a : Array.wrap(namespaces)
-        namespaces += [:base] unless namespaces.include?(:base)
+        namespaces += [:base] unless namespaces.include?(:base) || exclusive
 
+        iterated = []
         enumerator = Enumerator::Lazy.new(namespaces.uniq) do |yielder, *values|
           next unless @index.key?(values.last)
-          iterated = []
 
           # Only iterate over string based types
-          @index[values.last][base_class].each do |key, value|
+          @index[values.last][base_class]&.each do |_key, value|
             next if iterated.include?(value = value.call) || value.blank?
             iterated << value
             yielder << value
@@ -244,12 +264,12 @@ module Rails # :nodoc:
             @namespaces=#{@index.size}
             @base_classes=#{base_classes.size}
             @objects=#{@objects}
-            @aliases=#{@aliases}
             @pending=#{@pending.size}
         INFO
       end
 
       private
+
         attr_reader :callbacks
 
         # Add a item to the index and then trigger the callbacks if any
@@ -283,9 +303,11 @@ module Rails # :nodoc:
           while (klass, source = @pending.shift)
             next if klass.registered?
 
-            skip.include?(klass) \
-              ? keep << [klass, source] \
-              : validate << klass.register!
+            if skip.include?(klass)
+              keep << [klass, source]
+            else
+              validate << klass.register!
+            end
           end
 
           validate.compact.each(&:call)

@@ -22,13 +22,14 @@ module Rails # :nodoc:
             super if defined? super
 
             SCHEMA_FIELD_TYPES.each_key do |kind|
-              fields = instance_variable_get("@#{kind}_fields") || {}
+              fields = instance_variable_defined?("@#{kind}_fields")
+              fields = fields ? instance_variable_get("@#{kind}_fields") : {}
               fields.each_value { |field| subclass.add_proxy_field(kind, field) }
             end
           end
         end
 
-        class ScopedConfig < Struct.new(:source, :type) # :nodoc: all
+        ScopedConfig = Struct.new(:source, :type) do # :nodoc: all
           def arg(*args, **xargs, &block)
             xargs[:owner] ||= source
             GraphQL::Argument.new(*args, **xargs, &block)
@@ -206,7 +207,7 @@ module Rails # :nodoc:
                 kind: :object,
                 object?: true,
                 kind_enum: 'OBJECT',
-                fields: @#{kind}_fields || nil,
+                fields: defined?(@#{kind}_fields) ? @#{kind}_fields : nil,
                 gql_name: '#{type_name}',
                 interfaces: nil,
                 description: nil,

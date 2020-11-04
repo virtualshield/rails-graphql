@@ -6,7 +6,6 @@ module Rails # :nodoc:
       # Helper module to collect the directives from fragments, operations, and
       # fields.
       module Directives
-
         # Get the list of listeners from all directives
         def all_listeners
           directives.map(&:all_listeners).reduce(:+) || Set.new
@@ -20,6 +19,7 @@ module Rails # :nodoc:
         end
 
         protected
+
           # Make sure to always return a set
           def directives
             @directives || Set.new
@@ -36,7 +36,7 @@ module Rails # :nodoc:
 
               args = directive_arguments(instance)
               args = collect_arguments(args, data[:arguments]) do |errors|
-                "Invalid arguments for @#{instance.gql_name} directive" +
+                "Invalid arguments for @#{instance.gql_name} directive" \
                   " added to #{gql_name} #{kind}: #{errors}."
               end
 

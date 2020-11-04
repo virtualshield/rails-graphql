@@ -26,7 +26,8 @@ module Rails # :nodoc:
         module FixedTypes
           # Set or get the list of possible event types when attaching events
           def event_types(*list, append: false, expose: false)
-            return @event_types.presence || superclass.try(:event_types) if list.blank?
+            return (defined?(@event_types) && @event_types.presence) ||
+              superclass.try(:event_types) if list.blank? 
 
             list = event_types if append
             list += list.flatten.compact.map(&:to_sym)
@@ -57,7 +58,7 @@ module Rails # :nodoc:
 
         # Mostly for correct inheritance on instances
         def all_listeners
-          current = (@listeners || Set.new)
+          current = (defined?(@listeners) && @listeners) || Set.new
           defined?(super) ? (current + super) : current
         end
 
@@ -73,9 +74,6 @@ module Rails # :nodoc:
 
           listeners << event_name
           events[event_name].send(unshift ? :unshift : :push, block)
-        rescue
-          binding.pry
-          raise
         end
       end
     end

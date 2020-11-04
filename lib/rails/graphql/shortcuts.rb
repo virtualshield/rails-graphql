@@ -35,7 +35,7 @@ module GraphQL
   #
   #   Rails::GraphQL::Directive::DeprecatedDirective(...)
   #   # => Rails::GraphQL::Directive::DeprecatedDirective.new(...)
-  DIRECTIVE_SHORTCUTS = %i[DeprecatedDirective IncludeDirective SkipDirective]
+  DIRECTIVE_SHORTCUTS = %i[DeprecatedDirective IncludeDirective SkipDirective].freeze
 
   class << self
     delegate(:to_gql, :to_graphql, :type_map, to: 'Rails::GraphQL')

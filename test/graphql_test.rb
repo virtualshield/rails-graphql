@@ -34,8 +34,10 @@ class GraphQLTest < GraphQL::TestCase
   def test_reload_ar_adapters_bang
     result = []
     DESCRIBED_CLASS.stub(:enable_ar_adapter, ->(x) { result << x }) do
-      DESCRIBED_CLASS.reload_ar_adapters!
-      assert_empty(result)
+      DESCRIBED_CLASS.stub_cvar(:@@loaded_adapters, Set[]) do
+        DESCRIBED_CLASS.reload_ar_adapters!
+        assert_empty(result)
+      end
 
       DESCRIBED_CLASS.stub_cvar(:@@loaded_adapters, Set[1]) do
         DESCRIBED_CLASS.reload_ar_adapters!
@@ -47,7 +49,7 @@ class GraphQLTest < GraphQL::TestCase
   def test_to_gql
     DESCRIBED_CLASS.stub_const(:ToGQL, double(compile: passallthrough)) do
       assert_equal([1], DESCRIBED_CLASS.to_gql(1))
-      assert_equal([1, {a: 1}], DESCRIBED_CLASS.to_gql(1, a: 1))
+      assert_equal([1, { a: 1 }], DESCRIBED_CLASS.to_gql(1, a: 1))
     end
   end
 end

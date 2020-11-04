@@ -96,7 +96,7 @@ module Rails # :nodoc:
 
           # Trigger the plain field output validation
           def validate_output!(value)
-            checker = @writing_array ? :nullable? : :null?
+            checker = defined?(@writing_array) && @writing_array ? :nullable? : :null?
             field&.validate_output!(value, checker: checker, array: false)
           end
 

@@ -97,7 +97,7 @@ module Rails # :nodoc:
           def resolve
             return if invalid?
 
-            object = @current_object || parent.type_klass
+            object = (defined?(@current_object) && @current_object) || parent.type_klass
             return run_on_fragment(:resolve_with!, object) unless inline?
 
             super if type_klass =~ object

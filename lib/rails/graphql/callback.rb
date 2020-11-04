@@ -55,7 +55,7 @@ module Rails # :nodoc:
       def source_location
         block.is_a?(Proc) ? block.source_location : [
           "(symbolized-callback/#{target.inspect})",
-          block
+          block,
         ]
       end
 
@@ -105,7 +105,10 @@ module Rails # :nodoc:
               idx += 1
               next unless callback_inject_arguments
               result[0][idx] ||= event.parameter(name) if event.parameter?(name)
-            when :key, :keyreq
+            when :keyreq
+              next unless callback_inject_named_arguments
+              result[1][name] ||= args_source[name]
+            when :key
               next unless callback_inject_named_arguments
               result[1][name] ||= args_source[name] if args_source.key?(name)
             end

@@ -2,6 +2,10 @@
 
 module Rails # :nodoc:
   module GraphQL # :nodoc:
+    # = GraphQL Spec Deprecated Directive
+    #
+    # Mark fields or enum values as deprecated which will include an error
+    # message when they are requested or returned
     class Directive::DeprecatedDirective < Directive
       self.spec_object = true
 

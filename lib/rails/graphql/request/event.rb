@@ -8,7 +8,7 @@ module Rails # :nodoc:
       # A small extension of the original event to support extra methods and
       # helpers when performing events during a request
       class Event < GraphQL::Event
-        OBJECT_BASED_READERS = %i[fragment operation spread]
+        OBJECT_BASED_READERS = %i[fragment operation spread].freeze
 
         delegate :schema, :errors, :context, to: :request
         delegate :instance_for, to: :strategy
@@ -60,9 +60,9 @@ module Rails # :nodoc:
           source.of_type?(type)
         end
 
-        # Check if the current +object+ is of the given +type+
+        # Check if the current +object+ is of the given +item+
         def on?(item)
-          object.of_type?(type)
+          object.of_type?(item)
         end
 
         # Provide access to field arguments

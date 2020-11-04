@@ -3,7 +3,7 @@
 module Rails # :nodoc:
   module GraphQL # :nodoc:
     module Helpers # :nodoc:
-      module InheritedCollection
+      module InheritedCollection # :nodoc:
         DEFAULT_TYPES = {
           array:      '[]',
           set:        'Set.new',
@@ -74,7 +74,7 @@ module Rails # :nodoc:
 
             module_eval(<<~RUBY, __FILE__, __LINE__ + 1) if instance_predicate
               def self.#{name}?
-                defined?(@#{name}) || superclass.try(:#{name}?)
+                (defined?(@#{name}) && @#{name}.present?) || superclass.try(:#{name}?)
               end
             RUBY
 
@@ -132,7 +132,8 @@ module Rails # :nodoc:
           # ensuring that same key items will be combined
           def fetch_inherited_hash_set(ivar)
             inherited_ancestors.inject({}) do |result, klass|
-              next result if (val = klass.instance_variable_get(ivar)).blank?
+              next result unless klass.instance_variable_defined?(ivar)
+              val = klass.instance_variable_get(ivar)
               Helpers.merge_hash_array(result, val)
             end
           end

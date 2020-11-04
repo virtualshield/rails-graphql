@@ -3,7 +3,7 @@
 module Rails # :nodoc:
   module GraphQL # :nodoc:
     class Type # :nodoc:
-      # The String scalar type represents textual data, represented as UTF‐8
+      # The String scalar type represents textual data, represented as UTF-8
       # character sequences.
       #
       # See http://spec.graphql.org/June2018/#sec-String

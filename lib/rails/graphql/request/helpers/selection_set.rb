@@ -14,11 +14,11 @@ module Rails # :nodoc:
           # field defined under the schema structure
           def parse_selection
             @selection = {}
-            assigners = {}
+            assigners = Hash.new { |h, k| h[k] = [] }
 
             visitor.collect_fields(*data[:selection]) do |kind, node, data|
               component = add_component(kind, node, data)
-              assigners[component.name] = component if component.assignable?
+              assigners[component.name] << component if component.assignable?
             end unless data[:selection].nil? || data[:selection].null?
 
             assing_fields!(assigners)
@@ -30,14 +30,15 @@ module Rails # :nodoc:
           # based on Symbols, the best way to find +gql_name+ based fields is
           # through interation and search. Complexity O(n)
           def assing_fields!(assigners)
-            pending = assigners.size
+            pending = assigners.map(&:size).reduce(:+) || 0
             return if pending.zero?
 
             fields_source.each_value do |field|
-              next unless (item = assigners[field.gql_name])
+              next unless assigners.key?(field.gql_name)
 
-              item.assing_to(field)
-              break if (pending -= 1) === 0
+              items = assigners[field.gql_name]
+              items.each_with_object(field).each(&:assing_to)
+              break if (pending -= items.size) === 0
             end
           end
 

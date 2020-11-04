@@ -4,7 +4,7 @@ require 'ffi'
 
 module Rails # :nodoc:
   module GraphQL # :nodoc:
-    module Native
+    module Native # :nodoc:
       extend FFI::Library
 
       VERSION = GQLAst::VERSION
@@ -23,7 +23,7 @@ module Rails # :nodoc:
       require_relative 'native/pointers'
       require_relative 'native/functions'
 
-      attach_function :graphql_parse_string, [:pointer, :pointer], :pointer
+      attach_function :graphql_parse_string, %i[pointer pointer], :pointer
 
       attach_function :to_json, :graphql_ast_to_json, [:pointer], :string
 

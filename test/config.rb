@@ -1,3 +1,17 @@
+require 'simplecov'
+SimpleCov.start do
+  coverage_criterion :branch
+
+  add_filter '/test/'
+
+  add_group 'Definition', ['/graphql/type', '/graphql/introspection', '/graphql/schema']
+  add_group 'Source', '/graphql/source'
+  add_group 'Native', '/graphql/native'
+  add_group 'Field', '/graphql/field'
+  add_group 'Helpers', '/graphql/helpers'
+  add_group 'Request', '/graphql/request'
+end
+
 require 'minitest/autorun'
 require 'minitest/reporters'
 require 'rails-graphql'
@@ -7,12 +21,21 @@ require_relative './test_ext'
 
 Minitest::Reporters.use!(Minitest::Reporters::SpecReporter.new)
 
+# Load all files for coverage ensurance
+Rails::GraphQL.eager_load!
+
 module GraphQL
   class TestCase < Minitest::Test
     PASSTHROUGH = ->(x, *) { x }
     PASSALLTHROUGH = ->(*x) { x }
 
+    delegate :unmapped_class, to: :class
+
     protected
+
+      def self.unmapped_class(*args)
+        Class.new(*args) { def self.register!(*); end }
+      end
 
       def passthrough
         PASSTHROUGH

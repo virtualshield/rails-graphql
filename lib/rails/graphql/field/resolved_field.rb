@@ -12,7 +12,8 @@ module Rails # :nodoc:
         end
 
         def all_events
-          Helpers.merge_hash_array(field.all_events, @events || {}).transform_values do |arr|
+          events = defined?(@events) ? @events : {}
+          Helpers.merge_hash_array(field.all_events, events).transform_values do |arr|
             arr.sort_by { |cb| cb.try(:target).is_a?(GraphQL::Field) ? 0 : 1 }
           end
         end

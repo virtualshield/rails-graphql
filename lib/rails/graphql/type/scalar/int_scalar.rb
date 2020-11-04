@@ -3,8 +3,8 @@
 module Rails # :nodoc:
   module GraphQL # :nodoc:
     class Type # :nodoc:
-      # The Int scalar type represents a signed 32‐bit numeric
-      # non‐fractional value.
+      # The Int scalar type represents a signed 32-bit numeric
+      # non-fractional value.
       #
       # See http://spec.graphql.org/June2018/#sec-Int
       class Scalar::IntScalar < Scalar
@@ -14,7 +14,7 @@ module Rails # :nodoc:
         desc 'The Int scalar type represents a signed 32‐bit numeric non‐fractional value.'
 
         max_value = (1 << 31)
-        RANGE = (-max_value)...(max_value)
+        RANGE = (-max_value...max_value).freeze
 
         class << self
           def valid_input?(value)

@@ -36,13 +36,15 @@ module Rails # :nodoc:
         # * <tt>:col</tt> - The column associated with the error.
         # * <tt>:path</tt> - The path of the field that generated the error.
         def add(message, line: nil, col: nil, path: nil, **extra)
-          item = { message: message }
+          item = { 'message' => message }
 
-          item[:locations] = [{ line: line.to_i, column: col.to_i }] \
+          item['locations'] = extra.delete(:locations)
+          item['locations'] ||= [{ line: line.to_i, column: col.to_i }] \
             if line.present? && col.present?
 
-          item[:path] = path if path.present? && path.is_a?(Array)
-          item[:extensions] = extra if extra.present?
+          item['path'] = path if path.present? && path.is_a?(Array)
+          item['extensions'] = extra.deep_stringify_keys if extra.present?
+          item['locations'].map!(&:stringify_keys)
 
           @items << item
         end

@@ -3,7 +3,7 @@
 module Rails # :nodoc:
   module GraphQL # :nodoc:
     module Native # :nodoc:
-      class Location < FFI::Struct
+      class Location < FFI::Struct # :nodoc:
         layout(
           beginLine: :uint,
           beginColumn: :uint,
@@ -25,6 +25,13 @@ module Rails # :nodoc:
 
         def end_column
           self[:endColumn]
+        end
+
+        def to_errors
+          [
+            { 'line' => begin_line, 'column' => begin_column },
+            { 'line' => end_line,   'column' => end_column },
+          ]
         end
 
         private :[], :[]=

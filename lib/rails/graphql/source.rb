@@ -23,7 +23,7 @@ module Rails # :nodoc:
         autoload :ActiveRecordSource
       end
 
-      class ScopedConfig < Struct.new(:receiver, :self_object) # :nodoc: all
+      ScopedConfig = Struct.new(:receiver, :self_object) do # :nodoc: all
         def respond_to_missing?(method_name, include_private = false)
           self_object.respond_to?(method_name, include_private) ||
             receiver.respond_to?(method_name, include_private)
@@ -74,7 +74,7 @@ module Rails # :nodoc:
       # The purpose of instantiating a source is to have access to its public
       # methods. It then runs from the strategy perspective, pointing out any
       # other methods to the manually set event
-      delegate_missing_to :@event
+      delegate_missing_to :event
       attr_reader :event
 
       self.abstract = true
@@ -202,6 +202,7 @@ module Rails # :nodoc:
             create_type(:enum, as: enum_name.classify, **xargs) do
               indexed! if enumerator.first.last.is_a?(Numeric)
               enumerator.sort_by(&:last).map(&:first).each(&method(:add))
+              instance_exec(&block) if block.present?
             end
           end
 
@@ -270,13 +271,17 @@ module Rails # :nodoc:
           # It's an alternative to +self.hook_names -= %i[*names]+ which
           # disables a specific hook
           def disable(*names)
-            hook_names -= names.map { |hook_name| hook_name.to_s.singularize.to_sym }
+            self.hook_names -= names.flatten.map do |hook_name|
+              hook_name.to_s.singularize.to_sym
+            end
           end
 
           # It's an alternative to +self.hook_names += %i[*names]+ which
           # enables additional hooks
           def enable(*names)
-            hook_names += names.map { |hook_name| hook_name.to_s.singularize.to_sym }
+            self.hook_names += names.flatten.map do |hook_name|
+              hook_name.to_s.singularize.to_sym
+            end
           end
 
           # Return the module where the GraphQL types should be created at
@@ -308,7 +313,7 @@ module Rails # :nodoc:
 
           # Build the pending sources
           def build_pending!
-            while (klass, _ = pending.shift)
+            while (klass, = pending.shift)
               klass.send(:build!) unless klass.abstract?
             end
           end

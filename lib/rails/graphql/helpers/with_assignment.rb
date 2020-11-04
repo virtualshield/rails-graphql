@@ -24,7 +24,7 @@ module Rails # :nodoc:
 
         # Check its own class or pass it to the superclass
         def assigned_to
-          @assigned_to.presence || superclass.try(:assigned_to)
+          (defined?(@assigned_to) && @assigned_to.presence) || superclass.try(:assigned_to)
         end
 
         # Make sure to always save the assignment as string, so that
@@ -60,10 +60,11 @@ module Rails # :nodoc:
           return if abstract?
           return super unless assigned?
 
-          super.tap do
-            klass = safe_assigned_class
-            GraphQL.type_map.register_alias(klass, &method(:itself)) if klass
-          end
+          result = super
+          return result unless (klass = safe_assigned_class)
+
+          GraphQL.type_map.register_alias(klass, namespaces: namespaces, &method(:itself))
+          result
         end
 
         protected
@@ -84,11 +85,10 @@ module Rails # :nodoc:
 
             klass = self
             block = until klass === Class
-              if klass.instance_variable_defined?(:@error_block)
-                break klass.instance_variable_get(:@error_block)
-              else
-                klass = klass.superclass
-              end
+              break klass.instance_variable_get(:@error_block) \
+                if klass.instance_variable_defined?(:@error_block)
+
+              klass = klass.superclass
             end
 
             message = !block.nil? ? block.call(klass) : <<~MSG.squish

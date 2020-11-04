@@ -21,7 +21,7 @@ module Rails # :nodoc:
           @val.pop(2) if blank?(-2)
 
           self << finish unless finish.nil?
-          self.eol if auto_eol
+          eol if auto_eol
           self
         end
 

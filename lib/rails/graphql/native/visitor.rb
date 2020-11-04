@@ -3,7 +3,7 @@
 module Rails # :nodoc:
   module GraphQL # :nodoc:
     module Native # :nodoc:
-      class Visitor < FFI::Struct
+      class Visitor < FFI::Struct # :nodoc:
         CALLBACK_LAYOUT = %i[pointer pointer].freeze
 
         MACROS = %w[
@@ -15,9 +15,9 @@ module Rails # :nodoc:
           field_definition input_value_definition interface_type_definition
           union_type_definition enum_type_definition enum_value_definition
           input_object_type_definition type_extension_definition directive_definition
-        ]
+        ].freeze
 
-        AUTO_NESTED = %w[document object_value list_type non_null_type]
+        AUTO_NESTED = %w[document object_value list_type non_null_type].freeze
 
         ArgumentObject  = Struct.new(:name, :value, :variable)
         DirectiveObject = Struct.new(:name, :arguments)
@@ -318,7 +318,7 @@ module Rails # :nodoc:
         end
 
         # Add a nil value to the stack
-        def visit_null_value(node)
+        def visit_null_value(*)
           stack << nil
         end
 
@@ -328,7 +328,7 @@ module Rails # :nodoc:
         end
 
         # Add a hash value to the stack
-        def visit_object_value(node)
+        def visit_object_value(*)
           stack << {}
         end
 
@@ -341,7 +341,7 @@ module Rails # :nodoc:
 
         # At the end of a list, change the stack based on the size of the list
         def end_visit_list_value(node)
-          stack << size.zero? ? [] : stack.slice!(-(list_size(node))..-1)
+          stack << size.zero? ? [] : stack.slice!(-list_size(node)..-1)
         end
       end
     end

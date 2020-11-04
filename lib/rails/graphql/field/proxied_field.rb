@@ -31,7 +31,7 @@ module Rails # :nodoc:
       Field.proxyable_methods %w[name gql_name method_name resolver description
         null? nullable? enabled?], klass: self
 
-      def initialize(field, owner: , **xargs, &block)
+      def initialize(field, owner:, **xargs, &block)
         @field = field
         @owner = owner
 
@@ -97,6 +97,7 @@ module Rails # :nodoc:
       end
 
       protected
+
         alias field proxied_field
 
         def normalize_name(value) # :nodoc:

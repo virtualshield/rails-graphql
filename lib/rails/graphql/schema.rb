@@ -28,7 +28,7 @@ module Rails # :nodoc:
       # The purpose of instantiating an schema is to have access to its
       # public methods. It then runs from the strategy perspective, pointing
       # out any other methods to the manually set event
-      delegate_missing_to :@event
+      delegate_missing_to :event
       attr_reader :event
 
       self.abstract = true
@@ -89,6 +89,12 @@ module Rails # :nodoc:
           )
         end
 
+        # :singleton-method:
+        # For campatibility with type map
+        def eager_load!
+          TypeMap.loaded! :Schema
+        end
+
         # Find all types that are available for the current schema
         def types(base_class: :Type, &block)
           type_map.each_from(namespace, base_class: base_class, &block)
@@ -112,7 +118,11 @@ module Rails # :nodoc:
         # The process to register a class and it's name on the index
         def register!
           return if self == GraphQL::Schema
-          return type_map.register(self).method(:validate!) unless registered?
+
+          unless registered?
+            super if defined? super
+            return type_map.register(self).method(:validate!)
+          end
 
           current = type_map.fetch(:schema,
             namespaces: namespace,
@@ -235,7 +245,7 @@ module Rails # :nodoc:
                 "#{base_module.name}" module.
               MSG
             else
-              base_class ||= superclass.ancestors.find { |klass| klass.superclass === Class }
+              base_class ||= superclass.ancestors.find { |k| k.superclass === Class }
 
               valid = superclass.is_a?(Module) && superclass < base_class
               raise DefinitionError, <<~MSG.squish unless valid
@@ -250,6 +260,7 @@ module Rails # :nodoc:
             klass.assigned_to = name_or_object if name_or_object.is_a?(Module) &&
               klass.is_a?(Helpers::WithAssignment)
 
+            klass.set_namespace(namespace)
             klass.instance_exec(&block) if block.present?
             klass
           end

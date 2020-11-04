@@ -9,8 +9,21 @@ module Rails
         sti_interface? ? interface_class : super
       end
 
+      # Get all unique attribute names that exists in the current model
+      def reflection_attributes(holder)
+        items = []
+        each_reflection(holder) do |item|
+          next unless item.belongs_to?
+          next items << item.foreign_key.to_s unless item.polymorphic?
+          items += [item.foreign_type, item.foreign_key]
+        end
+
+        items.compact.flatten.unshift(primary_key)
+      end
+
       # Iterate over all the attributes, except the primary key, from the model
       # but already set to be imported to GraphQL fields
+      # TODO: Turn into an enumerator
       def each_attribute(holder, skip_primary_key = true)
         adapter_key = GraphQL.ar_adapter_key(adapter_name)
 
@@ -24,6 +37,7 @@ module Rails
       end
 
       # Iterate over all the model reflections
+      # TODO: Turn into an enumerator
       def each_reflection(holder)
         skip_fields = skips_for(holder).map(&:to_s)
         model._reflections.each_value do |reflection|
@@ -60,11 +74,13 @@ module Rails
 
         # Build all necessary attribute fields into the given +holder+
         def build_attribute_fields(holder, **field_options)
-          each_attribute(holder) do |key, type, options|
-            next if skip.include?(key)
+          attributes_as_ids = reflection_attributes(holder)
+          each_attribute(holder) do |key, type, **options|
+            next if skip.include?(key) || holder.field?(key)
 
-            type = @enums[key.to_s] if @enums.key?(key.to_s)
-            next if holder.field?(key)
+            str_key = key.to_s
+            type = (defined?(@enums) && @enums.key?(str_key) && @enums[str_key]) ||
+              (attributes_as_ids.include?(str_key) && :id) || type
 
             options[:null] = !attr_required?(key) unless options.key?(:null)
             holder.field(key, type, **options.merge(field_options[key] || {}))
@@ -84,8 +100,10 @@ module Rails
               if type <= Source::ActiveRecordSource
                 source_name = item.collection? ? type.plural : type.singular
                 proxy_options = options.merge(alias: reflection.name, of_type: :proxy)
-                field = holder.safe_field(source, **proxy_options) \
-                  if (source = type.query_fields[source_name]).present?
+
+                if (source = type.query_fields[source_name]).present?
+                  field = holder.safe_field(source, **proxy_options)
+                end
               end
 
               field ||= holder.field(item.name, type, **options)
@@ -105,9 +123,9 @@ module Rails
             expected_name += 'Input' unless expected_name.ends_with?('Input')
 
             type_map_after_register(expected_name) do |input|
-              options = reflection_to_options(reflection)
-              options.merge!(alias: "#{reflection.name}_attributes")
-              holder.safe_field(reflection.name, input, **options)
+              options = reflection_to_options(reflection).merge(null: true)
+              field_name = "#{reflection.name}_attributes"
+              holder.safe_field(field_name, input, **options)
             end
           end
         end

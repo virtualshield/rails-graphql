@@ -62,7 +62,7 @@ module Rails # :nodoc:
           load "#{__dir__}/shortcuts.rb"
 
           $LOAD_PATH.each do |path|
-            next unless path =~ /\/app\/graphql$/
+            next unless path =~ %r{\/app\/graphql$}
             Dir.glob("#{path}/**/*.rb").sort.each(&method(:load))
           end
 
