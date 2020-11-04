@@ -25,4 +25,6 @@ tmp/
 .ruby-version
 .ruby-gemset
 .ruby-env
-gemfiles/*.lock
+gemfiles/*
+vendor/
+.vscode
