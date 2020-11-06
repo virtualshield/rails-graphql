@@ -96,8 +96,8 @@ module Rails # :nodoc:
           return context.stacked(value, &block) unless value.nil?
 
           stack = field.all_events[:prepare].map { |cb| cb.source_location.join(':') }
-          request.report_node_error(<<~MSG.squish, field.node, stack: stack.reverse)
-            It is expected to get a result from the prepare events
+          request.report_node_error(<<~MSG.squish, field, stack: stack.reverse)
+            It is expected to get a result from prepare events
           MSG
         end
 

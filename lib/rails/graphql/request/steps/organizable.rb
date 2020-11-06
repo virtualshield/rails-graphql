@@ -108,7 +108,7 @@ module Rails # :nodoc:
                 # When arguments are not equivalent, they can ended up with
                 # invalid values, so this already ensures that whatever the
                 # variable value ended up being, it will be valid due to this
-                raise ArgumentError, <<~MSG.squish unless argument =~ op_var
+                raise ArgumentError, <<~MSG.squish unless op_var =~ argument
                   The $#{var_name} variable on #{operation.log_source} is not compatible
                   with "#{key}" argument
                 MSG

@@ -238,7 +238,7 @@ type _Query {
   
   __type(name: String!): __Type
   
-  liteFactions: [LiteFaction!]!
+  liteFactions(order: String): [LiteFaction!]!
   
   liteFaction(id: ID!): LiteFaction!
   

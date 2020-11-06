@@ -94,8 +94,8 @@ module Rails # :nodoc:
 
       on :finish do
         attach_fields!
-        attach_scoped_arguments_to(object.fields)
-        attach_scoped_arguments_to(mutation_fields)
+        attach_scoped_arguments_to(query_fields.values)
+        attach_scoped_arguments_to(mutation_fields.values)
 
         next if model.base_class == model
 
@@ -176,11 +176,11 @@ module Rails # :nodoc:
       # Once the records are pre-loaded due to +preload_association+, use the
       # parent value and the preloader result to get the records
       def parent_owned_records(collection_result = false)
-        if !!(data = event.data[:prepared])
-          data.records_by_owner[current_value]
-        else
-          collection_result ? [] : nil
-        end
+        data = event.data[:prepared]
+        return collection_result ? [] : nil unless data
+
+        result = data.records_by_owner[current_value] || []
+        collection_result ? result : result.first
       end
 
       # The perform step for the +create+ based mutation

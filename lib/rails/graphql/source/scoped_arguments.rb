@@ -5,6 +5,9 @@ module Rails # :nodoc:
     # This is a helper class that allows sources to have scoped-based arguments,
     # meaning that when an argument is present, it triggers the underlying block
     # on the fields where the argument was attached to
+    #
+    # TODO: Easy the usage of scoped arguments with AR, to map model scopes as
+    # arguments using the abilities here provided
     module Source::ScopedArguments
       def self.included(other)
         other.extend(ClassMethods)
@@ -40,7 +43,7 @@ module Rails # :nodoc:
         protected
 
           # Add a new scoped param to the list
-          def scoped_argument(param, type, proc_method = nil, **settings, &block)
+          def scoped_argument(param, type = :string, proc_method = nil, **settings, &block)
             block = proc_method if proc_method.present? && block.nil?
             argument = Argument.new(param, type, **settings.merge(owner: self), &block)
             (@scoped_arguments ||= {})[argument.name] = argument
@@ -73,7 +76,7 @@ module Rails # :nodoc:
           next result unless argument.respond_to?(:block) && args_source.key?(argument.name)
           send_args = argument.block.arity.eql?(1) ? [args_source[argument.name]] : []
 
-          value = argument.block.call(*send_args)
+          value = result.instance_exec(*send_args, &argument.block)
           value = value.nil? ? result : value
 
           assigned_to.nil? ? value : event.data[assigned_to] = value

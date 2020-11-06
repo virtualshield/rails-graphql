@@ -224,11 +224,11 @@ module Rails # :nodoc:
               include Helpers::WithOwner if with_owner
               set_namespaces(*source.namespaces)
 
-              instance_exec(&block) if block.present?
-
-              self.owner ||= source if respond_to?(:owner=)
-              self.assigned_to ||= source.safe_assigned_class \
+              self.owner = source if respond_to?(:owner=)
+              self.assigned_to = source.safe_assigned_class \
                 if source.assigned? && is_a?(Helpers::WithAssignment)
+
+              instance_exec(&block) if block.present?
             end
           end
 

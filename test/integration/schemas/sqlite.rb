@@ -71,5 +71,12 @@ class StartWarsSqliteSchema < GraphQL::Schema
     config.enable_string_collector = false
   end
 
-  sources LiteFaction, LiteBase, LiteShip
+  sources LiteFaction do
+    with_options on: 'liteFactions' do
+      scoped_argument(:order) { |o| order(name: o) }
+    end
+  end
+
+  sources LiteBase
+  sources LiteShip
 end
