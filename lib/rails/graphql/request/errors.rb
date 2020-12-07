@@ -44,9 +44,9 @@ module Rails # :nodoc:
 
           item['path'] = path if path.present? && path.is_a?(Array)
           item['extensions'] = extra.deep_stringify_keys if extra.present?
-          item['locations'].map!(&:stringify_keys)
+          item['locations']&.map!(&:stringify_keys)
 
-          @items << item
+          @items << item.compact
         end
       end
     end

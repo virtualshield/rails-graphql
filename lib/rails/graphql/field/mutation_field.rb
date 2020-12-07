@@ -24,8 +24,8 @@ module Rails # :nodoc:
       # Get the performer that can be already defined or used through the
       # +method_name+ if that is callable
       def performer
-        @performer ||= callable?(method_name) \
-          ? Callback.new(self, :perform, method_name) \
+        @performer ||= callable?(:"#{method_name}!") \
+          ? Callback.new(self, :perform, :"#{method_name}!") \
           : false
       end
 

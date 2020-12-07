@@ -145,6 +145,11 @@ module Rails # :nodoc:
           defined?(@built) && !!@built
         end
 
+        # Checks if a given method can act as resolver
+        def gql_resolver?(method_name)
+          (instance_methods - GraphQL::Source.instance_methods).include?(method_name)
+        end
+
         # Attach all defined schema fields into the schemas using the namespaces
         # configured for the source
         def attach_fields!
