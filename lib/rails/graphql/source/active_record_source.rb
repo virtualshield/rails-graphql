@@ -124,6 +124,11 @@ module Rails # :nodoc:
           @enums ||= model.defined_enums.dup
         end
 
+        # Just a little override to ensure that both model and table are ready
+        def build!
+          super if model&.table_exists?
+        end
+
         protected
 
           # Check if a given +attr_name+ is associated with a presence validator
