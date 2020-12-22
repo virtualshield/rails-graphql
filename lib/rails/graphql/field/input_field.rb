@@ -55,7 +55,17 @@ module Rails # :nodoc:
 
       # Return the default value if the given +value+ is nil
       def deserialize(value = nil)
-        value.nil? ? @default : super
+        value.nil? ? default : super
+      end
+
+      # A little override to use the default value
+      def to_json(value = nil)
+        super(value.nil? ? default : value)
+      end
+
+      # A little override to use the default value
+      def as_json(value = nil)
+        super(value.nil? ? default : value)
       end
 
       # Checks if the default value of the field is valid

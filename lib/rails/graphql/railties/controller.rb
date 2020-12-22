@@ -77,7 +77,7 @@ module Rails # :nodoc:
         # Get the GraphQL variables for a request
         def gql_variables(variables = params[:variables])
           case variables
-          when ::ActionController::Parameters then variables.permit!
+          when ::ActionController::Parameters then variables.permit!.to_h
           when String then variables.present? ? JSON.parse(variables) : {}
           when Hash   then variables
           else {}
