@@ -15,7 +15,7 @@ module Rails # :nodoc:
 
       # Directives need to be contextualized by the given instance as +context+
       def self.set_context(item, context)
-        lambda { |*args| item.call(*args, context: context) }
+        lambda { |*args, **xargs| item.call(*args, _callback_context: context, **xargs) }
       end
 
       def initialize(target, event_name, *args, **xargs, &block)
@@ -46,9 +46,12 @@ module Rails # :nodoc:
 
       # This does the whole checking and preparation in order to really execute
       # the callback method
-      def call(event, context: nil)
+      def call(event, *args, _callback_context: nil, **xargs)
         return unless event.name === event_name && can_run?(event)
-        block.is_a?(Symbol) ? call_symbol(event) : call_proc(event, context)
+
+        block.is_a?(Symbol) \
+          ? call_symbol(event, *args, **xargs) \
+          : call_proc(event, _callback_context, *args, **xargs)
       end
 
       # Get a described source location for the callback
@@ -68,38 +71,45 @@ module Rails # :nodoc:
 
       private
 
+        # Find the proper owner of the symbol based callback
+        def owner
+          @owner ||= target.all_owners.find do |item|
+            item.is_a?(Class) ? item.method_defined?(block) : item.respond_to?(block)
+          end || target
+        end
+
         # Using the filters, check if the current callback can be executed
         def can_run?(event)
           filters.all? { |key, options| event_filters[key][:block].call(options, event) }
         end
 
         # Call the callback block as a symbol
-        def call_symbol(event)
-          owner = target.try(:proxied_owner) || target.try(:owner) || target
+        def call_symbol(event, *args, **xargs)
           event.on_instance(owner) do |instance|
             block = instance.method(@block)
-            args, xargs = collect_parameters(event, block)
+            args, xargs = collect_parameters(event, [args, xargs], block)
             block.call(*args, **xargs)
           end
         end
 
         # Call the callback block as a proc
-        def call_proc(event, context = nil)
-          args, xargs = collect_parameters(event)
+        def call_proc(event, context = nil, *args, **xargs)
+          args, xargs = collect_parameters(event, [args, xargs])
           (context || event).instance_exec(*args, **xargs, &block)
         end
 
         # Read the arguments needed for a block then collect them from the
         # event and return the execution args
-        def collect_parameters(event, block = @block)
-          args_source = event.send(:args_source) || event
-          start_args = [@pre_args.deep_dup, @pre_xargs.deep_dup]
-          return start_args unless inject_arguments?
+        def collect_parameters(event, send_args, block = @block)
+          args_source = event.send(:args_source)
+          send_args[0] += @pre_args.deep_dup
+          send_args[1].merge!(@pre_xargs.deep_dup)
+          return send_args unless inject_arguments?
 
           # TODO: Maybe we need to turn procs into lambdas so the optional
           # arguments doesn't suffer any kind of change
           idx = -1
-          block.parameters.each_with_object(start_args) do |(type, name), result|
+          block.parameters.each_with_object(send_args) do |(type, name), result|
             case type
             when :opt, :req
               idx += 1

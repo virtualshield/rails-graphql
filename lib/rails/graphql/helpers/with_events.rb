@@ -27,20 +27,20 @@ module Rails # :nodoc:
           # Set or get the list of possible event types when attaching events
           def event_types(*list, append: false, expose: false)
             return (defined?(@event_types) && @event_types.presence) ||
-              superclass.try(:event_types) if list.blank? 
+              superclass.try(:event_types) || [] if list.blank?
 
-            list = event_types if append
-            list += list.flatten.compact.map(&:to_sym)
-            @event_types = list.uniq.freeze
-            expose_events! if expose
+            new_list = append ? event_types : []
+            new_list += list.flatten.compact.map(&:to_sym)
+            @event_types = new_list.uniq.freeze
+            expose_events!(*list) if expose
             @event_types
           end
 
           protected
 
             # Auxiliar method that creates easy-accessible callback assignment
-            def expose_events!
-              event_types.each do |event_name|
+            def expose_events!(*list)
+              list.each do |event_name|
                 next if method_defined?(event_name)
                 define_method(event_name) do |*args, **xargs, &block|
                   on(event_name, *args, **xargs, &block)
@@ -51,7 +51,7 @@ module Rails # :nodoc:
 
         # Mostly for correct inheritance on instances
         def all_events
-          current = (@events || {})
+          current = defined?(@events) ? @events : {}
           return current unless defined? super
           Helpers.merge_hash_array(current, super)
         end

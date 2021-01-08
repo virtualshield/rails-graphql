@@ -10,6 +10,10 @@ module Rails # :nodoc:
     class Field::OutputField < Field
       include Helpers::WithArguments
       include Helpers::WithValidator
+      include Helpers::WithEvents
+      include Helpers::WithCallbacks
+
+      include Field::AuthorizedField
       include Field::ResolvedField
       include Field::TypedField
 

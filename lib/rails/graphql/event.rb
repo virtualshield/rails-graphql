@@ -108,7 +108,7 @@ module Rails # :nodoc:
 
       # Call a given block and send the event as reference
       def trigger(block)
-        catchable(:item) { @last_result = block.call(self) }
+        @last_result = catchable(:item) { block.call(self) }
       end
 
       # Stop the execution of an event using a given +layer+. The default is to
@@ -127,6 +127,10 @@ module Rails # :nodoc:
 
       alias call_super call_next
 
+      protected
+
+        alias args_source itself
+
       private
 
         # Add the layer, exec the block and remove the layer
@@ -135,6 +139,17 @@ module Rails # :nodoc:
           catch(layer) { yield }
         ensure
           @layers.pop
+        end
+
+        # Check for data based readers
+        def respond_to_missing?(method_name, include_private = false)
+          data.key?(method_name) || super
+        end
+
+        # If the +method_name+ matches any key entry of the provided data, just
+        # return the value stored there
+        def method_missing(method_name, *)
+          data.key?(method_name) ? data[method_name] : super
         end
     end
   end

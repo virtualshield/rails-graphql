@@ -6,12 +6,13 @@ module Rails # :nodoc:
       # Helper module to collect the directives from fragments, operations, and
       # fields.
       module Directives
-        # Get the list of listeners from all directives
+        # Get the list of listeners from directives set during the request only
         def all_listeners
           directives.map(&:all_listeners).reduce(:+) || Set.new
         end
 
-        # Get the list of events from all directives and caches it by request
+        # Get the list of events from directives set during the request only and
+        # then caches it by request
         def all_events
           @all_events ||= directives.map(&:all_events).inject({}) do |lhash, rhash|
             Helpers.merge_hash_array(lhash, rhash)

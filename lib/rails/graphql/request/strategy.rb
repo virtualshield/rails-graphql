@@ -37,6 +37,7 @@ module Rails # :nodoc:
 
         def initialize(request)
           @request = request
+          @objects_pool = {}
           collect_request_listeners
         end
 
@@ -205,7 +206,6 @@ module Rails # :nodoc:
           # it can load data in a pretty smart way
           def collect_data
             @data_pool = {}
-            @objects_pool = {}
             @context = request.build(Request::Context)
 
             # TODO: Create an orchestrator to allow cross query loading

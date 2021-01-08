@@ -28,6 +28,20 @@ class Object < BasicObject
     const_set(name, old_value) if defined? old_value
   end
 
+  def stub_imethod(name, &block)
+    lambda do |&run_block|
+      alias_method(:"_old_#{name}", name) if (reset_old = method_defined?(name))
+      define_method(name, &block)
+      run_block.call
+    ensure
+      undef_method(name)
+      if reset_old
+        alias_method(name, :"_old_#{name}")
+        undef_method(:"_old_#{name}")
+      end
+    end
+  end
+
   def get_reset_ivar(name, *extra, &block)
     instance_variable_set(name, extra.first) if extra.any?
     instance_exec(&block)

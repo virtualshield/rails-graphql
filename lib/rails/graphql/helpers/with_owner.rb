@@ -6,7 +6,14 @@ module Rails # :nodoc:
       # Helper module that allows other objects to hold an +assigned_to+ object
       module WithOwner
         def self.included(other)
+          other.extend(WithOwner::ClassMethods)
           other.class_attribute(:owner, instance_writer: false)
+        end
+
+        module ClassMethods # :nodoc: all
+          def method_defined?(method_name)
+            super || owner&.method_defined?(method_name)
+          end
         end
 
         private
@@ -24,8 +31,9 @@ module Rails # :nodoc:
 
           # Since owners are classes, this checks for the instance methods of
           # it, since this is a instance method
-          def owner_respond_to?(method_name, include_private = false)
-            (include_private ? %i[public protected private] : %i[public]).any? do |type|
+          def owner_respond_to?(method_name, with_private = false)
+            return true if !owner.is_a?(Class) && owner.respond_to?(method_name, with_private)
+            (with_private ? %i[public protected private] : %i[public]).any? do |type|
               owner.send("#{type}_instance_methods").include?(method_name)
             end unless owner.nil?
           end

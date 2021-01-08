@@ -189,7 +189,11 @@ module Rails # :nodoc:
         SCHEMA_FIELD_TYPES.each do |kind, type_name|
           class_eval <<-RUBY, __FILE__, __LINE__ + 1
             def #{kind}_field?(name)
-              field?(:#{kind}, name)
+              has_field?(:#{kind}, name)
+            end
+
+            def #{kind}_field(name)
+              find_field(:#{kind}, name)
             end
 
             def #{kind}_fields(&block)

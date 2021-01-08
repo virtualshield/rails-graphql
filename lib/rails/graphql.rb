@@ -136,9 +136,7 @@ module Rails # :nodoc:
 
         if (source = xargs.delete(:source)).present?
           location = xargs.delete(:location) || source.try(:directive_location)
-          event ||= GraphQL::Event.new(:attach, source, **xargs.reverse_merge(
-            phase: :definition,
-          ))
+          event ||= GraphQL::Event.new(:attach, source, phase: :definition, **xargs)
         end
 
         Array.wrap(list).each_with_object(Set.new) do |item, result|

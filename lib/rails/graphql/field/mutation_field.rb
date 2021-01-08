@@ -16,9 +16,10 @@ module Rails # :nodoc:
       end
 
       # Add a block or a callable method that is executed before the resolver
-      # but after all the before resolve
+      # but after all the before resolve. It returns +self+ for chain purposes
       def perform(*args, **xargs, &block)
         @performer = Callback.new(self, :perform, *args, **xargs, &block)
+        self
       end
 
       # Get the performer that can be already defined or used through the

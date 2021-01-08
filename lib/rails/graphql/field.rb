@@ -38,19 +38,19 @@ module Rails # :nodoc:
 
       autoload :ScopedConfig
 
+      autoload :AuthorizedField
+      autoload :ProxiedField
       autoload :ResolvedField
       autoload :TypedField
-      autoload :ProxiedField
 
       autoload :InputField
       autoload :OutputField
       autoload :MutationField
 
-      delegate :input_type?, :output_type?, :leaf_type?, :proxy?, :mutation?, to: :class
-
-      delegate :namespaces, to: :owner
-
       attr_reader :name, :gql_name, :owner
+
+      delegate :input_type?, :output_type?, :leaf_type?, :proxy?, :mutation?, to: :class
+      delegate :namespaces, to: :owner
 
       class << self
         # A small shared helper method that allows field information to be
@@ -143,6 +143,11 @@ module Rails # :nodoc:
           other.array? == array? &&
           (other.null? == null? || other.null? && !null?) &&
           (other.nullable? == nullable? || other.nullable? && !nullable?)
+      end
+
+      # Return the owner as the single item of the list
+      def all_owners
+        [owner]
       end
 
       # Checks if the argument can be null

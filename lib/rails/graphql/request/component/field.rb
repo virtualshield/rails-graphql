@@ -8,6 +8,7 @@ module Rails # :nodoc:
       # This class holds information about a given field that should be
       # collected from the source of where it was requested.
       class Component::Field < Component
+        include Authorizable
         include ValueWriters
         include SelectionSet
         include Directives
@@ -40,13 +41,16 @@ module Rails # :nodoc:
         # Override that considers the requested field directives and also the
         # definition field events, both from itself and its directives events
         def all_listeners
-          field.all_listeners + super
+          (request.cache(:listeners)[field] ||= field.all_listeners) + super
         end
 
         # Override that considers the requested field directives and also the
         # definition field events, both from itself and its directives events
         def all_events
-          @all_events ||= Helpers.merge_hash_array(field.all_events, super)
+          @all_events ||= Helpers.merge_hash_array(
+            (request.cache(:events)[field] ||= field.all_events),
+            super,
+          )
         end
 
         # Get and cache all the arguments for the field
@@ -129,6 +133,7 @@ module Rails # :nodoc:
           def organize_then(&block)
             super(block) do
               check_assignment!
+              check_authorization!
 
               parse_arguments
               parse_directives
@@ -183,10 +188,10 @@ module Rails # :nodoc:
           def trigger_event(event_name, **xargs)
             return super if !defined?(@current_object) || @current_object.nil?
 
-            listeners = request.cache(:dynamic_listeners)[field] ||= field.all_listeners
+            listeners = request.cache(:listeners)[field] ||= field.all_listeners
             return super unless listeners.include?(event_name)
 
-            callbacks = request.cache(:dynamic_events)[field] ||= field.all_events
+            callbacks = request.cache(:events)[field] ||= field.all_events
             old_events, @all_events = @all_events, callbacks
             super
           ensure

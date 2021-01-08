@@ -70,12 +70,12 @@ module Rails # :nodoc:
           args_source.try(:[], name.to_sym)
         end
 
-        # A combined helper for +instance_for+ and +set_on+
-        def on_instance(klass, &block)
-          set_on(klass.is_a?(Class) ? instance_for(klass) : klass, &block)
-        end
-
         alias arg argument
+
+        # A combined helper for +instance_for+ and +set_on+
+        def on_instance(object, &block)
+          set_on(object.is_a?(Class) ? instance_for(object) : object, &block)
+        end
 
         protected
 

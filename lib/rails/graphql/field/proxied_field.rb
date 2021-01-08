@@ -68,6 +68,11 @@ module Rails # :nodoc:
         field.owner
       end
 
+      # Override this to include proxied owners
+      def all_owners
+        super + proxied_owner.all_owners
+      end
+
       # Return the proxied field
       def proxied_field
         @field

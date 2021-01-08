@@ -6,7 +6,7 @@ module Rails # :nodoc:
     # instance of this class works as proxy for changes to the actual field.
     Field::ScopedConfig = Struct.new(:field, :receiver) do
       delegate :argument, :ref_argument, :id_argument, :use, :internal?, :disabled?,
-        :enabled?, :disable!, :enable!, to: :field
+        :enabled?, :disable!, :enable!, :authorize, to: :field
 
       delegate_missing_to :receiver
 

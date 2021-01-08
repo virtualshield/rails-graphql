@@ -20,6 +20,7 @@ module Rails # :nodoc:
 
       eager_autoload do
         autoload_under :steps do
+          autoload :Authorizable
           autoload :Organizable
           autoload :Prepareable
           autoload :Resolveable
@@ -41,8 +42,6 @@ module Rails # :nodoc:
 
       attr_reader :schema, :visitor, :operations, :fragments, :errors,
         :args, :response, :strategy, :stack
-
-      delegate :all_listeners, to: :schema
 
       class << self
         # Shortcut for initialize, set context, and execute
@@ -77,6 +76,11 @@ module Rails # :nodoc:
         @extensions = {}
 
         ensure_schema!
+      end
+
+      # Cache all the schema listeners for this current request
+      def all_listeners
+        @all_listeners ||= schema.all_listeners
       end
 
       # Cache all the schema events for this current request
@@ -127,7 +131,7 @@ module Rails # :nodoc:
       # Add the given +exception+ to the errors using the +node+ location
       def exception_to_error(exception, node, **xargs)
         xargs[:exception] = exception.class.name
-        report_node_error(exception.message, node, **xargs)
+        report_node_error(xargs.delete(:message) || exception.message, node, **xargs)
       end
 
       # A little helper to report an error on a given node

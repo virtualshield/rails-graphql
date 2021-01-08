@@ -223,11 +223,11 @@ module Rails # :nodoc:
         namespaces += [:base] unless namespaces.include?(:base) || exclusive
 
         iterated = []
-        enumerator = Enumerator::Lazy.new(namespaces.uniq) do |yielder, *values|
-          next unless @index.key?(values.last)
+        enumerator = Enumerator::Lazy.new(namespaces.uniq) do |yielder, item|
+          next unless @index.key?(item)
 
           # Only iterate over string based types
-          @index[values.last][base_class]&.each do |_key, value|
+          @index[item][base_class]&.each do |_key, value|
             next if iterated.include?(value = value.call) || value.blank?
             iterated << value
             yielder << value

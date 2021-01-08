@@ -150,13 +150,13 @@ module Rails # :nodoc:
       end
 
       # Prepare to load multiple records from the underlying table
-      def load_records
-        inject_scopes(model.all, :relation)
+      def load_records(scope = model.default_scoped)
+        inject_scopes(scope, :relation)
       end
 
       # Prepare to load a single record from the underlying table
-      def load_record
-        load_records.find(event.argument(primary_key))
+      def load_record(scope = model.default_scoped)
+        scope.find(event.argument(primary_key))
       end
 
       # Get the chain result and preload the records with thre resulting scope
@@ -166,7 +166,7 @@ module Rails # :nodoc:
 
       # Collect a scope for filters applied to a given association
       def build_association_scope(association)
-        scope = model._reflect_on_association(association).klass.unscoped
+        scope = model._reflect_on_association(association).klass.default_scoped
 
         # Apply proxied injected scopes
         proxied = event.field.try(:proxied_owner)

@@ -29,16 +29,16 @@ module Rails # :nodoc:
 
       # Just add the callbacks setup to the field
       def self.included(other)
-        other.include(Helpers::WithEvents)
-        other.include(Helpers::WithCallbacks)
-        other.event_types(:prepare, :finalize, expose: true)
+        other.event_types(:prepare, :finalize, append: true, expose: true)
         other.alias_method(:before_resolve, :prepare)
         other.alias_method(:after_resolve, :finalize)
       end
 
-      # Add a block that is performed while resolving a value of a field
+      # Add a block that is performed while resolving a value of a field. It
+      # returns +self+ for chain purposes
       def resolve(*args, **xargs, &block)
         @resolver = Callback.new(self, :resolve, *args, **xargs, &block)
+        self
       end
 
       # Get the resolver that can be already defined or used through the

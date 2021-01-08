@@ -38,5 +38,9 @@ module Rails # :nodoc:
     # Error class related to when the captured output value is invalid due to
     # type checking
     InvalidValueError = Class.new(FieldError)
+
+    # Error class related to when a field is unauthorized and can not be used,
+    # similar to disabled fields
+    UnauthorizedFieldError = Class.new(FieldError)
   end
 end

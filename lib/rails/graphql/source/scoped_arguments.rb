@@ -45,7 +45,7 @@ module Rails # :nodoc:
           # Add a new scoped param to the list
           def scoped_argument(param, type = :string, proc_method = nil, **settings, &block)
             block = proc_method if proc_method.present? && block.nil?
-            argument = Argument.new(param, type, **settings.merge(owner: self), &block)
+            argument = Argument.new(param, type, **settings, owner: self, &block)
             (@scoped_arguments ||= {})[argument.name] = argument
           end
 
