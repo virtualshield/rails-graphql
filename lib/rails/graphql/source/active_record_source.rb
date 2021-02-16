@@ -100,7 +100,7 @@ module Rails # :nodoc:
         next if model.base_class == model
 
         # TODO: Allow nested inheritance for setting up implementation
-        type_map_after_register(model.base_class.name) do |type|
+        type_map_after_register(model.base_class) do |type|
           object.implements(type) if type.interface?
         end
       end

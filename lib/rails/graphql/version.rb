@@ -2,6 +2,6 @@
 
 module Rails # :nodoc:
   module GraphQL # :nodoc:
-    VERSION = '0.2.0'
+    VERSION = '0.2.1'
   end
 end

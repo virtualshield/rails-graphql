@@ -252,7 +252,7 @@ module Rails # :nodoc:
         position = callbacks[name_or_key].size
 
         callbacks[name_or_key] << ->(n, b, result) do
-          return unless b === base_class && namespaces.include?(n)
+          return unless b === base_class && (n === :base || namespaces.include?(n))
           block.call(result)
           position
         end

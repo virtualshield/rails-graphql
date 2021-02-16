@@ -54,14 +54,16 @@ module Rails # :nodoc:
           # Ignores the possible errors here related
         end
 
-        # After a successfully registration, add the assigned class to the
-        # type map as a great alias to find the object
+        # After a successfully registration, add the assigned class to the type
+        # map as a great alias to find the object, but only if the class does
+        # not have an alias already
         def register!
           return if abstract?
           return super unless assigned?
 
           result = super
           return result unless (klass = safe_assigned_class)
+          return result if GraphQL.type_map.exist?(klass, namespaces: namespaces)
 
           GraphQL.type_map.register_alias(klass, namespaces: namespaces, &method(:itself))
           result

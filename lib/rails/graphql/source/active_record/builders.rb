@@ -91,7 +91,7 @@ module Rails
         def build_reflection_fields(holder)
           each_reflection(holder) do |item|
             next if holder.field?(item.name)
-            type_map_after_register(item.klass.name) do |type|
+            type_map_after_register(item.klass) do |type|
               next unless (type.object? && type.try(:assigned_to) != item.klass) ||
                 type.interface?
 
