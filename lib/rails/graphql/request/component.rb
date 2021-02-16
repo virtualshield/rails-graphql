@@ -36,9 +36,9 @@ module Rails # :nodoc:
 
         attr_reader :data
 
-        delegate :schema, :visitor, :response, :strategy, to: :request
+        delegate :visitor, :response, :strategy, to: :request
         delegate :find_type!, :find_directive!, :trigger_event, to: :strategy
-        delegate :memo, to: :operation
+        delegate :memo, :schema, to: :operation
         delegate :kind, to: :class
 
         alias of_type? is_a?

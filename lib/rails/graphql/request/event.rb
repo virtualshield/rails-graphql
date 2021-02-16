@@ -10,9 +10,9 @@ module Rails # :nodoc:
       class Event < GraphQL::Event
         OBJECT_BASED_READERS = %i[fragment operation spread].freeze
 
-        delegate :schema, :errors, :context, to: :request
+        delegate :errors, :context, to: :request
         delegate :instance_for, to: :strategy
-        delegate :memo, to: :source
+        delegate :memo, :schema, to: :source
 
         attr_reader :strategy, :request, :index
 
