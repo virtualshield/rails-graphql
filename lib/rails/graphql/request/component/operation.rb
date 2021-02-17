@@ -49,6 +49,7 @@ module Rails # :nodoc:
         autoload :Subscription
 
         delegate :type, :query?, :mutation?, :subscription?, to: :class
+        delegate :schema, to: :strategy
 
         attr_reader :name, :variables, :arguments, :request
 

@@ -74,7 +74,7 @@ module Rails # :nodoc:
         protected
 
           # It's extremely important to have a way to access the current request
-          # since not all objects stores s direct pointer to it
+          # since not all objects stores a direct pointer to it
           def request
             raise NotImplementedError
           end
