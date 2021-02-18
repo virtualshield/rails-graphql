@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 appraise 'rails-master' do
-  gem 'rails', github: 'rails/rails', require: 'rails/all'
+  gem 'rails', github: 'rails/rails', branch: 'main', require: 'rails/all'
   gem 'sqlite3', '~> 1.4', platform: :ruby
 end
 
