@@ -47,7 +47,7 @@ module Rails # :nodoc:
           MSG
 
           @writing_array = true
-          response.with_stack(field.gql_name, array: true, plain: leaf_type?) do
+          response.with_stack(gql_name, array: true, plain: leaf_type?) do
             value.each(&block)
           end
         ensure

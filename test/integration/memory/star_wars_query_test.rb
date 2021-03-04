@@ -86,6 +86,21 @@ class Integration_Memory_StarWarsQueryTest < GraphQL::IntegrationTestCase
     GQL
   end
 
+  def test_using_alias_to_change_key_name_on_array
+    friends = [
+      { name: 'Han Solo' },
+      { name: 'Leia Organa' },
+      { name: 'C-3PO' },
+      { name: 'R2-D2' },
+    ]
+
+    assert_result({ data: { luke: { name: 'Luke Skywalker', others: friends } } }, <<~GQL)
+      query FetchLukeDeepAliased { luke: human(id: "1000") {
+        name others: friends { name }
+      } }
+    GQL
+  end
+
   def test_using_alias_to_change_key_name_twice
     luke = { name: 'Luke Skywalker' }
     leia = { name: 'Leia Organa' }

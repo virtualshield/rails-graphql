@@ -147,6 +147,9 @@ module Rails # :nodoc:
       def report_error(message, **xargs)
         xargs[:path] ||= stack_to_path
         errors.add(message, **xargs)
+
+        # Return nil for easier usage
+        nil
       end
 
       # Add the given +object+ into the execution +stack+ and execute the given
