@@ -50,6 +50,10 @@ module Rails # :nodoc:
           response.serialize(Type::Scalar::StringScalar, gql_name, value)
         end
 
+        # Prepare is not necessary for this field
+        def prepare!
+        end
+
         protected
 
           # Normal mode of the organize step
