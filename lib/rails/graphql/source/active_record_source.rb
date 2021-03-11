@@ -34,19 +34,19 @@ module Rails # :nodoc:
 
       delegate :primary_key, :singular, :plural, :model, to: :class
 
-      skip_on :input, :created_at, :updated_at
+      skip_from(:input, :created_at, :updated_at)
 
-      on :start do
+      step(:start) do
         GraphQL.enable_ar_adapter(adapter_name)
         build_enum_types
       end
 
-      on :object do
+      step(:object) do
         build_attribute_fields(self)
         build_reflection_fields(self)
       end
 
-      on :input do
+      step(:input) do
         extra = { primary_key => { null: true } }
         build_attribute_fields(self, **extra)
         build_reflection_inputs(self)
@@ -61,7 +61,7 @@ module Rails # :nodoc:
         end
       end
 
-      on :query do
+      step(:query) do
         safe_field(plural, object, full: true) do
           before_resolve :load_records
         end
@@ -72,7 +72,7 @@ module Rails # :nodoc:
         end
       end
 
-      on :mutation do
+      step(:mutation) do
         safe_field("create_#{singular}", object, null: false) do
           argument singular, input, null: false
           perform :create_record
@@ -92,7 +92,7 @@ module Rails # :nodoc:
         end
       end
 
-      on :finish do
+      step(:finish) do
         attach_fields!
         attach_scoped_arguments_to(query_fields.values)
         attach_scoped_arguments_to(mutation_fields.values)

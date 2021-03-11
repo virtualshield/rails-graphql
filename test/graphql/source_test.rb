@@ -122,16 +122,16 @@ class GraphQL_SourceTest < GraphQL::TestCase
     skip
   end
 
-  def test_skip_on
+  def test_skip_from
     hash_list = Hash.new { |h, k| h[k] = Set.new }
     described_class.stub(:segmented_skip_fields, -> { hash_list }) do
-      assert_equal(Set[:a], described_class.send(:skip_on, 1, :a))
-      assert_equal(Set[:b], described_class.send(:skip_on, 2, 'b'))
-      assert_equal(Set[:b, :c, :d], described_class.send(:skip_on, 2, 'c', :d))
+      assert_equal(Set[:a], described_class.send(:skip_from, 1, :a))
+      assert_equal(Set[:b], described_class.send(:skip_from, 2, 'b'))
+      assert_equal(Set[:b, :c, :d], described_class.send(:skip_from, 2, 'c', :d))
     end
   end
 
-  def test_on
+  def test_step
     skip
   end
 
@@ -147,7 +147,7 @@ class GraphQL_SourceTest < GraphQL::TestCase
   def test_override
     sequence = []
     described_class.stub(:skip, ->(*args) { sequence += args }) do
-      described_class.stub(:on, ->(*args, &block) { sequence += args << block }) do
+      described_class.stub(:step, ->(*args, &block) { sequence += args << block }) do
         described_class.send(:override, :start, &passthrough)
         assert_equal(0, described_class.hooks[:start].size)
         assert_equal([:start, :start, passthrough], sequence)

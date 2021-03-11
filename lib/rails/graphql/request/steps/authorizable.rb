@@ -10,18 +10,18 @@ module Rails # :nodoc:
           # Similar to trigger for object, but with an extra extension for
           # instance methods defined on the given object
           def authorize_using(object, send_args, events = nil)
-            cache = data[:request].cache(name)[object] ||= []
+            cache = data[:request].cache(:authorize)[object] ||= []
             return false if cache.present? && cache.none?
             args, xargs = send_args
 
             # Authorize through instance method
             using_object = cache[0] ||= authorize_on_object(object)
             set_on(using_object) do |instance|
-              instance.public_send("#{name}!", self, *args, **xargs)
+              instance.public_send(:authorize!, *args, **xargs)
             end if using_object
 
             # Authorize through events
-            using_events = cache[1] ||= (events || object.all_events[name]).presence
+            using_events = cache[1] ||= (events || object.all_events[:authorize]).presence
             using_events&.each { |block| block.call(self, *args, **xargs) }
 
             # Does any authorize process ran
@@ -29,14 +29,14 @@ module Rails # :nodoc:
           end
 
           # Simply unauthorize the operation
-          def unauthorize!(*, message: nil, **)
+          def unauthorized!(*, message: nil, **)
             raise UnauthorizedFieldError, message || <<~MSG.squish
               Unauthorized access to "#{field.gql_name}" field.
             MSG
           end
 
           # Simply authorize the operation
-          def authorize!(*)
+          def authorized!(*)
             throw :authorized
           end
 
@@ -54,6 +54,7 @@ module Rails # :nodoc:
         end
 
         # Check if the field is correctly authorized to be executed
+        # TODO: Implement reverse order of authorization
         def check_authorization!
           return unless field.authorizable?
           *args, block = field.authorizer
@@ -74,7 +75,7 @@ module Rails # :nodoc:
               executed = true
             end
 
-            event.unauthorize!(message: <<~MSG.squish) unless executed
+            event.unauthorized!(message: <<~MSG.squish) unless executed
               Authorization required but unable to be executed
             MSG
           end
@@ -89,6 +90,7 @@ module Rails # :nodoc:
           # Build and store the authorization event
           def authorization_event
             Event.new(:authorize, self,
+              context: request.context,
               request: request,
               schema: schema,
               field: field,

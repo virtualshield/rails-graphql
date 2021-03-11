@@ -90,16 +90,13 @@ module Rails # :nodoc:
         # Execute the prepare step for the given +field+ and execute the given
         # block using context stack
         def prepare(field, &block)
+          # TODO: Maybe rely on resolve when it does not have a prepare step,
+          # even though queries should not be executed on resolve
           value = safe_store_data(field) do
             Event.trigger(:prepare, field, self, **PREPARE_XARGS)
           end
 
-          return context.stacked(value, &block) unless value.nil?
-
-          stack = field.all_events[:prepare].map { |cb| cb.source_location.join(':') }
-          request.report_node_error(<<~MSG.squish, field, stack: stack.reverse)
-            It is expected to get a result from prepare events
-          MSG
+          context.stacked(value, &block) unless value.nil?
         end
 
         # Resolve a value for a given object, It uses the +args+ to prevent
@@ -111,7 +108,6 @@ module Rails # :nodoc:
               &field.resolver) if field.try(:dynamic_resolver?)
           end if args.size.zero?
 
-          # Now we have a value to set on the context
           value = args.last
           value = field.decorate(value) if decorate
           context.stacked(value) do |current|

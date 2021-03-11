@@ -32,6 +32,7 @@ module Rails # :nodoc:
           autoload :DateScalar
           autoload :DateTimeScalar
           autoload :DecimalScalar
+          autoload :JsonScalar
           autoload :TimeScalar
         end
 

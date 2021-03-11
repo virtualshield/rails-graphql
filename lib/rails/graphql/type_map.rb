@@ -222,14 +222,14 @@ module Rails # :nodoc:
         namespaces = namespaces.is_a?(Set) ? namespaces.to_a : Array.wrap(namespaces)
         namespaces += [:base] unless namespaces.include?(:base) || exclusive
 
-        iterated = []
+        iterated = Set.new
         enumerator = Enumerator::Lazy.new(namespaces.uniq) do |yielder, item|
           next unless @index.key?(item)
 
           # Only iterate over string based types
           @index[item][base_class]&.each do |_key, value|
-            next if iterated.include?(value = value.call) || value.blank?
-            iterated << value
+            next if (value = value.call).blank? || iterated.include?(value.gql_name)
+            iterated << value.gql_name
             yielder << value
           end
         end

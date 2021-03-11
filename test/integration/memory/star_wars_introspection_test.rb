@@ -8,7 +8,7 @@ class Integration_Memory_StarWarsIntrospectionTest < GraphQL::IntegrationTestCas
 
   def test_query_schema_types
     types = named_list(*%w[Bigint Binary Boolean Character Date DateTime Decimal Droid Episode
-      Float Human ID Int String Time _Mutation _Query __Directive __DirectiveLocation
+      Float Human ID Int Json String Time _Mutation _Query __Directive __DirectiveLocation
       __EnumValue __Field __InputValue __Schema __Type __TypeKind])
 
     sort_items = ->(result) do

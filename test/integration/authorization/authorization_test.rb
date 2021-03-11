@@ -22,11 +22,11 @@ class Integration_Memory_AuthorizationTest < GraphQL::IntegrationTestCase
     assert_exception('{ sample2 }')
     assert_result({ sample1: 'Ok 1', sample2: nil }, '{ sample1 sample2 }', dig: 'data')
 
-    SCHEMA.stub_imethod(:authorize!, &:authorize!).call do
+    SCHEMA.stub_imethod(:authorize!) { authorized! }.call do
       assert_result(SAMPLE2, '{ sample2 }')
     end
 
-    SCHEMA.stub_imethod(:authorize!, &:unauthorize!).call do
+    SCHEMA.stub_imethod(:authorize!) { unauthorized! }.call do
       assert_exception('{ sample2 }')
     end
   end
@@ -38,7 +38,7 @@ class Integration_Memory_AuthorizationTest < GraphQL::IntegrationTestCase
       assert_executed { assert_result(SAMPLE1, '{ sample1 }') }
     end
 
-    block = ->(ev) { executed! && ev.unauthorize! }
+    block = ->(ev) { executed! && ev.unauthorized! }
     field.stub_ivar(:@authorizer, [[], {}, block]) do
       assert_executed { assert_exception('{ sample1 }') }
     end
@@ -51,7 +51,7 @@ class Integration_Memory_AuthorizationTest < GraphQL::IntegrationTestCase
       assert_executed { assert_result(SAMPLE2, '{ sample2 }') }
 
       assert_executed do
-        field.on(:authorize) { |event| event.unauthorize! }
+        field.on(:authorize) { |event| event.unauthorized! }
         assert_exception('{ sample2 }')
       end
     end
@@ -76,8 +76,9 @@ class Integration_Memory_AuthorizationTest < GraphQL::IntegrationTestCase
 
   def test_authorize_bypass
     field = SCHEMA.query_field(:sample2)
-    auth_block   = ->(e, event) { e.call && event.authorize!   }.curry(2)[method(:executed!)]
-    unauth_block = ->(e, event) { e.call && event.unauthorize! }.curry(2)[method(:executed!)]
+    counter = method(:executed!)
+    auth_block   = ->(ev = nil) { counter.call && (ev || itself).authorized!   }
+    unauth_block = ->(ev = nil) { counter.call && (ev || itself).unauthorized! }
 
     field.stub_ivar(:@events, { authorize: [unauth_block] }) do
       SCHEMA.stub_imethod(:authorize!, &auth_block).call do

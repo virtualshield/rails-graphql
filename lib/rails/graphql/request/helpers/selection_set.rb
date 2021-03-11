@@ -50,8 +50,7 @@ module Rails # :nodoc:
 
           # Find all the fields that have a prepare step and execute them
           def prepare_fields
-            return unless selection.any?
-            (strategy.listeners[:prepare] & selection.values).each(&:prepare!)
+            selection.values.each(&:prepare!) if selection.any?
           end
 
           # Trigger the process of resolving the value of all the fields. Since

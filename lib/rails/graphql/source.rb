@@ -14,6 +14,8 @@ module Rails # :nodoc:
       extend Helpers::WithSchemaFields
       extend Helpers::WithAssignment
       extend Helpers::WithNamespace
+      extend Helpers::WithEvents
+      extend Helpers::WithCallbacks
 
       DEFAULT_NAMESPACES = %i[base].freeze
 
@@ -238,7 +240,7 @@ module Rails # :nodoc:
           end
 
           # Add fields to be skipped on the given +source+ as the segment
-          def skip_on(source, *fields)
+          def skip_from(source, *fields)
             segmented_skip_fields[source] += fields.flatten.compact.map(&:to_sym).to_set
           end
 
@@ -246,13 +248,13 @@ module Rails # :nodoc:
           # parent hooks. If the class is already built, then execute the hook.
           # Use the +unshift: true+ to add the hook at the beginning of the
           # list, which will then be the last to run
-          def on(hook_name, unshift: false, &block)
+          def step(hook_name, unshift: false, &block)
             raise ArgumentError, <<~MSG.squish unless hook_names.include?(hook_name.to_sym)
               The #{hook_name.inspect} is not a valid hook method.
             MSG
 
             if built?
-              send("run_#{hook_name}_hooks", block)
+              catch(:skip) { send("run_#{hook_name}_hooks", block) }
             else
               hooks[hook_name.to_sym].public_send(unshift ? :unshift : :push, block)
             end
@@ -262,7 +264,7 @@ module Rails # :nodoc:
           def skip(*names)
             names.each do |hook_name|
               hook_name = hook_name.to_s.singularize.to_sym
-              on(hook_name) { throw :skip }
+              step(hook_name) { throw :skip }
             end
           end
 
@@ -270,7 +272,7 @@ module Rails # :nodoc:
           # +on hook_name do; end+
           def override(hook_name, &block)
             skip(hook_name)
-            on(hook_name, &block)
+            step(hook_name, &block)
           end
 
           # It's an alternative to +self.hook_names -= %i[*names]+ which

@@ -6,6 +6,16 @@ module Rails # :nodoc:
     # enabling or disabling access to a field. It has a similar structure to
     # events, but has a different hierarchy of resolution
     module Field::AuthorizedField
+      module Proxied # :nodoc: all
+        def authorizer
+          super || field.authorizer
+        end
+
+        def authorizable?
+          super || field.authorizable?
+        end
+      end
+
       # Just add the callbacks setup to the field
       def self.included(other)
         other.event_types(:authorize, append: true)
@@ -27,7 +37,13 @@ module Rails # :nodoc:
       def authorizable?
         defined?(@authorizer)
       end
+
+      protected
+
+        def proxied # :nodoc:
+          super if defined? super
+          extend Field::AuthorizedField::Proxied
+        end
     end
   end
 end
-#

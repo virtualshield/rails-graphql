@@ -229,13 +229,15 @@ class GraphQL_TypeMapTest < GraphQL::TestCase
 
   def test_each_from
     assert_registered(4) do
-      subject.stub_ivar(:@index, SAMPLE_INDEX) do
-        items = [1, 4]
-        subject.each_from(:base) { |x| assert_equal(items.shift, x) }
+      Integer.stub_imethod(:gql_name) { to_s }.call do
+        subject.stub_ivar(:@index, SAMPLE_INDEX) do
+          items = [1, 4]
+          subject.each_from(:base) { |x| assert_equal(items.shift, x) }
 
-        assert_equal([2, 3, 1, 4], subject.each_from(:other).entries)
-        assert_equal([2, 3], subject.each_from(:other, exclusive: true).entries)
-        assert_equal([], subject.each_from(:other, base_class: :Other).entries)
+          assert_equal([2, 3, 1, 4], subject.each_from(:other).entries)
+          assert_equal([2, 3], subject.each_from(:other, exclusive: true).entries)
+          assert_equal([], subject.each_from(:other, base_class: :Other).entries)
+        end
       end
     end
   end

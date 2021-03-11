@@ -68,6 +68,12 @@ module Rails # :nodoc:
           false
         end
 
+        # Defines if the object is a source of operations, which is only used
+        # for fake base types like +_Query+ and +_Mutation+
+        def operational?
+          false
+        end
+
         # A little helper to instanteate the type if necessary
         def decorate(value)
           value
