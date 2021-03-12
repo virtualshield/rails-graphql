@@ -155,8 +155,14 @@ module Rails # :nodoc:
           MSG
 
           unless event.nil?
-            item.assing_owner!(event.source)
-            event.trigger_object(item)
+            begin
+              item.assing_owner!(event.source)
+              event.trigger_object(item)
+            rescue => error
+              raise StandardError, <<~MSG.squish
+                Unable to #{event.name} the @#{item.gql_name} directive: #{error.message}
+              MSG
+            end
           end
 
           others << item
