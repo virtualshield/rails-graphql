@@ -16,6 +16,10 @@ module Rails # :nodoc:
             value.is_a?(Hash)
           end
 
+          def to_json(value)
+            value.to_json
+          end
+
           def as_json(value)
             value.as_json
           end

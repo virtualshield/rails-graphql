@@ -66,7 +66,8 @@ module Rails
           return remove_instance_variable(:@enums) if enums.blank?
 
           @enums = enums.map do |attribute, setting|
-            [attribute.to_s, create_enum(attribute.to_s, setting, once: true)]
+            class_name = base_name + attribute.to_s.classify
+            [attribute.to_s, create_enum(class_name, setting, once: true)]
           rescue DuplicatedError
             next
           end.compact.to_h.freeze

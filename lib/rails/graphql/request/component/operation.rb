@@ -115,8 +115,8 @@ module Rails # :nodoc:
           def organize_then(&block)
             super(block) do
               parse_variables
-              parse_directives(type)
               parse_selection
+              parse_directives(type)
             end
           end
 

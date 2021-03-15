@@ -213,7 +213,7 @@ module Rails # :nodoc:
             end
           end
 
-          # Helper method to create a class based on the given type and allows
+          # Helper method to create a class based on the given +type+ and allows
           # several other settings to be executed on it
           def create_type(type = nil, **xargs, &block)
             name = "#{gql_module.name}::#{xargs.delete(:as) || base_name}"
