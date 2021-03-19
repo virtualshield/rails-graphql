@@ -73,8 +73,12 @@ module Rails # :nodoc:
 
         event.data[assigned_to] ||= object unless assigned_to.nil?
         event.field.all_arguments.each_value.inject(object) do |result, argument|
-          next result unless argument.respond_to?(:block) && args_source.key?(argument.name)
-          send_args = argument.block.arity.eql?(1) ? [args_source[argument.name]] : []
+          arg_value = args_source.key?(argument.name) \
+            ? args_source[argument.name] \
+            : argument.default
+
+          next result if arg_value.nil? || !argument.respond_to?(:block)
+          send_args = argument.block.arity.eql?(1) ? [arg_value] : []
 
           value = result.instance_exec(*send_args, &argument.block)
           value = value.nil? ? result : value
