@@ -3,10 +3,10 @@ name: Tests
 on:
   push:
     branches:
-  pull_request:
 
 env:
   IMAGE_NAME: rails-graphql
+  CC_TEST_REPORTER_ID: 2d14d106457e068c485041b7429071be8addc74041e3a20a310efae66357beeb
 
 jobs:
   RubyTests:
@@ -32,3 +32,10 @@ jobs:
     - run: bundle exec appraisal install
     - run: bundle exec rake tasks -f tasks/libgraphqlparser.rb compile
     - run: bundle exec rake
+    - name: Publish Code Coverage
+      if: ${{ matrix.os == 'ubuntu-18.04' && matrix.ruby == 'head' }}
+      uses: paambaati/codeclimate-action@v2.7.5
+      with:
+        debug: true
+        
+      
