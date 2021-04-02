@@ -67,7 +67,6 @@ class GraphQL_Type_EnumTest < GraphQL::TestCase
 
   def test_add
     assert_raises(StandardError) { DESCRIBED_CLASS.add(nil) }
-    assert_raises(StandardError) { DESCRIBED_CLASS.add(1) }
     assert_raises(StandardError) { DESCRIBED_CLASS.add('') }
 
     DESCRIBED_CLASS.stub(:all_values, %w[A B C]) do

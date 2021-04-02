@@ -84,6 +84,7 @@ module Rails # :nodoc:
           #   See {DeprecatedDirective}[rdoc-ref:Rails::GraphQL::Directive::DeprecatedDirective]
           #   (defaults to false).
           def add(value, desc: nil, directives: nil, deprecated: false)
+            value = value&.to_s
             raise ArgumentError, <<~MSG.squish unless value.is_a?(String) && value.present?
               The "#{value}" is invalid.
             MSG

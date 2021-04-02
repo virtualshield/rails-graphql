@@ -207,17 +207,19 @@ module Rails # :nodoc:
             end
 
             def #{kind}_type
-              OpenStruct.new(
-                kind: :object,
-                object?: true,
-                kind_enum: 'OBJECT',
-                fields: defined?(@#{kind}_fields) ? @#{kind}_fields : nil,
-                gql_name: '#{type_name}',
-                interfaces: nil,
-                description: nil,
-                interfaces?: false,
-                internal?: false,
-              ).freeze
+              if defined?(@#{kind}_fields) && @#{kind}_fields.present?
+                OpenStruct.new(
+                  kind: :object,
+                  object?: true,
+                  kind_enum: 'OBJECT',
+                  fields: @#{kind}_fields,
+                  gql_name: '#{type_name}',
+                  interfaces: nil,
+                  description: nil,
+                  interfaces?: false,
+                  internal?: false,
+                ).freeze
+              end
             end
           RUBY
         end
