@@ -103,9 +103,12 @@ module Rails # :nodoc:
         # problems with nil values.
         def resolve(field, *args, array: false, decorate: false, &block)
           rescue_with_handler(field: field) do
-            prepared = data_for(args, field)&.last
-            args << Event.trigger(:resolve, field, self, prepared: prepared,
-              &field.resolver) if field.try(:dynamic_resolver?)
+            if field.try(:dynamic_resolver?)
+              prepared = @data_pool[field]
+              args << Event.trigger(:resolve, field, self, prepared: prepared, &field.resolver)
+            else
+              data_for(args, field)
+            end
           end if args.size.zero?
 
           value = args.last
