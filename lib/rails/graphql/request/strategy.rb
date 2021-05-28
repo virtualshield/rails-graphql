@@ -79,8 +79,8 @@ module Rails # :nodoc:
 
         # When a +field+ has a perform step, run it under the context of the
         # prepared value from the data pool
-        def perform(field)
-          context.stacked(@data_pool[field]) do
+        def perform(field, data = nil)
+          context.stacked(data || @data_pool[field]) do
             safe_store_data(field) do
               Event.trigger(:perform, field, self, &field.performer)
             end
@@ -93,7 +93,8 @@ module Rails # :nodoc:
           # TODO: Maybe rely on resolve when it does not have a prepare step,
           # even though queries should not be executed on resolve
           value = safe_store_data(field) do
-            Event.trigger(:prepare, field, self, **PREPARE_XARGS)
+            result = Event.trigger(:prepare, field, self, **PREPARE_XARGS)
+            field.mutation? ? perform(field, result) : result
           end
 
           context.stacked(value, &block) unless value.nil?
@@ -203,12 +204,12 @@ module Rails # :nodoc:
 
           # This is where the strategy is most effective. By preparing the tree,
           # it can load data in a pretty smart way
-          def collect_data
+          def collect_data(force = false)
             @data_pool = {}
             @context = request.build(Request::Context)
 
             # TODO: Create an orchestrator to allow cross query loading
-            yield if listening_to?(:prepare)
+            yield if force || listening_to?(:prepare)
           end
 
           # Initiate the response context, named

@@ -16,7 +16,7 @@ module Rails # :nodoc:
         delegate :decorate, to: :type_klass
         delegate :operation, :variables, to: :parent
         delegate :method_name, :resolver, :performer, :type_klass, :leaf_type?,
-          :dynamic_resolver?, to: :field
+          :dynamic_resolver?, :mutation?, to: :field
 
         parent_memoize :request
 
@@ -149,7 +149,6 @@ module Rails # :nodoc:
           # Perform the resolve step
           def resolve_then(&block)
             stacked do
-              strategy.perform(self) if field.mutation?
               send(field.array? ? 'resolve_many' : 'resolve_one', &block)
             rescue StandardError => error
               resolve_invalid(error)
