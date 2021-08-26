@@ -138,7 +138,7 @@ module Rails
           required = options[:array]
           required ||= attr_required?(reflection.name)
           required ||= attr_required?(reflection.association_foreign_key) \
-            if reflection.belongs_to?
+            if reflection.belongs_to? && !reflection.options[:optional]
 
           options[:nullable] = !options[:array]
           options[:null] = !required
