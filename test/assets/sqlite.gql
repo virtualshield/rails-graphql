@@ -61,55 +61,55 @@ scalar Time
 enum __DirectiveLocation {
   "Mark as a executable directive usable on query objects."
   QUERY
-
+  
   "Mark as a executable directive usable on mutation objects."
   MUTATION
-
+  
   "Mark as a executable directive usable on subscription objects."
   SUBSCRIPTION
-
+  
   "Mark as a executable directive usable on field objects."
   FIELD
-
+  
   "Mark as a executable directive usable on fragment definition objects."
   FRAGMENT_DEFINITION
-
+  
   "Mark as a executable directive usable on fragment spread objects."
   FRAGMENT_SPREAD
-
+  
   "Mark as a executable directive usable on inline fragment objects."
   INLINE_FRAGMENT
-
+  
   "Mark as a type system directive usable on schema definitions."
   SCHEMA
-
+  
   "Mark as a type system directive usable on scalar definitions."
   SCALAR
-
+  
   "Mark as a type system directive usable on object definitions."
   OBJECT
-
+  
   "Mark as a type system directive usable on field definitions."
   FIELD_DEFINITION
-
+  
   "Mark as a type system directive usable on argument definitions."
   ARGUMENT_DEFINITION
-
+  
   "Mark as a type system directive usable on interface definitions."
   INTERFACE
-
+  
   "Mark as a type system directive usable on union definitions."
   UNION
-
+  
   "Mark as a type system directive usable on enum definitions."
   ENUM
-
+  
   "Mark as a type system directive usable on enum value definitions."
   ENUM_VALUE
-
+  
   "Mark as a type system directive usable on input object definitions."
   INPUT_OBJECT
-
+  
   "Mark as a type system directive usable on input field definitions."
   INPUT_FIELD_DEFINITION
 }
@@ -121,25 +121,25 @@ This enum enlist all the valid base types.
 enum __TypeKind {
   "Scalar types represent primitive leaf values in a GraphQL type system.\n"
   SCALAR
-
+  
   "Objects represent a list of named fields, each of which yield a value of a\nspecific type.\n"
   OBJECT
-
+  
   "Interfaces represent a list of named fields and their types.\n"
   INTERFACE
-
+  
   "Unions represent an object that could be one of a list of GraphQL Object types.\n"
   UNION
-
+  
   "Enum types, like scalar types, also represent leaf values in a GraphQL\ntype system. However Enum types describe the set of possible values.\n"
   ENUM
-
+  
   "Objects represent a list of named fields, each of which yield a value of\na specific type.\n"
   INPUT_OBJECT
-
+  
   "A GraphQL list is a special collection type which declares the type of\neach item in the List (referred to as the item type of the list).\n"
   LIST
-
+  
   "This type wraps an underlying type, and this type acts identically to that wrapped\ntype, with the exception that null is not a valid response for the wrapping type.\n"
   NON_NULL
 }
@@ -147,110 +147,110 @@ enum __TypeKind {
 # Assigned to LiteBase class
 input LiteBaseInput {
   id: ID
-
+  
   factionId: ID
-
-  name: String
-
+  
+  name: String!
+  
   planet: String
-
+  
   _delete: Boolean = false
 }
 
 # Assigned to LiteFaction class
 input LiteFactionInput {
   id: ID
-
+  
   name: String
-
+  
   _delete: Boolean = false
-
+  
   basesAttributes: [LiteBaseInput!]
-
+  
   shipsAttributes: [LiteShipInput!]
 }
 
 # Assigned to LiteShip class
 input LiteShipInput {
   id: ID
-
+  
   factionId: ID
-
+  
   name: String
-
+  
   _delete: Boolean = false
 }
 
 # Assigned to LiteBase class
 type LiteBase {
   id: ID!
-
+  
   factionId: ID
-
-  name: String
-
+  
+  name: String!
+  
   planet: String
-
+  
   faction: LiteFaction
 }
 
 # Assigned to LiteFaction class
 type LiteFaction {
   id: ID!
-
+  
   name: String
-
+  
   bases: [LiteBase!]!
-
+  
   ships: [LiteShip!]!
 }
 
 # Assigned to LiteShip class
 type LiteShip {
   id: ID!
-
+  
   factionId: ID
-
+  
   name: String
-
+  
   faction: LiteFaction
 }
 
 type _Mutation {
   createLiteFaction(liteFaction: LiteFactionInput!): LiteFaction!
-
+  
   updateLiteFaction(id: ID!, liteFaction: LiteFactionInput!): LiteFaction!
-
+  
   deleteLiteFaction(id: ID!): Boolean!
-
+  
   createLiteBase(liteBase: LiteBaseInput!): LiteBase!
-
+  
   updateLiteBase(id: ID!, liteBase: LiteBaseInput!): LiteBase!
-
+  
   deleteLiteBase(id: ID!): Boolean!
-
+  
   createLiteShip(liteShip: LiteShipInput!): LiteShip!
-
+  
   updateLiteShip(id: ID!, liteShip: LiteShipInput!): LiteShip!
-
+  
   deleteLiteShip(id: ID!): Boolean!
 }
 
 type _Query {
   __schema: __Schema!
-
+  
   __type(name: String!): __Type
-
+  
   liteFactions(order: String): [LiteFaction!]!
-
+  
   liteFaction(id: ID!): LiteFaction!
-
-  liteBases: [LiteBase!]!
-
+  
+  liteBases(order: String = "desc"): [LiteBase!]!
+  
   liteBase(id: ID!): LiteBase!
-
+  
   liteShips: [LiteShip!]!
-
+  
   liteShip(id: ID!): LiteShip!
 }
 
@@ -266,11 +266,11 @@ additional information to the executor.
 # Assigned to Rails::GraphQL::Directive class
 type __Directive {
   name: String!
-
+  
   description: String
-
+  
   locations: [__DirectiveLocation!]!
-
+  
   args: [__InputValue!]!
 }
 
@@ -281,11 +281,11 @@ of a value kept as all caps (ie. ONE_VALUE).
 """
 type __EnumValue {
   name: String!
-
+  
   description: String
-
+  
   isDeprecated: Boolean!
-
+  
   deprecationReason: String
 }
 
@@ -297,15 +297,15 @@ a value of a specific type.
 # Assigned to Rails::GraphQL::Field class
 type __Field {
   name: String!
-
+  
   description: String
-
+  
   args: [__InputValue!]!
-
+  
   type: __Type!
-
+  
   isDeprecated: Boolean!
-
+  
   deprecationReason: String
 }
 
@@ -318,11 +318,11 @@ a single value.
 # Assigned to Rails::GraphQL::Field::InputField class
 type __InputValue {
   name: String!
-
+  
   description: String
-
+  
   type: __Type!
-
+  
   defaultValue: String
 }
 
@@ -336,13 +336,13 @@ determines the place in the type system where those operations begin.
 # Assigned to Rails::GraphQL::Schema class
 type __Schema {
   types: [__Type!]!
-
+  
   queryType: __Type!
-
+  
   mutationType: __Type
-
+  
   subscriptionType: __Type
-
+  
   directives: [__Directive!]!
 }
 
@@ -370,26 +370,26 @@ the schema to define exactly what data is expected.
 # Assigned to Rails::GraphQL::Type class
 type __Type {
   kind: __TypeKind!
-
+  
   name: String
-
+  
   description: String
-
+  
   "OBJECT and INTERFACE only"
   fields(includeDeprecated: Boolean = false): [__Field!]
-
+  
   "OBJECT only"
   interfaces: [__Type!]
-
+  
   "INTERFACE and UNION only"
   possibleTypes: [__Type!]
-
+  
   "ENUM only"
   enumValues(includeDeprecated: Boolean = false): [__EnumValue!]
-
+  
   "INPUT_OBJECT only"
   inputFields: [__InputValue!]
-
+  
   "NON_NULL and LIST only"
   ofType: __Type
 }
@@ -406,7 +406,7 @@ indicate what element should be used instead. This description is formatted
 using Markdown syntax (as specified by [CommonMark](http://commonmark.org/)).
   """
   reason: String
-
+  
 ) on FIELD_DEFINITION | ENUM_VALUE
 
 "Allows for conditional inclusion during execution as described by the if argument."
@@ -414,7 +414,7 @@ directive @include(
 
   "When false, the underlying element will be automatically marked as null."
   if: Boolean!
-
+  
 ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 
 "Allows for conditional exclusion during execution as described by the if argument."
@@ -422,5 +422,5 @@ directive @skip(
 
   "When true, the underlying element will be automatically marked as null."
   if: Boolean!
-
+  
 ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT

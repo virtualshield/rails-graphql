@@ -43,6 +43,8 @@ end
 class LiteBase < SQLiteRecord
   belongs_to :faction, class_name: 'LiteFaction', foreign_key: :faction_id
 
+  validates :name, presence: true
+
   create!(name: 'Yavin',            planet: 'Yavin 4',   faction: LiteFaction::REBELS)
   create!(name: 'Echo Base',        planet: 'Hoth',      faction: LiteFaction::REBELS)
   create!(name: 'Secret Hideout',   planet: 'Dantooine', faction: LiteFaction::REBELS)
@@ -53,6 +55,8 @@ end
 
 class LiteShip < SQLiteRecord
   belongs_to :faction, class_name: 'LiteFaction', foreign_key: :faction_id
+
+  validates :name, presence: true, if: -> { true }
 
   create!(name: 'X-Wing',           faction: LiteFaction::REBELS)
   create!(name: 'Y-Wing',           faction: LiteFaction::REBELS)
@@ -71,12 +75,17 @@ class StartWarsSqliteSchema < GraphQL::Schema
     config.enable_string_collector = false
   end
 
-  sources LiteFaction do
+  source LiteFaction do
     with_options on: 'liteFactions' do
       scoped_argument(:order) { |o| order(name: o) }
     end
   end
 
-  sources LiteBase
-  sources LiteShip
+  source LiteBase do
+    with_options on: 'liteBases' do
+      scoped_argument(:order, default: :desc) { |o| order(name: o) }
+    end
+  end
+
+  source LiteShip
 end

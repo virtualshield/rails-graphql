@@ -149,7 +149,7 @@ module Rails # :nodoc:
 
       # Turn the given value into a ruby object through deserialization
       def deserialize(value = nil)
-        value = @default if value.nil?
+        value = as_json if value.nil?
 
         return if value.nil?
         return type_klass.deserialize(value) unless array?

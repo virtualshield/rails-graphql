@@ -132,12 +132,18 @@ module Rails # :nodoc:
         protected
 
           # Check if a given +attr_name+ is associated with a presence validator
-          # but ignores when there is a default value
+          # (that does not include +if+ nor +unless+), but ignores when there is
+          # a default value
           def attr_required?(attr_name)
             return true if attr_name.eql?(primary_key)
             return false if model.columns_hash[attr_name]&.default.present?
             return false unless model._validators.key?(attr_name.to_sym)
-            model._validators[attr_name.to_sym].any?(presence_validator)
+
+            model._validators[attr_name.to_sym].any? do |validator|
+              validator.is_a?(presence_validator) &&
+                !(validator.options[:if] ||
+                  validator.options[:unless])
+            end
           rescue ::ActiveRecord::StatementInvalid
             false
           end
@@ -155,8 +161,9 @@ module Rails # :nodoc:
       end
 
       # Prepare to load a single record from the underlying table
-      def load_record(scope = model.default_scoped)
-        scope.find(event.argument(primary_key))
+      def load_record(scope = model.default_scoped, find_by: nil)
+        find_by ||= { primary_key => event.argument(primary_key) }
+        inject_scopes(scope, :relation).find_by(find_by)
       end
 
       # Get the chain result and preload the records with thre resulting scope

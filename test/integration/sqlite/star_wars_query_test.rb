@@ -68,4 +68,17 @@ class Integration_SQLite_StarWarsQueryTest < GraphQL::IntegrationTestCase
       query AllFactions($order: String!) { liteFactions(order: $order) { name } }
     GQL
   end
+
+  def test_bases_scoped_argument_with_default
+    bases = named_list('Death Star', 'Echo Base', 'Headquarters', 'Secret Hideout',
+      'Shield Generator', 'Yavin')
+
+    assert_result({ data: { liteBases: bases.reverse } }, <<~GQL)
+      query AllBases { liteBases { name } }
+    GQL
+
+    assert_result({ data: { liteBases: bases } }, <<~GQL, args: { order: 'asc' })
+      query AllBases($order: String!) { liteBases(order: $order) { name } }
+    GQL
+  end
 end

@@ -90,7 +90,6 @@ module Rails # :nodoc:
             errors = []
             source = source.all_arguments if source.respond_to?(:all_arguments)
             result = source.each_pair.each_with_object({}) do |(key, argument), hash|
-              next unless values.key?(key)
               value = values[key]
 
               # Pointer means operation variable
@@ -116,7 +115,7 @@ module Rails # :nodoc:
                 operation.used_variables << var_name
                 next unless variables.key?(op_var.name)
                 value = variables[op_var.name]
-              else
+              elsif !value.nil?
                 # Only when the given value is an actual value that we check if
                 # it is valid
                 raise ArgumentError, <<~MSG.squish unless argument.valid?(value)
@@ -124,6 +123,13 @@ module Rails # :nodoc:
                 MSG
 
                 value = argument.deserialize(value)
+              elsif argument.default_value?
+                # Ensure to always import arguments that have default values but
+                # were not included in the field
+                value = argument.deserialize
+              else
+                # Otherwise, simply just skip the argument
+                next
               end
 
               hash[argument.name] = value
