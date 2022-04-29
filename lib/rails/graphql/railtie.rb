@@ -23,21 +23,39 @@ module Rails # :nodoc:
 
       # Ensure a valid logger
       initializer 'graphql.logger' do
-        ActiveSupport.on_load(:graphql) do
+        ActiveSupport.on_load(:graphql) do |app|
           return if config.logger.present?
-          if ::Rails.logger.respond_to?(:tagged)
-            config.logger = ::Rails.logger
+
+          logger = ::Rails.logger
+          if logger.respond_to?(:tagged)
+            config.logger = logger
           else
-            config.logger = ActiveSupport::TaggedLogging.new(::Rails.logger)
+            config.logger = ActiveSupport::TaggedLogging.new(logger)
           end
         end
       end
 
-      # Expose database runtime to controller for logging.
+      # Expose GraphQL runtime to controller for logging
       initializer 'graphql.log_runtime' do
         require_relative './railties/controller_runtime'
         ActiveSupport.on_load(:action_controller) do
           include GraphQL::ControllerRuntime
+        end
+      end
+
+      # Clean up GraphQL params from logger
+      initializer 'graphql.params_cleanup' do
+        key = 'start_processing.action_controller'
+        ActiveSupport::Notifications.subscribe(key) do |*, payload|
+          payload[:params].except!(*config.graphql.omit_parameters) \
+            if payload[:headers]['action_controller.instance'].is_a?(GraphQL::Controller)
+        end
+      end
+
+      # Copy filter params when they are not exclusively set for GraphQL
+      initializer 'graphql.params_filter' do |app|
+        config.after_initialize do
+          config.graphql.filter_parameters ||= app.config.filter_parameters
         end
       end
 

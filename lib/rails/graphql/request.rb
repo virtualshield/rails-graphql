@@ -288,13 +288,13 @@ module Rails # :nodoc:
 
         # Log the execution of a GraphQL document
         def log_execution(document)
-          ActiveSupport::Notifications.instrument('request.graphql') do |payload|
-            yield.tap { log_payload(document, payload) }
+          ActiveSupport::Notifications.instrument('request.graphql', document: document) do |payload|
+            yield.tap { log_payload(payload) }
           end
         end
 
         # Build the payload to be sent to the log
-        def log_payload(document, data)
+        def log_payload(data)
           name = @operation_name.presence
           name ||= operations.keys.first if operations.size.eql?(1)
           map_variables = args.to_h if args.each_pair.any?
@@ -302,7 +302,6 @@ module Rails # :nodoc:
           data.merge!(
             name: name,
             cached: false,
-            document: document,
             variables: map_variables,
           )
         end

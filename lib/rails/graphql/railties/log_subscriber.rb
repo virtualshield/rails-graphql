@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "active_support/parameter_filter"
+
 module Rails # :nodoc:
   module GraphQL # :nodoc:
     # = GraphQL Log Subscriber
@@ -8,6 +10,8 @@ module Rails # :nodoc:
     # has to report on logs that a query was performed.
     class LogSubscriber < ::ActiveSupport::LogSubscriber # :nodoc: all
       class_attribute :backtrace_cleaner, default: ActiveSupport::BacktraceCleaner.new
+
+      REMOVE_COMMENTS = /#(?=(?:[^"]*"[^"]*")*[^"]*$).*/m
 
       def self.runtime
         RuntimeRegistry.gql_runtime ||= 0
@@ -27,9 +31,10 @@ module Rails # :nodoc:
         name.unshift('CACHE') if payload[:cached]
         name = "#{name.compact.join(' ')} (#{event.duration.round(1)}ms)"
 
-        document = payload[:document].squish
+        document = payload[:document].gsub(REMOVE_COMMENTS, '').squish
         variables = payload[:variables].blank? ? nil : begin
-          "  (#{JSON.pretty_generate(payload[:variables]).squish})"
+          values = parameter_filter.filter(payload[:variables])
+          "  (#{JSON.pretty_generate(values).squish})"
         end
 
         debug "  #{color(name, MAGENTA, true)}  #{document}#{variables}"
@@ -38,7 +43,11 @@ module Rails # :nodoc:
       private
 
         def logger
-          GraphQL.config.logger
+          GraphQL.logger
+        end
+
+        def parameter_filter
+          ActiveSupport::ParameterFilter.new(GraphQL.config.filter_parameters)
         end
 
         def debug(*)

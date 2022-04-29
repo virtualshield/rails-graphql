@@ -10,6 +10,13 @@ module Rails # :nodoc:
       extend ActiveSupport::Concern
 
       REQUEST_XARGS = %i[operation_name variables context schema].freeze
+      DESCRIBE_HEADER = <<~TXT.freeze
+        """
+        Use the following HTTP params to modify this result:
+          without_descriptions => Remove all descriptions
+          without_spec => Remove all types from GraphQL spec
+        """
+      TXT
 
       included do
         # Each controller is assigned to a GraphQL schema on which the requests
@@ -24,7 +31,8 @@ module Rails # :nodoc:
 
       # GET /describe
       def describe
-        render plain: gql_schema.to_gql(
+
+        render plain: DESCRIBE_HEADER + gql_schema.to_gql(
           with_descriptions: !params.key?(:without_descriptions),
           with_spec: !params.key?(:without_spec),
         )
@@ -66,7 +74,7 @@ module Rails # :nodoc:
 
         # Get the GraphQL operation name
         def gql_operation_name
-          params[:operationName]
+          params[:operationName] || params[:operation_name]
         end
 
         # Get the GraphQL context for a requests

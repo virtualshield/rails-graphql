@@ -3,11 +3,20 @@
 module Rails # :nodoc:
   module GraphQL # :nodoc:
     configure do |config|
-      # This exposes the clean path from where a GraphQL request was started
+      # This exposes the clean path from where a GraphQL request was started.
       config.verbose_logs = true
 
+      # The list of parameters to omit from logger when running a GraphQL
+      # request. Those values will be better displayed in the internal runtime
+      # logger controller.
+      config.omit_parameters = %w[query operationName operation_name variables graphql]
+
+      # This list will actually affect what is displayed in the logs. When it is
+      # set to nil, it will copy its value from Rails +filter_parameters+.
+      config.filter_parameters = nil
+
       # A list of ActiveRecord adapters and their specific internal naming used
-      # to compound the accessors for direct query serialization
+      # to compound the accessors for direct query serialization.
       config.ar_adapters = {
         'Mysql2'     => :mysql,
         'PostgreSQL' => :pg,
