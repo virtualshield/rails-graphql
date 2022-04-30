@@ -142,10 +142,14 @@ module Rails # :nodoc:
             (arguments.keys - used_variables.to_a).each do |key|
               argument = arguments[key]
               request.report_node_error(<<~MSG.squish, argument.node || @node)
-                Unused variable $#{argument.gql_name} on #{log_source}.
+                Variable $#{argument.gql_name} was provided to #{log_source} but not used.
               MSG
             end
 
+            # Report all used variables to the request for greater scope
+            request.instance_variable_get(:@used_variables).merge(arguments.keys)
+
+            # Clear anything that is not necessary anymore
             @arguments = nil
             @used_variables = nil
           end

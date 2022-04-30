@@ -56,8 +56,7 @@ module Rails # :nodoc:
               item.validate!
             end unless data[:variables].blank?
 
-            args = request.sanitized_arguments
-            args = collect_arguments(self, args, var_access: false) do |errors|
+            args = collect_arguments(self, request.args, var_access: false) do |errors|
               "Invalid arguments for #{log_source}: #{errors}."
             end
 
@@ -140,7 +139,7 @@ module Rails # :nodoc:
             # Checks for any required arugment that was not provided
             source.each_value do |argument|
               next if result.key?(argument.name) || argument.null?
-              errors << "The \"#{argument.gql_name}\" argument can not be null"
+              errors << "the \"#{argument.gql_name}\" argument can not be null"
             end
 
             return result if errors.blank?

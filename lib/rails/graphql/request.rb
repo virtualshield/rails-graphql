@@ -40,8 +40,12 @@ module Rails # :nodoc:
         autoload :Strategy
       end
 
-      attr_reader :schema, :visitor, :operations, :fragments, :errors,
-        :args, :response, :strategy, :stack
+      attr_reader :args, :controller, :errors, :fragments, :operations, :response, :schema,
+        :stack, :strategy, :visitor
+
+      alias arguments args
+
+      delegate :action_name, to: :controller, allow_nil: true
 
       class << self
         # Shortcut for initialize, set context, and execute
@@ -75,6 +79,7 @@ module Rails # :nodoc:
         @schema = GraphQL::Schema.find!(@namespace)
         @extensions = {}
 
+        # TODO: The validation of the schema must happen in here
         ensure_schema!
       end
 
@@ -186,14 +191,6 @@ module Rails # :nodoc:
         obj
       end
 
-      # Get and cache a sanitized version of the arguments
-      def sanitized_arguments
-        return {} unless args.each_pair.any?
-        cache(:sanitized_arguments) do
-          args.to_h.transform_keys { |key| key.to_s.camelize(:lower) }
-        end
-      end
-
       # A shared way to cache information across the execution of an request
       def cache(key, init_value = nil, &block)
         @cache[key] ||= (init_value || block&.call || {})
@@ -204,16 +201,26 @@ module Rails # :nodoc:
         attr_reader :extensions
 
         # Reset principal variables and set the given +args+
-        def reset!(args: nil, variables: {}, operation_name: nil)
-          @args    = build_ostruct(args || variables).freeze
-          @errors  = Request::Errors.new(self)
+        def reset!(args: nil, variables: {}, operation_name: nil, controller: nil)
+          @arg_names = {}
+
+          @args = (args || variables || {}).transform_keys do |key|
+            key.to_s.camelize(:lower).tap do |sanitized_key|
+              @arg_names[sanitized_key] = key
+            end
+          end
+
+          @args = build_ostruct(@args).freeze
+          @errors = Request::Errors.new(self)
           @visitor = GraphQL::Native::Visitor.new
           @operation_name = operation_name
+          @controller = controller
 
           @stack      = [schema]
           @cache      = {}
           @fragments  = {}
           @operations = {}
+          @used_variables = Set.new
         end
 
         # This executes the whole process capturing any exceptions and handling
@@ -231,6 +238,8 @@ module Rails # :nodoc:
           parts = err.message.match(/\A(\d+)\.(\d+)(?:-\d+)?: (.*)\z/)
           errors.add(parts[3], line: parts[1], col: parts[2])
         ensure
+          report_unused_variables
+
           @cache.clear
           @fragments.clear
           @operations.clear
@@ -297,12 +306,14 @@ module Rails # :nodoc:
         def log_payload(data)
           name = @operation_name.presence
           name ||= operations.keys.first if operations.size.eql?(1)
-          map_variables = args.to_h if args.each_pair.any?
+          map_variables = args.to_h.transform_keys do |key|
+            @arg_names[key.to_s]
+          end
 
           data.merge!(
             name: name,
             cached: false,
-            variables: map_variables,
+            variables: map_variables.presence,
           )
         end
 
@@ -343,6 +354,14 @@ module Rails # :nodoc:
             Unable to perform a request under the #{@namespace.inspect} namespace,
             because there are no schema assigned to it.
           MSG
+        end
+
+        # Check all the operations and report any provided variable that was not
+        # used
+        def report_unused_variables
+          (@arg_names.keys - @used_variables.to_a).each do |key|
+            errors.add("Variable $#{@arg_names[key]} was provided but not used.")
+          end
         end
     end
   end

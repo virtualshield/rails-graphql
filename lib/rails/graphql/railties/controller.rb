@@ -31,7 +31,6 @@ module Rails # :nodoc:
 
       # GET /describe
       def describe
-
         render plain: DESCRIBE_HEADER + gql_schema.to_gql(
           with_descriptions: !params.key?(:without_descriptions),
           with_spec: !params.key?(:without_spec),
@@ -47,8 +46,8 @@ module Rails # :nodoc:
 
         # Execute a GraphQL request
         def gql_request(query, **xargs)
-          request_xargs = REQUEST_XARGS.inject({}) do |result, setting|
-            result.merge(setting => (xargs[setting] || send("gql_#{setting}")))
+          request_xargs = REQUEST_XARGS.each_with_object({}) do |setting, result|
+            result[setting] = (xargs[setting] || send("gql_#{setting}"))
           end
 
           ::Rails::GraphQL::Request.execute(query, **request_xargs)
