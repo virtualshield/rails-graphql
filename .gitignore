@@ -9,7 +9,6 @@
 .byebug_history
 .versions.conf
 .idea
-Gemfile.lock
 coverage
 doc/
 .config
