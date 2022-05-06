@@ -46,7 +46,7 @@ module Rails
 
             visitor.collect_variables(*data[:variables]) do |data, node|
               arg_name = data[:name]
-              raise ExecutionError, <<~MSG.squish if arguments.key?(arg_name)
+              raise ExecutionError, (+<<~MSG).squish if arguments.key?(arg_name)
                 The "#{arg_name}" argument is already defined for this #{kind}.
               MSG
 
@@ -56,12 +56,15 @@ module Rails
               item.validate!
             end unless data[:variables].blank?
 
-            args = collect_arguments(self, request.args, var_access: false) do |errors|
-              "Invalid arguments for #{log_source}: #{errors}."
-            end
+            error_format =
+            args = collect_arguments(self, request.args, var_access: false)
 
             @variables = args.freeze
             @arguments.freeze
+          rescue ArgumentsError => error
+            raise ArgumentsError, (+<<~MSG).chomp
+              Invalid arguments for #{log_source}: #{error.message}.
+            MSG
           end
 
           # Helper parser for arguments that also collect necessary variables
@@ -72,11 +75,14 @@ module Rails
               args[data[:name]] = data[:value] if variable.nil? || variable.null?
             end unless data[:arguments].blank?
 
-            args = collect_arguments(self, args) do |errors|
-              "Invalid arguments for #{gql_name} #{kind}: #{errors}."
-            end
+            error_format =
+            args = collect_arguments(self, args)
 
             @arguments = request.build(Request::Arguments, args).freeze
+          rescue ArgumentsError => error
+            raise ArgumentsError, (+<<~MSG).chomp
+              Invalid arguments for #{gql_name} #{kind}: #{error.message}.
+            MSG
           end
 
           # Build a hash that collect validated values for a set of arguments.
@@ -94,19 +100,19 @@ module Rails
               # Pointer means operation variable
               if value.is_a?(::FFI::Pointer)
                 var_name = visitor.node_name(value)
-                raise ArgumentError, <<~MSG.squish unless var_access
+                raise ArgumentError, (+<<~MSG).squish unless var_access
                   Unable to use variable "$#{var_name}" in the current scope
                 MSG
 
                 op_vars ||= operation.all_arguments
-                raise ArgumentError, <<~MSG.squish unless (op_var = op_vars[var_name]).present?
+                raise ArgumentError, (+<<~MSG).squish unless (op_var = op_vars[var_name]).present?
                   The #{operation.log_source} does not define the $#{var_name} variable
                 MSG
 
                 # When arguments are not equivalent, they can ended up with
                 # invalid values, so this already ensures that whatever the
                 # variable value ended up being, it will be valid due to this
-                raise ArgumentError, <<~MSG.squish unless op_var =~ argument
+                raise ArgumentError, (+<<~MSG).squish unless op_var =~ argument
                   The $#{var_name} variable on #{operation.log_source} is not compatible
                   with "#{key}" argument
                 MSG
@@ -117,7 +123,7 @@ module Rails
               elsif !value.nil?
                 # Only when the given value is an actual value that we check if
                 # it is valid
-                raise ArgumentError, <<~MSG.squish unless argument.valid?(value)
+                raise ArgumentError, (+<<~MSG).squish unless argument.valid?(value)
                   Invalid value provided to "#{key}" argument
                 MSG
 
@@ -139,11 +145,11 @@ module Rails
             # Checks for any required arugment that was not provided
             source.each_value do |argument|
               next if result.key?(argument.name) || argument.null?
-              errors << "the \"#{argument.gql_name}\" argument can not be null"
+              errors << +"the \"#{argument.gql_name}\" argument can not be null"
             end
 
             return result if errors.blank?
-            raise ArgumentError, block.call(errors.to_sentence)
+            raise ArgumentsError, errors.to_sentence
           end
       end
     end

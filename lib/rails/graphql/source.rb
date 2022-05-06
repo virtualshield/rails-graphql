@@ -296,7 +296,7 @@ module Rails
 
           # Return the module where the GraphQL types should be created at
           def gql_module
-            name.starts_with?('GraphQL::') ? module_parent : ::GraphQL
+            name.start_with?('GraphQL::') ? module_parent : ::GraphQL
           end
 
           # Get the list of fields to be skipped from the given +holder+ as the

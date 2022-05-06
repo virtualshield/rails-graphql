@@ -68,7 +68,7 @@ module Rails
             module_eval(<<~RUBY, __FILE__, __LINE__ + 1)
               def self.all_#{name}
                 ::Rails::GraphQL::Helpers::AttributeDelegator.new do
-                  fetch_inherited_#{type}('@#{name}')
+                  fetch_inherited_#{type}('@#{name}'.freeze)
                 end
               end
 

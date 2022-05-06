@@ -29,6 +29,9 @@ module Rails
     # Error related to the parsing process
     ParseError = Class.new(ExecutionError)
 
+    # Error class related to parsing the argumens
+    ArgumentsError = Class.new(ParseError)
+
     # Error class related to problems that happened during execution of fields
     FieldError = Class.new(ExecutionError)
 

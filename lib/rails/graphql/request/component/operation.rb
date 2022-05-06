@@ -141,7 +141,7 @@ module Rails
           def report_unused_variables
             (arguments.keys - used_variables.to_a).each do |key|
               argument = arguments[key]
-              request.report_node_error(<<~MSG.squish, argument.node || @node)
+              request.report_node_error((+<<~MSG).squish, argument.node || @node)
                 Variable $#{argument.gql_name} was provided to #{log_source} but not used.
               MSG
             end
@@ -161,7 +161,7 @@ module Rails
             if request.operations.key?(nil)
               invalidate!
 
-              request.report_node_error(<<~MSG.squish, @node)
+              request.report_node_error((+<<~MSG).squish, @node)
                 Unable to process the operation #{display_name} when the document
                 contain multiple anonymous operations.
               MSG
@@ -171,7 +171,7 @@ module Rails
               other_node = request.operations[name].instance_variable_get(:@node)
               location = GraphQL::Native.get_location(other_node)
 
-              request.report_node_error(<<~MSG.squish, @node)
+              request.report_node_error((+<<~MSG).squish, @node)
                 Duplicated operation named "#{name}" defined on
                 line #{location.begin_line}:#{location.begin_column}.
               MSG

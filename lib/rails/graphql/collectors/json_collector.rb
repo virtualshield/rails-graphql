@@ -12,7 +12,7 @@ module Rails
         def initialize(request)
           @request = request
 
-          @current_value = String.new
+          @current_value = StringIO.new
           @stack_value = []
 
           @current_array = false
@@ -50,10 +50,7 @@ module Rails
           if @current_array
             @current_value << value
           else
-            @current_value << '"'
-            @current_value << key.to_s
-            @current_value << '":'
-            @current_value << value.to_s
+            @current_value << '"' << +key.to_s << '":' << +value.to_s
           end
         end
 
@@ -72,12 +69,16 @@ module Rails
           return unless @stack_array.last === :complex
           (@stack_value.last << ',') unless @stack_value.last.blank?
           @stack_value.last << to_s
-          @current_value = String.new
+          @current_value = StringIO.new
         end
 
         # Get the current result
         def to_s
-          @current_array ? "[#{@current_value}]" : "{#{@current_value}}"
+          if @current_array
+            +'[' << @current_value.string << ']'
+          else
+            +'{' << @current_value.string << '}'
+          end
         end
 
         private
@@ -89,12 +90,12 @@ module Rails
             @stack_array << @current_array
 
             if as_array && !plain_array
-              @stack_value << String.new
+              @stack_value << StringIO.new
               @stack_array << :complex
               as_array = false
             end
 
-            @current_value = String.new
+            @current_value = StringIO.new
             @current_array = as_array
           end
 

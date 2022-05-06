@@ -16,6 +16,8 @@ module Rails
       # TODO: Maybe implement this in C
       class Visitor < FFI::Struct
         CALLBACK_LAYOUT = %i[pointer pointer].freeze
+        START_CALLBACK = callback(CALLBACK_LAYOUT, :bool)
+        END_CALLBACK = callback(CALLBACK_LAYOUT, :void)
 
         MACROS = %w[
           document operation_definition variable_definition selection_set field argument
@@ -39,33 +41,27 @@ module Rails
         VariableObject  = Struct.new(:name, :type, :null, :array, :nullable, :default)
 
         macros = MACROS.map do |key|
-          [
-            [    "visit_#{key}", callback(CALLBACK_LAYOUT, :bool)],
-            ["end_visit_#{key}", callback(CALLBACK_LAYOUT, :void)],
-          ]
+          [["visit_#{key}", START_CALLBACK], ["end_visit_#{key}", END_CALLBACK]]
         end.flatten(1).to_h
         layout(macros)
 
         @@callbacks = Visitor.new
         @@instances = Concurrent::Map.new
 
-        MACROS.each do |key|
-          @@callbacks["visit_#{key}".to_sym] = ->(node, ref) do
-            Visitor.ref_send(key, node, ref)
-          end
-
-          @@callbacks["end_visit_#{key}".to_sym] = ->(node, ref) do
-            Visitor.ref_send(key, node, ref, prefix: 'end')
+        macros.each_pair do |method_name, cb|
+          finalizer = cb == END_CALLBACK
+          key = method_name[(finalizer ? 10 : 6)..-1]
+          @@callbacks[method_name.to_sym] = ->(node, ref) do
+            Visitor.ref_send(method_name, key, node, ref, finalizer)
           end
         end
 
-        def self.ref_send(key, node, ref, prefix: nil)
+        def self.ref_send(method_name, key, node, ref, finalizer)
           instance = @@instances[ref.read_string]
-          method_name = [prefix, 'visit', key].compact.join('_')
 
           catch :override do
             instance.try(method_name, node)
-            prefix.nil? && instance.visit_nested?(key)
+            !finalizer && instance.visit_nested?(key)
           end
         end
 

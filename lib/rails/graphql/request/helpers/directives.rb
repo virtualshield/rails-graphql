@@ -30,18 +30,20 @@ module Rails
 
           # Helper parser for directives that also collect necessary variables
           def parse_directives(location = nil)
-            list = []
+            list = nil
 
             visitor.collect_directives(*data[:directives]) do |data|
               instance = find_directive!(data[:name])
 
               args = directive_arguments(instance)
-              args = collect_arguments(args, data[:arguments]) do |errors|
-                "Invalid arguments for @#{instance.gql_name} directive" \
-                  " added to #{gql_name} #{kind}: #{errors}."
-              end
+              args = collect_arguments(args, data[:arguments])
 
-              list << instance.new(request.build(Request::Arguments, args))
+              (list ||= []) << instance.new(request.build(Request::Arguments, args))
+            rescue ArgumentsError => error
+              raise ArgumentsError, (+<<~MSG).chomp
+                Invalid arguments for @#{instance.gql_name} directive
+                added to #{gql_name} #{kind}: #{error.message}.
+              MSG
             end unless data[:directives].blank?
 
             if list.present?
@@ -49,7 +51,7 @@ module Rails
               list = GraphQL.directives_to_set(list, [], event, location: location || kind)
             end
 
-            @directives = list.freeze
+            @directives = list&.freeze
           end
 
           # Get and cache all the arguments for this given +directive+

@@ -26,9 +26,7 @@ module Rails
           def parent_memoize(*methods)
             methods.each do |method_name|
               define_method(method_name) do
-                result = parent.public_send(method_name)
-                define_singleton_method(method_name) { result }
-                result
+                parent.public_send(method_name)
               end
             end
           end

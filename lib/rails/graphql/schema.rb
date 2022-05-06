@@ -262,7 +262,7 @@ module Rails
 
             klass_name = name.classify.demodulize
             klass_name += xargs[:suffix] if xargs.key?(:suffix) &&
-              !klass_name.ends_with?(xargs[:suffix])
+              !klass_name.end_with?(xargs[:suffix])
 
             if base_module.const_defined?(klass_name)
               klass = base_module.const_get(klass_name)

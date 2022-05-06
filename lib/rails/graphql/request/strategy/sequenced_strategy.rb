@@ -14,7 +14,7 @@ module Rails
 
         # Executes the strategy in the normal mode
         def resolve!
-          response.with_stack(:data) do
+          response.with_stack('data') do
             operations.each_value do |op|
               collect_listeners  { op.organize! }
               collect_data(true) { op.prepare! }
