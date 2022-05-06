@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # This is a helper class that allows sources to have scoped-based arguments,
     # meaning that when an argument is present, it triggers the underlying block
     # on the fields where the argument was attached to
@@ -34,7 +34,7 @@ module Rails # :nodoc:
         end
       end
 
-      module ClassMethods # :nodoc:
+      module ClassMethods
         # Return the list of scoped params defined
         def scoped_arguments
           defined?(@scoped_arguments) ? @scoped_arguments : {}

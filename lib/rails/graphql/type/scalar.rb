@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Type # :nodoc:
+module Rails
+  module GraphQL
+    class Type
       # = GraphQL ScalarType
       #
       # Scalar types represent primitive leaf values in a GraphQL type system.
@@ -62,8 +62,11 @@ module Rails # :nodoc:
             value
           end
 
-          def inspect # :nodoc:
-            "#<GraphQL::Scalar #{gql_name}>"
+          def inspect
+            return super if self.eql?(Type::Scalar)
+            directives = inspect_directives
+            directives.prepend(' ') if directives.present?
+            "#<GraphQL::Scalar #{gql_name}#{directives}>"
           end
         end
       end

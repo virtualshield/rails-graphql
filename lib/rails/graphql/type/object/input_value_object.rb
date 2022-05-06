@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Type # :nodoc:
+module Rails
+  module GraphQL
+    class Type
       # The introspection object for a input object
       class Object::InputValueObject < Object
         self.assigned_to = 'Rails::GraphQL::Field::InputField'

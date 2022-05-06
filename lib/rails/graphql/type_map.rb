@@ -3,8 +3,8 @@
 require 'concurrent/map'
 require 'active_support/core_ext/class/subclasses'
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = GraphQL Type Map
     #
     # Inspired by ActiveRecord::Type::TypeMap, this class stores all the things
@@ -31,9 +31,16 @@ module Rails # :nodoc:
         base_classes[base_class] = true
       end
 
+      # Get the current version of the Type Map. On each reset, the version is
+      # changed and can be used to invalidate cache and similar things
+      def version
+        @version ||= GraphQL.config.version&.first(8) || SecureRandom.hex(8)
+      end
+
       # Reset the state of the type mapper
       def reset!
         @objects = 0 # Number of types and directives defined
+        @version = nil # Make sure to not keep the same version
 
         @pending = []
         @callbacks = Hash.new { |h, k| h[k] = [] }
@@ -93,7 +100,7 @@ module Rails # :nodoc:
         result = fetch(*args, **xargs)
         return result unless result.nil?
 
-        raise ArgumentError, <<~MSG.squish if base_classes[base_class]
+        raise NotFoundError, <<~MSG.squish if base_classes[base_class]
           Unable to find #{args.first.inspect} #{base_class} object.
         MSG
 
@@ -258,7 +265,7 @@ module Rails # :nodoc:
         end
       end
 
-      def inspect # :nodoc:
+      def inspect
         <<~INFO.squish + '>'
           #<Rails::GraphQL::TypeMap [index]
             @namespaces=#{@index.size}

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Helpers # :nodoc:
+module Rails
+  module GraphQL
+    module Helpers
       # Helper module that allows other objects to hold namespaces. It can
       # either work as an extension of the superclass using +add_namespace+ or
       # it can be reset then set using +namespace+.

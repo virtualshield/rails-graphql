@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # Based on:
     # SELECT t.oid, t.typname, format_type(t.oid, NULL) AS sql_type
     # FROM pg_type t
@@ -31,7 +31,7 @@ module Rails # :nodoc:
     type_map.register_alias 'pg:time with time zone',         'pg:time without time zone'
     type_map.register_alias 'pg:jsonb',                       'pg:json'
 
-    module PG # :nodoc: all
+    module PG
       module SourceMethods
         protected
 

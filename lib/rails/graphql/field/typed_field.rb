@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # This is a helper module that basically works with fields that have an
     # assigned type value
     module Field::TypedField
@@ -95,7 +95,7 @@ module Rails # :nodoc:
           result
         end
 
-        def proxied # :nodoc:
+        def proxied
           super if defined? super
           extend Field::TypedField::Proxied
         end

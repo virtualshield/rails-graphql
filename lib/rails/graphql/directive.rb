@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = GraphQL Directive
     #
     # This is the base object for directives definition.
@@ -26,6 +26,7 @@ module Rails # :nodoc:
       extend Helpers::WithEvents
       extend Helpers::WithCallbacks
       extend Helpers::WithArguments
+      extend Helpers::WithGlobalID
       extend Helpers::Registerable
 
       VALID_LOCATIONS = Rails::GraphQL::Type::Enum::DirectiveLocationEnum
@@ -35,11 +36,13 @@ module Rails # :nodoc:
       DEFINITION_LOCATIONS = VALID_LOCATIONS[7..17].freeze
 
       class << self
-        def kind # :nodoc
+        def kind
           :directive
         end
 
-        def gql_name # :nodoc:
+        # Return the name of the object as a GraphQL name, ensure to use the
+        # first letter as lower case when being auto generated
+        def gql_name
           return @gql_name if defined?(@gql_name)
           @gql_name = super.camelize(:lower)
         end
@@ -64,13 +67,36 @@ module Rails # :nodoc:
           @locations = list.to_set
         end
 
-        def eager_load! # :nodoc:
+        # Ensure to return the directive class
+        def gid_base_class
+          GraphQL::Directive
+        end
+
+        # A helper method that allows directives to be initialized while
+        # correctly parsing the arguments
+        def build(**xargs)
+          xargs = xargs.stringify_keys
+          result = all_arguments.each_pair.each_with_object({}) do |(name, argument), hash|
+            hash[name] = argument.deserialize(xargs[argument.gql_name] || xargs[name.to_s])
+          end
+
+          new(**result)
+        end
+
+        # Return the directive, instantiate if it has params
+        def find_by_gid(gid)
+          options = { namespaces: gid.namespace, base_class: :Directive }
+          klass = GraphQL.type_map.fetch!(gid.name, **options)
+          gid.instantiate? ? klass.build(**gid.params) : klass
+        end
+
+        def eager_load!
           super
 
           TypeMap.loaded! :Directive
         end
 
-        def inspect # :nodoc:
+        def inspect
           return '#<GraphQL::Directive>' if eql?(GraphQL::Directive)
 
           args = arguments.each_value.map(&:inspect)
@@ -126,7 +152,7 @@ module Rails # :nodoc:
         autoload :SkipDirective
       end
 
-      delegate :locations, :gql_name, to: :class
+      delegate :locations, :gql_name, :gid_base_class, to: :class
 
       array_sanitizer = ->(setting) do
         Array.wrap(setting)
@@ -168,6 +194,22 @@ module Rails # :nodoc:
         @owner = owner
       end
 
+      # Corretly turn all the arguments into their +as_json+ version and return
+      # a hash of them
+      def args_as_json
+        all_arguments.each_pair.each_with_object({}) do |(name, argument), hash|
+          hash[argument.gql_name] = argument.as_json(@args[name])
+        end
+      end
+
+      # Corretly turn all the arguments into their +to_json+ version and return
+      # a hash of them
+      def args_to_json
+        all_arguments.each_pair.each_with_object({}) do |(name, argument), hash|
+          hash[argument.gql_name] = argument.to_json(@args[name])
+        end
+      end
+
       # When fetching all the events, embed the actual instance as the context
       # of the callback
       def all_events
@@ -181,8 +223,8 @@ module Rails # :nodoc:
         invalid = all_arguments.reject { |name, arg| arg.valid?(@args[name]) }
         return if invalid.empty?
 
-        invalid = invalid.map { |name, _| <<~MSG }
-          Invalid value "#{@args[name].inspect}" for #{name} argument.
+        invalid = invalid.map { |name, _| <<~MSG.chomp }
+          invalid value "#{@args[name].inspect}" for #{name} argument
         MSG
 
         raise ArgumentError, <<~MSG.squish
@@ -190,7 +232,7 @@ module Rails # :nodoc:
         MSG
       end
 
-      def inspect # :nodoc:
+      def inspect
         args = all_arguments.map do |name, arg|
           "#{arg.gql_name}: #{@args[name].inspect}" unless @args[name].nil?
         end.compact
@@ -198,6 +240,13 @@ module Rails # :nodoc:
         args = args.presence && "(#{args.join(', ')})"
         "@#{gql_name}#{args}"
       end
+
+      %i[to_global_id to_gid to_gid_param].each do |method_name|
+        define_method(method_name) do
+          self.class.public_send(method_name, args_as_json.compact)
+        end
+      end
+
     end
   end
 end

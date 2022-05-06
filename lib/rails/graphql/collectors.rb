@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Collectors # :nodoc:
+module Rails
+  module GraphQL
+    # All the possible collectors that uses the reverse visit approach
+    module Collectors
       extend ActiveSupport::Autoload
 
       autoload :HashCollector

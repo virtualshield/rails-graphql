@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Helpers # :nodoc:
+module Rails
+  module GraphQL
+    module Helpers
       # Helper module that allows other objects to hold schema fields (query,
       # mutation, and subscription fields). Works very similar to fields, but
       # they are placed in different places regarding their type.
@@ -14,10 +14,10 @@ module Rails # :nodoc:
         TYPE_FIELD_CLASS = {
           query:        'OutputField',
           mutation:     'MutationField',
-          subscription: 'OutputField',
+          subscription: 'SubscriptionField',
         }.freeze
 
-        module ClassMethods # :nodoc: all
+        module ClassMethods
           def inherited(subclass)
             super if defined? super
 
@@ -29,7 +29,8 @@ module Rails # :nodoc:
           end
         end
 
-        ScopedConfig = Struct.new(:source, :type) do # :nodoc: all
+        # Helper class to be used as the +self+ in configuration blocks
+        ScopedConfig = Struct.new(:source, :type) do
           def arg(*args, **xargs, &block)
             xargs[:owner] ||= source
             GraphQL::Argument.new(*args, **xargs, &block)
@@ -63,7 +64,7 @@ module Rails # :nodoc:
             end
         end
 
-        def self.extended(other) # :nodoc:
+        def self.extended(other)
           other.extend(WithSchemaFields::ClassMethods)
         end
 
@@ -71,6 +72,8 @@ module Rails # :nodoc:
         def fields_for(type)
           public_send("#{type}_fields")
         end
+
+        alias [] :fields_for
 
         # Return the object name for a given +type+ of list of fields
         def type_name_for(type)
@@ -105,6 +108,10 @@ module Rails # :nodoc:
         # Add a new field to the list but use a proxy instead of a hard copy of
         # a given +field+
         def add_proxy_field(type, field, *args, **xargs, &block)
+          raise ArgumentError, <<~MSG.squish if field.schema_type != type
+            A #{field.schema_type} field cannot be added as a #{type} field.
+          MSG
+
           klass = Field.const_get(TYPE_FIELD_CLASS[type])
           raise ArgumentError, <<~MSG.squish unless field.is_a?(klass)
             The #{field.class.name} is not a valid field for #{type} fields.
@@ -158,7 +165,7 @@ module Rails # :nodoc:
 
         # If the field is not found it will raise an exception
         def find_field!(type, object)
-          find_field(type, object) || raise(::ArgumentError, <<~MSG.squish)
+          find_field(type, object) || raise(NotFoundError, <<~MSG.squish)
             The #{object.inspect} field on #{type} is not defined yet.
           MSG
         end
@@ -186,6 +193,11 @@ module Rails # :nodoc:
           end
         end
 
+        # Find a specific field using its id as +gql_name.type+
+        def find_by_gid(gid)
+          find_field!(gid.scope, gid.name)
+        end
+
         SCHEMA_FIELD_TYPES.each do |kind, type_name|
           class_eval <<-RUBY, __FILE__, __LINE__ + 1
             def #{kind}_field?(name)
@@ -209,6 +221,7 @@ module Rails # :nodoc:
             def #{kind}_type
               if defined?(@#{kind}_fields) && @#{kind}_fields.present?
                 OpenStruct.new(
+                  name: "\#{name}[:#{kind}]",
                   kind: :object,
                   object?: true,
                   kind_enum: 'OBJECT',

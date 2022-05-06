@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Type # :nodoc:
+module Rails
+  module GraphQL
+    class Type
       # = GraphQL EnumType
       #
       # Enum types, like scalar types, also represent leaf values in a GraphQL
@@ -129,16 +129,13 @@ module Rails # :nodoc:
             end.freeze
           end
 
-          # This returns the field directives and all value directives
-          def all_directives
-            all_value_directives.each_value.reduce(:+)
-          end
-
-          def inspect # :nodoc:
+          def inspect
+            return super if self.eql?(Type::Enum)
             <<~INFO.squish + '>'
               #<GraphQL::Enum #{gql_name}
               (#{all_values.size})
               {#{all_values.to_a.join(' | ')}}
+              #{inspect_directives}
             INFO
           end
 

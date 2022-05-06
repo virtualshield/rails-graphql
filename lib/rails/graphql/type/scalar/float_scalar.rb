@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Type # :nodoc:
+module Rails
+  module GraphQL
+    class Type
       # The Float scalar type represents signed double-precision fractional
       # values as specified by
       # {IEEE 754}[http://en.wikipedia.org/wiki/IEEE_floating_point].

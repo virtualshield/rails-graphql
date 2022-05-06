@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Request # :nodoc:
+module Rails
+  module GraphQL
+    class Request
       # Helper module to collect the fields from fragments, operations, and also
       # other fields.
       module SelectionSet

@@ -1,16 +1,17 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Helpers # :nodoc:
-      # Helper module that allows other objects to hold an +assigned_to+ object
+module Rails
+  module GraphQL
+    module Helpers
+      # Helper focus on event execution when objects have a owner property,
+      # pratically allowing resolvers and similar to be called in the owner
       module WithOwner
         def self.included(other)
           other.extend(WithOwner::ClassMethods)
           other.class_attribute(:owner, instance_writer: false)
         end
 
-        module ClassMethods # :nodoc: all
+        module ClassMethods
           def method_defined?(method_name)
             super || owner&.method_defined?(method_name)
           end
@@ -18,11 +19,11 @@ module Rails # :nodoc:
 
         private
 
-          def respond_to_missing?(*args) # :nodoc:
+          def respond_to_missing?(*args)
             owner_respond_to?(*args) || super
           end
 
-          def method_missing(method_name, *args, **xargs, &block) # :nodoc:
+          def method_missing(method_name, *args, **xargs, &block)
             return super unless owner_respond_to?(method_name)
             event.on_instance(owner) do |obj|
               obj.public_send(method_name, *args, **xargs, &block)

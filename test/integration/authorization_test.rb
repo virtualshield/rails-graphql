@@ -1,6 +1,6 @@
 require 'integration/config'
 
-class Integration_Memory_AuthorizationTest < GraphQL::IntegrationTestCase
+class Integration_AuthorizationTest < GraphQL::IntegrationTestCase
   load_schema 'authorization'
 
   SCHEMA = ::AuthorizationSchema

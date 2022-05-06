@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = GraphQL Controller
     #
     # The controller helper methods that allow GraphQL to be performed on a

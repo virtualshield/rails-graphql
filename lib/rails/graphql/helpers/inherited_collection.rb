@@ -1,9 +1,14 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Helpers # :nodoc:
-      module InheritedCollection # :nodoc:
+module Rails
+  module GraphQL
+    module Helpers
+      # Helper module that allow classes to have specific type of attributes
+      # that are corretly delt when it is inherited by another class. It keeps
+      # track of its own value and allow access to all values of the property
+      # in the tree,
+      module InheritedCollection
+        # All possible types of inheritable values
         DEFAULT_TYPES = {
           array:      '[]',
           set:        'Set.new',

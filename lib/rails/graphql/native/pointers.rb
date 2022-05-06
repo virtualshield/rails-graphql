@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Native # :nodoc:
+module Rails
+  module GraphQL
+    module Native
       # This helps to make sure that any parser error is correctly initialized
       # and easy to ready. It also release the error using GC.
       class ParseError < FFI::MemoryPointer

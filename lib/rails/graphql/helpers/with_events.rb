@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Helpers # :nodoc:
+module Rails
+  module GraphQL
+    module Helpers
       # Helper module that allows other objects to hold events, either from a
       # singleton point-of-view, or for instances
       module WithEvents

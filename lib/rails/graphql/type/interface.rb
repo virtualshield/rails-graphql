@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Type # :nodoc:
+module Rails
+  module GraphQL
+    class Type
       # = GraphQL InterfaceType
       #
       # Interfaces represent a list of named fields and their types.
@@ -64,10 +64,14 @@ module Rails # :nodoc:
             types << object
           end
 
-          def inspect # :nodoc:
+          def inspect
+            return super if self.eql?(Type::Interface)
             fields = @fields.values.map(&:inspect)
             fields = fields.presence && " {#{fields.join(', ')}}"
-            "#<GraphQL::Interface #{gql_name}#{fields}>"
+
+            directives = inspect_directives
+            directives.prepend(' ') if directives.present?
+            "#<GraphQL::Interface #{gql_name}#{fields}#{directives}>"
           end
 
           # Check if the given object is properly implementing this interface

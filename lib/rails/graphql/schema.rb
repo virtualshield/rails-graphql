@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = GraphQL Schema
     #
     # This is a pure representation of a GraphQL schema.
@@ -19,6 +19,7 @@ module Rails # :nodoc:
     class Schema
       extend Helpers::WithSchemaFields
       extend Helpers::WithDirectives
+      extend Helpers::WithGlobalID
       extend Helpers::Registerable
       extend GraphQL::Introspection
 
@@ -63,7 +64,7 @@ module Rails # :nodoc:
         # :singleton-method:
         # Since there is only one schema per namespace, then both kind and
         # to_sym, which is used to register, are the same
-        def kind # :nodoc:
+        def kind
           :schema
         end
 
@@ -102,12 +103,25 @@ module Rails # :nodoc:
 
         # Schemas are assigned to a single namespace
         def set_namespace(*list)
-          super(list.first)
+          @namespace = normalize_namespaces(list).first
         end
+
+        alias set_namespaces set_namespace
 
         # Schemas are assigned to a single namespace and not inherited
         def namespace(*list)
-          list.blank? ? (namespaces.first || :base) : set_namespace(*list)
+          if list.present?
+            set_namespace(*list)
+          elsif defined?(@namespace) && !@namespace.nil?
+            @namespace
+          else
+            :base
+          end
+        end
+
+        # Add compatibility to the list of namespaces
+        def namespaces
+          Set.new([namespace])
         end
 
         # Check if the class is already registered in the typemap
@@ -167,6 +181,19 @@ module Rails # :nodoc:
         # Describe a schema as a GraphQL string
         def to_gql(**xargs)
           ToGQL.describe(self, **xargs)
+        end
+
+        # The base class of all schemas is always +Schema+
+        def gid_base_class
+          Schema
+        end
+
+        # Return the schema
+        def find_by_gid(gid)
+          result = find!(gid.namespace.to_sym)
+          return result if gid.name.nil?
+
+          result.find_field!(gid.scope, gid.name)
         end
 
         protected

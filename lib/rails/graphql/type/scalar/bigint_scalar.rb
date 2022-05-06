@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Type # :nodoc:
+module Rails
+  module GraphQL
+    class Type
       # Bigint basically removes the limit of the value, but it serializes as
       # a string so it won't go against the spec
       class Scalar::BigintScalar < Scalar
         desc <<~DESC
-          The Bigint scalar type represents a signed numeric non‐fractional value.
-          It can go beyond the Int 32‐bit limit, but it's exchanged as a string.
+          The Bigint scalar type represents a signed numeric non-fractional value.
+          It can go beyond the Int 32-bit limit, but it's exchanged as a string.
         DESC
 
         class << self

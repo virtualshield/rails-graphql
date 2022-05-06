@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Request # :nodoc:
+module Rails
+  module GraphQL
+    class Request
       # Helper methods for the resolve step of a request
       module Resolveable
         # Resolve the object

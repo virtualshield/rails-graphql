@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Request # :nodoc:
+module Rails
+  module GraphQL
+    class Request
       # = GraphQL Request Strategy
       #
       # This is the base class for the strategies of resolving a request.

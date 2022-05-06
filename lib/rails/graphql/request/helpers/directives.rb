@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Request # :nodoc:
+module Rails
+  module GraphQL
+    class Request
       # Helper module to collect the directives from fragments, operations, and
       # fields.
       module Directives

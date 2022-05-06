@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Type # :nodoc:
+module Rails
+  module GraphQL
+    class Type
       # Binary basically allows binary data to be shared using Base64 strings,
       # ensuring the UTF-8 encoding and performing the necessary conversion.
       #

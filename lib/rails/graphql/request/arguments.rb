@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Request # :nodoc:
+module Rails
+  module GraphQL
+    class Request
       # = GraphQL Request Arguments
       #
       # This is an extension of an +OpenStruct+ since argument values can be

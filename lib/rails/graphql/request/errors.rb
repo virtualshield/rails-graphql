@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Request # :nodoc:
+module Rails
+  module GraphQL
+    class Request
       # = GraphQL Request Errors
       #
       # This class is inspired by +ActiveModel::Erros+. The idea is to hold all

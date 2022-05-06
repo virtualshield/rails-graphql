@@ -69,7 +69,7 @@ class LiteShip < SQLiteRecord
 end
 
 class StartWarsSqliteSchema < GraphQL::Schema
-  namespace :start_wars_sqlite
+  namespace :star_wars_sqlite
 
   configure do |config|
     config.enable_string_collector = false

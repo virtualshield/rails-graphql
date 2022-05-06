@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = GraphQL Source
     #
     # Source is an abstract object that can contains fields, objects, and
@@ -25,7 +25,8 @@ module Rails # :nodoc:
         autoload :ActiveRecordSource
       end
 
-      ScopedConfig = Struct.new(:receiver, :self_object) do # :nodoc: all
+      # Helper class to be used as the +self+ in configuration blocks
+      ScopedConfig = Struct.new(:receiver, :self_object) do
         def respond_to_missing?(method_name, include_private = false)
           self_object.respond_to?(method_name, include_private) ||
             receiver.respond_to?(method_name, include_private)
@@ -84,10 +85,10 @@ module Rails # :nodoc:
       class << self
         attr_reader :schemas
 
-        delegate :field, :proxy_field, :overwrite_field, :[], :field?,
-          :field_names, :gql_name, to: :object
+        delegate :field, :proxy_field, :overwrite_field, :field?, :field_names,
+          :gql_name, to: :object
 
-        def kind # :nodoc:
+        def kind
           :source
         end
 
@@ -176,7 +177,7 @@ module Rails # :nodoc:
           end.compact.to_h
         end
 
-        def eager_load! # :nodoc:
+        def eager_load!
           super
 
           build_pending!
@@ -225,6 +226,8 @@ module Rails # :nodoc:
             elsif superclass.is_a?(String)
               superclass = superclass.constantize
             end
+
+            # binding.pry if with_owner
 
             source = self
             Schema.send(:create_type, name, superclass, **xargs) do

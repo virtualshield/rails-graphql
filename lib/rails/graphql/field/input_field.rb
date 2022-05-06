@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = GraphQL Input Field
     #
     # An input field works the same way as an argument and they are pretty much
@@ -28,7 +28,8 @@ module Rails # :nodoc:
         @default = default
       end
 
-      def configure # :nodoc:
+      # Prevent input fields from being further configured using a block
+      def configure
         raise ArgumentError, 'Input fields can\'t be further configured using blocks'
       end
 
@@ -95,7 +96,7 @@ module Rails # :nodoc:
 
         # Display the default value when it is present for inspection
         def inspect_default_value
-          " = #{to_hash.inspect}" if default?
+          " = #{as_json.inspect}" if default_value?
         end
     end
   end

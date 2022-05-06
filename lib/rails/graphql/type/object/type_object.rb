@@ -1,10 +1,12 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Type # :nodoc:
+module Rails
+  module GraphQL
+    class Type
       # The introspection object for any kind of type
       class Object::TypeObject < Object
+        # List and not null are not actully types, but they still need to
+        # some how exist for introspection purposes
         FAKE_TYPES = {
           list: {
             kind: :list,

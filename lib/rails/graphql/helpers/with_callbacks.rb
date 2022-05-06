@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Helpers # :nodoc:
+module Rails
+  module GraphQL
+    module Helpers
       # Callbacks is an extension of the events which works with the
       # {Callback}[rdoc-ref:Rails::GraphQL::Callback] class, then having extra
       # powers when actually executing the event against procs or owner-based

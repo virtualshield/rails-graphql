@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Type # :nodoc:
+module Rails
+  module GraphQL
+    class Type
       # DateTime uses a ISO 8601 string to exchange the value.
       class Scalar::DateTimeScalar < Scalar
         aliases :datetime

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    # = GraphQL Output Field
+module Rails
+  module GraphQL
+    # = GraphQL Mutation Field
     #
     # This is an extension of a normal output field, which just add extra
     # validation and ensurance that the +perform+ step can be executed
@@ -13,6 +13,11 @@ module Rails # :nodoc:
         def performer
           super || field.performer
         end
+      end
+
+      # Change the schema type of the field
+      def schema_type
+        :mutation
       end
 
       # Add a block or a callable method that is executed before the resolver
@@ -42,7 +47,7 @@ module Rails # :nodoc:
 
       protected
 
-        def proxied # :nodoc:
+        def proxied
           super if defined? super
           extend Field::MutationField::Proxied
         end

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = GraphQL Source Active Record
     #
     # This source allows the translation of active record objects into a new
@@ -150,7 +150,7 @@ module Rails # :nodoc:
 
         private
 
-          def presence_validator # :nodoc:
+          def presence_validator
             ::ActiveRecord::Validations::PresenceValidator
           end
       end
@@ -235,7 +235,7 @@ module Rails # :nodoc:
 
       private
 
-        def preloader_association # :nodoc:
+        def preloader_association
           ActiveRecord::Associations::Preloader::Association
         end
     end

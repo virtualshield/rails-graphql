@@ -1,9 +1,20 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Native # :nodoc:
-      class Visitor < FFI::Struct # :nodoc:
+module Rails
+  module GraphQL
+    module Native
+      # = GraphQL Native Visitor
+      #
+      # Coordinates the whole process of iterating over the nodes of a GraphQL
+      # document and providing information about the collected elements. It has
+      # all the bindings but it does not goes into all depths once.
+      #
+      # The usage is coordinate in other places where the proper place will read
+      # its necessary points and pass forward the pointers so that other
+      # processes can dig deeper later.
+      #
+      # TODO: Maybe implement this in C
+      class Visitor < FFI::Struct
         CALLBACK_LAYOUT = %i[pointer pointer].freeze
 
         MACROS = %w[

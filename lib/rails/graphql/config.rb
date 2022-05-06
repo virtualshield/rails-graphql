@@ -1,8 +1,14 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     configure do |config|
+      # This helps to keep track of when things were cached and registered.
+      # Cached objects with mismatching versions needs to be upgraded or simply
+      # reloaded. A good way to use this is to set to the commit hash, but
+      # beware to stick to 8 characters.
+      config.version = nil
+
       # This exposes the clean path from where a GraphQL request was started.
       config.verbose_logs = true
 

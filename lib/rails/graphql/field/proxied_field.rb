@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = GraphQL Proxied Field
     #
     # Proxied fields are a soft way to copy a real field. The good part is that
@@ -78,15 +78,20 @@ module Rails # :nodoc:
         @field
       end
 
-      def disable! # :nodoc:
+      # Just ensure that when the field is proxied to an interface it does not
+      # allow disabling
+      def disable!
         super unless non_interface_proxy!('disable')
       end
 
-      def enable! # :nodoc:
+      # Just ensure that when the field is proxied to an interface it does not
+      # allow enabling
+      def enable!
         super unless non_interface_proxy!('enable')
       end
 
-      def all_directives # :nodoc:
+      # Prepend the proxy directives and then the source directives
+      def all_directives
         field.all_directives + super
       end
 
@@ -105,7 +110,7 @@ module Rails # :nodoc:
 
         alias field proxied_field
 
-        def normalize_name(value) # :nodoc:
+        def normalize_name(value)
           super unless value.blank? || non_interface_proxy!('rename')
         end
 

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Type # :nodoc:
+module Rails
+  module GraphQL
+    class Type
       # Handles an unstructured JSON data
       class Scalar::JsonScalar < Scalar
         desc 'Provides an unstructured JSON data with all its available kyes and values.'

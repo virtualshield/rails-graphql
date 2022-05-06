@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = GraphQL Request
     #
     # This class is responsible for processing a GraphQL response. It will
@@ -11,8 +11,22 @@ module Rails # :nodoc:
     #
     # ==== Options
     #
+    # * <tt>:args</tt> - The arguments of the request, same as variables
+    # * <tt>:as</tt> - The format of the output of the request, supports both
+    #   +:hash+ and +:string+ (defaults to :string)
+    # * <tt>:context</tt> - The context of the request, which can be accessed in
+    #   fields, resolvers and so as a way to customize the result
+    # * <tt>:controller</tt> - From which controller this operation is running
+    #   from, which provides view-like access to helpers and methods through the
+    #   request
     # * <tt>:namespace</tt> - Set what is the namespace used for the request
-    #   (defaults to :base).
+    #   (defaults to :base)
+    # * <tt>:operation_name</tt> - The name of the operation as a sort of label,
+    #   it can also be collected by the name of the single operation in the
+    #   request
+    # * <tt>:schema</tt> - The schema on which the request should run on. It
+    #   has higher precedence than the namesace
+    # * <tt>:variables</tt> - The variables of the request
     class Request
       extend ActiveSupport::Autoload
 
@@ -65,7 +79,7 @@ module Rails # :nodoc:
           Component.const_defined?(name) ? Component.const_get(name) : super
         end
 
-        def eager_load! # :nodoc:
+        def eager_load!
           super
 
           Request::Component.eager_load!

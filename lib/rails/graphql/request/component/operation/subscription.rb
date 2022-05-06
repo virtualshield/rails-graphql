@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Request # :nodoc:
-      class Component # :nodoc:
+module Rails
+  module GraphQL
+    class Request
+      class Component
         # = GraphQL Request Component Subscription Operation
         #
         # Handles a subscription operation inside a request.

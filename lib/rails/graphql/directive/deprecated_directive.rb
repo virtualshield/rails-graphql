@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = GraphQL Spec Deprecated Directive
     #
     # Mark fields or enum values as deprecated which will include an error
@@ -12,7 +12,7 @@ module Rails # :nodoc:
       placed_on :field_definition, :enum_value
 
       desc <<~DESC
-        Indicate deprecated portions of a GraphQL service’s schema, such as deprecated
+        Indicate deprecated portions of a GraphQL service's schema, such as deprecated
         fields on a type or deprecated enum values.
       DESC
 

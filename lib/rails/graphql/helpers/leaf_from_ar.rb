@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Helpers # :nodoc:
+module Rails
+  module GraphQL
+    module Helpers
       # Helper module allowing leaf values to be collected direct from
       # ActiveRecord. It also helps AR Adapters to define the necessary
       # methods and settings to operate with this extractor.

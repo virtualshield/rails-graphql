@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Request # :nodoc:
+module Rails
+  module GraphQL
+    class Request
       # = GraphQl Multi Query Strategy
       #
       # This is a resolution strategy to solve requests that only contain
@@ -11,7 +11,7 @@ module Rails # :nodoc:
       class Strategy::MultiQueryStrategy < Strategy
         self.priority = 10
 
-        def self.can_resolve?(request) # :nodoc:
+        def self.can_resolve?(request)
           request.operations.values.all?(&:query?)
         end
 

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # Error class tha wrappes all the other error classes
     StandardError = Class.new(::StandardError)
 
@@ -13,6 +13,9 @@ module Rails # :nodoc:
 
     # Errors that can happen related to the arguments given to a method
     ArgumentError = Class.new(DefinitionError)
+
+    # Errors that can happen when locking for definition objects, like fields
+    NotFoundError = Class.new(DefinitionError)
 
     # Errors related to the name of the objects
     NameError = Class.new(DefinitionError)

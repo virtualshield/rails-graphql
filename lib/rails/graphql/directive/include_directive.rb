@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = GraphQL Spec Include Directive
     #
     # Allow including fields only +if+ condition is true
@@ -17,7 +17,7 @@ module Rails # :nodoc:
       DESC
 
       on :attach do |source|
-        source.invalidate! unless args[:if]
+        source.skip! unless args[:if]
       end
     end
   end

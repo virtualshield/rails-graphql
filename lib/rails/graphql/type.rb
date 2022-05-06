@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = GraphQL Type
     #
     # This is the most pure object from GraphQL. Anything that a schema can
@@ -10,6 +10,7 @@ module Rails # :nodoc:
     class Type
       extend ActiveSupport::Autoload
       extend Helpers::WithDirectives
+      extend Helpers::WithGlobalID
       extend Helpers::Registerable
 
       # A direct representation of the spec types
@@ -34,6 +35,12 @@ module Rails # :nodoc:
         # defined on +Type::KINDS+
         def base_type
           nil
+        end
+
+        # This cannot be defined using alias because the +base_type+ method is
+        # overrided by children classes
+        def gid_base_class
+          base_type
         end
 
         # Check if the other type is equivalent
@@ -86,10 +93,17 @@ module Rails # :nodoc:
           (instance_methods - ref_object.instance_methods).include?(method_name)
         end
 
+        # Return the type object, instantiate if it has params
+        def find_by_gid(gid)
+          options = { namespaces: gid.namespace.to_sym, base_class: :Type }
+          klass = GraphQL.type_map.fetch!(gid.name, **options)
+          gid.instantiate? ? klass.build(**gid.params) : klass
+        end
+
         # Defines a series of question methods based on the kind
         KINDS.each { |kind| define_method("#{kind.downcase}?") { false } }
 
-        def eager_load! # :nodoc:
+        def eager_load!
           super
 
           # Due to inheritance

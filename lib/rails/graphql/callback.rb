@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = Rails GraphQL Callback
     #
     # An extra powerfull proc that can handle way more situations than the

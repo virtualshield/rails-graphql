@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Type # :nodoc:
+module Rails
+  module GraphQL
+    class Type
       # = GraphQL InputType
       #
       # Input defines a set of input fields; the input fields are either
@@ -34,6 +34,16 @@ module Rails # :nodoc:
             @gql_name = result
           end
 
+          # Transforms the given value to its representation in a JSON string
+          def as_json(value)
+            parse_arguments(value, using: :as_json, key: :gql_name)
+          end
+
+          # Transforms the given value to its representation in a Hash object
+          def to_json(value)
+            as_json(value).to_json
+          end
+
           # Check if a given value is a valid non-deserialized input
           def valid_input?(value)
             value = value.to_h if value.respond_to?(:to_h)
@@ -43,40 +53,53 @@ module Rails # :nodoc:
             value = value.transform_keys { |key| key.to_s.camelize(:lower) }
             value = build_defaults.merge(value)
 
-            return false unless value.size.eql?(fields.size)
+            return false unless value.size.eql?(fields.count)
 
             fields.all? { |item| item.valid_input?(value[item.gql_name]) }
           end
 
           # Turn the given value into an isntance of the input object
           def deserialize(value)
-            value = value.to_h if value.respond_to?(:to_h)
-            value = {} unless value.is_a?(Hash)
-            value = enabled_fields.map do |field|
-              next unless value.key?(field.gql_name) || value.key?(field.name)
-              [field.name, field.deserialize(value[field.gql_name] || value[field.name])]
-            end.compact.to_h
-
-            new(OpenStruct.new(value))
+            new(OpenStruct.new(parse_arguments(value, using: :deserialize)))
           end
+
+          alias build deserialize
 
           # Build a hash with the default values for each of the given fields
           def build_defaults
             enabled_fields.map { |field| [field.gql_name, field.default] }.to_h
           end
 
-          def inspect # :nodoc:
-            args = fields.each_value.map(&:inspect)
+          def inspect
+            return super if self.eql?(Type::Input)
+            args = fields.values.map(&:inspect)
             args = args.presence && "(#{args.join(', ')})"
-            "#<GraphQL::Input #{gql_name}#{args}>"
+
+            directives = inspect_directives
+            directives.prepend(' ') if directives.present?
+            "#<GraphQL::Input #{gql_name}#{args}#{directives}>"
           end
+
+          private
+
+            def parse_arguments(value, using:, key: :name)
+              value = value.to_h if value.respond_to?(:to_h)
+              value = {} unless value.is_a?(Hash)
+              value = value.stringify_keys
+
+              enabled_fields.each.with_object({}) do |field, hash|
+                next unless value.key?(field.gql_name) || value.key?(field.name.to_s)
+                result = value[field.gql_name] || value[field.name.to_s]
+                hash[field.public_send(key)] = field.public_send(using, result)
+              end.compact
+            end
         end
 
         attr_reader :args
         attr_writer :resource
 
         delegate :fields, to: :class
-        delegate :[], to: :args
+        delegate :to_h, :[], to: :args
 
         delegate_missing_to :resource
 
@@ -102,6 +125,18 @@ module Rails # :nodoc:
           parametrize(self)
         end
 
+        # Corretly turn all the arguments into their +as_json+ version and
+        # return a hash of them
+        def args_as_json
+          self.class.as_json(@args.to_h)
+        end
+
+        # Corretly turn all the arguments into their +to_json+ version and
+        # return a hash of them
+        def args_to_json
+          self.class.to_json(@args.to_h)
+        end
+
         # Checks if all the values provided to the input instance are valid
         def validate!(*)
           errors = []
@@ -115,6 +150,12 @@ module Rails # :nodoc:
           raise InvalidValueError, <<~MSG.squish
             Invalid value provided to #{gql_name} field: #{errors.to_sentence}.
           MSG
+        end
+
+        %i[to_global_id to_gid to_gid_param].each do |method_name|
+          define_method(method_name) do
+            self.class.public_send(method_name, args_as_json.compact)
+          end
         end
 
         private

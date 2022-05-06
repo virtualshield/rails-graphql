@@ -4,8 +4,8 @@ require 'rails/railtie'
 require 'action_controller'
 require 'action_controller/railtie'
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = Rails GraphQL Railtie
     #
     # Rails integration and configuration
@@ -64,6 +64,13 @@ module Rails # :nodoc:
         require_relative './railties/log_subscriber'
         ActiveSupport.on_load(:graphql) do
           GraphQL::LogSubscriber.backtrace_cleaner = ::Rails.backtrace_cleaner
+        end
+      end
+
+      # Add the GraphQL Global ID serializer to active job serializers
+      initializer 'graphql.global_id' do
+        ActiveSupport.on_load(:active_job) do
+          ActiveJob::Serializers.add_serializers(Rails::GraphQL::GlobalID::Serializer)
         end
       end
 

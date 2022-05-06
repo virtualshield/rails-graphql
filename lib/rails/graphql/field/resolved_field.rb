@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # This provides ways for fields to be resolved manually, by adding callbacks
     # and additional configurations in order to resolve a field value during a
     # request
@@ -84,7 +84,7 @@ module Rails # :nodoc:
           owner.is_a?(Class) && owner.try(:gql_resolver?, method_name)
         end
 
-        def proxied # :nodoc:
+        def proxied
           super if defined? super
           extend Field::ResolvedField::Proxied
         end

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Type # :nodoc:
+module Rails
+  module GraphQL
+    class Type
       # = GraphQL ObjectType
       #
       # Objects represent a list of named fields, each of which yield a value of
@@ -75,6 +75,16 @@ module Rails # :nodoc:
           # Check if the object implements the given +interface+
           def implements?(interface)
             (object = find_interface(interface)).present? && all_interfaces.include?(object)
+          end
+
+          def inspect
+            return super if self.eql?(Type::Object)
+            fields = @fields.values.map(&:inspect)
+            fields = fields.presence && " {#{fields.join(', ')}}"
+
+            directives = inspect_directives
+            directives.prepend(' ') if directives.present?
+            "#<GraphQL::Object #{gql_name}#{fields}#{directives}>"
           end
 
           private

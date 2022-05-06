@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Type # :nodoc:
+module Rails
+  module GraphQL
+    class Type
       # Uses as a float extension in order to transmit times (hours, minutes,
       # and seconds) as a numeric representation of seconds and milliseconds.
       class Scalar::TimeScalar < Scalar::FloatScalar

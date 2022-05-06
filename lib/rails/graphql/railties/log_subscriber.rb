@@ -2,13 +2,13 @@
 
 require "active_support/parameter_filter"
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = GraphQL Log Subscriber
     #
     # This is the log tracker that workds the same way as ActiveRecord when it
     # has to report on logs that a query was performed.
-    class LogSubscriber < ::ActiveSupport::LogSubscriber # :nodoc: all
+    class LogSubscriber < ::ActiveSupport::LogSubscriber
       class_attribute :backtrace_cleaner, default: ActiveSupport::BacktraceCleaner.new
 
       REMOVE_COMMENTS = /#(?=(?:[^"]*"[^"]*")*[^"]*$).*/m

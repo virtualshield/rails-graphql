@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
 
     # Based on:
     # https://github.com/rails/rails/blob/v6.0.0/activerecord/lib/active_record/
@@ -20,7 +20,7 @@ module Rails # :nodoc:
 
     type_map.register_alias 'sqlite:text',        'sqlite:string'
 
-    module SQLite # :nodoc: all
+    module SQLite
       module SourceMethods
         protected
 

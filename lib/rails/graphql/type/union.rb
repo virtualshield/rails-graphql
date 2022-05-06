@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Type # :nodoc:
+module Rails
+  module GraphQL
+    class Type
       # = GraphQL UnionType
       #
       # Unions represent an object that could be one of a list of GraphQL
@@ -73,11 +73,13 @@ module Rails # :nodoc:
             MSG
           end
 
-          def inspect # :nodoc:
+          def inspect
+            return super if self.eql?(Type::Union)
             <<~INFO.squish + '>'
               #<GraphQL::Union #{gql_name}
               (#{all_members.size})
               {#{all_members.map(&:gql_name).join(' | ')}}
+              #{inspect_directives}
             INFO
           end
         end

@@ -1,7 +1,10 @@
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Collectors # :nodoc:
-      # This collector helps building a indented string
+module Rails
+  module GraphQL
+    module Collectors
+      # = GraphQL Idented Collector
+      #
+      # This collector helps building a indented string, most used for
+      # displaying a GraphQL schema
       class IdentedCollector
         def initialize(initial = 0, size = 2, auto_eol: true)
           @size = size

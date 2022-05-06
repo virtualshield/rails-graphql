@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Request # :nodoc:
+module Rails
+  module GraphQL
+    class Request
       # = GraphQl Strategy Dynamic Instance
       #
       # When an event is call on non-object types, this class allows both
@@ -16,18 +16,18 @@ module Rails # :nodoc:
 
         private
 
-          def respond_to_missing?(method_name, include_private = false) # :nodoc:
+          def respond_to_missing?(method_name, include_private = false)
             __current_object__&.respond_to?(method_name, include_private) || super
           end
 
-          def method_missing(method_name, *args, **xargs, &block) # :nodoc:
+          def method_missing(method_name, *args, **xargs, &block)
             object = __current_object__
 
             return super unless object&.respond_to?(method_name)
             object.public_send(method_name, *args, **xargs, &block)
           end
 
-          def __current_object__ # :nodoc:
+          def __current_object__
             return unless __getobj__.instance_variable_defined?(:@event)
 
             event = __getobj__.instance_variable_get(:@event)

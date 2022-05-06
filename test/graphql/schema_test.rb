@@ -36,19 +36,21 @@ class GraphQL_SchemaTest < GraphQL::TestCase
   end
 
   def test_set_namespace
-    result = DESCRIBED_CLASS.get_reset_ivar(:@namespaces) { set_namespace('a') }
-    assert_equal(Set[:a], result)
+    result = DESCRIBED_CLASS.get_reset_ivar(:@namespace) { set_namespace('a') }
+    assert_equal(:a, result)
 
-    result = DESCRIBED_CLASS.get_reset_ivar(:@namespaces) { set_namespace('b', 'c') }
-    assert_equal(Set[:b], result)
+    result = DESCRIBED_CLASS.get_reset_ivar(:@namespace) { set_namespace('b', 'c') }
+    assert_equal(:b, result)
   end
 
   def test_namespace
-    DESCRIBED_CLASS.stub(:namespaces, []) do
+    assert_equal(:base, DESCRIBED_CLASS.namespace)
+
+    DESCRIBED_CLASS.stub_ivar(:@namespace, nil) do
       assert_equal(:base, DESCRIBED_CLASS.namespace)
     end
 
-    DESCRIBED_CLASS.stub(:namespaces, [1]) do
+    DESCRIBED_CLASS.stub_ivar(:@namespace, 1) do
       assert_equal(1, DESCRIBED_CLASS.namespace)
     end
 

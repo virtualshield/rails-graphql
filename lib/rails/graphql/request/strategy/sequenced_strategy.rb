@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Request # :nodoc:
+module Rails
+  module GraphQL
+    class Request
       # = GraphQl Sequenced Strategy
       #
       # This is the default resolution strategy, where each operation is
       # performed in sequece, and they don't relate to each other in any way.
       class Strategy::SequencedStrategy < Strategy
-        def self.can_resolve?(_) # :nodoc:
+        def self.can_resolve?(_)
           true
         end
 

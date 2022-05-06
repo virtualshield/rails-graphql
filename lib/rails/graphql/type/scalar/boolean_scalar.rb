@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Type # :nodoc:
+module Rails
+  module GraphQL
+    class Type
       # The Boolean scalar type represents +true+ or +false+.
       #
       # See http://spec.graphql.org/June2018/#sec-Boolean

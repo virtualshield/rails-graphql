@@ -128,15 +128,6 @@ class GraphQL_Type_EnumTest < GraphQL::TestCase
     end
   end
 
-  def test_all_directives
-    test_class_1 = unmapped_class(Rails::GraphQL::Type::Enum)
-    test_class_1.stub(:all_value_directives, { 'A' => Set[1, 2] }) do
-      result = test_class_1.all_directives
-      assert_kind_of(Set, result)
-      assert_equal([1, 2], result.to_a)
-    end
-  end
-
   def test_inspect
     DESCRIBED_CLASS.stub(:name, 'GraphQL::TestEnum') do
       DESCRIBED_CLASS.stub(:all_values, %w[]) do

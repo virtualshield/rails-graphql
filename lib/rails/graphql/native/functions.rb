@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Native # :nodoc:
+module Rails
+  module GraphQL
+    module Native
       def self.attach_operation(method_name, function_name, result: :string)
         attach_function(method_name, function_name, [:pointer], result)
       end

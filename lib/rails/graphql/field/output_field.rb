@@ -1,17 +1,21 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = GraphQL Output Field
     #
     # Most of the fields in a GraphQL operation are output fields or similar or
     # proxies of it. They can express both leaf and branch data. They can also
     # be the entry point of a GraphQL request.
     class Field::OutputField < Field
+      # Do not change this order because it can affect how events work. Callback
+      # must always come after events
       include Helpers::WithArguments
-      include Helpers::WithValidator
       include Helpers::WithEvents
       include Helpers::WithCallbacks
+
+      include Helpers::WithGlobalID
+      include Helpers::WithValidator
 
       include Field::AuthorizedField
       include Field::ResolvedField
@@ -46,6 +50,11 @@ module Rails # :nodoc:
         end
 
         super(*args, **xargs, &block)
+      end
+
+      # By default, output fields that belongs to a schema is a query field
+      def schema_type
+        :query
       end
 
       # Check if the arguments are also equivalent
@@ -91,7 +100,12 @@ module Rails # :nodoc:
           end
         end
 
-        def proxied # :nodoc:
+        # Properly display the owner section when the field is owned by a Schema
+        def inspect_owner
+          (owner.is_a?(Helpers::WithSchemaFields)) ? "#{owner.name}[:#{schema_type}]" : super
+        end
+
+        def proxied
           super if defined? super
           extend Field::OutputField::Proxied
         end

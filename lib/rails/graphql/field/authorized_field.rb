@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # This provides ways for fields to be authorized, giving a logical level for
     # enabling or disabling access to a field. It has a similar structure to
     # events, but has a different hierarchy of resolution
@@ -40,7 +40,7 @@ module Rails # :nodoc:
 
       protected
 
-        def proxied # :nodoc:
+        def proxied
           super if defined? super
           extend Field::AuthorizedField::Proxied
         end

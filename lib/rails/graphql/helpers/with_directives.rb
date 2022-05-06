@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Helpers # :nodoc:
+module Rails
+  module GraphQL
+    module Helpers
       # Helper module that allows other objects to hold directives during the
       # definition process
       module WithDirectives
@@ -109,6 +109,13 @@ module Rails # :nodoc:
           @directives.each(&:validate!)
           @directives.freeze
         end
+
+        protected
+
+          # Helper method to inspect the directives
+          def inspect_directives
+            all_directives.map(&:inspect).join(' ')
+          end
 
         private
 

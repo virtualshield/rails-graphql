@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Collectors # :nodoc:
+module Rails
+  module GraphQL
+    module Collectors
+      # = GraphQL JSON Collector
+      #
       # This collector helps building a JSON response using the string approach,
       # which has better performance, since all the encoding is performed up
-      # front. The drawback is that it can't return an hash.
+      # front. The drawback is that it can't return a hash.
       class JsonCollector
         def initialize(request)
           @request = request

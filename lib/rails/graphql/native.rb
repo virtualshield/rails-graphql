@@ -2,9 +2,9 @@
 
 require 'ffi'
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Native # :nodoc:
+module Rails
+  module GraphQL
+    module Native
       extend FFI::Library
 
       VERSION = GQLAst::VERSION

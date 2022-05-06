@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Type # :nodoc:
+module Rails
+  module GraphQL
+    class Type
       # Date uses a ISO 8601 string to exchange the value.
       class Scalar::DateScalar < Scalar
         desc 'The Date scalar type represents a ISO 8601 string value.'

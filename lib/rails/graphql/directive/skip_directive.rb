@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = GraphQL Spec Skip Directive
     #
     # Allow skipping fields given an +if+ condition
@@ -17,7 +17,7 @@ module Rails # :nodoc:
       DESC
 
       on :attach do |source|
-        source.invalidate! if args[:if]
+        source.skip! if args[:if]
       end
     end
   end

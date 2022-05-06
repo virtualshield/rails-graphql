@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Helpers # :nodoc:
+module Rails
+  module GraphQL
+    module Helpers
       # Helper that contains the main exceptions and validation process for a
       # value against a type
       module WithValidator
@@ -30,7 +30,7 @@ module Rails # :nodoc:
 
         private
 
-          def validate_array(value) # :nodoc:
+          def validate_array(value)
             return 'is not an array' unless value.is_a?(Enumerable)
 
             value.each_with_index do |val, idx|
@@ -39,11 +39,11 @@ module Rails # :nodoc:
             end
           end
 
-          def validate_null(value, checker = :null?) # :nodoc:
+          def validate_null(value, checker = :null?)
             'can not be null' if value.nil? && !send(checker)
           end
 
-          def validate_type(value) # :nodoc:
+          def validate_type(value)
             'is invalid' if leaf_type? && !type_klass.valid_output?(value)
           end
       end

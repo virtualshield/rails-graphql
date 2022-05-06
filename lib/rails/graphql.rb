@@ -7,6 +7,7 @@ require 'active_support/core_ext/module/attribute_accessors_per_thread'
 require 'active_support/core_ext/string/strip'
 
 require 'rails/graphql/version'
+require 'rails/graphql/uri'
 
 ActiveSupport::Inflector.inflections(:en) do |inflect|
   inflect.acronym 'GraphiQL'
@@ -14,7 +15,7 @@ ActiveSupport::Inflector.inflections(:en) do |inflect|
   inflect.acronym 'GQLAst'
 end
 
-module Rails # :nodoc:
+module Rails
   # = Rails GraphQL
   #
   # This implementation tries to be as close as the GraphQL spec as possible,
@@ -76,6 +77,7 @@ module Rails # :nodoc:
       autoload :Argument
       autoload :Directive
       autoload :Field
+      autoload :GlobalID
       autoload :Introspection
       autoload :Schema
       autoload :Type
@@ -170,7 +172,7 @@ module Rails # :nodoc:
         end
       end
 
-      def eager_load! # :nodoc:
+      def eager_load!
         super
 
         GraphQL::Request.eager_load!

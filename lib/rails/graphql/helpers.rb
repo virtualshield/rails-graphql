@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Helpers # :nodoc:
+module Rails
+  module GraphQL
+    # All helpers that allow this gem to be flexible and extendable to any other
+    # sources of objects and other gems as well
+    module Helpers
       extend ActiveSupport::Autoload
 
       autoload :AttributeDelegator
@@ -16,6 +18,7 @@ module Rails # :nodoc:
       autoload :WithDirectives
       autoload :WithEvents
       autoload :WithFields
+      autoload :WithGlobalID
       autoload :WithNamespace
       autoload :WithOwner
       autoload :WithSchemaFields

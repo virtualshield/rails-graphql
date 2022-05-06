@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Type # :nodoc:
+module Rails
+  module GraphQL
+    class Type
       # The ID scalar type represents a unique identifier, often used to
       # refetch an object or as the key for a cache. The ID type is serialized
       # in the same way as a +StringScalar+.

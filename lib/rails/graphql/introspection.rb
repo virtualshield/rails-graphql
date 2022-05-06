@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # Module related to some methods regarding the introspection of a schema
     module Introspection
-      module ClassMethods # :nodoc: all
+      module ClassMethods
         def inherited(subclass)
           super if defined? super
 
@@ -21,7 +21,7 @@ module Rails # :nodoc:
         end
       end
 
-      def self.extended(other) # :nodoc:
+      def self.extended(other)
         other.extend(Introspection::ClassMethods)
       end
 

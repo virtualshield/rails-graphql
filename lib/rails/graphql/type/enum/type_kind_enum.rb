@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Type # :nodoc:
+module Rails
+  module GraphQL
+    class Type
       # Bigint basically removes the limit of the value, but it serializes as
       # a string so it won't go against the spec
       class Enum::TypeKindEnum < Enum

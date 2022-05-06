@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = GraphQL Argument
     #
     # This represents an item from the ArgumentsDefinition, which was supposed
@@ -198,7 +198,7 @@ module Rails # :nodoc:
 
       alias_method :&, :+
 
-      def inspect # :nodoc:
+      def inspect
         result = "#{name}: "
         result += '[' if array?
         result += type_klass.gql_name

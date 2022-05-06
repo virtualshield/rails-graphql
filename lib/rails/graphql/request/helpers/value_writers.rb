@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    class Request # :nodoc:
+module Rails
+  module GraphQL
+    class Request
       # A set of helper methods to write a value to the response
       module ValueWriters
         # TODO: Maybe move this to a setting so it allow extensions

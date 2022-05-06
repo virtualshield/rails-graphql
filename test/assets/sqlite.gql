@@ -4,8 +4,8 @@ schema {
 }
 
 """
-The Bigint scalar type represents a signed numeric non‐fractional value.
-It can go beyond the Int 32‐bit limit, but it's exchanged as a string.
+The Bigint scalar type represents a signed numeric non-fractional value.
+It can go beyond the Int 32-bit limit, but it's exchanged as a string.
 """
 scalar Bigint
 
@@ -327,8 +327,8 @@ type __InputValue {
 }
 
 """
-A GraphQL service’s collective type system capabilities are referred
-to as that service’s "schema". A schema is defined in terms of the
+A GraphQL service's collective type system capabilities are referred
+to as that service's "schema". A schema is defined in terms of the
 types and directives it supports as well as the root operation types
 for each kind of operation: query, mutation, and subscription; this
 determines the place in the type system where those operations begin.
@@ -395,7 +395,7 @@ type __Type {
 }
 
 """
-Indicate deprecated portions of a GraphQL service’s schema, such as deprecated
+Indicate deprecated portions of a GraphQL service's schema, such as deprecated
 fields on a type or deprecated enum values.
 """
 directive @deprecated(

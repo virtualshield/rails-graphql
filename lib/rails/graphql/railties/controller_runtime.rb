@@ -2,8 +2,8 @@
 
 require 'active_support/core_ext/module/attr_internal'
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = GraphQL Controller Runtime
     #
     # Tool that calculates the runtime of a GraphQL operation. This works
@@ -12,7 +12,7 @@ module Rails # :nodoc:
     module ControllerRuntime
       extend ActiveSupport::Concern
 
-      module ClassMethods # :nodoc: all
+      module ClassMethods
         def log_process_action(payload)
           messages, gql_runtime = super, payload[:gql_runtime]
           messages << format('GraphQL: %.1fms', gql_runtime.to_f) if gql_runtime

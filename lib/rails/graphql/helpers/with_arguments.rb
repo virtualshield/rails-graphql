@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Helpers # :nodoc:
+module Rails
+  module GraphQL
+    module Helpers
       # Helper module that allows other objects to hold arguments
       module WithArguments
         def self.extended(other)
@@ -17,7 +17,7 @@ module Rails # :nodoc:
           end
         end
 
-        module ClassMethods # :nodoc: all
+        module ClassMethods
           def inherited(subclass)
             super if defined? super
             return if arguments.empty?

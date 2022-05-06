@@ -3,8 +3,8 @@
 require 'arel/visitors/visitor'
 
 # rubocop:disable Naming/MethodParameterName, Naming/MethodName
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = GraphQL ToGQL
     #
     # This class can turn any class related to GraphQL into its GraphQL string
@@ -344,7 +344,7 @@ module Rails # :nodoc:
           collector << ' = ' << o.to_json(o.default) if o.try(:default_value?)
         end
 
-        def visit(object, collector = nil) # :nodoc:
+        def visit(object, collector = nil)
           object_class = object.is_a?(Module) ? object : object.class
           dispatch_method = dispatch[object_class]
           if collector

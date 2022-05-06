@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # = GraphQL Field
     #
     # A field has multiple purposes, which is defined by the specific subclass
@@ -49,8 +49,11 @@ module Rails # :nodoc:
 
       attr_reader :name, :gql_name, :owner
 
-      delegate :input_type?, :output_type?, :leaf_type?, :proxy?, :mutation?, to: :class
+      alias gid_base_class owner
+
       delegate :namespaces, to: :owner
+      delegate :input_type?, :output_type?, :leaf_type?, :proxy?,
+        :mutation?, :subscription?, to: :class
 
       class << self
         # A small shared helper method that allows field information to be
@@ -89,6 +92,11 @@ module Rails # :nodoc:
         def mutation?
           false
         end
+
+        # Checks if the field is associated with a subscription
+        def subscription?
+          false
+        end
       end
 
       def initialize(name, owner:, **xargs, &block)
@@ -110,7 +118,7 @@ module Rails # :nodoc:
         configure(&block) if block.present?
       end
 
-      def initialize_copy(*) # :nodoc:
+      def initialize_copy(*)
         super
 
         @owner = nil
@@ -132,22 +140,39 @@ module Rails # :nodoc:
         Field::ScopedConfig.new(self, block.binding.receiver).instance_exec(&block)
       end
 
+      # Return the owner as the single item of the list
+      def all_owners
+        [owner]
+      end
+
       # Returns the name of the method used to retrieve the information
       def method_name
         defined?(@method_name) ? @method_name : @name
       end
 
-      # Check if the other field is equivalent
-      def =~(other)
-        other.is_a?(GraphQL::Field) &&
-          other.array? == array? &&
-          (other.null? == null? || other.null? && !null?) &&
-          (other.nullable? == nullable? || other.nullable? && !nullable?)
+      # Return the description of the argument
+      def description
+        @desc
       end
 
-      # Return the owner as the single item of the list
-      def all_owners
-        [owner]
+      # Mark the field as globally enabled
+      def enable!
+        @enabled = true
+      end
+
+      # Mark the field as globally disabled
+      def disable!
+        @enabled = false
+      end
+
+      # Update the null value
+      def required!
+        @null = false
+      end
+
+      # Update the nullable value
+      def required_items!
+        @nullable = false
       end
 
       # Checks if the argument can be null
@@ -173,21 +198,6 @@ module Rails # :nodoc:
       # Check if tre field is disabled
       def disabled?
         !enabled?
-      end
-
-      # Mark the field as globally enabled
-      def enable!
-        @enabled = true
-      end
-
-      # Mark the field as globally disabled
-      def disable!
-        @enabled = false
-      end
-
-      # Return the description of the argument
-      def description
-        @desc
       end
 
       # Checks if a description was provided
@@ -247,16 +257,6 @@ module Rails # :nodoc:
         MSG
       end
 
-      # Update the null value
-      def required!
-        @null = false
-      end
-
-      # Update the nullable value
-      def required_items!
-        @nullable = false
-      end
-
       # Create a proxy of the current field
       def to_proxy(*args, **xargs, &block)
         proxy = self.class.allocate
@@ -266,7 +266,15 @@ module Rails # :nodoc:
         proxy
       end
 
-      def inspect # :nodoc:
+      # Check if the other field is equivalent
+      def =~(other)
+        other.is_a?(GraphQL::Field) &&
+          other.array? == array? &&
+          (other.null? == null? || other.null? && !null?) &&
+          (other.nullable? == nullable? || other.nullable? && !nullable?)
+      end
+
+      def inspect
         <<~INSPECT.squish + '>'
           #<#{self.class.name}
           #{inspect_owner}
@@ -302,11 +310,6 @@ module Rails # :nodoc:
           elsif @name.start_with?('_')
             @gql_name.prepend('_')
           end
-        end
-
-        # Helper method to inspect the directives
-        def inspect_directives
-          all_directives.map(&:inspect)
         end
 
         # Show the name of the owner of the object for inspection

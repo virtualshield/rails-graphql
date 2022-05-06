@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Native # :nodoc:
-      class Location < FFI::Struct # :nodoc:
+module Rails
+  module GraphQL
+    module Native
+      # Helper class to get the line and column information of a node
+      class Location < FFI::Struct
         layout(
           beginLine: :uint,
           beginColumn: :uint,

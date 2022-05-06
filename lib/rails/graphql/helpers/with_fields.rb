@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Helpers # :nodoc:
+module Rails
+  module GraphQL
+    module Helpers
       # Helper module that allows other objects to hold fields during the
       # definition process. Works very similar to Arguments, but it's more
       # flexible, since the type of the fields can be dynamic defined by the
@@ -12,7 +12,7 @@ module Rails # :nodoc:
       # related to the base type, but it's closer associated with the strategy
       # used to handle them.
       module WithFields
-        module ClassMethods # :nodoc: all
+        module ClassMethods
           def inherited(subclass)
             super if defined? super
             return unless defined?(@fields)
@@ -20,7 +20,7 @@ module Rails # :nodoc:
           end
         end
 
-        def self.extended(other) # :nodoc:
+        def self.extended(other)
           other.extend(WithFields::ClassMethods)
           other.define_singleton_method(:fields) { @fields ||= Concurrent::Map.new }
           other.class_attribute(:field_type, instance_writer: false)
@@ -104,19 +104,19 @@ module Rails # :nodoc:
 
         # If the field is not found it will raise an exception
         def find_field!(object)
-          find_field(object) || raise(::ArgumentError, <<~MSG.squish)
+          find_field(object) || raise(NotFoundError, <<~MSG.squish)
             The #{object.inspect} field is not defined yet.
           MSG
         end
 
         # Get the list of GraphQL names of all the fields difined
         def field_names(enabled_only = true)
-          (enabled_only ? enabled_fields : fields.each_value).map(&:gql_name).compact
+          (enabled_only ? enabled_fields : lazy_each_field).map(&:gql_name).eager
         end
 
         # Return a lazy enumerator for enabled fields
         def enabled_fields
-          fields.values.select(&:enabled?)
+          lazy_each_field.select(&:enabled?)
         end
 
         # Validate all the fields to make sure the definition is valid
@@ -128,12 +128,23 @@ module Rails # :nodoc:
           fields.each_value(&:validate!)
         end
 
+        # Find a specific field using its id as +gql_name.type+
+        def find_by_gid(gid)
+          find_field!(gid.name)
+        end
+
         protected
 
           # A little helper to define arguments using the :arguments key
           def arg(*args, **xargs, &block)
             xargs[:owner] = self
             GraphQL::Argument.new(*args, **xargs, &block)
+          end
+
+        private
+
+          def lazy_each_field
+            fields.each_pair.lazy.each_entry.map(&:last)
           end
       end
     end

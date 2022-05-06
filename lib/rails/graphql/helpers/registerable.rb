@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Helpers # :nodoc:
+module Rails
+  module GraphQL
+    module Helpers
       # Helper module responsible for name stuff and also responsible for
       # registering the objects to the type map, which also checks for the
       # uniqueness of the name of things.
@@ -26,7 +26,7 @@ module Rails # :nodoc:
           other.class_attribute :description, instance_writer: false
         end
 
-        module ClassMethods # :nodoc: all
+        module ClassMethods
           # Here we wait for the class to be fully loaded so that we can
           # correctly trigger the registration
           def inherited(subclass)

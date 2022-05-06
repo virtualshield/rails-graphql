@@ -1,6 +1,10 @@
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
-    module Collectors # :nodoc:
+# frozen_string_literal: true
+
+module Rails
+  module GraphQL
+    module Collectors
+      # = GraphQL Hash Collector
+      #
       # This collector helps building a JSON response using the hash approach,
       # where the value is kept as an hash and later turn into a string
       class HashCollector
