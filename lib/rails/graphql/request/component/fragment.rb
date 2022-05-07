@@ -86,12 +86,12 @@ module Rails
 
           # Check if the field was assigned correctly to an output field
           def check_assignment!
-            raise ExecutionError, <<~MSG.squish unless type_klass.output_type?
+            raise ExecutionError, (+<<~MSG).squish unless type_klass.output_type?
               Unable to assing #{type_klass.gql_name} to "#{name}" fragment because
               it is not a output type.
             MSG
 
-            raise ExecutionError, <<~MSG.squish if type_klass.leaf_type?
+            raise ExecutionError, (+<<~MSG).squish if type_klass.leaf_type?
               Unable to assing #{type_klass.gql_name} to "#{name}" fragment because
               a "#{type_klass.kind}" type can not be the source of a fragmnet.
             MSG
@@ -107,7 +107,7 @@ module Rails
             other_node = request.fragments[name].instance_variable_get(:@node)
             location = GraphQL::Native.get_location(other_node)
 
-            request.report_node_error(<<~MSG.squish, @node)
+            request.report_node_error((+<<~MSG).squish, @node)
               Duplicated fragment named "#{name}" defined on
               line #{location.begin_line}:#{location.begin_column}
             MSG

@@ -90,7 +90,7 @@ module URI
 
     # Implement #to_s to avoid no implicit conversion of nil into string when path is nil
     def to_s
-      "gql://#{host}#{path}#{'?' + query if query}"
+      +"gql://#{host}#{path}#{'?' + query if query}"
     end
 
     protected
@@ -123,7 +123,7 @@ module URI
 
       def check_scheme(scheme)
         return super if scheme == 'gql'
-        raise URI::BadURIError, "Not a gql:// URI scheme: #{inspect}"
+        raise URI::BadURIError, +"Not a gql:// URI scheme: #{inspect}"
       end
 
       def set_components(path, validate = false)
@@ -145,13 +145,13 @@ module URI
       end
 
       def validate_component(component)
-        raise URI::InvalidComponentError, <<~MSG.chomp if component.blank?
+        raise URI::InvalidComponentError, (+<<~MSG).chomp if component.blank?
           Expected a URI like gql://base/Directive/deprecated: #{inspect}.
         MSG
       end
 
       def validate_object_name(name, class_name)
-        raise URI::InvalidComponentError, <<~MSG.squish if name.blank?
+        raise URI::InvalidComponentError, (+<<~MSG).squish if name.blank?
           Unable to create a GraphQL ID for #{class_name} without an object name.
         MSG
       end

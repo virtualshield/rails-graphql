@@ -30,7 +30,7 @@ The values are exchange as string.
 """
 scalar Decimal
 
-"The Float scalar type represents signed double‐precision fractional values."
+"The Float scalar type represents signed double-precision fractional values."
 scalar Float
 
 """
@@ -46,7 +46,7 @@ scalar Int
 scalar Json
 
 """
-The String scalar type represents textual data, represented as UTF‐8 character
+The String scalar type represents textual data, represented as UTF-8 character
 sequences.
 """
 scalar String

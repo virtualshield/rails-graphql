@@ -40,25 +40,25 @@ module Rails
           xargs[:owner] = self
           object = field_type.new(name, *args, **xargs, &block)
 
-          raise DuplicatedError, <<~MSG.squish if field?(object.name)
+          raise DuplicatedError, (+<<~MSG).squish if field?(object.name)
             The #{name.inspect} field is already defined and can't be redefined.
           MSG
 
           fields[object.name] = object
         rescue DefinitionError => e
-          raise e.class, e.message + "\n  Defined at: #{caller(2)[0]}"
+          raise e.class, +"#{e.message}\n  Defined at: #{caller(2)[0]}"
         end
 
         # Add a new field to the list but use a proxy instead of a hard copy of
         # a given +field+
         def proxy_field(field, *args, **xargs, &block)
-          raise ArgumentError, <<~MSG.squish unless field.is_a?(GraphQL::Field)
+          raise ArgumentError, (+<<~MSG).squish unless field.is_a?(GraphQL::Field)
             The #{field.class.name} is not a valid field.
           MSG
 
           xargs[:owner] = self
           object = field.to_proxy(*args, **xargs, &block)
-          raise DuplicatedError, <<~MSG.squish if field?(object.name)
+          raise DuplicatedError, (+<<~MSG).squish if field?(object.name)
             The #{field.name.inspect} field is already defined and can't be replaced.
           MSG
 
@@ -104,7 +104,7 @@ module Rails
 
         # If the field is not found it will raise an exception
         def find_field!(object)
-          find_field(object) || raise(NotFoundError, <<~MSG.squish)
+          find_field(object) || raise(NotFoundError, (+<<~MSG).squish)
             The #{object.inspect} field is not defined yet.
           MSG
         end

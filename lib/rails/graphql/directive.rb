@@ -97,11 +97,11 @@ module Rails
         end
 
         def inspect
-          return '#<GraphQL::Directive>' if eql?(GraphQL::Directive)
+          return super if eql?(GraphQL::Directive)
 
           args = arguments.each_value.map(&:inspect)
           args = args.presence && "(#{args.join(', ')})"
-          "#<GraphQL::Directive @#{gql_name}#{args}>"
+          +"#<GraphQL::Directive @#{gql_name}#{args}>"
         end
 
         private
@@ -112,7 +112,7 @@ module Rails
             list.map! { |item| item.to_s.underscore.to_sym }
 
             invalid = list - VALID_LOCATIONS
-            raise ArgumentError, <<~MSG.squish unless invalid.empty?
+            raise ArgumentError, (+<<~MSG).squish unless invalid.empty?
               Invalid locations for @#{gql_name}: #{invalid.to_sentence}.
             MSG
           end
@@ -187,7 +187,7 @@ module Rails
 
       # Once the directive is correctly prepared, we need to assign the owner
       def assing_owner!(owner)
-        raise ArgumentError, <<~MSG.squish if defined?(@owner)
+        raise ArgumentError, (+<<~MSG).squish if defined?(@owner)
           Owner already assigned for @#{gql_name} directive.
         MSG
 
@@ -223,22 +223,22 @@ module Rails
         invalid = all_arguments.reject { |name, arg| arg.valid?(@args[name]) }
         return if invalid.empty?
 
-        invalid = invalid.map { |name, _| <<~MSG.chomp }
+        invalid = invalid.map { |name, _| (+<<~MSG).chomp }
           invalid value "#{@args[name].inspect}" for #{name} argument
         MSG
 
-        raise ArgumentError, <<~MSG.squish
+        raise ArgumentError, (+<<~MSG).squish
           Invalid usage of @#{gql_name} directive: #{invalid.to_sentence}.
         MSG
       end
 
       def inspect
         args = all_arguments.map do |name, arg|
-          "#{arg.gql_name}: #{@args[name].inspect}" unless @args[name].nil?
+          +"#{arg.gql_name}: #{@args[name].inspect}" unless @args[name].nil?
         end.compact
 
-        args = args.presence && "(#{args.join(', ')})"
-        "@#{gql_name}#{args}"
+        args = args.presence && +"(#{args.join(', ')})"
+        +"@#{gql_name}#{args}"
       end
 
       %i[to_global_id to_gid to_gid_param].each do |method_name|

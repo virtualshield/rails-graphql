@@ -53,7 +53,7 @@ module Rails
             fields.each do |name, field|
               defined = object.field?(name)
               invalid = defined && object.fields[name] !~ field
-              raise ArgumentError, <<~MSG.squish if invalid
+              raise ArgumentError, (+<<~MSG).squish if invalid
                 The "#{object.gql_name}" object already has a "#{field.gql_name}" field and it
                 is not equivalent to the one defined on the "#{gql_name}" interface.
               MSG
@@ -67,11 +67,11 @@ module Rails
           def inspect
             return super if self.eql?(Type::Interface)
             fields = @fields.values.map(&:inspect)
-            fields = fields.presence && " {#{fields.join(', ')}}"
+            fields = fields.presence && +" {#{fields.join(', ')}}"
 
             directives = inspect_directives
             directives.prepend(' ') if directives.present?
-            "#<GraphQL::Interface #{gql_name}#{fields}#{directives}>"
+            +"#<GraphQL::Interface #{gql_name}#{fields}#{directives}>"
           end
 
           # Check if the given object is properly implementing this interface

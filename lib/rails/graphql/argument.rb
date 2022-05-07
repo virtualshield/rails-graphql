@@ -174,19 +174,19 @@ module Rails
       def validate!(*)
         super if defined? super
 
-        raise NameError, <<~MSG.squish if gql_name.start_with?('__')
+        raise NameError, (+<<~MSG).squish if gql_name.start_with?('__')
           The name "#{gql_name}" is invalid. Argument names cannot start with "__".
         MSG
 
-        raise ArgumentError, <<~MSG.squish unless type_klass.is_a?(Module)
+        raise ArgumentError, (+<<~MSG).squish unless type_klass.is_a?(Module)
           Unable to find the "#{type.inspect}" input type on GraphQL context.
         MSG
 
-        raise ArgumentError, <<~MSG.squish unless type_klass.input_type?
+        raise ArgumentError, (+<<~MSG).squish unless type_klass.input_type?
           The "#{type_klass.gql_name}" is not a valid input type.
         MSG
 
-        raise ArgumentError, <<~MSG.squish unless default.nil? || valid?(default)
+        raise ArgumentError, (+<<~MSG).squish unless default.nil? || valid?(default)
           The given default value "#{default.inspect}" is not valid for this argument.
         MSG
       end
@@ -199,13 +199,13 @@ module Rails
       alias_method :&, :+
 
       def inspect
-        result = "#{name}: "
-        result += '[' if array?
-        result += type_klass.gql_name
-        result += '!' if array? && !nullable?
-        result += ']' if array?
-        result += '!' unless null?
-        result += " = #{to_hash.inspect}" if default_value?
+        result = +"#{name}: "
+        result << '[' if array?
+        result << type_klass.gql_name
+        result << '!' if array? && !nullable?
+        result << ']' if array?
+        result << '!' unless null?
+        result << " = #{to_hash.inspect}" if default_value?
         result
       end
 

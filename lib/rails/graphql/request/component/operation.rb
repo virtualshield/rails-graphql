@@ -96,7 +96,7 @@ module Rails
 
         # A fast way to access the correct display name for log or errors
         def log_source
-          @log_source ||= name.blank? ? type : "#{name} #{type}"
+          @log_source ||= name.blank? ? type : +"#{name} #{type}"
         end
 
         protected
@@ -134,7 +134,7 @@ module Rails
 
           # Name used for debug purposes
           def display_name
-            @display_name ||= "#{type.to_s.titlecase} #{name.presence || '__default__'}"
+            @display_name ||= +"#{type.to_s.titlecase} #{name.presence || '__default__'}"
           end
 
           # Add an error for each not used variable and then clean up some data

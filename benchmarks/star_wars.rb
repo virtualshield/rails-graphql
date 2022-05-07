@@ -55,9 +55,10 @@ require_relative 'star_wars/original_gem'
 
 require 'rails-graphql'
 require_relative 'star_wars/new_gem'
+
 Rails::GraphQL.eager_load!
-Rails::GraphQL::Collectors::JsonCollector
-Rails::GraphQL::Core.type_map.send(:register_pending!)
+Rails::GraphQL.type_map.send(:register_pending!)
+Rails::GraphQL.config.logger = ActiveSupport::TaggedLogging.new(Logger.new('/dev/null'))
 
 Benchmark.ips do |x|
   x.report('Original gem') { StarWars.execute(QUERY, ARGS, display: DISPLAY) }

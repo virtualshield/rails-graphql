@@ -11,7 +11,7 @@ module Rails
         self.spec_object = true
 
         desc <<~DESC
-          The String scalar type represents textual data, represented as UTF‐8 character
+          The String scalar type represents textual data, represented as UTF-8 character
           sequences.
         DESC
 

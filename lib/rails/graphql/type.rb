@@ -101,7 +101,7 @@ module Rails
         end
 
         # Defines a series of question methods based on the kind
-        KINDS.each { |kind| define_method("#{kind.downcase}?") { false } }
+        KINDS.each { |kind| define_method(:"#{kind.downcase}?") { false } }
 
         def eager_load!
           super
@@ -138,7 +138,7 @@ module Rails
             if subclass.superclass.eql?(GraphQL::Type)
               subclass.redefine_singleton_method(:base_type) { subclass }
 
-              question_method = "#{subclass.name.demodulize.underscore}?"
+              question_method = :"#{subclass.name.demodulize.underscore}?"
               subclass.redefine_singleton_method(question_method) { true }
 
               subclass.spec_object = true

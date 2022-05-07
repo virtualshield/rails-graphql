@@ -11,7 +11,7 @@ module Rails
       class Scalar::FloatScalar < Scalar
         self.spec_object = true
 
-        desc 'The Float scalar type represents signed double‐precision fractional values.'
+        desc 'The Float scalar type represents signed double-precision fractional values.'
 
         class << self
           def valid_input?(value)

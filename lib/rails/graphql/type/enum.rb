@@ -85,12 +85,12 @@ module Rails
           #   (defaults to false).
           def add(value, desc: nil, directives: nil, deprecated: false)
             value = value&.to_s
-            raise ArgumentError, <<~MSG.squish unless value.is_a?(String) && value.present?
+            raise ArgumentError, (+<<~MSG).squish unless value.is_a?(String) && value.present?
               The "#{value}" is invalid.
             MSG
 
             value = value.upcase
-            raise ArgumentError, <<~MSG.squish if all_values.include?(value)
+            raise ArgumentError, (+<<~MSG).squish if all_values.include?(value)
               The "#{value}" is already defined for #{gql_name} enum.
             MSG
 
@@ -111,7 +111,7 @@ module Rails
 
           # Check if a given +value+ is using a +directive+
           def value_using?(value, directive)
-            raise ArgumentError, <<~MSG.squish unless directive < GraphQL::Directive
+            raise ArgumentError, (+<<~MSG).squish unless directive < GraphQL::Directive
               The provided #{item_or_symbol.inspect} is not a valid directive.
             MSG
 
@@ -131,7 +131,7 @@ module Rails
 
           def inspect
             return super if self.eql?(Type::Enum)
-            <<~INFO.squish + '>'
+            (+<<~INFO).squish << '>'
               #<GraphQL::Enum #{gql_name}
               (#{all_values.size})
               {#{all_values.to_a.join(' | ')}}

@@ -80,11 +80,11 @@ module Rails
           def inspect
             return super if self.eql?(Type::Object)
             fields = @fields.values.map(&:inspect)
-            fields = fields.presence && " {#{fields.join(', ')}}"
+            fields = fields.presence && +" {#{fields.join(', ')}}"
 
             directives = inspect_directives
             directives.prepend(' ') if directives.present?
-            "#<GraphQL::Object #{gql_name}#{fields}#{directives}>"
+            +"#<GraphQL::Object #{gql_name}#{fields}#{directives}>"
           end
 
           private
@@ -104,7 +104,7 @@ module Rails
               ) unless object.is_a?(Module) && object < Type::Interface
 
               return object if object.try(:interface?)
-              raise ArgumentError, <<~MSG.squish
+              raise ArgumentError, (+<<~MSG).squish
                 The given "#{object}" is not a valid interface.
               MSG
             end

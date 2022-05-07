@@ -100,7 +100,7 @@ module Rails
         result = fetch(*args, **xargs)
         return result unless result.nil?
 
-        raise NotFoundError, <<~MSG.squish if base_classes[base_class]
+        raise NotFoundError, (+<<~MSG).squish if base_classes[base_class]
           Unable to find #{args.first.inspect} #{base_class} object.
         MSG
 
@@ -201,7 +201,7 @@ module Rails
       # method to return that item, or a key from the same namespace and base
       # class
       def register_alias(name_or_key, key = nil, **xargs, &block)
-        raise ArgumentError, <<~MSG.squish unless key.nil? ^ block.nil?
+        raise ArgumentError, (+<<~MSG).squish unless key.nil? ^ block.nil?
           Provide either a key or a block in order to register an alias.
         MSG
 
@@ -266,7 +266,7 @@ module Rails
       end
 
       def inspect
-        <<~INFO.squish + '>'
+        (+<<~INFO).squish << '>'
           #<Rails::GraphQL::TypeMap [index]
             @namespaces=#{@index.size}
             @base_classes=#{base_classes.size}
@@ -319,7 +319,7 @@ module Rails
 
           validate.compact.each(&:call)
         rescue DefinitionError => e
-          raise e.class, e.message + "\n  Defined at: #{source}"
+          raise e.class, +"#{e.message}\n  Defined at: #{source}"
         ensure
           @pending += keep unless keep.nil?
         end
@@ -345,7 +345,7 @@ module Rails
 
         # Make sure that the given key is a valid base class key
         def ensure_base_class!(key)
-          raise ArgumentError, <<~MSG.squish unless base_classes.keys.include?(key)
+          raise ArgumentError, (+<<~MSG).squish unless base_classes.keys.include?(key)
             Unsupported base class "#{key.inspect}".
           MSG
         end

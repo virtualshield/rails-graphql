@@ -93,7 +93,7 @@ module Rails
               klass = klass.superclass
             end
 
-            message = !block.nil? ? block.call(klass) : <<~MSG.squish
+            message = !block.nil? ? block.call(klass) : (+<<~MSG).squish
               The "#{klass.name}" is not a subclass of #{base_class.name}.
             MSG
 

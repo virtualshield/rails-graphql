@@ -29,7 +29,7 @@ module Rails
 
         def initialize(*args, arguments: nil, **xargs, &block)
           @arguments = Array.wrap(arguments).map do |object|
-            raise ArgumentError, <<~MSG.squish unless object.is_a?(Argument)
+            raise ArgumentError, (+<<~MSG).squish unless object.is_a?(Argument)
               The given "#{object.inspect}" is not a valid Argument object.
             MSG
 
@@ -60,29 +60,29 @@ module Rails
           xargs[:owner] = self
           object = GraphQL::Argument.new(name, base_type, **xargs)
 
-          raise DuplicatedError, <<~MSG.squish if has_argument?(object.name)
+          raise DuplicatedError, (+<<~MSG).squish if has_argument?(object.name)
             The #{name.inspect} argument is already defined and can't be redefined.
           MSG
 
           (@arguments ||= {})[object.name] = object
         rescue DefinitionError => e
-          raise e.class, e.message + "\n  Defined at: #{caller(2)[0]}"
+          raise e.class, +"#{e.message}\n  Defined at: #{caller(2)[0]}"
         end
 
         # Since arguments' owner are more flexible, their instances can be
         # directly associated to objects that have argument
         def ref_argument(object)
-          raise ArgumentError, <<~MSG.squish unless object.is_a?(GraphQL::Argument)
+          raise ArgumentError, (+<<~MSG).squish unless object.is_a?(GraphQL::Argument)
             The given object #{object.inspect} is not a valid argument.
           MSG
 
-          raise DuplicatedError, <<~MSG.squish if has_argument?(object.name)
+          raise DuplicatedError, (+<<~MSG).squish if has_argument?(object.name)
             The #{object.name.inspect} argument is already defined and can't be redefined.
           MSG
 
           (@arguments ||= {})[object.name] = object
         rescue DefinitionError => e
-          raise e.class, e.message + "\n  Defined at: #{caller(2)[0]}"
+          raise e.class, +"#{e.message}\n  Defined at: #{caller(2)[0]}"
         end
 
         # A short cute for arguments named and typed as id
@@ -111,7 +111,7 @@ module Rails
           # Show all the arguments as their inspect version
           def inspect_arguments
             args = all_arguments.each_value.map(&:inspect)
-            args.presence && "(#{args.join(', ')})"
+            args.presence && +"(#{args.join(', ')})"
           end
 
           # Check the equivalency of arguments

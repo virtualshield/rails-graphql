@@ -7,8 +7,6 @@ module Rails
       # +GlobalID::Identification+, but instead of things being found by the
       # class that they are, it uses owners and base classes.
       module WithGlobalID
-        ID_SEPARATOR = '.'
-
         def to_global_id(options = nil)  # :nodoc:
           GlobalID.create(self, options)
         end

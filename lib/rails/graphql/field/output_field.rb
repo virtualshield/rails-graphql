@@ -83,7 +83,7 @@ module Rails
       def validate!(*)
         super if defined? super
 
-        raise ArgumentError, <<~MSG.squish unless type_klass.output_type?
+        raise ArgumentError, (+<<~MSG).squish unless type_klass.output_type?
           The "#{type_klass.gql_name}" is not a valid output type.
         MSG
       end
@@ -102,7 +102,7 @@ module Rails
 
         # Properly display the owner section when the field is owned by a Schema
         def inspect_owner
-          (owner.is_a?(Helpers::WithSchemaFields)) ? "#{owner.name}[:#{schema_type}]" : super
+          owner.is_a?(Helpers::WithSchemaFields) ? +"#{owner.name}[:#{schema_type}]" : super
         end
 
         def proxied

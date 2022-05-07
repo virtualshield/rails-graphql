@@ -358,7 +358,7 @@ module Rails
             respond_to?(dispatch[klass], true)
           end
 
-          raise(::TypeError, "Cannot visit #{object_class}") unless superklass
+          raise(::TypeError, +"Cannot visit #{object_class}") unless superklass
           dispatch[object_class] = dispatch[superklass]
           retry
         end

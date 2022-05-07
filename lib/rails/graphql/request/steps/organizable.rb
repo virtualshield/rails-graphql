@@ -56,7 +56,6 @@ module Rails
               item.validate!
             end unless data[:variables].blank?
 
-            error_format =
             args = collect_arguments(self, request.args, var_access: false)
 
             @variables = args.freeze
@@ -75,7 +74,6 @@ module Rails
               args[data[:name]] = data[:value] if variable.nil? || variable.null?
             end unless data[:arguments].blank?
 
-            error_format =
             args = collect_arguments(self, args)
 
             @arguments = request.build(Request::Arguments, args).freeze

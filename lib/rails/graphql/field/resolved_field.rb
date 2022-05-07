@@ -71,7 +71,7 @@ module Rails
           callback.block.is_a?(Proc) || callable?(callback.block)
         end
 
-        raise ArgumentError, <<~MSG.squish if invalid.present?
+        raise ArgumentError, (+<<~MSG).squish if invalid.present?
           The "#{owner.name}" class does not define the following methods needed
           for performing hooks: #{invalid.map(&:block).to_sentence}.
         MSG

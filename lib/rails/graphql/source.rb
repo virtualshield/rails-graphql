@@ -115,7 +115,7 @@ module Rails
         # Find a source for a given object. If none is found, then raise an
         # exception
         def find_for!(object)
-          find_for(object) || raise(::ArgumentError, <<~MSG.squish)
+          find_for(object) || raise(::ArgumentError, (+<<~MSG).squish)
             Unable to find a source for "#{object.name}".
           MSG
         end
@@ -158,8 +158,8 @@ module Rails
         def attach_fields!
           refresh_schemas!
           schemas.each_value do |schema|
-            Helpers::WithSchemaFields::SCHEMA_FIELD_TYPES.keys.each do |type|
-              list = public_send("#{type}_fields")
+            Helpers::WithSchemaFields::SCHEMA_FIELD_TYPES.each_key do |type|
+              list = public_send(:"#{type}_fields")
               next if list.empty?
 
               list.each_value do |field|
@@ -252,12 +252,12 @@ module Rails
           # Use the +unshift: true+ to add the hook at the beginning of the
           # list, which will then be the last to run
           def step(hook_name, unshift: false, &block)
-            raise ArgumentError, <<~MSG.squish unless hook_names.include?(hook_name.to_sym)
+            raise ArgumentError, (+<<~MSG).squish unless hook_names.include?(hook_name.to_sym)
               The #{hook_name.inspect} is not a valid hook method.
             MSG
 
             if built?
-              catch(:skip) { send("run_#{hook_name}_hooks", block) }
+              catch(:skip) { send(:"run_#{hook_name}_hooks", block) }
             else
               hooks[hook_name.to_sym].public_send(unshift ? :unshift : :push, block)
             end
@@ -341,7 +341,7 @@ module Rails
           def build!
             return if built?
 
-            raise DefinitionError, <<~MSG.squish if abstract
+            raise DefinitionError, (+<<~MSG).squish if abstract
               Abstract source #{name} cannot be built.
             MSG
 
@@ -350,7 +350,7 @@ module Rails
             catch(:done) do
               hook_names.each do |hook_name|
                 break if hook_name === :finish
-                catch(:skip) { send("run_#{hook_name}_hooks") }
+                catch(:skip) { send(:"run_#{hook_name}_hooks") }
               end
             end
 

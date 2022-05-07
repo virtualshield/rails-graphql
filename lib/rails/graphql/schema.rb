@@ -39,7 +39,7 @@ module Rails
       # Imports schema specific configurations
       configure do |config|
         %i[enable_string_collector request_strategies].each do |name|
-          config.send("#{name}=", GraphQL.config.send(name))
+          config_accessor(name) { GraphQL.config.send(name) }
         end
       end
 
@@ -144,7 +144,7 @@ module Rails
             exclusive: true,
           )
 
-          raise ArgumentError, <<~MSG.squish
+          raise ArgumentError, (+<<~MSG).squish
             The #{namespace.inspect} namespace is already assigned to "#{current.name}".
             Please change the namespace for "#{klass.name}" class.
           MSG
@@ -267,7 +267,7 @@ module Rails
             if base_module.const_defined?(klass_name)
               klass = base_module.const_get(klass_name)
 
-              raise DuplicatedError, <<~MSG.squish unless !xargs[:once] && klass < superclass
+              raise DuplicatedError, (+<<~MSG).squish unless !xargs[:once] && klass < superclass
                 A constant named "#{klass_name}" already exists for the
                 "#{base_module.name}" module.
               MSG
@@ -275,7 +275,7 @@ module Rails
               base_class ||= superclass.ancestors.find { |k| k.superclass === Class }
 
               valid = superclass.is_a?(Module) && superclass < base_class
-              raise DefinitionError, <<~MSG.squish unless valid
+              raise DefinitionError, (+<<~MSG).squish unless valid
                 The given "#{superclass}" superclass does not inherites from
                 #{base_class.name} class.
               MSG

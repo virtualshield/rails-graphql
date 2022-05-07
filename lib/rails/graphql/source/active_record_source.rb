@@ -17,7 +17,7 @@ module Rails
       extend Builders
 
       validate_assignment('ActiveRecord::Base') do |value|
-        "The \"#{value.name}\" is not a valid Active Record model"
+        +"The \"#{value.name}\" is not a valid Active Record model"
       end
 
       # The name of the class (or the class itself) to be used as superclass for

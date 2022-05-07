@@ -129,7 +129,7 @@ module Rails
 
         # Display the source of the proxy for inspection
         def inspect_source
-          "@source=#{proxied_owner.name}[:#{field.name}] [proxied]"
+          +"@source=#{proxied_owner.name}[:#{field.name}] [proxied]"
         end
 
         # This is trigerred when the field is proxied

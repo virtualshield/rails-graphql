@@ -35,7 +35,7 @@ module Rails
         # Check if the requested field is marked as deprecated
         def report_for_field(event)
           return unless event.field.using?(self.class)
-          item = "#{event.source.gql_name} field"
+          item = +"#{event.source.gql_name} field"
           event.request.report_error(build_message(item))
         end
 
@@ -44,15 +44,15 @@ module Rails
           return unless event.current_value.deprecated?
 
           value = event.current_value.to_s
-          item = "#{value} value for the #{event.source.gql_name} field"
+          item = +"#{value} value for the #{event.source.gql_name} field"
           event.request.report_error(build_message(item))
         end
 
         # Build the error message to display on the result
         def build_message(item)
-          result = "The #{item} is deprecated"
-          result += ", reason: #{args.reason}" if args.reason.present?
-          result + '.'
+          result = +"The #{item} is deprecated"
+          result << ", reason: #{args.reason}" if args.reason.present?
+          result << '.'
         end
     end
   end

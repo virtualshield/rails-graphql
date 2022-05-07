@@ -39,7 +39,7 @@ module Rails
       def validate!(*)
         super if defined? super
 
-        raise ValidationError, <<~MSG.squish unless performer.present?
+        raise ValidationError, (+<<~MSG).squish unless performer.present?
           The "#{gql_name}" mutation field must have a perform action through a given
           block or a method named #{method_name} on #{owner.class.name}.
         MSG

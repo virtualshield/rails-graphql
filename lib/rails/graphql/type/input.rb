@@ -73,11 +73,11 @@ module Rails
           def inspect
             return super if self.eql?(Type::Input)
             args = fields.values.map(&:inspect)
-            args = args.presence && "(#{args.join(', ')})"
+            args = args.presence && +"(#{args.join(', ')})"
 
             directives = inspect_directives
             directives.prepend(' ') if directives.present?
-            "#<GraphQL::Input #{gql_name}#{args}#{directives}>"
+            +"#<GraphQL::Input #{gql_name}#{args}#{directives}>"
           end
 
           private
@@ -147,7 +147,7 @@ module Rails
           end
 
           return if errors.empty?
-          raise InvalidValueError, <<~MSG.squish
+          raise InvalidValueError, (+<<~MSG).squish
             Invalid value provided to #{gql_name} field: #{errors.to_sentence}.
           MSG
         end

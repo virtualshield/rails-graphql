@@ -30,7 +30,7 @@ module Rails
 
           # Simply unauthorize the operation
           def unauthorized!(*, message: nil, **)
-            raise UnauthorizedFieldError, message || <<~MSG.squish
+            raise UnauthorizedFieldError, message || (+<<~MSG).squish
               Unauthorized access to "#{field.gql_name}" field.
             MSG
           end
@@ -75,7 +75,7 @@ module Rails
               executed = true
             end
 
-            event.unauthorized!(message: <<~MSG.squish) unless executed
+            event.unauthorized!(message: (+<<~MSG).squish) unless executed
               Authorization required but unable to be executed
             MSG
           end

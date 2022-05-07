@@ -27,17 +27,16 @@ module Rails
 
         payload = event.payload
 
-        name = ['GraphQL', payload[:name].presence]
-        name.unshift('CACHE') if payload[:cached]
-        name = "#{name.compact.join(' ')} (#{event.duration.round(1)}ms)"
+        desc = +'  GraphQL'
+        desc << '[CACHE]' if payload[:cached]
+        desc << ' ' << payload[:name] if payload[:name].present?
+        desc << ' ' << '(' << event.duration.round(1).to_s << 'ms' << ')'
 
-        document = payload[:document].gsub(REMOVE_COMMENTS, '').squish
-        variables = payload[:variables].blank? ? nil : begin
-          values = parameter_filter.filter(payload[:variables])
-          "  (#{JSON.pretty_generate(values).squish})"
-        end
+        desc = color(desc, MAGENTA, true)
+        desc << payload[:document].gsub(REMOVE_COMMENTS, '').squish
+        desc << debug_variables(payload[:variables]) unless payload[:variables].blank?
 
-        debug "  #{color(name, MAGENTA, true)}  #{document}#{variables}"
+        debug(desc)
       end
 
       private
@@ -46,23 +45,27 @@ module Rails
           GraphQL.logger
         end
 
-        def parameter_filter
-          ActiveSupport::ParameterFilter.new(GraphQL.config.filter_parameters)
-        end
-
         def debug(*)
           return unless super
 
           log_query_source if GraphQL.config.verbose_logs
         end
 
+        def debug_variables(vars)
+          +'  ' << '(' << JSON.pretty_generate(values).squish << ')'
+        end
+
         def log_query_source
           source = extract_query_source_location(caller)
-          logger.debug("  ↳ #{source}") if source
+          logger.debug(+"  ↳ #{source}") if source
         end
 
         def extract_query_source_location(locations)
           backtrace_cleaner.clean(locations.lazy).first
+        end
+
+        def parameter_filter
+          ActiveSupport::ParameterFilter.new(GraphQL.config.filter_parameters)
         end
     end
   end

@@ -90,27 +90,20 @@ module Rails
         # Execute the prepare step for the given +field+ and execute the given
         # block using context stack
         def prepare(field, &block)
-          # TODO: Maybe rely on resolve when it does not have a prepare step,
-          # even though queries should not be executed on resolve
           value = safe_store_data(field) do
-            result = Event.trigger(:prepare, field, self, **PREPARE_XARGS)
-            field.mutation? ? perform(field, result) : result
+            Event.trigger(:prepare, field, self, **PREPARE_XARGS)
           end
 
+          perform(field, value) if field.mutation?
+
+          value = @data_pool[field]
           context.stacked(value, &block) unless value.nil?
         end
 
         # Resolve a value for a given object, It uses the +args+ to prevent
         # problems with nil values.
         def resolve(field, *args, array: false, decorate: false, &block)
-          rescue_with_handler(field: field) do
-            if field.try(:dynamic_resolver?)
-              prepared = @data_pool[field]
-              args << Event.trigger(:resolve, field, self, prepared: prepared, &field.resolver)
-            else
-              data_for(args, field)
-            end
-          end if args.size.zero?
+          resolve_data_for(field, args)
 
           value = args.last
           value = field.decorate(value) if decorate
@@ -120,6 +113,19 @@ module Rails
               field.write_value(current)
             else
               field.write_array(current, &block)
+            end
+          end
+        end
+
+        def resolve_data_for(field, args)
+          return unless args.size.zero?
+
+          rescue_with_handler(field: field) do
+            if field.try(:dynamic_resolver?)
+              prepared = @data_pool[field]
+              args << Event.trigger(:resolve, field, self, prepared: prepared, &field.resolver)
+            else
+              data_for(args, field)
             end
           end
         end

@@ -19,7 +19,7 @@ module Rails
       end
 
       def initialize(target, event_name, *args, **xargs, &block)
-        raise ::ArgumentError, <<~MSG.squish if block.nil? && !args.first.present?
+        raise ::ArgumentError, (+<<~MSG).squish if block.nil? && !args.first.present?
           Either provide a block or a method name when setting a #{event_name}
           callback on #{target.inspect}.
         MSG
@@ -27,7 +27,7 @@ module Rails
         if block.nil?
           block = args.shift
           valid_format = block.is_a?(Symbol) || block.is_a?(Proc)
-          raise ::ArgumentError, <<~MSG.squish unless valid_format
+          raise ::ArgumentError, (+<<~MSG).squish unless valid_format
             The given #{block.class.name} class is not a valid callback.
           MSG
         end
@@ -57,7 +57,7 @@ module Rails
       # Get a described source location for the callback
       def source_location
         block.is_a?(Proc) ? block.source_location : [
-          "(symbolized-callback/#{target.inspect})",
+          +"(symbolized-callback/#{target.inspect})",
           block,
         ]
       end

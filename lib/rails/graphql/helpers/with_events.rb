@@ -68,7 +68,7 @@ module Rails
         def on(event_name, unshift: false, &block)
           event_name = event_name.to_sym
           valid = !event_types || event_types.include?(event_name)
-          raise ArgumentError, <<~MSG.squish unless valid
+          raise ArgumentError, (+<<~MSG).squish unless valid
             The #{event_name} is not a valid event type.
           MSG
 

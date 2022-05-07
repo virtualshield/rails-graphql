@@ -66,7 +66,7 @@ module Rails
             return super if self.eql?(Type::Scalar)
             directives = inspect_directives
             directives.prepend(' ') if directives.present?
-            "#<GraphQL::Scalar #{gql_name}#{directives}>"
+            +"#<GraphQL::Scalar #{gql_name}#{directives}>"
           end
         end
       end

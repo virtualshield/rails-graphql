@@ -30,7 +30,7 @@ module Rails
 
       # Prevent input fields from being further configured using a block
       def configure
-        raise ArgumentError, 'Input fields can\'t be further configured using blocks'
+        raise ArgumentError, +'Input fields can\'t be further configured using blocks'
       end
 
       # Allow change the default value for the input
@@ -73,11 +73,11 @@ module Rails
       def validate!(*)
         super if defined? super
 
-        raise ArgumentError, <<~MSG.squish unless type_klass.input_type?
+        raise ArgumentError, (+<<~MSG).squish unless type_klass.input_type?
           The "#{type_klass.gql_name}" is not a valid input type.
         MSG
 
-        raise ArgumentError, <<~MSG.squish unless default.nil? || valid_input?(default)
+        raise ArgumentError, (+<<~MSG).squish unless default.nil? || valid_input?(default)
           The given default value "#{default.inspect}" is not valid for this field.
         MSG
       end
@@ -96,7 +96,7 @@ module Rails
 
         # Display the default value when it is present for inspection
         def inspect_default_value
-          " = #{as_json.inspect}" if default_value?
+          +" = #{as_json.inspect}" if default_value?
         end
     end
   end

@@ -8,7 +8,7 @@ require 'date'
 # Describe your gem and declare its dependencies:
 Gem::Specification.new do |s|
   s.name        = 'rails-graphql'
-  s.version     = Rails::GraphQL::VERSION
+  s.version     = Rails::GraphQL::VERSION::STRING
   s.date        = Date.today.to_s
   s.authors     = ['Carlos Silva']
   s.email       = ['me@carlosfsilva.com']

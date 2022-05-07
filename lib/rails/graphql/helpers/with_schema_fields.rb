@@ -95,31 +95,31 @@ module Rails
           klass = Field.const_get(TYPE_FIELD_CLASS[type])
           object = klass.new(*args, **xargs, &block)
 
-          raise DuplicatedError, <<~MSG.squish if has_field?(type, object.name)
+          raise DuplicatedError, (+<<~MSG).squish if has_field?(type, object.name)
             The "#{object.name}" field is already defined on #{type} fields and
             cannot be redefined.
           MSG
 
           fields_for(type)[object.name] = object
         rescue DefinitionError => e
-          raise e.class, e.message + "\n  Defined at: #{caller(2)[0]}"
+          raise e.class, +"#{e.message}\n  Defined at: #{caller(2)[0]}"
         end
 
         # Add a new field to the list but use a proxy instead of a hard copy of
         # a given +field+
         def add_proxy_field(type, field, *args, **xargs, &block)
-          raise ArgumentError, <<~MSG.squish if field.schema_type != type
+          raise ArgumentError, (+<<~MSG).squish if field.schema_type != type
             A #{field.schema_type} field cannot be added as a #{type} field.
           MSG
 
           klass = Field.const_get(TYPE_FIELD_CLASS[type])
-          raise ArgumentError, <<~MSG.squish unless field.is_a?(klass)
+          raise ArgumentError, (+<<~MSG).squish unless field.is_a?(klass)
             The #{field.class.name} is not a valid field for #{type} fields.
           MSG
 
           xargs[:owner] = self
           object = field.to_proxy(*args, **xargs, &block)
-          raise DuplicatedError, <<~MSG.squish if has_field?(type, object.name)
+          raise DuplicatedError, (+<<~MSG).squish if has_field?(type, object.name)
             The #{field.name.inspect} field is already defined on #{type} fields
             and cannot be replaced.
           MSG
@@ -165,7 +165,7 @@ module Rails
 
         # If the field is not found it will raise an exception
         def find_field!(type, object)
-          find_field(type, object) || raise(NotFoundError, <<~MSG.squish)
+          find_field(type, object) || raise(NotFoundError, (+<<~MSG).squish)
             The #{object.inspect} field on #{type} is not defined yet.
           MSG
         end

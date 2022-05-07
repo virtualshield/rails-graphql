@@ -7,15 +7,15 @@ module Rails
       module ValueWriters
         # TODO: Maybe move this to a setting so it allow extensions
         KIND_WRITERS = {
-          union:     'write_union',
-          interface: 'write_interface',
-          object:    'write_object',
+          union:     :write_union,
+          interface: :write_interface,
+          object:    :write_object,
         }.freeze
 
         # Write a value to the response
         def write_value(value)
           return write_leaf(value) if value.nil?
-          send(KIND_WRITERS[field.kind] || 'write_leaf', value)
+          send(KIND_WRITERS[field.kind] || :write_leaf, value)
         end
 
         # Resolve a given value when it is an array
@@ -41,7 +41,7 @@ module Rails
 
         # Helper to start writing as array
         def write_array!(value, &block)
-          raise InvalidValueError, <<~MSG.squish unless value.respond_to?(:each)
+          raise InvalidValueError, (+<<~MSG).squish unless value.respond_to?(:each)
             The #{gql_name} field is excepting an array
             but got an "#{value.class.name}" instead.
           MSG
@@ -56,9 +56,11 @@ module Rails
 
         # Add the item index to the exception message
         def format_array_execption(error, idx)
-          real_error = 'The ' + ActiveSupport::Inflector.ordinalize(idx + 1)
-          real_error += " value of the #{gql_name} field"
-          source_error = "The #{gql_name} field value"
+          real_error = (+<<~MSG).squish
+            The #{ActiveSupport::Inflector.ordinalize(idx + 1)} value of the #{gql_name} field
+          MSG
+
+          source_error = +"The #{gql_name} field value"
 
           message = error.message.gsub(source_error, real_error)
           error.define_singleton_method(:message) { message }
@@ -105,7 +107,7 @@ module Rails
           # A problem when an object-based value is not a valid member of the
           # +type_klass+ of this field
           def raise_invalid_member!
-            raise(FieldError, <<~MSG.squish)
+            raise FieldError, (+<<~MSG).squish
               The #{gql_name} field result is not a member of #{type_klass.gql_name}.
             MSG
           end

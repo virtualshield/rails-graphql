@@ -70,7 +70,7 @@ module Rails
           def resolve_then
             super do
               typename = @typename || parent.typename
-              raise InvalidValueError, <<~MSG.squish if typename.blank?
+              raise InvalidValueError, (+<<~MSG).squish if typename.blank?
                 The #{gql_name} field value cannot be null.
               MSG
 

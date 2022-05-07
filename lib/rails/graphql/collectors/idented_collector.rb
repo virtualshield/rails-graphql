@@ -8,7 +8,7 @@ module Rails
       class IdentedCollector
         def initialize(initial = 0, size = 2, auto_eol: true)
           @size = size
-          @val = [[initial, '']]
+          @val = [[initial, +'']]
           @auto_eol = auto_eol
         end
 
@@ -53,13 +53,13 @@ module Rails
 
         def indent
           return @val.last[0] += @size if blank?
-          @val << [last_ident + @size, '']
+          @val << [last_ident + @size, +'']
           self
         end
 
         def unindent
           return @val.last[0] -= @size if blank?
-          @val << [last_ident - @size, '']
+          @val << [last_ident - @size, +'']
           self
         end
 

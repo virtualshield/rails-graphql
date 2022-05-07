@@ -333,7 +333,7 @@ module Rails
 
         # Initialize the class that responsible for storaging the response
         def initialize_response(as_format, to)
-          raise ::ArgumentError, <<~MSG.squish if to.nil?
+          raise ::ArgumentError, (+<<~MSG).squish if to.nil?
             The given format #{as_format.inspect} is not a valid reponse format.
           MSG
 
@@ -342,7 +342,7 @@ module Rails
             : Collectors::HashCollector
 
           obj = klass.new(self)
-          raise ::ArgumentError, <<~MSG.squish unless obj.respond_to?(to)
+          raise ::ArgumentError, (+<<~MSG).squish unless obj.respond_to?(to)
             Unable to use "#{klass.name}" as response collector since it does
             not implement a #{to.inspect} method.
           MSG
@@ -353,7 +353,7 @@ module Rails
         # Little helper to build an +OpenStruct+ ensure the given +value+ is a
         # +Hash+. It can also +transform_keys+ with the given block
         def build_ostruct(value, &block)
-          raise ::ArgumentError, <<~MSG.squish unless value.is_a?(Hash)
+          raise ::ArgumentError, (+<<~MSG).squish unless value.is_a?(Hash)
             The "#{value.class.name}" is not a valid hash.
           MSG
 
@@ -364,7 +364,7 @@ module Rails
         # Make sure that a schema was assigned by find the corresponding one for
         # the namespace of the request
         def ensure_schema!
-          raise ::ArgumentError, <<~MSG.squish if schema.nil?
+          raise ::ArgumentError, (+<<~MSG).squish if schema.nil?
             Unable to perform a request under the #{@namespace.inspect} namespace,
             because there are no schema assigned to it.
           MSG
@@ -374,7 +374,7 @@ module Rails
         # used
         def report_unused_variables
           (@arg_names.keys - @used_variables.to_a).each do |key|
-            errors.add("Variable $#{@arg_names[key]} was provided but not used.")
+            errors.add(+"Variable $#{@arg_names[key]} was provided but not used.")
           end
         end
     end

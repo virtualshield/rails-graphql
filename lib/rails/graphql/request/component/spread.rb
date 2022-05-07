@@ -78,7 +78,7 @@ module Rails
                 parse_selection
               else
                 @fragment = request.fragments[name]
-                raise ArgumentError, <<~MSG.squish if @fragment.nil?
+                raise ArgumentError, (+<<~MSG).squish if @fragment.nil?
                   The "#{name}" fragment is not defined in this request.
                 MSG
               end
@@ -90,7 +90,7 @@ module Rails
           # Spread has a special behavior when using a fragment
           def prepare
             return super if inline?
-            raise 'Prepare with fragment not implemented yet'
+            raise(+'Prepare with fragment not implemented yet')
           end
 
           # Resolve the spread operation

@@ -142,17 +142,17 @@ module Rails
         end
 
         Array.wrap(list).each_with_object(Set.new) do |item, result|
-          raise ArgumentError, <<~MSG.squish unless item.kind_of?(GraphQL::Directive)
+          raise ArgumentError, (+<<~MSG).squish unless item.kind_of?(GraphQL::Directive)
             The "#{item.class}" is not a valid directive.
           MSG
 
           invalid = others.present? && (others.any? { |k| k.class.eql?(item.class) })
-          raise DuplicatedError, <<~MSG.squish if invalid
+          raise DuplicatedError, (+<<~MSG).squish if invalid
             A @#{item.gql_name} directive have already been provided.
           MSG
 
           invalid_location = location.present? && !item.locations.include?(location)
-          raise ArgumentError, <<~MSG.squish if invalid_location
+          raise ArgumentError, (+<<~MSG).squish if invalid_location
             You cannot use @#{item.gql_name} directive due to location restriction.
           MSG
 
@@ -161,7 +161,7 @@ module Rails
               item.assing_owner!(event.source)
               event.trigger_object(item)
             rescue => error
-              raise StandardError, <<~MSG.squish
+              raise StandardError, (+<<~MSG).squish
                 Unable to #{event.name} the @#{item.gql_name} directive: #{error.message}
               MSG
             end

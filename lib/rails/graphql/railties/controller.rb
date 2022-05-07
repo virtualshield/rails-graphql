@@ -47,7 +47,7 @@ module Rails
         # Execute a GraphQL request
         def gql_request(query, **xargs)
           request_xargs = REQUEST_XARGS.each_with_object({}) do |setting, result|
-            result[setting] = (xargs[setting] || send("gql_#{setting}"))
+            result[setting] = (xargs[setting] || send(:"gql_#{setting}"))
           end
 
           ::Rails::GraphQL::Request.execute(query, **request_xargs)
@@ -60,7 +60,7 @@ module Rails
           schema ||= application_default_schema
           return schema if schema.is_a?(Module) && schema < ::Rails::GraphQL::Schema
 
-          raise ExecutionError, <<~MSG.squish
+          raise ExecutionError, (+<<~MSG).squish
             Unable to find a valid schema for #{self.class.name},
             defined value: #{schema.inspect}.
           MSG

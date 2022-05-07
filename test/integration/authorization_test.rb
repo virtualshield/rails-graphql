@@ -1,9 +1,19 @@
 require 'integration/config'
 
 class Integration_AuthorizationTest < GraphQL::IntegrationTestCase
-  load_schema 'authorization'
+  class SCHEMA < GraphQL::Schema
+    namespace :authorization
 
-  SCHEMA = ::AuthorizationSchema
+    configure do |config|
+      config.enable_string_collector = false
+    end
+
+    query_fields do
+      field(:sample1, :string).resolve { 'Ok 1' }
+      field(:sample2, :string).authorize.resolve { 'Ok 2' }
+    end
+  end
+
   EXCEPTION_NAME = 'Rails::GraphQL::UnauthorizedFieldError'
   EXCEPTION_PATH = ['errors', 0, 'extensions', 'exception']
 
@@ -22,11 +32,11 @@ class Integration_AuthorizationTest < GraphQL::IntegrationTestCase
     assert_exception('{ sample2 }')
     assert_result({ sample1: 'Ok 1', sample2: nil }, '{ sample1 sample2 }', dig: 'data')
 
-    SCHEMA.stub_imethod(:authorize!) { authorized! }.call do
+    SCHEMA.stub_imethod(:authorize!, -> { authorized! }) do
       assert_result(SAMPLE2, '{ sample2 }')
     end
 
-    SCHEMA.stub_imethod(:authorize!) { unauthorized! }.call do
+    SCHEMA.stub_imethod(:authorize!, -> { unauthorized! }) do
       assert_exception('{ sample2 }')
     end
   end
@@ -81,13 +91,13 @@ class Integration_AuthorizationTest < GraphQL::IntegrationTestCase
     unauth_block = ->(ev = nil) { counter.call && (ev || itself).unauthorized! }
 
     field.stub_ivar(:@events, { authorize: [unauth_block] }) do
-      SCHEMA.stub_imethod(:authorize!, &auth_block).call do
+      SCHEMA.stub_imethod(:authorize!, auth_block) do
         assert_executed { assert_result(SAMPLE2, '{ sample2 }') }
       end
     end
 
     field.stub_ivar(:@events, { authorize: [auth_block] }) do
-      SCHEMA.stub_imethod(:authorize!, &unauth_block).call do
+      SCHEMA.stub_imethod(:authorize!, unauth_block) do
         assert_executed { assert_exception('{ sample2 }') }
       end
     end

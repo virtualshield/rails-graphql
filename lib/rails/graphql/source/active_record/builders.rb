@@ -31,7 +31,7 @@ module Rails
         skip_fields << model.inheritance_column
         skip_fields << primary_key unless skip_primary_key
 
-        send("#{adapter_key}_attributes") do |attribute, *args|
+        send(:"#{adapter_key}_attributes") do |attribute, *args|
           yield attribute, *args unless skip_fields.include?(attribute)
         end
       end

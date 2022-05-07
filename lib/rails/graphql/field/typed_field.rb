@@ -69,7 +69,7 @@ module Rails
       def validate!(*)
         super if defined? super
 
-        raise ArgumentError, <<~MSG.squish unless type_klass.is_a?(Module)
+        raise ArgumentError, (+<<~MSG).squish unless type_klass.is_a?(Module)
           Unable to find the "#{type.inspect}" input type on GraphQL context.
         MSG
 
@@ -77,7 +77,7 @@ module Rails
           type_klass < base_type
         end
 
-        raise ArgumentError, <<~MSG.squish unless valid_type
+        raise ArgumentError, (+<<~MSG).squish unless valid_type
           The "#{type_klass.base_type}" is not accepted in this context.
         MSG
       end
@@ -86,12 +86,12 @@ module Rails
 
         # Little helper that shows the type of the field
         def inspect_type
-          result = ': '
-          result += '[' if array?
-          result += type_klass.gql_name
-          result += '!' if array? && !nullable?
-          result += ']' if array?
-          result += '!' unless null?
+          result = +': '
+          result << '[' if array?
+          result << type_klass.gql_name
+          result << '!' if array? && !nullable?
+          result << ']' if array?
+          result << '!' unless null?
           result
         end
 

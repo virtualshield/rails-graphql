@@ -15,7 +15,7 @@ module Rails
       module ClassMethods
         def log_process_action(payload)
           messages, gql_runtime = super, payload[:gql_runtime]
-          messages << format('GraphQL: %.1fms', gql_runtime.to_f) if gql_runtime
+          messages << format(+'GraphQL: %.1fms', gql_runtime.to_f) if gql_runtime
           messages
         end
       end

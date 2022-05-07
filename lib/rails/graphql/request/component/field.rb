@@ -68,7 +68,7 @@ module Rails
         # field, which means that +output_type?+ must be true. It also must be
         # called exactly once per field.
         def assing_to(field)
-          raise ArgumentError, <<~MSG.squish if defined?(@assigned)
+          raise ArgumentError, (+<<~MSG).squish if defined?(@assigned)
             The "#{gql_name}" field is already assigned to #{@field.inspect}.
           MSG
 
@@ -149,7 +149,7 @@ module Rails
           # Perform the resolve step
           def resolve_then(&block)
             stacked do
-              send(field.array? ? 'resolve_many' : 'resolve_one', &block)
+              send((field.array? ? :resolve_many : :resolve_one), &block)
             rescue StandardError => error
               resolve_invalid(error)
             end
@@ -199,27 +199,27 @@ module Rails
 
           # Check if the field was assigned correctly to an output field
           def check_assignment!
-            raise MissingFieldError, <<~MSG.squish if field.nil?
+            raise MissingFieldError, (+<<~MSG).squish if field.nil?
               Unable to find a field named "#{gql_name}" on
               #{entry_point? ? operation.kind : parent.type_klass.name}.
             MSG
 
-            raise FieldError, <<~MSG.squish unless field.output_type?
+            raise FieldError, (+<<~MSG).squish unless field.output_type?
               The "#{gql_name}" was assigned to a non-output type of field: #{field.inspect}.
             MSG
 
             empty_selection = data[:selection].nil? || data[:selection].null?
-            raise FieldError, <<~MSG.squish if field.leaf_type? && !empty_selection
+            raise FieldError, (+<<~MSG).squish if field.leaf_type? && !empty_selection
               The "#{gql_name}" was assigned to the #{type_klass.gql_name} which
               is a leaf type and does not have nested fields.
             MSG
 
-            raise FieldError, <<~MSG.squish if !field.leaf_type? && empty_selection
+            raise FieldError, (+<<~MSG).squish if !field.leaf_type? && empty_selection
               The "#{gql_name}" was assigned to the #{type_klass.gql_name} which
               is not a leaf type and requires a selection of fields.
             MSG
 
-            raise DisabledFieldError, <<~MSG.squish if field.disabled?
+            raise DisabledFieldError, (+<<~MSG).squish if field.disabled?
               The "#{gql_name}" was found but it is marked as disabled.
             MSG
           end

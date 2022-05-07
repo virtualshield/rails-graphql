@@ -60,8 +60,8 @@ module Rails
         # proxied
         def proxyable_methods(*list, klass:, allow_nil: false)
           list = list.flatten.compact.map do |method_name|
-            ivar = '@' + method_name.delete_suffix('?')
-            accessor = 'field' + (allow_nil ? '&.' : '.') + method_name
+            ivar = +'@' + method_name.delete_suffix('?')
+            accessor = +'field' + (allow_nil ? '&.' : '.') + method_name
             "def #{method_name}; defined?(#{ivar}) ? #{ivar} : #{accessor}; end"
           end
 
@@ -251,7 +251,7 @@ module Rails
       def validate!(*)
         super if defined? super
 
-        raise NameError, <<~MSG.squish if gql_name.start_with?('__') && !internal?
+        raise NameError, (+<<~MSG).squish if gql_name.start_with?('__') && !internal?
           The name "#{gql_name}" is invalid. Only internal fields from the
           spec can have a name starting with "__".
         MSG
@@ -275,7 +275,7 @@ module Rails
       end
 
       def inspect
-        <<~INSPECT.squish + '>'
+        (+<<~INFO).squish << '>'
           #<#{self.class.name}
           #{inspect_owner}
           #{inspect_source}
@@ -283,7 +283,7 @@ module Rails
           #{gql_name}#{inspect_arguments}#{inspect_type}
           #{inspect_default_value}
           #{inspect_directives}
-        INSPECT
+        INFO
       end
 
       protected

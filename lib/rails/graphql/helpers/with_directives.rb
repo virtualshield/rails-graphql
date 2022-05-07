@@ -35,7 +35,7 @@ module Rails
 
           # Use this once to define the directive location
           def directive_location=(value)
-            raise ArgumentError, 'Directive location is already defined' \
+            raise ArgumentError, +'Directive location is already defined' \
               unless directive_location.nil?
 
             @directive_location = value
@@ -53,7 +53,7 @@ module Rails
         def use(item_or_symbol, *list, **xargs)
           if item_or_symbol.is_a?(Symbol)
             directive = fetch!(item_or_symbol)
-            raise ArgumentError, <<~MSG.squish unless directive < GraphQL::Directive
+            raise ArgumentError, (+<<~MSG).squish unless directive < GraphQL::Directive
               Unable to find the #{item_or_symbol.inspect} directive.
             MSG
 
@@ -66,13 +66,13 @@ module Rails
           items = GraphQL.directives_to_set(list, current, source: self)
           directives.merge(items)
         rescue DefinitionError => e
-          raise e.class, e.message + "\n  Defined at: #{caller(2)[0]}"
+          raise e.class, +"#{e.message}\n  Defined at: #{caller(2)[0]}"
         end
 
         # Check wheter a given directive is being used
         def using?(item_or_symbol)
           directive = item_or_symbol.is_a?(Symbol) ? fetch!(item_or_symbol) : item_or_symbol
-          raise ArgumentError, <<~MSG.squish unless directive < GraphQL::Directive
+          raise ArgumentError, (+<<~MSG).squish unless directive < GraphQL::Directive
             The provided #{item_or_symbol.inspect} is not a valid directive.
           MSG
 
