@@ -50,25 +50,29 @@ QUERY = <<~GQL
   }
 GQL
 
-require 'graphql'
-require_relative 'star_wars/original_gem'
+ogem = -> do
+  require 'graphql'
+  require_relative 'star_wars/original_gem'
+end
 
-require 'rails-graphql'
-require_relative 'star_wars/new_gem'
+ngem = -> do
+  require 'rails-graphql'
+  require_relative 'star_wars/new_gem'
 
-Rails::GraphQL.eager_load!
-Rails::GraphQL.type_map.send(:register_pending!)
-Rails::GraphQL.config.logger = ActiveSupport::TaggedLogging.new(Logger.new('/dev/null'))
+  Rails::GraphQL.eager_load!
+  Rails::GraphQL.type_map.send(:register_pending!)
+  Rails::GraphQL.config.logger = ActiveSupport::TaggedLogging.new(Logger.new('/dev/null'))
+end
 
 Benchmark.ips do |x|
-  x.report('Original gem') { StarWars.execute(QUERY, ARGS, display: DISPLAY) }
-  x.report('New gem') { StarWarsSchema.execute(QUERY, ARGS, display: DISPLAY) }
+  x.report('Original gem') { ogem.call; StarWars.execute(QUERY, ARGS, display: DISPLAY) }
+  x.report('New gem') { ngem.call; StarWarsSchema.execute(QUERY, ARGS, display: DISPLAY) }
   x.compare!
 end
 
 # Benchmark.memory do |x|
-#   x.report('Original gem') { StarWars.execute(QUERY, ARGS, display: DISPLAY) }
-#   x.report('New gem') { StarWarsSchema.execute(QUERY, ARGS, display: DISPLAY) }
+#   x.report('Original gem') { ogem.call; StarWars.execute(QUERY, ARGS, display: DISPLAY) }
+#   x.report('New gem') { ngem.call; StarWarsSchema.execute(QUERY, ARGS, display: DISPLAY) }
 #   x.compare!
 # end
 

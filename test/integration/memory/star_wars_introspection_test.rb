@@ -6,13 +6,19 @@ class Integration_Memory_StarWarsIntrospectionTest < GraphQL::IntegrationTestCas
 
   SCHEMA = ::StartWarsMemSchema
 
+  def test_auto_introspection
+    assert(SCHEMA.introspection?)
+    assert(SCHEMA.has_field?(:query, :__schema))
+    assert(SCHEMA.has_field?(:query, :__type))
+  end
+
   def test_query_schema_types
-    types = named_list(*%w[Bigint Binary Boolean Character Date DateTime Decimal Droid Episode
-      Float Human ID Int Json String Time _Mutation _Query __Directive __DirectiveLocation
-      __EnumValue __Field __InputValue __Schema __Type __TypeKind])
+    types = named_list(*%w[Boolean Character Droid Episode Float Human ID Int String
+      _Mutation _Query __Directive __DirectiveLocation __EnumValue __Field __InputValue
+      __Schema __Type __TypeKind])
 
     sort_items = ->(result) do
-      result.dig('data', '__schema', 'types').sort_by! { |t| t['name'] }
+      result.dig('data', '__schema', 'types')&.sort_by! { |t| t['name'] }
     end
 
     assert_result({ data: { __schema: { types: types } } }, <<~GQL, &sort_items)
@@ -128,6 +134,8 @@ class Integration_Memory_StarWarsIntrospectionTest < GraphQL::IntegrationTestCas
   # There are some issues with the end sorting, so compare the string result
   # with sorted characters, which will produce the exact match
   def test_query_full_introspection
+    SCHEMA.send(:enable_introspection!)
+
     query = gql_file('introspection')
     result = text_file('introspection-mem').split('').sort.join
     assert_result(result, query, as: :string) do |res|

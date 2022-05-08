@@ -78,13 +78,6 @@ module Rails
         def const_missing(name)
           Component.const_defined?(name) ? Component.const_get(name) : super
         end
-
-        def eager_load!
-          super
-
-          Request::Component.eager_load!
-          Request::Strategy.eager_load!
-        end
       end
 
       # Forces the schema to be registered on type map before moving forward
@@ -93,7 +86,6 @@ module Rails
         @schema = GraphQL::Schema.find!(@namespace)
         @extensions = {}
 
-        # TODO: The validation of the schema must happen in here
         ensure_schema!
       end
 
@@ -235,6 +227,8 @@ module Rails
           @fragments  = {}
           @operations = {}
           @used_variables = Set.new
+
+          schema.validate
         end
 
         # This executes the whole process capturing any exceptions and handling

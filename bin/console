@@ -13,5 +13,7 @@ require 'rails-graphql'
 class ApplicationSchema < GraphQL::Schema
 end
 
+$config = Rails::GraphQL.config
+
 ARGV.clear
 IRB.start

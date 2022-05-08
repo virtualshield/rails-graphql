@@ -24,14 +24,12 @@ module Rails
           Type::Union,
         ].freeze
 
-        eager_autoload do
-          autoload :DirectiveObject
-          autoload :EnumValueObject
-          autoload :FieldObject
-          autoload :InputValueObject
-          autoload :SchemaObject
-          autoload :TypeObject
-        end
+        autoload :DirectiveObject
+        autoload :EnumValueObject
+        autoload :FieldObject
+        autoload :InputValueObject
+        autoload :SchemaObject
+        autoload :TypeObject
 
         # Define the methods for accessing the interfaces of the object
         inherited_collection :interfaces, instance_reader: false

@@ -107,10 +107,11 @@ module Rails
                 end
               end
 
-              field ||= holder.field(item.name, type, **options)
-              field.before_resolve(:preload_association, item.name)
-              field.before_resolve(:build_association_scope, item.name)
-              field.resolve(:parent_owned_records, item.collection?)
+              if (field ||= holder.safe_field(item.name, type, **options))
+                field.before_resolve(:preload_association, item.name)
+                field.before_resolve(:build_association_scope, item.name)
+                field.resolve(:parent_owned_records, item.collection?)
+              end
             end
           end
         end
@@ -121,7 +122,7 @@ module Rails
             next if (reflection = model._reflect_on_association(reflection_name)).nil?
 
             expected_name = reflection.klass.name.tr(':', '')
-            expected_name += 'Input' unless expected_name.ends_with?('Input')
+            expected_name += 'Input' unless expected_name.end_with?('Input')
 
             type_map_after_register(expected_name) do |input|
               options = reflection_to_options(reflection).merge(null: true)

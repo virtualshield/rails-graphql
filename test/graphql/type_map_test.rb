@@ -15,49 +15,24 @@ class GraphQL_TypeMapTest < GraphQL::TestCase
     @subject ||= DESCRIBED_CLASS.new
   end
 
-  def test_loaded_bang
-    DESCRIBED_CLASS.stub(:base_classes, { Type: false }) do
-      refute(DESCRIBED_CLASS.base_classes[:Type])
-      DESCRIBED_CLASS.loaded!(:Type)
-      assert(DESCRIBED_CLASS.base_classes[:Type])
-    end
-
-    DESCRIBED_CLASS.stub(:base_classes, { Type: true }) do
-      assert(DESCRIBED_CLASS.base_classes[:Type])
-    end
-  end
-
   def test_reset_bang
     checkpoint = registered_double
     subject.instance_variable_set(:@objects, 1)
-    subject.instance_variable_set(:@pending, 2)
-    subject.instance_variable_set(:@callbacks, 3)
+    subject.instance_variable_set(:@version, 2)
+    subject.instance_variable_set(:@pending, 3)
     subject.instance_variable_set(:@skip_register, 4)
-    subject.instance_variable_set(:@index, 5)
-    subject.instance_variable_set(:@checkpoint, [checkpoint])
+    subject.instance_variable_set(:@callbacks, 5)
+    subject.instance_variable_set(:@dependencies, 6)
+    subject.instance_variable_set(:@index, 7)
     subject.reset!
 
     refute_equal(1, subject.instance_variable_get(:@objects))
-    refute_equal(2, subject.instance_variable_get(:@pending))
-    refute_equal(3, subject.instance_variable_get(:@callbacks))
+    refute_equal(2, subject.instance_variable_get(:@version))
+    refute_equal(3, subject.instance_variable_get(:@pending))
     refute_equal(4, subject.instance_variable_get(:@skip_register))
-    refute_equal(5, subject.instance_variable_get(:@index))
-    assert_predicate(checkpoint, :registered?)
-  end
-
-  def test_use_checkpoint_bang
-    subject.stub(:objects, [1]) do
-      assert_registered do
-        subject.use_checkpoint!
-        assert_equal([1], subject.instance_variable_get(:@checkpoint))
-      end
-    end
-
-    reset = false
-    subject.stub(:reset!, -> { reset  = true }) do
-      subject.use_checkpoint!
-      assert(reset)
-    end
+    refute_equal(5, subject.instance_variable_get(:@callbacks))
+    refute_equal(6, subject.instance_variable_get(:@dependencies))
+    refute_equal(7, subject.instance_variable_get(:@index))
   end
 
   def test_objects
@@ -66,15 +41,23 @@ class GraphQL_TypeMapTest < GraphQL::TestCase
       assert_empty(subject.objects)
     end
 
-    item = registered_double
-    subject.stub_ivar(:@index, { a: { b: { c: -> { item } }, d: { e: -> { 1 } } } }) do
+    item = double(
+      gql_name: 'name',
+      is_a?: ->(klass) { klass == Rails::GraphQL::Helpers::Registerable },
+    )
+
+    other = double(gql_name: 'otherName')
+
+    checker = -> { item }
+    subject.stub_ivar(:@index, { a: { b: { c: checker }, d: { e: checker }, f: { g: other } } }) do
       assert_empty(subject.objects(namespaces: :z))
       assert_empty(subject.objects(namespaces: :a, base_classes: :z))
-      assert_empty(subject.objects(namespaces: :a, base_classes: :d))
+      assert_empty(subject.objects(namespaces: :a, base_classes: :f))
 
-      result = subject.objects
-      refute_includes(result, 1)
-      assert_includes(result, item)
+      subject.class.stub(:base_classes, %i[b d f]) do
+        result = subject.objects
+        assert_equal([item], result)
+      end
     end
   end
 
@@ -86,15 +69,10 @@ class GraphQL_TypeMapTest < GraphQL::TestCase
 
     loaded = false
     subject.stub(:fetch, ->(*x) { x if loaded }) do
-      subject.stub(:base_classes, { Type: true }) do
-        assert_raises(StandardError) { subject.fetch!(1) }
-      end
+      assert_raises(StandardError) { subject.fetch!(1) }
 
-      subject.stub(:base_classes, { Type: false }) do
-        Rails::GraphQL.stub_const(:Type, double(eager_load!: -> { loaded = true })) do
-          assert_equal([1, { base_class: :Type }], subject.fetch!(1))
-          assert(loaded)
-        end
+      subject.stub(:load_dependencies!, ->(*) { loaded = true }) do
+        assert_equal([1, {  base_class: :Type }], subject.fetch!(1))
       end
     end
   end
@@ -170,7 +148,7 @@ class GraphQL_TypeMapTest < GraphQL::TestCase
           subject.stub(:fetch, passallthrough) do
             xargs = { base_class: object1, namespaces: :base, exclusive: true }
             assert_equal([:string, xargs], added[1][-1].call)
-            assert_equal(object1, added[0][-1].call)
+            assert_equal(object1, added[0][-1])
           end
 
           assert_equal(1, subject.instance_variable_get(:@objects))
@@ -245,7 +223,7 @@ class GraphQL_TypeMapTest < GraphQL::TestCase
   def test_after_register
     subject.stub(:fetch, passallthrough) do
       result = subject.after_register(:a, &passthrough)
-      xargs = { prevent_register: true, base_class: :Type, namespaces: :base }
+      xargs = { prevent_register: true, base_class: :Type }
       assert_equal([:a, xargs], result)
     end
 
@@ -270,15 +248,20 @@ class GraphQL_TypeMapTest < GraphQL::TestCase
       [:other, :Type],
       [:other, :Type],
     ].each_with_index do |(ns, bc), idx|
-      assert_nil(register[:a][idx].call(:x, bc, :non_called))
-      assert_nil(register[:a][idx].call(ns, :y, :non_called))
-      assert_equal(idx, register[:a][idx].call(ns, bc, :called))
+      assert_nil(register[:a][3 - idx].call(:x, bc, :non_called))
+      assert_nil(register[:a][3 - idx].call(ns, :y, :non_called))
+      assert(register[:a][3 - idx].call(ns, bc, :called))
     end
   end
 
   def test_inspect
-    assert_equal(<<~INFO.chomp, subject.inspect)
-      #<Rails::GraphQL::TypeMap [index] @namespaces=0 @base_classes=3 @objects=0 @pending=0>
+    assert_equal(<<~INFO.squish, subject.inspect)
+      #<Rails::GraphQL::TypeMap [index]
+      @namespaces=0
+      @base_classes=3
+      @objects=0
+      @pending=0
+      @dependencies={base: 14}>
     INFO
   end
 
@@ -322,7 +305,7 @@ class GraphQL_TypeMapTest < GraphQL::TestCase
 
   def test_register_pending_bang
     registered = false
-    object = double(register!: -> { -> { registered = true } }, registered?: false)
+    object = double(register!: -> { registered = true }, registered?: false)
     skipped = double(registered?: false)
     other = double(registered?: true)
 

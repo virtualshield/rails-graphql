@@ -56,31 +56,31 @@ module Rails
     RuntimeRegistry = Class.new { thread_mattr_accessor :gql_runtime }
 
     autoload :ToGQL
+    autoload :Event
+    autoload :Source
     autoload :Helpers
+    autoload :Callback
+    autoload :GlobalID
     autoload :Collectors
 
+    autoload :Argument
+    autoload :Directive
+    autoload :Field
+    autoload :Introspection
+    autoload :Schema
+    autoload :Type
+
+    autoload_under :railties do
+      autoload :BaseGenerator
+      autoload :Controller
+      autoload :ControllerRuntime
+      autoload :LogSubscriber
+    end
+
     eager_autoload do
-      autoload_under :railties do
-        autoload :BaseGenerator
-        autoload :Controller
-        autoload :ControllerRuntime
-        autoload :LogSubscriber
-      end
-
-      autoload :Callback
-      autoload :Event
       autoload :Native
-      autoload :Request
-      autoload :Source
       autoload :TypeMap
-
-      autoload :Argument
-      autoload :Directive
-      autoload :Field
-      autoload :GlobalID
-      autoload :Introspection
-      autoload :Schema
-      autoload :Type
+      autoload :Request
     end
 
     class << self
@@ -170,16 +170,6 @@ module Rails
           others << item
           result << item
         end
-      end
-
-      def eager_load!
-        super
-
-        GraphQL::Request.eager_load!
-        GraphQL::Source.eager_load!
-
-        GraphQL::Directive.eager_load!
-        GraphQL::Type.eager_load!
       end
     end
   end

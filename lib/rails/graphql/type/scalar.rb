@@ -18,23 +18,22 @@ module Rails
 
         setup! leaf: true, input: true, output: true
 
-        eager_autoload do
-          # Load all the default scalar types
-          autoload :IntScalar
-          autoload :FloatScalar
-          autoload :StringScalar
-          autoload :BooleanScalar
-          autoload :IdScalar
+        # Load all the default scalar types
+        autoload :IntScalar
+        autoload :FloatScalar
+        autoload :StringScalar
+        autoload :BooleanScalar
+        autoload :IdScalar
 
-          # Load all additional scalar types
-          autoload :BigintScalar
-          autoload :BinaryScalar
-          autoload :DateScalar
-          autoload :DateTimeScalar
-          autoload :DecimalScalar
-          autoload :JsonScalar
-          autoload :TimeScalar
-        end
+        # Load all additional scalar types
+        autoload :AnyScalar
+        autoload :BigintScalar
+        autoload :BinaryScalar
+        autoload :DateScalar
+        autoload :DateTimeScalar
+        autoload :DecimalScalar
+        autoload :JsonScalar
+        autoload :TimeScalar
 
         class << self
           # Check if a given value is a valid non-deserialized input

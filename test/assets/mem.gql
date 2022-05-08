@@ -3,32 +3,8 @@ schema {
   mutation: _Mutation
 }
 
-"""
-The Bigint scalar type represents a signed numeric non-fractional value.
-It can go beyond the Int 32-bit limit, but it's exchanged as a string.
-"""
-scalar Bigint
-
-"""
-The Binary scalar type represents a Base64 string.
-Normally used to share files and uploads.
-"""
-scalar Binary
-
 "The Boolean scalar type represents true or false."
 scalar Boolean
-
-"The Date scalar type represents a ISO 8601 string value."
-scalar Date
-
-"The DateTime scalar type represents a ISO 8601 string value."
-scalar DateTime
-
-"""
-The Decimal scalar type represents signed fractional values with extra precision.
-The values are exchange as string.
-"""
-scalar Decimal
 
 "The Float scalar type represents signed double-precision fractional values."
 scalar Float
@@ -42,20 +18,11 @@ scalar ID
 "The Int scalar type represents a signed 32‐bit numeric non‐fractional value."
 scalar Int
 
-"Provides an unstructured JSON data with all its available kyes and values."
-scalar Json
-
 """
 The String scalar type represents textual data, represented as UTF-8 character
 sequences.
 """
 scalar String
-
-"""
-The Time scalar type that represents a distance in time using hours,
-minutes, seconds, and miliseconds.
-"""
-scalar Time
 
 "One of the films in the Star Wars Trilogy"
 enum Episode {

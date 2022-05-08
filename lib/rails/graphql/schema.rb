@@ -38,7 +38,9 @@ module Rails
 
       # Imports schema specific configurations
       configure do |config|
-        %i[enable_string_collector request_strategies].each do |name|
+        %i[
+          enable_introspection enable_string_collector request_strategies
+        ].each do |name|
           config_accessor(name) { GraphQL.config.send(name) }
         end
       end
@@ -91,9 +93,18 @@ module Rails
         end
 
         # :singleton-method:
-        # For campatibility with type map
-        def eager_load!
-          TypeMap.loaded! :Schema
+        # The base class of all schemas is always +Schema+
+        def gid_base_class
+          Schema
+        end
+
+        # :singleton-method:
+        # Return the schema
+        def find_by_gid(gid)
+          result = find!(gid.namespace.to_sym)
+          return result if gid.name.nil?
+
+          result.find_field!(gid.scope, gid.name)
         end
 
         # Find all types that are available for the current schema
@@ -124,6 +135,25 @@ module Rails
           Set.new([namespace])
         end
 
+        # Check if the schema is valid
+        def valid?
+          !!defined?(@validated)
+        end
+
+        # Only run the validated process if it has not yet been validated
+        def validate
+          validate! unless valid?
+        rescue StandardError
+          puts (+"\e[1m\e[31mSchema #{name} is invalid!\e[0m")
+          raise
+        end
+
+        # Run validations and then mark itself as validated
+        def validate!(*)
+          super if defined? super
+          @validated = true
+        end
+
         # Check if the class is already registered in the typemap
         def registered?
           type_map.object_exist?(self, exclusive: true)
@@ -135,7 +165,7 @@ module Rails
 
           unless registered?
             super if defined? super
-            return type_map.register(self).method(:validate!)
+            return type_map.register(self)
           end
 
           current = type_map.fetch(:schema,
@@ -183,22 +213,7 @@ module Rails
           ToGQL.describe(self, **xargs)
         end
 
-        # The base class of all schemas is always +Schema+
-        def gid_base_class
-          Schema
-        end
-
-        # Return the schema
-        def find_by_gid(gid)
-          result = find!(gid.namespace.to_sym)
-          return result if gid.name.nil?
-
-          result.find_field!(gid.scope, gid.name)
-        end
-
         protected
-
-          # TODO: Maybe provide an optional 'Any' scalar
 
           # Generate the helper methods to easily create types within the
           # definition of the schema

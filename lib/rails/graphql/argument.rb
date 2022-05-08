@@ -186,7 +186,7 @@ module Rails
           The "#{type_klass.gql_name}" is not a valid input type.
         MSG
 
-        raise ArgumentError, (+<<~MSG).squish unless default.nil? || valid?(default)
+        raise ArgumentError, (+<<~MSG).squish unless default.nil? || valid?(as_json(default))
           The given default value "#{default.inspect}" is not valid for this argument.
         MSG
       end
@@ -205,7 +205,7 @@ module Rails
         result << '!' if array? && !nullable?
         result << ']' if array?
         result << '!' unless null?
-        result << " = #{to_hash.inspect}" if default_value?
+        result << " = #{as_json.inspect}" if default_value?
         result
       end
 

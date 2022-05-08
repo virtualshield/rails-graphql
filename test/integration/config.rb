@@ -7,8 +7,26 @@ module GraphQL
     SCHEMAS = Pathname.new(__dir__).join('schemas')
     ASSETS = Pathname.new(__dir__).join('../assets')
 
+    BASE_SCHEMA = ::Rails::GraphQL::Schema
+
+    def run(*)
+      BASE_SCHEMA.send(:introspection_dependencies!)
+      BASE_SCHEMA.type_map.send(:load_dependencies!)
+
+      super
+    end
+
     def setup
-      reset_type_map!
+      BASE_SCHEMA.type_map.base_classes.each do |base_class|
+        GraphQL.const_get(base_class).descendants.each(&:register!)
+      end
+
+      index = BASE_SCHEMA.type_map.instance_variable_get(:@index)[:base][:Type]
+      remove_keys_form_type_map&.each(&index.method(:delete))
+    end
+
+    def teardown
+      BASE_SCHEMA.type_map.reset!
     end
 
     protected
@@ -17,8 +35,8 @@ module GraphQL
         require(SCHEMAS.join("#{name}"))
       end
 
-      def reset_type_map!
-        Rails::GraphQL.type_map.hard_reset!
+      def remove_keys_form_type_map
+        all_non_spec_keys
       end
 
       def named_list(*list, **extra)
@@ -51,6 +69,19 @@ module GraphQL
         obj = obj.deep_stringify_keys if obj.is_a?(Hash)
         obj = obj.map(&:deep_stringify_keys) if obj.is_a?(Array)
         obj.nil? ? assert_nil(result) : assert_equal(obj, result)
+      end
+
+      def all_non_spec_keys
+        [
+          :any, 'Any',
+          :bigint, 'Bigint',
+          :binary, 'Binary', :file,
+          :date_time, 'DateTime', :datetime,
+          :date, 'Date',
+          :decimal, 'Decimal',
+          :time, 'Time',
+          :json, 'JSON',
+        ]
       end
   end
 end

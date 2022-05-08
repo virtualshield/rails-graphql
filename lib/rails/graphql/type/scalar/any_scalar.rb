@@ -3,22 +3,17 @@
 module Rails
   module GraphQL
     class Type
-      # Handles an unstructured JSON data
-      class Scalar::JsonScalar < Scalar
-        rename! 'JSON'
-
-        desc <<~DESC
-          The JSON scalar type represents an unstructured JSON data
-          with all its available kyes and values.
-        DESC
+      # Handles any type of data for both input and output
+      class Scalar::AnyScalar < Scalar
+        desc 'The Any scalar type allows anything for both input and output.'
 
         class << self
           def valid_input?(value)
-            value.is_a?(Hash)
+            true
           end
 
           def valid_output?(value)
-            value.is_a?(Hash)
+            true
           end
 
           def to_json(value)

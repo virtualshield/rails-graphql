@@ -11,10 +11,8 @@ module Rails
 
         autoload :DynamicInstance
 
-        eager_autoload do
-          autoload :SequencedStrategy
-          autoload :MultiQueryStrategy
-        end
+        autoload :SequencedStrategy
+        autoload :MultiQueryStrategy
 
         # Configurations for the prepare step
         PREPARE_XARGS = { object?: true, reverse?: true }.freeze

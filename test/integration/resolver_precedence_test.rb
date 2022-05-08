@@ -20,15 +20,15 @@ class Integration_ResolverPrecedenceTest < GraphQL::IntegrationTestCase
     end
 
     mutation_fields do
-      field(:mutation1, :string)
+      field(:mutation1, :string).perform { }
     end
   end
 
   attr_reader :object, :field
 
   def test_simple_query
-    @object = SCHEMA
-    @field = object[:query][:query1]
+    object = SCHEMA
+    field = object[:query][:query1]
 
     # (1) Resolver as block comes first
     stub_handler(field, :resolve, -> { 'Ok 1' }) do
@@ -36,12 +36,12 @@ class Integration_ResolverPrecedenceTest < GraphQL::IntegrationTestCase
     end
 
     # (2) Method on schema comes second
-    stub_callable(object, :query1, -> { 'Ok 2' }) do
+    stub_callable(object, field, :query1, -> { 'Ok 2' }) do
       assert_result('Ok 2', 'query1')
     end
 
     # (1) Resolver block has higher precedence than method on schema
-    stub_callable(object, :query1, -> { 'Nok 3' }) do
+    stub_callable(object, field, :query1, -> { 'Nok 3' }) do
       stub_handler(field, :resolve, -> { 'Ok 3' }) do
         assert_result('Ok 3', 'query1')
       end
@@ -49,11 +49,12 @@ class Integration_ResolverPrecedenceTest < GraphQL::IntegrationTestCase
   end
 
   def test_simple_mutation
-    @object = SCHEMA
-    @field = object[:mutation][:mutation1]
+    object = SCHEMA
+    field = object[:mutation][:mutation1]
 
-    # (1) With resolver but no performer has the higher precedence
-    stub_handler(field, :resolve, -> { 'Ok 1' }) do
+    # (1) With performer but no resolver has the higher precedence
+    $check = true
+    stub_handler(field, :perform, -> { 'Ok 1' }) do
       assert_result('Ok 1', 'mutation1', :mutation)
     end
 
@@ -67,7 +68,7 @@ class Integration_ResolverPrecedenceTest < GraphQL::IntegrationTestCase
 
     # (3) Performer as a method but resolver as block
     result = ''
-    stub_callable(object, :mutation1!, -> { result << 'Ok 4' }) do
+    stub_callable(object, field, :mutation1!, -> { result << 'Ok 4' }) do
       stub_handler(field, :resolve, -> { result << 'Ok 5' }) do
         assert_result('Ok 4Ok 5', 'mutation1', :mutation)
       end
@@ -75,16 +76,16 @@ class Integration_ResolverPrecedenceTest < GraphQL::IntegrationTestCase
 
     # (4) Performer as a method first and then resolve as a method
     result = ''
-    stub_callable(object, :mutation1!, -> { result << 'Ok 6' }) do
-      stub_callable(object, :mutation1, -> { result << 'Ok 7' }) do
+    stub_callable(object, field, :mutation1!, -> { result << 'Ok 6' }) do
+      stub_callable(object, field, :mutation1, -> { result << 'Ok 7' }) do
         assert_result('Ok 6Ok 7', 'mutation1', :mutation)
       end
     end
 
     # (2) Blocks has higher precedence than methods
     result = ''
-    stub_callable(object, :mutation1!, -> { result << 'Nok 8' }) do
-      stub_callable(object, :mutation1, -> { result << 'Nok 9' }) do
+    stub_callable(object, field, :mutation1!, -> { result << 'Nok 8' }) do
+      stub_callable(object, field, :mutation1, -> { result << 'Nok 9' }) do
         stub_handler(field, :perform, -> { result << 'Ok 8' }) do
           stub_handler(field, :resolve, -> { result << 'Ok 9' }) do
             assert_result('Ok 8Ok 9', 'mutation1', :mutation)
@@ -95,8 +96,8 @@ class Integration_ResolverPrecedenceTest < GraphQL::IntegrationTestCase
   end
 
   def test_simple_object
-    @object = GraphQL::Object1Object
-    @field = object[:field1]
+    object = GraphQL::Object1Object
+    field = object[:field1]
 
     # (1) Block has higher precedence than default value
     stub_handler(field, :resolve, -> { 'Ok 1' }) do
@@ -104,7 +105,7 @@ class Integration_ResolverPrecedenceTest < GraphQL::IntegrationTestCase
     end
 
     # (2) Method on object comes second
-    stub_callable(object, :field1, -> { 'Ok 2' }) do
+    stub_callable(object, field, :field1, -> { 'Ok 2' }) do
       assert_result('Ok 2', 'field1.query2')
     end
 
@@ -112,7 +113,7 @@ class Integration_ResolverPrecedenceTest < GraphQL::IntegrationTestCase
     assert_result('Default Value', 'field1.query2')
 
     # (1) Block has higher precedence than methond on object
-    stub_callable(object, :field1, -> { 'Nok 3' }) do
+    stub_callable(object, field, :field1, -> { 'Nok 3' }) do
       stub_handler(field, :resolve, -> { 'Ok 3' }) do
         assert_result('Ok 3', 'field1.query2')
       end
@@ -133,12 +134,12 @@ class Integration_ResolverPrecedenceTest < GraphQL::IntegrationTestCase
       block = args.shift if args.first.is_a?(Proc)
       cb = create_callback(field, event, *args, **xargs, &block)
 
-      field.get_reset_ivar(:@dynamic_resolver) do
+      field.get_reset_ivar(:@dynamic_resolver, event == :resolve) do
         field.stub_ivar(EVENT_HANDLERS[event], cb) { yield }
       end
     end
 
-    def stub_callable(object, method_name, block, field: @field)
+    def stub_callable(object, field, method_name, block)
       field.get_reset_ivar(:@dynamic_resolver) do
         field.get_reset_ivar(:@resolver) do
           object.stub_imethod(method_name, block) { yield }

@@ -73,38 +73,6 @@ module Rails
           ActiveJob::Serializers.add_serializers(Rails::GraphQL::GlobalID::Serializer)
         end
       end
-
-      # Add reloader ability for files under 'app/graphql'
-      # TODO: Maybe improve to use rails auto loader
-      initializer 'graphql.reloader' do
-        Rails::GraphQL.eager_load!
-        ActiveSupport::Reloader.to_prepare do
-          Rails::GraphQL.type_map.use_checkpoint!
-          Rails::GraphQL.reload_ar_adapters!
-
-          Object.send(:remove_const, :GraphQL) if Object.const_defined?(:GraphQL)
-
-          load "#{__dir__}/shortcuts.rb"
-
-          $LOAD_PATH.each do |path|
-            next unless path =~ %r{\/app\/graphql$}
-            Dir.glob("#{path}/**/*.rb").sort.each(&method(:load))
-          end
-
-          GraphQL::Source.send(:build_pending!)
-        end
-      end
-
-      # initializer "active_record.set_reloader_hooks" do
-      #   ActiveSupport.on_load(:active_record) do
-      #     ActiveSupport::Reloader.before_class_unload do
-      #       if ActiveRecord::Base.connected?
-      #         ActiveRecord::Base.clear_cache!
-      #         ActiveRecord::Base.clear_reloadable_connections!
-      #       end
-      #     end
-      #   end
-      # end
     end
   end
 end

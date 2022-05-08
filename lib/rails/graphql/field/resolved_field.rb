@@ -65,16 +65,27 @@ module Rails
 
         # Store this result for performance purposes
         @dynamic_resolver = dynamic_resolver?
-        return unless defined? @events
+        return unless defined?(@events)
 
-        invalid = @events.each_value.reject do |callback|
-          callback.block.is_a?(Proc) || callable?(callback.block)
-        end
+        # TODO: Change how events are validated. Relying on the +source_location
+        # uses inspect, which is not a good approach
 
-        raise ArgumentError, (+<<~MSG).squish if invalid.present?
-          The "#{owner.name}" class does not define the following methods needed
-          for performing hooks: #{invalid.map(&:block).to_sentence}.
-        MSG
+        # invalid = @events.each_pair.each_with_object({}) do |(key, events), hash|
+        #   events.each do |event|
+        #     _, method_name = event.source_location
+        #     next if method_name.nil? || callable?(method_name)
+
+        #     (hash[key] ||= []).push(method_name)
+        #   end
+        # end
+
+        # return if invalid.empty?
+
+        # invalid = invalid.map { |key, list| (+"#{key} => [#{list.join(', ')}]") }
+        # raise ArgumentError, (+<<~MSG).squish if invalid.present?
+        #   The "#{owner.name}" class does not define the following methods needed
+        #   for performing callbacks: #{invalid.join(', ')}.
+        # MSG
       end
 
       protected

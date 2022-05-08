@@ -58,7 +58,7 @@ module Rails
             MSG
 
             super if defined? super
-            GraphQL.type_map.register(self).method(:validate!)
+            GraphQL.type_map.register(self)
           end
         end
 

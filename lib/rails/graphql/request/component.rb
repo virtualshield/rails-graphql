@@ -43,11 +43,12 @@ module Rails
 
         eager_autoload do
           autoload :Field
-          autoload :Fragment
           autoload :Operation
-          autoload :Spread
-          autoload :Typename
         end
+
+        autoload :Fragment
+        autoload :Spread
+        autoload :Typename
 
         def initialize(node, data)
           @node = node

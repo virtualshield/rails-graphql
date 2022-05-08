@@ -19,11 +19,8 @@ module Rails
 
       DEFAULT_NAMESPACES = %i[base].freeze
 
-      eager_autoload do
-        autoload :ScopedArguments
-
-        autoload :ActiveRecordSource
-      end
+      autoload :ScopedArguments
+      autoload :ActiveRecordSource
 
       # Helper class to be used as the +self+ in configuration blocks
       ScopedConfig = Struct.new(:receiver, :self_object) do
@@ -112,6 +109,7 @@ module Rails
           end
         end
 
+        # :singleton-method:
         # Find a source for a given object. If none is found, then raise an
         # exception
         def find_for!(object)
@@ -120,6 +118,7 @@ module Rails
           MSG
         end
 
+        # :singleton-method:
         # Using the list of +base_sources+, find the first one that can handle
         # the given +object+
         def find_for(object)
@@ -175,12 +174,6 @@ module Rails
           @schemas = (namespaces.presence || DEFAULT_NAMESPACES).map do |ns|
             (schema = Schema.find(ns)).present? ? [ns, schema] : nil
           end.compact.to_h
-        end
-
-        def eager_load!
-          super
-
-          build_pending!
         end
 
         protected
@@ -332,8 +325,7 @@ module Rails
           # meaning that they are a base sources
           def base_sources
             @@base_sources ||= begin
-              eager_load!
-              descendants.select(&:abstract?).to_set
+              GraphQL.config.sources.map(&:constantize).to_set
             end
           end
 

@@ -33,6 +33,11 @@ module Rails
       # their name, so we don't have to define classes like +PointInputInput+.
       config.auto_suffix_input_objects = 'Input'
 
+      # Introspection is enabled by default. Changing this will affect all the
+      # schemas off the application and reduce memory usage. This can also be
+      # set at per schema.
+      config.enable_introspection = true
+
       # For performance purposes, this gem implements a
       # {JsonCollector}[rdoc-ref:Rails::GraphQL::Collectors::JsonCollector].
       # If you prefer to use the normal hash to string serialization, you can
@@ -57,6 +62,11 @@ module Rails
       config.request_strategies = [
         'Rails::GraphQL::Request::Strategy::MultiQueryStrategy',
         'Rails::GraphQL::Request::Strategy::SequencedStrategy',
+      ]
+
+      # A list of all possible rails-graphql-compatible sources
+      config.sources = [
+        'Rails::GraphQL::Source::ActiveRecordSource',
       ]
 
       # TODO: To be implemented

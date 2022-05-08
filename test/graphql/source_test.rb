@@ -196,7 +196,7 @@ class GraphQL_SourceTest < GraphQL::TestCase
   def test_pending_ask
     refute_predicate(source_const, :pending?)
 
-    sample = unmapped_class(source_const)
+    unmapped_class(source_const)
     assert_predicate(source_const, :pending?)
   end
 

@@ -24,14 +24,11 @@ module Rails
         field :subscription_type, '__Type'
         field :directives,        '__Directive', full: true, method_name: :read_directives
 
-        # TODO: make it work for lazy enumerator
         def read_types
           event.schema.types(base_class: :Type).force
         end
 
-        # TODO: it only works after eager_load!
         def read_directives
-          Directive.eager_load!
           event.schema.types(base_class: :Directive).force
         end
       end

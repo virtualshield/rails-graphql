@@ -15,7 +15,7 @@ module Rails
 
       # A direct representation of the spec types
       KINDS = %w[Scalar Object Interface Union Enum Input].freeze
-      eager_autoload { KINDS.each { |kind| autoload kind.to_sym } }
+      KINDS.each { |kind| autoload kind.to_sym }
 
       delegate :base_type, :kind, :kind_enum, :input_type?, :output_type?,
         :leaf_type?, to: :class, prefix: :gql
@@ -102,20 +102,6 @@ module Rails
 
         # Defines a series of question methods based on the kind
         KINDS.each { |kind| define_method(:"#{kind.downcase}?") { false } }
-
-        def eager_load!
-          super
-
-          # Due to inheritance
-          return unless eql?(GraphQL::Type)
-
-          Type::Enum.eager_load!
-          Type::Object.eager_load!
-          Type::Scalar.eager_load!
-
-          Source.eager_load!
-          TypeMap.loaded! :Type
-        end
 
         protected
 

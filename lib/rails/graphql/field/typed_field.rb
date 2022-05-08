@@ -18,7 +18,7 @@ module Rails
           @type_klass = type
           @type = type.to_sym
         else
-          @type = type.to_s.underscore.to_sym
+          @type = type
         end
 
         super(name, *args, **xargs, &block)
@@ -70,7 +70,7 @@ module Rails
         super if defined? super
 
         raise ArgumentError, (+<<~MSG).squish unless type_klass.is_a?(Module)
-          Unable to find the "#{type.inspect}" input type on GraphQL context.
+          Unable to find the "#{type.inspect}" data type on GraphQL context.
         MSG
 
         valid_type = valid_field_types.empty? || valid_field_types.any? do |base_type|

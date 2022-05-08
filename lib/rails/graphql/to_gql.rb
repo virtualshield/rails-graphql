@@ -32,6 +32,8 @@ module Rails
 
       # Describe the given +schema+ as GraphQL, with all types and directives
       def describe(schema, collector = nil, with_descriptions: true, with_spec: nil)
+        GraphQL.type_map.send(:load_dependencies!, namespace: schema.namespace)
+
         collector ||= Collectors::IdentedCollector.new
         @with_descriptions = with_descriptions
         @with_spec = with_spec.nil? ? schema.introspection? : with_spec

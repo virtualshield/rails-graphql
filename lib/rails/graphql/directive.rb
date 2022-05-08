@@ -29,11 +29,16 @@ module Rails
       extend Helpers::WithGlobalID
       extend Helpers::Registerable
 
-      VALID_LOCATIONS = Rails::GraphQL::Type::Enum::DirectiveLocationEnum
-        .values.to_a.map { |value| value.downcase.to_sym }.freeze
+      EXECUTION_LOCATIONS  = %i[
+        query mutation subscription field fragment_definition fragment_spread inline_fragment
+      ].freeze
 
-      EXECUTION_LOCATIONS  = VALID_LOCATIONS[0..6].freeze
-      DEFINITION_LOCATIONS = VALID_LOCATIONS[7..17].freeze
+      DEFINITION_LOCATIONS = %i[
+        schema scalar object field_definition argument_definition interface union
+        enum enum_value input_object input_field_definition
+      ].freeze
+
+      VALID_LOCATIONS = (EXECUTION_LOCATIONS + DEFINITION_LOCATIONS).freeze
 
       class << self
         def kind
@@ -90,12 +95,6 @@ module Rails
           gid.instantiate? ? klass.build(**gid.params) : klass
         end
 
-        def eager_load!
-          super
-
-          TypeMap.loaded! :Directive
-        end
-
         def inspect
           return super if eql?(GraphQL::Directive)
 
@@ -146,11 +145,9 @@ module Rails
 
       self.abstract = true
 
-      eager_autoload do
-        autoload :DeprecatedDirective
-        autoload :IncludeDirective
-        autoload :SkipDirective
-      end
+      autoload :DeprecatedDirective
+      autoload :IncludeDirective
+      autoload :SkipDirective
 
       delegate :locations, :gql_name, :gid_base_class, to: :class
 

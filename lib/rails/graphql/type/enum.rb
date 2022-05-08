@@ -13,10 +13,8 @@ module Rails
 
         setup! leaf: true, input: true, output: true
 
-        eager_autoload do
-          autoload :DirectiveLocationEnum
-          autoload :TypeKindEnum
-        end
+        autoload :DirectiveLocationEnum
+        autoload :TypeKindEnum
 
         # Define the methods for accessing the values attribute
         inherited_collection :values

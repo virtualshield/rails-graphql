@@ -45,7 +45,7 @@ module Rails
         # Add the given +value+ to the given +key+. Ensure to encode the value
         # before calling this function.
         def add(key, value)
-          (@current_value << ',') unless @current_value.blank?
+          (@current_value << ',') if @current_value.pos > 0
 
           if @current_array
             @current_value << value

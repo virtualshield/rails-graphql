@@ -208,6 +208,10 @@ module Rails
               find_field(:#{kind}, name)
             end
 
+            def add_#{kind}_field(*args, **xargs, &block)
+              add_field(:#{kind}, *args, **xargs, &block)
+            end
+
             def #{kind}_fields(&block)
               return @#{kind}_fields ||= Concurrent::Map.new if block.nil?
               configure_fields(:#{kind}, &block)

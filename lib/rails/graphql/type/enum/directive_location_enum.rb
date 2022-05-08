@@ -12,17 +12,17 @@ module Rails
 
         desc 'The valid locations that a directive may be placed.'
 
-        %w[QUERY MUTATION SUBSCRIPTION FIELD FRAGMENT_DEFINITION
-          FRAGMENT_SPREAD INLINE_FRAGMENT].each do |value|
-          desc = value.downcase.tr('_', ' ')
-          add(value, desc: "Mark as a executable directive usable on #{desc} objects.")
+        Directive::EXECUTION_LOCATIONS.each do |value|
+          name = value.to_s.upcase
+          desc = value.to_s.tr('_', ' ')
+          add(name, desc: "Mark as a executable directive usable on #{desc} objects.")
         end
 
-        %w[SCHEMA SCALAR OBJECT FIELD_DEFINITION ARGUMENT_DEFINITION INTERFACE UNION
-          ENUM ENUM_VALUE INPUT_OBJECT INPUT_FIELD_DEFINITION].each do |value|
-          desc = value.downcase.tr('_', ' ')
+        Directive::DEFINITION_LOCATIONS.each do |value|
+          name = value.to_s.upcase
+          desc = value.to_s.tr('_', ' ')
           desc = "Mark as a type system directive usable on #{desc} definitions."
-          add(value, desc: desc.gsub(/definition definitions\.$/, 'definitions.'))
+          add(name, desc: desc.sub('definition definitions.', 'definitions.'))
         end
       end
     end
