@@ -62,7 +62,7 @@ module Rails
         # TODO: Maybe add a way to detect from which file the schema is being loaded
         def gql_schema_header
           schema = self.class.gql_schema
-          "# Schema #{schema.name} [#{schema.namespace}] {#{localtion}}\n"
+          "# Schema #{schema.name} [#{schema.namespace}]\n"
         end
 
         # The schema on which the requests will be performed from

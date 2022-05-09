@@ -30,7 +30,7 @@ Gem::Specification.new do |s|
   s.extensions   = ['ext/extconf.rb']
   s.rdoc_options = ['--title', 'GraphQL server for Rails']
 
-  s.required_ruby_version = '>= 2.2'
+  s.required_ruby_version = '>= 2.6.3'
   s.add_dependency 'rails', '>= 5.0'
   s.add_dependency 'ffi', '~> 1.12'
 
