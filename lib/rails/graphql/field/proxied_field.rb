@@ -52,6 +52,7 @@ module Rails
           )
         end
 
+        # TODO: Replace by a proper method to build and set @directives
         @directives = GraphQL.directives_to_set(xargs[:directives], source: self) \
           if xargs.key?(:directives)
 

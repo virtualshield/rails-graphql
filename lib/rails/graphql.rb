@@ -133,21 +133,21 @@ module Rails
       #
       # If a +source+ is provided, then an +:attach+ event will be triggered
       # for each directive on the givem source element.
-      def directives_to_set(list, others = [], event = nil, **xargs)
-        others = others.dup
+      def directives_to_set(list, others = nil, event = nil, **xargs)
+        return if list.blank?
 
         if (source = xargs.delete(:source)).present?
           location = xargs.delete(:location) || source.try(:directive_location)
           event ||= GraphQL::Event.new(:attach, source, phase: :definition, **xargs)
         end
 
-        Array.wrap(list).each_with_object(Set.new) do |item, result|
+        others = others&.to_set
+        list.then.each_with_object(Set.new) do |item, result|
           raise ArgumentError, (+<<~MSG).squish unless item.kind_of?(GraphQL::Directive)
             The "#{item.class}" is not a valid directive.
           MSG
 
-          invalid = others.present? && (others.any? { |k| k.class.eql?(item.class) })
-          raise DuplicatedError, (+<<~MSG).squish if invalid
+          raise DuplicatedError, (+<<~MSG).squish if others&.any?(item) || result.any?(item)
             A @#{item.gql_name} directive have already been provided.
           MSG
 

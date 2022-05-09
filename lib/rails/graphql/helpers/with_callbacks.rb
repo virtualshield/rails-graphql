@@ -37,9 +37,9 @@ module Rails
           protected
 
             # Attach a new key based event filter
-            def event_filter(key, sanitizer = nil, &block)
+            def event_filter(key, &block)
               @event_filters ||= superclass.try(:event_filters)&.dup || {}
-              @event_filters[key.to_sym] = { block: block, sanitizer: sanitizer }
+              @event_filters[key.to_sym] = block
             end
         end
 
@@ -47,7 +47,7 @@ module Rails
         # {Callback}[rdoc-ref:Rails::GraphQL::Callback] object.
         def on(event_name, *args, unshift: false, **xargs, &block)
           block = Callback.new(self, event_name, *args, **xargs, &block)
-          super(event_name, unshift: unshift, &block)
+          super(event_name, block, unshift: unshift)
         end
       end
     end

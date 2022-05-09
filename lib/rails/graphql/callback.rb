@@ -37,9 +37,7 @@ module Rails
 
         @pre_args = args
         @pre_xargs = xargs.slice!(*event_filters.keys)
-        @filters = xargs.map do |key, value|
-          [key, event_filters[key][:sanitizer]&.call(value) || value]
-        end.to_h
+        @filters = xargs
 
         @block = block
       end
@@ -80,7 +78,9 @@ module Rails
 
         # Using the filters, check if the current callback can be executed
         def can_run?(event)
-          filters.all? { |key, options| event_filters[key][:block].call(options, event) }
+          filters.all? do |key, options|
+            target.instance_exec(options, event, &event_filters[key])
+          end
         end
 
         # Call the callback block as a symbol

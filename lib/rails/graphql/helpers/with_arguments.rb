@@ -36,7 +36,7 @@ module Rails
         end
 
         def initialize(*args, arguments: nil, **xargs, &block)
-          @arguments = Array.wrap(arguments).map do |object|
+          @arguments = arguments.then.map do |object|
             raise ArgumentError, (+<<~MSG).squish unless object.is_a?(Argument)
               The given "#{object.inspect}" is not a valid Argument object.
             MSG

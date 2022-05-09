@@ -121,7 +121,7 @@ module Rails
           def all_deprecated_values
             @all_deprecated_values ||= begin
               all_value_directives.to_a.inject({}) do |list, (value, dirs)|
-                obj = dirs.find { |dir| dir.is_a?(deprecated_klass) }
+                obj = dirs&.find { |dir| dir.is_a?(deprecated_klass) }
                 obj ? list.merge(value => obj.args.reason) : list
               end
             end.freeze

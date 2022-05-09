@@ -103,7 +103,10 @@ module Rails
         @owner = owner
         normalize_name(name)
 
-        @directives = GraphQL.directives_to_set(xargs[:directives], source: self)
+        # TODO: Replace by a proper method to build and set @directives
+        directives = GraphQL.directives_to_set(xargs[:directives], source: self)
+        @directives = directives unless directives.nil?
+
         @method_name = xargs[:method_name].to_s.underscore.to_sym \
           unless xargs[:method_name].nil?
 

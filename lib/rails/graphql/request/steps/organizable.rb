@@ -61,7 +61,7 @@ module Rails
             @variables = args.freeze
             @arguments.freeze
           rescue ArgumentsError => error
-            raise ArgumentsError, (+<<~MSG).chomp
+            raise ArgumentsError, (+<<~MSG).squish
               Invalid arguments for #{log_source}: #{error.message}.
             MSG
           end
@@ -79,7 +79,7 @@ module Rails
             args = collect_arguments(self, args)
             @arguments = request.build(Request::Arguments, args).freeze unless args.nil?
           rescue ArgumentsError => error
-            raise ArgumentsError, (+<<~MSG).chomp
+            raise ArgumentsError, (+<<~MSG).squish
               Invalid arguments for #{gql_name} #{kind}: #{error.message}.
             MSG
           end

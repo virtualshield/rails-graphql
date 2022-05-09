@@ -31,12 +31,12 @@ module Rails
 
       EXECUTION_LOCATIONS  = %i[
         query mutation subscription field fragment_definition fragment_spread inline_fragment
-      ].freeze
+      ].to_set.freeze
 
       DEFINITION_LOCATIONS = %i[
         schema scalar object field_definition argument_definition interface union
         enum enum_value input_object input_field_definition
-      ].freeze
+      ].to_set.freeze
 
       VALID_LOCATIONS = (EXECUTION_LOCATIONS + DEFINITION_LOCATIONS).freeze
 
@@ -105,17 +105,6 @@ module Rails
 
         private
 
-          # Check if the given list the locations are valid
-          def validate_locations!(list)
-            list.flatten!
-            list.map! { |item| item.to_s.underscore.to_sym }
-
-            invalid = list - VALID_LOCATIONS
-            raise ArgumentError, (+<<~MSG).squish unless invalid.empty?
-              Invalid locations for @#{gql_name}: #{invalid.to_sentence}.
-            MSG
-          end
-
           # Provide a nice way to use a directive without calling
           # +Directive.new+, like the +DeprecatedDirective+ can be initialized
           # using +GraphQL::DeprecatedDirective(*args)+
@@ -128,6 +117,29 @@ module Rails
             subclass.module_parent.define_singleton_method(method_name) do |*args, &block|
               subclass.new(*args, &block)
             end
+          end
+
+          # A helper method that allows the +on+ and +for+ event filters to be
+          # used with things from both the TypeMap and the GraphQL shortcut
+          # classes
+          def sanitize_objects(setting)
+            setting.then.map do |item|
+              next item unless item.is_a?(String) || item.is_a?(Symbol)
+              GraphQL.type_map.fetch(item, namespaces: namespaces) ||
+                ::GraphQL.const_get(item)
+            end
+          end
+
+          # Check if the given list the locations are valid
+          def validate_locations!(list)
+            invalid = list.flatten.lazy.reject do |item|
+              item = item.to_s.underscore.to_sym unless item.is_a?(Symbol)
+              VALID_LOCATIONS.include?(item)
+            end
+
+            raise ArgumentError, (+<<~MSG).squish if invalid.any?
+              Invalid locations for @#{gql_name}: #{invalid.force.to_sentence}.
+            MSG
           end
 
           # Allows checking value existence
@@ -153,28 +165,16 @@ module Rails
 
       delegate :locations, :gql_name, :gid_base_class, to: :class
 
-      array_sanitizer = ->(setting) do
-        Array.wrap(setting)
+      event_filter(:for) do |options, event|
+        sanitize_objects(options).any?(&event.source.method(:of_type?))
       end
 
-      object_sanitizer = ->(setting) do
-        Array.wrap(setting).map! do |item|
-          next item unless item.is_a?(String) || item.is_a?(Symbol)
-          GraphQL.type_map.fetch(item, namespaces: namespaces) ||
-            ::GraphQL.const_get(item)
-        end
+      event_filter(:on) do |options, event|
+        event.respond_to?(:on?) && sanitize_objects(options).any?(&event.method(:on?))
       end
 
-      event_filter(:for, object_sanitizer) do |options, event|
-        options.any?(&event.source.method(:of_type?))
-      end
-
-      event_filter(:on, object_sanitizer) do |options, event|
-        event.respond_to?(:on?) && options.any?(&event.method(:on?))
-      end
-
-      event_filter(:during, array_sanitizer) do |options, event|
-        event.key?(:phase) && options.include?(event[:phase])
+      event_filter(:during) do |options, event|
+        event.key?(:phase) && options.then.include?(event[:phase])
       end
 
       attr_reader :args
@@ -219,10 +219,14 @@ module Rails
 
       # Checks if all the arguments provided to the directive instance are valid
       def validate!(*)
+        raise ArgumentError, (+<<~MSG).squish unless defined?(@owner)
+          The @#{gql_name} directive is unbounded.
+        MSG
+
         invalid = all_arguments.reject { |name, arg| arg.valid?(@args[name]) }
         return if invalid.empty?
 
-        invalid = invalid.map { |name, _| (+<<~MSG).chomp }
+        invalid = invalid.each_key.map { |name| (+<<~MSG).squish }
           invalid value "#{@args[name].inspect}" for #{name} argument
         MSG
 
@@ -237,7 +241,8 @@ module Rails
         end.compact
 
         args = args.presence && +"(#{args.join(', ')})"
-        +"@#{gql_name}#{args}"
+        unbound = ' # unbound' unless defined?(@owner)
+        +"@#{gql_name}#{args}#{unbound}"
       end
 
       %i[to_global_id to_gid to_gid_param].each do |method_name|

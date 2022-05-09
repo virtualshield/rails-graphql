@@ -21,6 +21,7 @@ module Rails
         def initialize_copy(orig)
           super
 
+          return if orig.directives.nil?
           @directives = orig.directives.dup
         end
 

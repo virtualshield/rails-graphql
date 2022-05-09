@@ -145,7 +145,7 @@ module URI
       end
 
       def validate_component(component)
-        raise URI::InvalidComponentError, (+<<~MSG).chomp if component.blank?
+        raise URI::InvalidComponentError, (+<<~MSG).squish if component.blank?
           Expected a URI like gql://base/Directive/deprecated: #{inspect}.
         MSG
       end

@@ -39,9 +39,10 @@ module Rails
               args = directive_arguments(instance)
               args = collect_arguments(args, data[:arguments])
 
+              # TODO: Use instance.method(:new).curry(2)[$args$]
               (list ||= []) << instance.new(request.build(Request::Arguments, args))
             rescue ArgumentsError => error
-              raise ArgumentsError, (+<<~MSG).chomp
+              raise ArgumentsError, (+<<~MSG).squish
                 Invalid arguments for @#{instance.gql_name} directive
                 added to #{gql_name} #{kind}: #{error.message}.
               MSG

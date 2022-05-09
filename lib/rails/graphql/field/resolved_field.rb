@@ -90,7 +90,8 @@ module Rails
 
       protected
 
-        # Check if the method is defined and belongs to a non-abstract class
+        # Check if the method is defined and does not belong to a method defined
+        # by the gem itself
         def callable?(method_name)
           owner.is_a?(Class) && owner.public_method_defined?(method_name) &&
             !owner.public_instance_method(method_name).owner.try(:abstract?)

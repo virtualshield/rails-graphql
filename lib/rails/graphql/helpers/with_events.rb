@@ -65,15 +65,20 @@ module Rails
         # Add a new event listener for the given +event_name+. It is possible
         # to prepend the event by setting +unshift: true+. This checks if the
         # event name is a valid one due to +event_types+.
-        def on(event_name, unshift: false, &block)
+        def on(event_name, callback = nil, unshift: false, &block)
           event_name = event_name.to_sym
           valid = !event_types || event_types.include?(event_name)
           raise ArgumentError, (+<<~MSG).squish unless valid
             The #{event_name} is not a valid event type.
           MSG
 
+          invalid_callback = callback.nil? || callback.is_a?(Callback)
+          raise ArgumentError, (+<<~MSG).squish unless invalid_callback
+            The provided #{callback.class.name} is not a valid callback.
+          MSG
+
           listeners << event_name
-          events[event_name].send(unshift ? :unshift : :push, block)
+          events[event_name].send(unshift ? :unshift : :push, callback || block)
         end
       end
     end

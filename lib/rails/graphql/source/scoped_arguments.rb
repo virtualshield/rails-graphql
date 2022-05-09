@@ -21,7 +21,7 @@ module Rails
           super(*args, **xargs)
 
           @block = block
-          @fields = Array.wrap(on).presence
+          @fields = on&.then
         end
 
         # Check if the argument should be attached to the given +field+

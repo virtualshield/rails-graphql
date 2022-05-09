@@ -47,7 +47,7 @@ module Rails
       end
 
       step(:input) do
-        extra = Array.wrap(primary_key).product([{ null: true }]).to_h
+        extra = primary_key.then.entries.product([{ null: true }]).to_h
         build_attribute_fields(self, **extra)
         build_reflection_inputs(self)
 
