@@ -23,15 +23,16 @@ module Rails
 
           # Make sure to always return a set
           def directives
-            @directives || Set.new
+            defined?(@directives) && @directives || Set.new
           end
 
           alias all_directives directives
 
           # Helper parser for directives that also collect necessary variables
           def parse_directives(location = nil)
-            list = nil
+            return if data[:directives].blank?
 
+            list = nil
             visitor.collect_directives(*data[:directives]) do |data|
               instance = find_directive!(data[:name])
 
@@ -44,14 +45,12 @@ module Rails
                 Invalid arguments for @#{instance.gql_name} directive
                 added to #{gql_name} #{kind}: #{error.message}.
               MSG
-            end unless data[:directives].blank?
-
-            if list.present?
-              event = Event.new(:attach, strategy, self, phase: :execution)
-              list = GraphQL.directives_to_set(list, [], event, location: location || kind)
             end
 
-            @directives = list&.freeze
+            event = Event.new(:attach, strategy, self, phase: :execution)
+            list = GraphQL.directives_to_set(list, [], event, location: location || kind)
+
+            @directives = list.freeze
           end
 
           # Get and cache all the arguments for this given +directive+

@@ -35,9 +35,10 @@ module Rails
       def reset!
         @objects = 0 # Number of types and directives defined
         @version = nil # Make sure to not keep the same version
+        @skip_register = nil
 
         @pending = Concurrent::Array.new
-        @skip_register = nil
+        @reported_fallbacks = Concurrent::Set.new
 
         # Initialize the callbacks
         @callbacks = Concurrent::Map.new do |hc, key|
@@ -46,7 +47,7 @@ module Rails
 
         # Initialize the dependencies
         @dependencies = Concurrent::Map.new do |hd, key|
-          hd.fetch_or_store(key, Concurrent::Set.new)
+          hd.fetch_or_store(key, Concurrent::Array.new)
         end
 
         # Initialize the index structure
@@ -67,7 +68,7 @@ module Rails
 
       # Add a list of dependencies to the type map, so it can lazy load them
       def add_dependencies(*list, to:)
-        @dependencies[to] += list.flatten.compact.map(&:to_s)
+        @dependencies[to].concat(list.flatten.compact)
       end
 
       # Mark the given object to be registered later, when a fetch is triggered
@@ -141,21 +142,25 @@ module Rails
 
       # Same as +fetch+ but it will raise an exception or retry depending if the
       # base type was already loaded or not
-      def fetch!(*args, base_class: :Type, **xargs)
+      def fetch!(key_or_name, base_class: :Type, fallback: nil, **xargs)
         xargs[:base_class] = base_class
 
-        result = fetch(*args, **xargs)
+        result = fetch(key_or_name, **xargs)
         return result unless result.nil?
 
         new_loads = load_dependencies!(**xargs)
+        result = fetch(key_or_name, **xargs) if new_loads
 
-        result = fetch(*args, **xargs) if new_loads
-        return result unless result.nil?
+        if result.nil? && fallback
+          result = fetch(fallback, **xargs)
+          report_fallback(key_or_name, result, base_class)
+        end
 
-
-        raise NotFoundError, (+<<~MSG).squish
-          Unable to find #{args.first.inspect} #{base_class} object.
+        raise NotFoundError, (+<<~MSG).squish if result.nil?
+          Unable to find #{key_or_name.inspect} #{base_class} object.
         MSG
+
+        result
       end
 
       # Find the given key or name inside the base class either on the given
@@ -167,13 +172,14 @@ module Rails
         end
 
         possibilities = Array.wrap(key_or_name)
-        possibilities += Array.wrap(xargs[:fallback]) if xargs.key?(:fallback)
+        possibilities << xargs[:fallback] if xargs.key?(:fallback)
 
         base_class = xargs.fetch(:base_class, :Type)
         sanitize_namespaces(**xargs).find do |namespace|
           possibilities.find do |item|
             next if (result = dig(namespace, base_class, item)).nil?
-            return result.is_a?(Proc) ? result.call : result
+            next if (result.is_a?(Proc) && (result = result.call).nil?)
+            return result
           end
         end
       ensure
@@ -325,7 +331,11 @@ module Rails
         def load_dependencies!(**xargs)
           sanitize_namespaces(**xargs).reduce(false) do |result, namespace|
             next result if (list = @dependencies[namespace]).empty?
-            list.delete_if { |path| require(path) || true }
+
+            while (src = list.shift)
+              src.is_a?(Proc) ? src.call : require(src)
+            end
+
             true
           end
         end
@@ -376,6 +386,18 @@ module Rails
         def ensure_base_class!(key)
           raise ArgumentError, (+<<~MSG).squish unless base_classes.include?(key)
             Unsupported base class "#{key.inspect}".
+          MSG
+        end
+
+        # Warn whenever a new key was resolved as a fallback
+        def report_fallback(key_or_name, result, base_class)
+          return if @reported_fallbacks.include?(key_or_name)
+
+          @reported_fallbacks << key_or_name
+          GraphQL.logger.warn((+<<~MSG).squish)
+            \e[95m[GraphQL]
+            \e[33m#{base_class} "#{key_or_name}" is not defined,
+            using #{result.gql_name} instead.\e[0m
           MSG
         end
     end

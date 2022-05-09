@@ -42,7 +42,7 @@ module Rails
 
         # Only resolve if the +type_klass+ is equivalent to the given +object+
         def resolve_with!(object)
-          return if invalid?
+          return if unresolvable?
 
           @current_object = object
           resolve!
@@ -71,7 +71,7 @@ module Rails
 
           # Resolve the spread operation
           def resolve
-            return if invalid?
+            return if unresolvable?
 
             object = @current_object || type_klass
             resolve_then if type_klass =~ object

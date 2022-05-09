@@ -14,12 +14,14 @@ module Rails
 
           # Normal mode of the resolve step
           def resolve
+            return if skipped?
             invalid? ? try(:resolve_invalid) : resolve_then
           end
 
           # The actual process that resolve the object
           def resolve_then(after_block = nil, &block)
-            return if invalid?
+            return if unresolvable?
+
             stacked do
               block.call if block.present?
               trigger_event(:finalize)

@@ -22,11 +22,11 @@ module Rails
         using Markdown syntax (as specified by [CommonMark](http://commonmark.org/)).
       DESC
 
-      on :organized do |event|
+      on(:organized) do |event|
         report_for_field(event)
       end
 
-      on :finalize, for: Type::Enum do |event|
+      on(:finalize, for: Type::Enum) do |event|
         report_for_enum_value(event)
       end
 

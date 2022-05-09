@@ -60,9 +60,24 @@ module Rails
           defined?(@invalid) && @invalid
         end
 
+        # Check if the component is marked as skipped
+        def skipped?
+          defined?(@skipped) && @skipped
+        end
+
+        # Just a fancy name for invalid or skipped
+        def unresolvable?
+          invalid? || skipped?
+        end
+
         # Mark the component as invalid
         def invalidate!
           @invalid = true
+        end
+
+        # Skip the component
+        def skip!
+          @skipped = true
         end
 
         # Normaly, components are not assignable, only fields are

@@ -68,15 +68,16 @@ module Rails
 
           # Helper parser for arguments that also collect necessary variables
           def parse_arguments
-            args = {}
+            args = nil
+
             visitor.collect_arguments(*data[:arguments]) do |data|
+              args ||= {}
               args[data[:name]] = variable = data[:variable]
               args[data[:name]] = data[:value] if variable.nil? || variable.null?
             end unless data[:arguments].blank?
 
             args = collect_arguments(self, args)
-
-            @arguments = request.build(Request::Arguments, args).freeze
+            @arguments = request.build(Request::Arguments, args).freeze unless args.nil?
           rescue ArgumentsError => error
             raise ArgumentsError, (+<<~MSG).chomp
               Invalid arguments for #{gql_name} #{kind}: #{error.message}.
@@ -92,8 +93,10 @@ module Rails
 
             errors = []
             source = source.all_arguments if source.respond_to?(:all_arguments)
+            return unless source.present?
+
             result = source.each_pair.each_with_object({}) do |(key, argument), hash|
-              value = values[key]
+              value = values && values[key]
 
               # Pointer means operation variable
               if value.is_a?(::FFI::Pointer)

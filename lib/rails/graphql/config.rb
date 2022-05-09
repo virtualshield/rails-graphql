@@ -44,6 +44,11 @@ module Rails
       # disable this option.
       config.enable_string_collector = true
 
+      # Set what is de default expected output type of GraphQL requests. String
+      # combined with the previous setting has the best performance. On console,
+      # it will automatically shift to hash.
+      config.default_response_format = :string
+
       # Specifies if the results of operations should be encoded with
       # +ActiveSupport::JSON#encode+ instead of the default +JSON#generate+.
       # See also https://github.com/rails/rails/blob/master/activesupport/lib/active_support/json/encoding.rb
@@ -62,12 +67,32 @@ module Rails
       config.request_strategies = [
         'Rails::GraphQL::Request::Strategy::MultiQueryStrategy',
         'Rails::GraphQL::Request::Strategy::SequencedStrategy',
+        'Rails::GraphQL::Request::Strategy::CachedStrategy',
       ]
 
       # A list of all possible rails-graphql-compatible sources
       config.sources = [
         'Rails::GraphQL::Source::ActiveRecordSource',
       ]
+
+      # A list of known dependencies that can be requested and included in any
+      # schema. This is the best place for other gems to add their own
+      # dependencies and allow users to pick them
+      config.known_dependencies = {
+        scalar: {
+          any:       "#{__dir__}/type/scalar/any_scalar",
+          bigint:    "#{__dir__}/type/scalar/bigint_scalar",
+          binary:    "#{__dir__}/type/scalar/binary_scalar",
+          date_time: "#{__dir__}/type/scalar/date_time_scalar",
+          date:      "#{__dir__}/type/scalar/date_scalar",
+          decimal:   "#{__dir__}/type/scalar/decimal_scalar",
+          time:      "#{__dir__}/type/scalar/time_scalar",
+          json:      "#{__dir__}/type/scalar/json_scalar",
+        },
+        directive: {
+          cached:    "#{__dir__}/directive/cached_directive",
+        },
+      }
 
       # TODO: To be implemented
       # enable_i18n_descriptions

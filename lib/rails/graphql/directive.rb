@@ -149,6 +149,8 @@ module Rails
       autoload :IncludeDirective
       autoload :SkipDirective
 
+      autoload :CachedDirective
+
       delegate :locations, :gql_name, :gid_base_class, to: :class
 
       array_sanitizer = ->(setting) do

@@ -34,6 +34,10 @@ module Rails
         def has_argument?(name)
           super || field.has_argument?(name)
         end
+
+        def arguments?
+          super || field.arguments?
+        end
       end
 
       redefine_singleton_method(:output_type?) { true }

@@ -39,7 +39,8 @@ module Rails
       # Imports schema specific configurations
       configure do |config|
         %i[
-          enable_introspection enable_string_collector request_strategies
+          enable_introspection request_strategies
+          enable_string_collector default_response_format
         ].each do |name|
           config_accessor(name) { GraphQL.config.send(name) }
         end
@@ -180,11 +181,6 @@ module Rails
           MSG
         end
 
-        # Checks if a given method can act as resolver
-        def gql_resolver?(method_name)
-          (instance_methods - GraphQL::Schema.instance_methods).include?(method_name)
-        end
-
         # Find a given +type+ associated with the schema
         def find_type(type, **xargs)
           xargs[:base_class] = :Type
@@ -215,10 +211,64 @@ module Rails
 
         protected
 
+          # Indicate to type map that the current schema depends on all the
+          # files in the provided +path+ directory
+          def load_directory(dir = '.', recursive: true)
+            source = caller_locations(2, 1).first.path
+
+            absolute = dir.start_with?(File::SEPARATOR)
+            path = recursive ? File.join('**', '*.rb') : '*.rb'
+            dir = File.expand_path(dir, File.dirname(source)) unless absolute
+
+            list = Dir.glob(File.join(dir, path)).select do |file_name|
+              next if file_name == source
+              file_name.chomp!('.rb')
+            end
+
+            type_map.add_dependencies(list, to: namespace)
+          end
+
+          # An alias to the above metho that does not accept arguments
+          def load_current_directory
+            load_directory
+          end
+
+          # Load a list of known dependencies based on the given +type+
+          def load_dependencies(type, *list)
+            ref = GraphQL.config.known_dependencies
+
+            raise ArgumentError, (+<<~MSG).squish if (ref = ref[type]).nil?
+              There are no #{type} known dependencies.
+            MSG
+
+            list = list.flatten.compact.map do |item|
+              next item unless (item = ref[item]).nil?
+              raise ArgumentError, (+<<~MSG).squish
+                Unable to find #{item} as #{type} in known dependencies.
+              MSG
+            end
+
+            type_map.add_dependencies(list, to: namespace)
+          end
+
+          # A syntax sugar for +load_dependencies(:directive, *list)+
+          def load_directives(*list)
+            load_dependencies(:directive, *list)
+          end
+
+          # A syntax sugar for +load_dependencies(:source, *list)+
+          def load_sources(*list)
+            load_dependencies(:source, *list)
+          end
+
           # Generate the helper methods to easily create types within the
           # definition of the schema
           GraphQL::Type::KINDS.each do |kind|
             class_eval <<-RUBY, __FILE__, __LINE__ + 1
+              def load_#{kind.underscore.pluralize}(*list)
+                load_dependencies(:#{kind.underscore}, *list)
+              end
+
               def #{kind.underscore}(name, **xargs, &block)
                 create_type(name, :#{kind}, **xargs, &block)
               end
@@ -308,7 +358,5 @@ module Rails
           end
       end
     end
-
-    ActiveSupport.run_load_hooks(:graphql, Schema)
   end
 end

@@ -66,16 +66,6 @@ class GraphQL_SchemaTest < GraphQL::TestCase
     end
   end
 
-  def test_gql_resolver_ask
-    refute(DESCRIBED_CLASS.gql_resolver?(:calculate))
-
-    DESCRIBED_CLASS.send(:define_method, :calculate) {}
-    assert(DESCRIBED_CLASS.gql_resolver?(:calculate))
-
-    DESCRIBED_CLASS.send(:undef_method, :calculate)
-    refute(DESCRIBED_CLASS.gql_resolver?(:calculate))
-  end
-
   def test_find_type
     DESCRIBED_CLASS.stub(:namespaces, :a) do
       DESCRIBED_CLASS.stub(:type_map, double(fetch: passallthrough)) do

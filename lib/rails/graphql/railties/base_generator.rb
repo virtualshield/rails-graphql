@@ -22,13 +22,7 @@ module Rails
 
         def app_module_name
           require File.expand_path('config/application', destination_root)
-
-          app_class = Rails.application.class
-          source_name = app_class.respond_to?(:module_parent_name) \
-            ? :module_parent_name \
-            : :parent_name
-
-          app_class.send(source_name)
+          Rails.application.class.name.chomp('::Application')
         end
     end
   end

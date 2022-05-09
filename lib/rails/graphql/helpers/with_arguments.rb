@@ -15,6 +15,14 @@ module Rails
           other.define_method(:arguments) do
             defined?(@arguments) ? @arguments : {}
           end
+
+          other.define_method(:all_arguments) do
+            arguments
+          end
+
+          other.define_method(:arguments?) do
+            !!defined?(@arguments)
+          end
         end
 
         module ClassMethods
@@ -48,11 +56,6 @@ module Rails
         # Check if all the arguments are compatible
         def =~(other)
           super && other.respond_to?(:all_arguments) && match_arguments?(other)
-        end
-
-        # Mostly for correct inheritance on instances
-        def all_arguments
-          defined?(@arguments) ? @arguments : {}
         end
 
         # See {Argument}[rdoc-ref:Rails::GraphQL::Argument] class.

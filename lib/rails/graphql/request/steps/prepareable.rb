@@ -14,13 +14,14 @@ module Rails
 
           # Normal mode of the prepare step
           def prepare
-            return if invalid?
+            return if unresolvable?
             prepare_then { prepare_fields }
           end
 
           # The actual process that prepare the object
           def prepare_then(after_block = nil, &block)
-            return if invalid?
+            return if unresolvable?
+
             stacked do
               block.call if block.present?
               trigger_event(:prepared)

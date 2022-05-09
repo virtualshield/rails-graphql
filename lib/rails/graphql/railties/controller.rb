@@ -31,10 +31,7 @@ module Rails
 
       # GET /describe
       def describe
-        render plain: DESCRIBE_HEADER + gql_schema.to_gql(
-          with_descriptions: !params.key?(:without_descriptions),
-          with_spec: !params.key?(:without_spec),
-        )
+        render plain: DESCRIBE_HEADER + gql_describe_schema
       end
 
       protected
@@ -44,6 +41,14 @@ module Rails
           render json: gql_request(*args, **xargs)
         end
 
+        # Shows a text representation of the schema
+        def gql_describe_schema
+          gql_schema_header + gql_schema.to_gql(
+            with_descriptions: !params.key?(:without_descriptions),
+            with_spec: !params.key?(:without_spec),
+          )
+        end
+
         # Execute a GraphQL request
         def gql_request(query, **xargs)
           request_xargs = REQUEST_XARGS.each_with_object({}) do |setting, result|
@@ -51,6 +56,13 @@ module Rails
           end
 
           ::Rails::GraphQL::Request.execute(query, **request_xargs)
+        end
+
+        # Print a header of the current schema for the description process
+        # TODO: Maybe add a way to detect from which file the schema is being loaded
+        def gql_schema_header
+          schema = self.class.gql_schema
+          "# Schema #{schema.name} [#{schema.namespace}] {#{localtion}}\n"
         end
 
         # The schema on which the requests will be performed from

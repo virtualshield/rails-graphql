@@ -12,7 +12,7 @@ module Rails
         self.priority = 10
 
         def self.can_resolve?(request)
-          request.operations.values.all?(&:query?)
+          request.operations.each_value.all?(&:query?)
         end
 
         # Executes the strategy in the normal mode
@@ -27,8 +27,8 @@ module Rails
         private
 
           # Execute a given block for each defined operation
-          def for_each_operation
-            operations.each_value { |op| yield op }
+          def for_each_operation(&block)
+            operations.each_value(&block)
           end
       end
     end

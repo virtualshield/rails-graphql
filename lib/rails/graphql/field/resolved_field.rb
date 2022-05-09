@@ -90,9 +90,10 @@ module Rails
 
       protected
 
-        # Chedck if a given +method_name+ is callable from the owner perspective
+        # Check if the method is defined and belongs to a non-abstract class
         def callable?(method_name)
-          owner.is_a?(Class) && owner.try(:gql_resolver?, method_name)
+          owner.is_a?(Class) && owner.public_method_defined?(method_name) &&
+            !owner.public_instance_method(method_name).owner.try(:abstract?)
         end
 
         def proxied

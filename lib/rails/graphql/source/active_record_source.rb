@@ -32,7 +32,7 @@ module Rails
 
       self.abstract = true
 
-      delegate :primary_key, :singular, :plural, :model, to: :class
+      delegate :primary_key, :singular, :plural, :model, :id_columns, to: :class
 
       skip_from(:input, :created_at, :updated_at)
 
@@ -47,7 +47,7 @@ module Rails
       end
 
       step(:input) do
-        extra = { primary_key => { null: true } }
+        extra = Array.wrap(primary_key).product([{ null: true }]).to_h
         build_attribute_fields(self, **extra)
         build_reflection_inputs(self)
 
@@ -63,32 +63,32 @@ module Rails
 
       step(:query) do
         safe_field(plural, object, full: true) do
-          before_resolve :load_records
+          before_resolve(:load_records)
         end
 
         safe_field(singular, object, null: false) do
-          argument primary_key, :id, null: false
-          before_resolve :load_record
+          build_primary_key_arguments(self)
+          before_resolve(:load_record)
         end
       end
 
       step(:mutation) do
         safe_field("create_#{singular}", object, null: false) do
-          argument singular, input, null: false
-          perform :create_record
+          argument(singular, input, null: false)
+          perform(:create_record)
         end
 
         safe_field("update_#{singular}", object, null: false) do
-          argument primary_key, :id, null: false
-          argument singular, input, null: false
-          before_resolve :load_record
-          perform :update_record
+          build_primary_key_arguments(self)
+          argument(singular, input, null: false)
+          before_resolve(:load_record)
+          perform(:update_record)
         end
 
         safe_field("delete_#{singular}", :boolean, null: false) do
-          argument primary_key, :id, null: false
-          before_resolve :load_record
-          perform :destroy_record
+          build_primary_key_arguments(self)
+          before_resolve(:load_record)
+          perform(:destroy_record)
         end
       end
 

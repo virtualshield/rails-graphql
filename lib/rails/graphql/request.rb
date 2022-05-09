@@ -30,7 +30,12 @@ module Rails
     class Request
       extend ActiveSupport::Autoload
 
-      RESPONSE_FORMATS = { string: :to_s, object: :to_h, hash: :to_h }.freeze
+      RESPONSE_FORMATS = {
+        string: :to_s,
+        object: :to_h,
+        json: :to_h,
+        hash: :to_h,
+      }.freeze
 
       eager_autoload do
         autoload_under :steps do
@@ -110,14 +115,15 @@ module Rails
       end
 
       # Execute a given document with the given arguments
-      def execute(document, as: :string, **xargs)
+      def execute(document, **xargs)
+        output = xargs.delete(:as) || schema.config.default_response_format
         reset!(**xargs)
 
-        to = RESPONSE_FORMATS[as]
-        @response = initialize_response(as, to)
+        formatter = RESPONSE_FORMATS[output]
+        @response = initialize_response(output, formatter)
 
         execute!(document)
-        response.public_send(to)
+        response.public_send(formatter)
       end
 
       alias perform execute
@@ -247,6 +253,8 @@ module Rails
           errors.add(parts[3], line: parts[1], col: parts[2])
         ensure
           report_unused_variables
+
+          # File.binwrite('/var/www/graphql/gem/tmp/doc.cache', Marshal.dump(@document))
 
           @cache.clear
           @fragments.clear

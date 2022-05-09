@@ -34,7 +34,7 @@ module Rails
 
         # Redirect to the fragment or check the inline type before resolving
         def resolve_with!(object)
-          return if invalid?
+          return if unresolvable?
 
           @current_object = object
           resolve!
@@ -95,7 +95,7 @@ module Rails
 
           # Resolve the spread operation
           def resolve
-            return if invalid?
+            return if unresolvable?
 
             object = (defined?(@current_object) && @current_object) || parent.type_klass
             return run_on_fragment(:resolve_with!, object) unless inline?

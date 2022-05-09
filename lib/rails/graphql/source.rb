@@ -104,9 +104,9 @@ module Rails
           subclass.abstract = false
           super if defined? super
 
-          pending[subclass] ||= caller(1).find do |item|
-            !item.end_with?("`inherited'")
-          end
+          # TODO: Base here is not ideal but works
+          load_proc = -> { subclass.build! unless subclass.abstract? }
+          GraphQL.type_map.add_dependencies(load_proc, to: :base)
         end
 
         # :singleton-method:
@@ -147,9 +147,24 @@ module Rails
           defined?(@built) && !!@built
         end
 
-        # Checks if a given method can act as resolver
-        def gql_resolver?(method_name)
-          (instance_methods - GraphQL::Source.instance_methods).include?(method_name)
+        # Build all the objects associated with this source
+        def build!
+          return if built?
+
+          raise DefinitionError, (+<<~MSG).squish if abstract
+            Abstract source #{name} cannot be built.
+          MSG
+
+          @built = true
+
+          catch(:done) do
+            hook_names.each do |hook_name|
+              break if hook_name === :finish
+              catch(:skip) { send(:"run_#{hook_name}_hooks") }
+            end
+          end
+
+          catch(:skip) { send(:run_finish_hooks) } if respond_to?(:run_finish_hooks, true)
         end
 
         # Attach all defined schema fields into the schemas using the namespaces
@@ -303,50 +318,12 @@ module Rails
 
         private
 
-          # The list of pending sources to be built asscoaited to where they
-          # were defined
-          def pending
-            @@pending ||= {}
-          end
-
-          # Check if there are pending sources to be built
-          def pending?
-            pending.any?
-          end
-
-          # Build the pending sources
-          def build_pending!
-            while (klass, = pending.shift)
-              klass.send(:build!) unless klass.abstract?
-            end
-          end
-
           # Find all classes that inherits from source that are abstract,
           # meaning that they are a base sources
           def base_sources
             @@base_sources ||= begin
               GraphQL.config.sources.map(&:constantize).to_set
             end
-          end
-
-          # Build all the objects associated with this source
-          def build!
-            return if built?
-
-            raise DefinitionError, (+<<~MSG).squish if abstract
-              Abstract source #{name} cannot be built.
-            MSG
-
-            @built = true
-
-            catch(:done) do
-              hook_names.each do |hook_name|
-                break if hook_name === :finish
-                catch(:skip) { send(:"run_#{hook_name}_hooks") }
-              end
-            end
-
-            catch(:skip) { send(:run_finish_hooks) } if respond_to?(:run_finish_hooks, true)
           end
 
           {

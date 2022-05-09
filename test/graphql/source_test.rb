@@ -34,11 +34,7 @@ class GraphQL_SourceTest < GraphQL::TestCase
   end
 
   def test_inherited
-    assert_pending([])
-
-    other = unmapped_class(described_class)
-    refute_predicate(other, :abstract?)
-    assert_pending(described_class, other)
+    skip
   end
 
   def test_find_for_bang
@@ -190,24 +186,6 @@ class GraphQL_SourceTest < GraphQL::TestCase
         result = described_class.send(:skips_for, double(kind: :object))
         assert_equal(Set[:b], result)
       end
-    end
-  end
-
-  def test_pending_ask
-    refute_predicate(source_const, :pending?)
-
-    unmapped_class(source_const)
-    assert_predicate(source_const, :pending?)
-  end
-
-  def test_build_pending_bang
-    built = [false, false]
-    object1 = double(build!: -> { built[0] = true }, abstract?: false)
-    object2 = double(build!: -> { built[1] = true }, abstract?: true)
-
-    described_class.stub(:pending, [object1, object2]) do
-      described_class.send(:build_pending!)
-      assert_equal([true, false], built)
     end
   end
 

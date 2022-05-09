@@ -13,6 +13,7 @@ module Rails
 
         autoload :SequencedStrategy
         autoload :MultiQueryStrategy
+        autoload :CachedStrategy
 
         # Configurations for the prepare step
         PREPARE_XARGS = { object?: true, reverse?: true }.freeze

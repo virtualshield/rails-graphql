@@ -13,13 +13,15 @@ module Rails
           # Helper parser for selection fields that also asssign the actual
           # field defined under the schema structure
           def parse_selection
+            return if data[:selection].nil? || data[:selection].null?
+
             @selection = {}
             assigners = Hash.new { |h, k| h[k] = [] }
 
             visitor.collect_fields(*data[:selection]) do |kind, node, data|
               component = add_component(kind, node, data)
               assigners[component.name] << component if component.assignable?
-            end unless data[:selection].nil? || data[:selection].null?
+            end
 
             assing_fields!(assigners)
             @selection.freeze
@@ -45,19 +47,19 @@ module Rails
           # Recursive operation that perform the organization step for the
           # selection
           def organize_fields
-            selection.each_value(&:organize!) if selection.any?
+            selection.each_value(&:organize!) if selection.present?
           end
 
           # Find all the fields that have a prepare step and execute them
           def prepare_fields
-            selection.values.each(&:prepare!) if selection.any?
+            selection.each_value(&:prepare!) if selection.present?
           end
 
           # Trigger the process of resolving the value of all the fields. Since
           # complex object may or may not be inside an array, this helps to
           # decide if a new stack should be started or not
           def resolve_fields(object = nil)
-            return unless selection.any?
+            return unless selection.present?
 
             items = selection.each_value
             items = items.each_with_object(object) unless object.nil?

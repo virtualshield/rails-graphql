@@ -86,13 +86,6 @@ module Rails
           value
         end
 
-        # Checks if a given method can act as resolver
-        def gql_resolver?(method_name)
-          ref_object = self
-          ref_object = ref_object.superclass until ref_object.base_object?
-          (instance_methods - ref_object.instance_methods).include?(method_name)
-        end
-
         # Return the type object, instantiate if it has params
         def find_by_gid(gid)
           options = { namespaces: gid.namespace.to_sym, base_class: :Type }

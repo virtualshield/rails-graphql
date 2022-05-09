@@ -11,7 +11,7 @@ module Rails
     class LogSubscriber < ::ActiveSupport::LogSubscriber
       class_attribute :backtrace_cleaner, default: ActiveSupport::BacktraceCleaner.new
 
-      REMOVE_COMMENTS = /#(?=(?:[^"]*"[^"]*")*[^"]*$).*/m
+      REMOVE_COMMENTS = /#(?=(?:[^"]*"[^"]*")*[^"]*$).*/
 
       def self.runtime
         RuntimeRegistry.gql_runtime ||= 0
@@ -27,13 +27,13 @@ module Rails
 
         payload = event.payload
 
-        desc = +'  GraphQL'
+        desc = +'GraphQL'
         desc << '[CACHE]' if payload[:cached]
         desc << ' ' << payload[:name] if payload[:name].present?
         desc << ' ' << '(' << event.duration.round(1).to_s << 'ms' << ')'
 
-        desc = color(desc, MAGENTA, true)
-        desc << payload[:document].gsub(REMOVE_COMMENTS, '').squish
+        desc = (+color(desc, MAGENTA, true))
+        desc << ' ' << payload[:document].gsub(REMOVE_COMMENTS, '').squish
         desc << debug_variables(payload[:variables]) unless payload[:variables].blank?
 
         debug(desc)

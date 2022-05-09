@@ -67,7 +67,7 @@ module Rails
         # Mark the start of a new element on the array.
         def next
           return unless @stack_array.last === :complex
-          (@stack_value.last << ',') unless @stack_value.last.blank?
+          (@stack_value.last << ',') if @stack_value.last.pos > 0
           @stack_value.last << to_s
           @current_value = StringIO.new
         end

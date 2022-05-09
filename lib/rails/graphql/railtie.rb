@@ -21,9 +21,14 @@ module Rails
         require_relative './schema'
       end
 
+      console do
+        config.graphql.enable_string_collector = false
+        config.graphql.default_response_format = :hash
+      end
+
       # Ensure a valid logger
-      initializer 'graphql.logger' do
-        ActiveSupport.on_load(:graphql) do |app|
+      initializer 'graphql.logger' do |app|
+        ActiveSupport.on_load(:graphql) do
           return if config.logger.present?
 
           logger = ::Rails.logger
@@ -63,7 +68,7 @@ module Rails
       initializer 'graphql.backtrace_cleaner' do
         require_relative './railties/log_subscriber'
         ActiveSupport.on_load(:graphql) do
-          GraphQL::LogSubscriber.backtrace_cleaner = ::Rails.backtrace_cleaner
+          LogSubscriber.backtrace_cleaner = ::Rails.backtrace_cleaner
         end
       end
 
@@ -71,6 +76,15 @@ module Rails
       initializer 'graphql.global_id' do
         ActiveSupport.on_load(:active_job) do
           ActiveJob::Serializers.add_serializers(Rails::GraphQL::GlobalID::Serializer)
+        end
+      end
+
+      # Attempt to auto load the base schema as a dependency of the type map
+      initializer 'graphql.auto_base_schema' do |app|
+        ActiveSupport.on_load(:graphql) do
+          file = app.railtie_name.sub(/_application$/, '_schema')
+          path = app.root.join('app').join('graphql').join(file)
+          GraphQL.type_map.add_dependencies(path.to_s, to: :base) if path.sub_ext('.rb').exist?
         end
       end
     end

@@ -26,6 +26,8 @@ module Rails
         attach_operation :ofield_value, :GraphQLAstObjectField_get_value
 
         attach_operation :variable_name, :GraphQLAstVariable_get_name
+
+        attach_operation :directive_name, :GraphQLAstDirective_get_name
       end
 
       with_options(result: :int) do

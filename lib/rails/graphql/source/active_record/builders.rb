@@ -9,16 +9,26 @@ module Rails
         sti_interface? ? interface_class : super
       end
 
-      # Get all unique attribute names that exists in the current model
-      def reflection_attributes(holder)
-        items = []
-        each_reflection(holder) do |item|
-          next unless item.belongs_to?
-          next items << item.foreign_key.to_s unless item.polymorphic?
-          items += [item.foreign_type, item.foreign_key]
+      # List of all columns that should be threated as IDs
+      # TODO: Add a exclusive cache for the build process
+      def id_columns
+        @id_columns ||= begin
+          result = Set.new(Array.wrap(primary_key))
+          each_reflection.each_with_object(result) do |item, arr|
+            arr << item.foreign_key.to_s if item.belongs_to?
+          end
         end
+      end
 
-        items.compact.flatten.unshift(primary_key)
+      # Get all unique attribute names that exists in the current model
+      # TODO: Improve this by combining with the above method
+      def reflection_attributes(holder)
+        result = Set.new(Array.wrap(primary_key))
+        each_reflection(holder).each_with_object(result) do |item, items|
+          next unless item.belongs_to?
+          items << item.foreign_key.to_s
+          items << item.foreign_key if item.polymorphic?
+        end
       end
 
       # Iterate over all the attributes, except the primary key, from the model
@@ -31,22 +41,31 @@ module Rails
         skip_fields << model.inheritance_column
         skip_fields << primary_key unless skip_primary_key
 
-        send(:"#{adapter_key}_attributes") do |attribute, *args|
-          yield attribute, *args unless skip_fields.include?(attribute)
+        send(:"#{adapter_key}_attributes") do |attribute, *args, **xargs|
+          yield(attribute, *args, **xargs) unless skip_fields.include?(attribute)
         end
       end
 
       # Iterate over all the model reflections
-      # TODO: Turn into an enumerator
-      def each_reflection(holder)
-        skip_fields = skips_for(holder).map(&:to_s)
-        model._reflections.each_value do |reflection|
-          next if skip_fields.include?(reflection.name.to_s)
+      def each_reflection(holder = nil, &block)
+        skip_fields = skips_for(holder).map(&:to_s).to_set if holder
+        model._reflections.each_value.select do |reflection|
+          next if skip_fields&.include?(reflection.name.to_s)
 
           reflection = model._reflections[reflection.to_s] \
             unless reflection.is_a?(abstract_reflection)
 
-          yield reflection unless reflection.nil?
+          !reflection.nil?
+        end.each(&block)
+      end
+
+      # Build arguments that correctly reflect the primary key, as a single
+      # column or as an array of columns
+      def build_primary_key_arguments(holder)
+        if primary_key.is_a?(Array)
+          primary_key.each { |key| holder.argument(key, :id, null: false) }
+        else
+          holder.argument(primary_key, :id, null: false)
         end
       end
 

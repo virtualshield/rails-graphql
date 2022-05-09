@@ -38,25 +38,6 @@ class GraphQL_TypeTest < GraphQL::TestCase
     assert_equal(1, DESCRIBED_CLASS.decorate(1))
   end
 
-  def test_gql_resolver_ask
-    DESCRIBED_CLASS.stub(:base_object?, false) do
-      refute(DESCRIBED_CLASS.gql_resolver?(:calculate))
-      DESCRIBED_CLASS.send(:define_method, :calculate) {}
-
-      assert(DESCRIBED_CLASS.gql_resolver?(:calculate))
-
-      other_class = unmapped_class(DESCRIBED_CLASS)
-      assert(other_class.gql_resolver?(:calculate))
-
-      other_class.stub(:base_object?, true) do
-        refute(other_class.gql_resolver?(:calculate))
-      end
-
-      DESCRIBED_CLASS.send(:undef_method, :calculate)
-      refute(DESCRIBED_CLASS.gql_resolver?(:calculate))
-    end
-  end
-
   def test_kind_ask
     assert_respond_to(DESCRIBED_CLASS, :scalar?)
     assert_respond_to(DESCRIBED_CLASS, :object?)

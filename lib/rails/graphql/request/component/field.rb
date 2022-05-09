@@ -55,6 +55,8 @@ module Rails
 
         # Get and cache all the arguments for the field
         def all_arguments
+          return unless field.arguments?
+
           request.cache(:arguments)[field] ||= begin
             if (result = field.all_arguments).any?
               result.each_value.map(&:gql_name).zip(result.each_value).to_h
@@ -118,6 +120,7 @@ module Rails
         # field needs to be redirected to the one from the actual resolved
         # +object+ type
         def resolve_with!(object)
+          return if skipped?
           return resolve! if invalid?
 
           old_field, @field = @field, object[@field.name]

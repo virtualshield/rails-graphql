@@ -179,3 +179,5 @@ require 'rails/graphql/config'
 require 'rails/graphql/errors'
 require 'rails/graphql/shortcuts'
 require 'rails/graphql/railtie'
+
+ActiveSupport.run_load_hooks(:graphql, Rails::GraphQL)
