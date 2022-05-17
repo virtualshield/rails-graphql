@@ -89,7 +89,7 @@ module Rails
 
       # Find the key associated with the given +adapter_name+
       def ar_adapter_key(adapter_name)
-        config.ar_adapters[adapter_name]
+        config.ar_adapters.dig(adapter_name, :key)
       end
 
       # This is a little helper to require ActiveRecord adapter specific
@@ -97,13 +97,11 @@ module Rails
       def enable_ar_adapter(adapter_name)
         return if (@@loaded_adapters ||= Set.new).include?(adapter_name)
 
-        path = "adapters/#{ar_adapter_key(adapter_name)}_adapter"
-        $LOAD_PATH.any? do |load_path|
-          next unless load_path.to_s =~ %r{\/app\/graphql$}
-          next unless File.exist?("#{load_path}/#{path}.rb")
-          load "#{load_path}/#{path}.rb"
-        end || load("#{__dir__}/graphql/#{path}.rb")
+        raise ::ArgumentError, (+<<~MSG).squish unless config.ar_adapters.key?(adapter_name)
+          There is no GraphQL mapping for #{adapter_name} ActiveRecord adapter.
+        MSG
 
+        require(config.ar_adapters.dig(adapter_name, :path))
         @@loaded_adapters << adapter_name
       end
 

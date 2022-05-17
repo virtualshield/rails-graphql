@@ -18,6 +18,7 @@ module Rails
     type_map.register_alias 'sqlite:string',      :string
     type_map.register_alias 'sqlite:time',        :time
 
+    type_map.register_alias 'sqlite:varchar',     'sqlite:string'
     type_map.register_alias 'sqlite:text',        'sqlite:string'
 
     module SQLite

@@ -12,7 +12,7 @@ class GraphQLTest < GraphQL::TestCase
   end
 
   def test_ar_adapter_key
-    DESCRIBED_CLASS.stub(:config, double(ar_adapters: { 'a' => 1 })) do
+    DESCRIBED_CLASS.stub(:config, double(ar_adapters: { 'a' => { key: 1 } })) do
       assert_equal(1, DESCRIBED_CLASS.ar_adapter_key('a'))
       assert_nil(DESCRIBED_CLASS.ar_adapter_key('b'))
     end

@@ -42,5 +42,8 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency 'rdoc', '~> 6.2.1'
   s.add_development_dependency 'simplecov', '~> 0.20'
+
+  s.add_development_dependency 'pg', '~> 1.3'
+  s.add_development_dependency 'mysql2', '~> 0.5'
   s.add_development_dependency 'sqlite3', '~> 1.4'
 end

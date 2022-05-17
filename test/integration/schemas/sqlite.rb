@@ -1,14 +1,17 @@
 require 'active_record'
-
-ActiveRecord::Base.establish_connection(adapter: 'sqlite3', database: ':memory:')
+require 'active_record/database_configurations'
 
 ActiveSupport::Inflector.inflections(:en) do |inflect|
   inflect.irregular 'base', 'bases'
 end
 
-ActiveRecord::Schema.define(version: 1) do
-  self.verbose = false
+class SQLiteRecord < ActiveRecord::Base
+  self.abstract_class = true
 
+  establish_connection(adapter: 'sqlite3', database: ':memory:')
+end
+
+SQLiteRecord.connection.instance_eval do
   create_table 'lite_factions', force: :cascade do |t|
     t.string 'name'
   end
@@ -23,10 +26,6 @@ ActiveRecord::Schema.define(version: 1) do
     t.integer 'faction_id'
     t.string 'name'
   end
-end
-
-class SQLiteRecord < ActiveRecord::Base
-  self.abstract_class = true
 end
 
 class LiteFaction < SQLiteRecord

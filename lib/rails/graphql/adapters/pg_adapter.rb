@@ -42,8 +42,7 @@ module Rails
               type_name = column.sql_type_metadata.sql_type
               type = find_type!('pg:' + type_name.gsub(/(\(|\[).*/, ''), fallback: :string)
 
-              options = { array: type_name.include?('[]') }
-              yield(column.name, type, **options)
+              yield(column.name, type, array: type_name.include?('[]'))
             end
           end
       end

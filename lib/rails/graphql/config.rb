@@ -24,9 +24,9 @@ module Rails
       # A list of ActiveRecord adapters and their specific internal naming used
       # to compound the accessors for direct query serialization.
       config.ar_adapters = {
-        'Mysql2'     => :mysql,
-        'PostgreSQL' => :pg,
-        'SQLite'     => :sqlite,
+        'Mysql2'     => { key: :mysql,  path: "#{__dir__}/adapters/mysql_adapter" },
+        'PostgreSQL' => { key: :pg,     path: "#{__dir__}/adapters/pg_adapter" },
+        'SQLite'     => { key: :sqlite, path: "#{__dir__}/adapters/sqlite_adapter" },
       }
 
       # For all the input object type defined, auto add the following prefix to
@@ -70,14 +70,14 @@ module Rails
         # 'Rails::GraphQL::Request::Strategy::CachedStrategy',
       ]
 
-      # A list of all possible rails-graphql-compatible sources
+      # A list of all possible rails-graphql-compatible sources.
       config.sources = [
         'Rails::GraphQL::Source::ActiveRecordSource',
       ]
 
       # A list of known dependencies that can be requested and included in any
       # schema. This is the best place for other gems to add their own
-      # dependencies and allow users to pick them
+      # dependencies and allow users to pick them.
       config.known_dependencies = {
         scalar: {
           any:       "#{__dir__}/type/scalar/any_scalar",
@@ -103,9 +103,7 @@ module Rails
 
     # This is the logger for all the operations for GraphQL
     def self.logger
-      config.logger ||= ActiveSupport::TaggedLogging.new(
-        ActiveSupport::Logger.new(STDOUT),
-      )
+      config.logger ||= ActiveSupport::TaggedLogging.new(ActiveSupport::Logger.new(STDOUT))
     end
   end
 end

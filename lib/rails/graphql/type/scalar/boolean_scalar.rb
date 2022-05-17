@@ -19,16 +19,16 @@ module Rails
             valid_token?(value) || value === true || value === false
           end
 
-          def valid_output?(value)
-            value.respond_to?(:present?)
+          def valid_output?(*)
+            true # Pretty much anything can be turned into a boolean
           end
 
           def as_json(value)
-            value.present?
+            !(value.nil? || FALSE_VALUES.include?(value))
           end
 
           def deserialize(value)
-            value.is_a?(::GQLParser::Token) ? as_json(value) : !FALSE_VALUES.include?(value)
+            as_json(value)
           end
         end
       end

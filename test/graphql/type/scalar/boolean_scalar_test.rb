@@ -21,20 +21,23 @@ class GraphQL_Type_Scalar_BooleanScalarTest < GraphQL::TestCase
   def test_as_json
     assert(DESCRIBED_CLASS.as_json(true))
     assert(DESCRIBED_CLASS.as_json([1]))
+    assert(DESCRIBED_CLASS.as_json([]))
     assert(DESCRIBED_CLASS.as_json('abc'))
+    assert(DESCRIBED_CLASS.as_json(''))
 
-    refute(DESCRIBED_CLASS.as_json([]))
-    refute(DESCRIBED_CLASS.as_json(''))
     refute(DESCRIBED_CLASS.as_json(nil))
+    refute(DESCRIBED_CLASS.as_json(0))
+    refute(DESCRIBED_CLASS.as_json('f'))
+    refute(DESCRIBED_CLASS.as_json('false'))
   end
 
   def test_deserialize
-    assert(DESCRIBED_CLASS.deserialize(nil))
     assert(DESCRIBED_CLASS.deserialize(1))
     assert(DESCRIBED_CLASS.deserialize('abc'))
     assert(DESCRIBED_CLASS.deserialize(true))
 
     refute(DESCRIBED_CLASS.deserialize(0))
+    refute(DESCRIBED_CLASS.deserialize(nil))
     refute(DESCRIBED_CLASS.deserialize(false))
   end
 end
