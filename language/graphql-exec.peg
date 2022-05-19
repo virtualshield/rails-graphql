@@ -1,0 +1,87 @@
+# This is the PEG-based grammar for GraphQL based on:
+# https://spec.graphql.org/October2021/#sec-Document-Syntax
+#
+# It is also inspired by another PEG grammar of GraphQL for JavaScript:
+# https://github.com/madjam002/graphqlite/blob/master/grammar.pegjs
+#
+# This only complies with the GraphQL spec with no further additions, focusing
+# only the **Executable Definitions**, to optimize the output and processing
+
+grammar Rails.GraphQL.Parser
+  ## ROOT
+  # Collect all definitions ignoring whitespaces
+  document <- @ows definitions:definition+ @ows
+
+  # MAIN TREE
+  definition <- operation / fragment
+
+  operation <- (type:operation_type @rws)? (name @rws)? variables? directives? selection
+  fragment <- "fragment" @rws (!"on" name) @rws "on" @rws type:name directives? @rws selection
+  operation_type <- "query" / "mutation" / "subscription"
+
+  selection <- @op_object items:selection_item* @cl_object
+  selection_item <- (field / fragment_spread / inline_fragment) @field_sep
+
+  field <- (alias:name @key_sep)? name arguments? directives? selection?
+  fragment_spread <- "..." @ows name directives?
+  inline_fragment <- "..." @ows ((!"on" name) @rws "on" @rws type:name)? directives? selection
+
+  directives <- @rws "@" name arguments?
+  variables <- op_parent variable* cl_parent
+  arguments <- op_parent argument* cl_parent
+
+  variable <- "$" name @key_sep type:generic_type (eql_sep value)? directives?
+  argument <- name @key_sep (value / ("$" var_name:name))
+
+  generic_type <- name / not_null_type / list_type
+  not_null_type <- (name / list_type) "!"
+  list_type <- op_list generic_type cl_list
+
+  # FORMATTING
+  # The definition of whitespaces (o => optional, r => required) and comments
+  ws <- [ \t\n\r] / comment
+  comment <- "#" [^\n]*
+  ows <- ws*
+  rws <- ws+
+
+  ## SEPARATORS
+  # Some common separators
+  op_object <- @ows @"{" @ows
+  cl_object <- @ows @"}" @ows
+  op_parent <- @ows @"(" @ows
+  cl_parent <- @ows @")" @ows
+  op_list <- @ows @"[" @ows
+  cl_list <- @ows @"]" @ows
+  key_sep <- @ows @":" @ows
+  eql_sep <- @ows @"=" @ows
+  item_sep <- @ows @"," @ows
+  field_sep <- @ows @","* @ows
+
+  # IDENTIFIERS
+  # Name based identifiers
+  name <- [a-zA-Z_] [0-9a-zA-Z_]*
+  value <- int_number / float_number / string / boolean / null / enum / list_value / object_value
+
+  int_number   <- "-"? int
+  float_number <- int_number fraction? exponent?
+  string       <- inline_string / multiline_string
+  boolean      <- "true" / "false"
+  null         <- "null"
+  enum         <- name
+  list_value   <- @op_list items:(value (@item_sep value)*)? @cl_list
+  object_value <- @op_object items:(object_field (@item_sep object_field)*)? @cl_object
+
+  # Numeric helpers
+  digit <- [0-9]
+  int <- "0" / ([1-9] digit*)
+  fraction <- @"." value:(digit+)
+  exponent <- [eE] value:(("+" / "-")? digit+)
+
+  # String helpers
+  char <- [\u0009\u000A\u000D\u0020-\uFFFF] / escaped_char
+  escaped_char <- "\\" ([\u0056\u002F\u0062\u0066\u006E\u0072\u0074] / ("u" code:[0-9a-fA-F]{4}))
+  inline_string <- '"' char* '"'
+  multiline_string <- '"""' char* '"""'
+
+  # Hash helper
+  object_field <- name @key_sep value
