@@ -94,6 +94,13 @@ module Rails
         },
       }
 
+      # GlobalID for types
+      config.schema_type_names = {
+        query: '_Query',
+        mutation: '_Mutation',
+        subscription: '_Subscription',
+      }
+
       # TODO: To be implemented
       # enable_i18n_descriptions
       # enable_auto_descriptions

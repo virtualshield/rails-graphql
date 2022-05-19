@@ -7,10 +7,6 @@ module Rails
       # mutation, and subscription fields). Works very similar to fields, but
       # they are placed in different places regarding their type.
       module WithSchemaFields
-        SCHEMA_FIELD_TYPES = %i[query mutation subscription].map do |key|
-          [key, "_#{key.to_s.classify}"]
-        end.to_h.freeze
-
         TYPE_FIELD_CLASS = {
           query:        'OutputField',
           mutation:     'MutationField',
@@ -21,7 +17,7 @@ module Rails
           def inherited(subclass)
             super if defined? super
 
-            SCHEMA_FIELD_TYPES.each_key do |kind|
+            TYPE_FIELD_CLASS.each_key do |kind|
               fields = instance_variable_defined?("@#{kind}_fields")
               fields = fields ? instance_variable_get("@#{kind}_fields") : {}
               fields.each_value { |field| subclass.add_proxy_field(kind, field) }
@@ -77,7 +73,7 @@ module Rails
 
         # Return the object name for a given +type+ of list of fields
         def type_name_for(type)
-          SCHEMA_FIELD_TYPES[type]
+          GraphQL.config.schema_type_names[type]
         end
 
         # Only add the field if it is not already defined
@@ -187,7 +183,7 @@ module Rails
 
           # TODO: Maybe find a way to freeze the fields, since after validation
           # the best thing to do is block changes
-          SCHEMA_FIELD_TYPES.each_key do |kind|
+          TYPE_FIELD_CLASS.each_key do |kind|
             next unless instance_variable_defined?("@#{kind}_fields")
             instance_variable_get("@#{kind}_fields")&.each_value(&:validate!)
           end
@@ -198,7 +194,7 @@ module Rails
           find_field!(gid.scope, gid.name)
         end
 
-        SCHEMA_FIELD_TYPES.each do |kind, type_name|
+        TYPE_FIELD_CLASS.each_key do |kind|
           class_eval <<-RUBY, __FILE__, __LINE__ + 1
             def #{kind}_field?(name)
               has_field?(:#{kind}, name)
@@ -219,7 +215,7 @@ module Rails
             end
 
             def #{kind}_type_name
-              '#{type_name}'
+              type_name_for(:#{kind})
             end
 
             def #{kind}_type
@@ -230,7 +226,7 @@ module Rails
                   object?: true,
                   kind_enum: 'OBJECT',
                   fields: @#{kind}_fields,
-                  gql_name: '#{type_name}',
+                  gql_name: #{kind}_type_name,
                   interfaces: nil,
                   description: nil,
                   interfaces?: false,

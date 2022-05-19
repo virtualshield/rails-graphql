@@ -172,7 +172,7 @@ module Rails
         def attach_fields!
           refresh_schemas!
           schemas.each_value do |schema|
-            Helpers::WithSchemaFields::SCHEMA_FIELD_TYPES.each_key do |type|
+            Helpers::WithSchemaFields::TYPE_FIELD_CLASS.each_key do |type|
               list = public_send(:"#{type}_fields")
               next if list.empty?
 

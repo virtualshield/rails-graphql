@@ -111,8 +111,9 @@ module Rails
           visit_directives(o.directives, collector)
 
           collector.indented(' {', '}') do
-            Helpers::WithSchemaFields::SCHEMA_FIELD_TYPES.each do |key, name|
+            Helpers::WithSchemaFields::TYPE_FIELD_CLASS.each_key do |key|
               next unless key.eql?(:query) || o.fields_for(key).present?
+              name = o.type_name_for(key)
 
               collector << key.to_s
               collector << ': '
