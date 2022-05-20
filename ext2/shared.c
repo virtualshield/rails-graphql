@@ -44,30 +44,19 @@ void gql_debug_print(const char *message)
 // Initialize a new scanner
 struct gql_scanner gql_new_scanner(VALUE source)
 {
-  struct gql_scanner scanner = {0, 0, 1, 1, -1, RSTRING_PTR(source)};
-  scanner.current = scanner.doc[0];
+  char *doc = RSTRING_PTR(source);
+  struct gql_scanner scanner = {
+      .current_pos = 0,
+      .current_line = 1,
+      .last_nl_at = 0,
+      .current = doc[0],
+      .doc = doc};
+
   return scanner;
 }
 
-// Get what is in the scanner right now and return as a C string
-// It's IMPERATIVE to +ALLOCV_END(GQLParser)+ after the use
-char *gql_scanner_to_char(struct gql_scanner *scanner)
-{
-  // ruby-2.7.5/object.c:3600
-  long len = GQL_SCAN_SIZE(scanner);
-  // char *segment = ALLOCV(GQLParser, len + 1);
-  // MEMCPY(segment, (scanner->doc + scanner->start_pos), char, len);
-  // segment[len] = '\0';
-
-  char *segment = malloc(len + 1);
-
-  memset(segment, '\0', len + 1);
-  strncpy(segment, scanner->doc + scanner->start_pos, len);
-  return segment;
-}
-
-// Returns the base index of the token from where the upgrade should move from
-enum gql_identifier gql_upgrade_basis(const char *upgrade_from[])
+// Returns the base index of the lexeme from where the upgrade should move from
+enum gql_lexeme gql_upgrade_basis(const char *upgrade_from[])
 {
   if (*upgrade_from == *GQL_VALUE_KEYWORDS)
     return gql_iv_true;
@@ -80,7 +69,7 @@ enum gql_identifier gql_upgrade_basis(const char *upgrade_from[])
 }
 
 // This checks if the identifier in the scanner should be upgraded to a keyword
-enum gql_identifier gql_identifier_to_keyword(struct gql_scanner *scanner, const char *upgrade_from[])
+enum gql_lexeme gql_name_to_keyword(struct gql_scanner *scanner, const char *upgrade_from[])
 {
   unsigned long pos, len = GQL_SCAN_SIZE(scanner);
   unsigned int valid = 0, i = 0;
@@ -112,21 +101,23 @@ enum gql_identifier gql_identifier_to_keyword(struct gql_scanner *scanner, const
 }
 
 /* SCANNER HELPERS */
-enum gql_identifier gql_read_name(struct gql_scanner *scanner)
+enum gql_lexeme gql_read_name(struct gql_scanner *scanner)
 {
   // Read all the chars and digits
-  GQL_READ_WHILE(scanner, GQL_S_CHARACTER(scanner->current) || GQL_S_DIGIT(scanner->current));
+  GQL_SCAN_WHILE(scanner, GQL_S_CHARACTER(scanner->current) || GQL_S_DIGIT(scanner->current));
+  scanner->last_pos = scanner->current_pos - 1;
   return gql_i_name;
 }
 
-enum gql_identifier gql_read_comment(struct gql_scanner *scanner)
+enum gql_lexeme gql_read_comment(struct gql_scanner *scanner)
 {
   // Move forward until it finds a new line
-  GQL_READ_WHILE(scanner, scanner->current != '\n');
+  GQL_SCAN_WHILE(scanner, scanner->current != '\n');
+  scanner->last_pos = scanner->current_pos - 1;
   return gql_i_comment;
 }
 
-enum gql_identifier gql_read_hash(struct gql_scanner *scanner)
+enum gql_lexeme gql_read_hash(struct gql_scanner *scanner)
 {
   // Start with 1 curly open
   int curly_opens = 1;
@@ -147,11 +138,13 @@ enum gql_identifier gql_read_hash(struct gql_scanner *scanner)
     GQL_SCAN_NEXT(scanner);
   }
 
-  // Mark the result as an Hash
+  // Save the last position, move to the next and return as hash
+  scanner->last_pos = scanner->current_pos;
+  GQL_SCAN_NEXT(scanner);
   return gql_iv_hash;
 }
 
-enum gql_identifier gql_read_float(struct gql_scanner *scanner)
+enum gql_lexeme gql_read_float(struct gql_scanner *scanner)
 {
   // If what made it get in here was an '.', then it can recurse to the expoenent of a fraction
   int at_fraction = scanner->current == '.';
@@ -168,38 +161,40 @@ enum gql_identifier gql_read_float(struct gql_scanner *scanner)
   GQL_SCAN_NEXT(scanner);
 
   // Read all the numbers
-  GQL_READ_WHILE(scanner, GQL_S_DIGIT(scanner->current));
+  GQL_SCAN_WHILE(scanner, GQL_S_DIGIT(scanner->current));
 
   // If it is at fraction and the next is an exponent marker, then recurse
   if (at_fraction && (scanner->current == 'e' || scanner->current == 'E'))
     return gql_read_float(scanner);
 
-  // Otherwise just finish the float
+  // Otherwise save the last position and just finish the float
+  scanner->last_pos = scanner->current_pos - 1;
   return gql_iv_float;
 }
 
-enum gql_identifier gql_read_number(struct gql_scanner *scanner)
+enum gql_lexeme gql_read_number(struct gql_scanner *scanner)
 {
   // Pass over the negative sign
   if (scanner->current == '-') GQL_SCAN_NEXT(scanner);
 
   // If begins with zero, it can only be 0 or error
   if (scanner->current == '0')
-    return (GQL_S_DIGIT(GQL_SCAN_LOOK(scanner, 1))) ? gql_i_unknown : gql_iv_int;
+    return (GQL_S_DIGIT(GQL_SCAN_LOOK(scanner, 1))) ? gql_i_unknown : gql_iv_integer;
 
   // Read all the numbers
-  GQL_READ_WHILE(scanner, GQL_S_DIGIT(scanner->current));
+  GQL_SCAN_WHILE(scanner, GQL_S_DIGIT(scanner->current));
 
-  // Halt the process if it's not a float marker
-  return (GQL_S_FLOAT_MARK(scanner->current)) ? gql_read_float(scanner) : gql_iv_int;
+  // Save the last position and halt the process if it's not a float marker
+  scanner->last_pos = scanner->current_pos - 1;
+  return (GQL_S_FLOAT_MARK(scanner->current)) ? gql_read_float(scanner) : gql_iv_integer;
 }
 
-enum gql_identifier gql_read_string(struct gql_scanner *scanner, int allow_heredoc)
+enum gql_lexeme gql_read_string(struct gql_scanner *scanner, int allow_heredoc)
 {
-  int start_size, end_size;
+  int start_size, end_size = 0;
 
   // Read all the initial quotes and save the size
-  GQL_READ_WHILE(scanner, scanner->current == '"');
+  GQL_SCAN_WHILE(scanner, scanner->current == '"');
   start_size = GQL_SCAN_SIZE(scanner);
 
   // 4, 5, or more than 6 means an invalid tripple-quotes block
@@ -218,29 +213,39 @@ enum gql_identifier gql_read_string(struct gql_scanner *scanner, int allow_hered
     if (scanner->current == '"')
     {
       end_size++;
-      continue;
+    }
+    else
+    {
+      // Anything that is not a quote reset the end size
+      end_size = 0;
+
+      // If we get to the end of the file, return an unknown
+      if (scanner->current == '\0') return gql_i_unknown;
+
+      // Skip one extra character, which means it is skipping the escapped char
+      if (scanner->current == '\\') GQL_SCAN_NEXT(scanner);
     }
 
-    // If we get to the end of the file, return an unknown
-    if (scanner->current == '\0') return gql_i_unknown;
-
-    // Skip one extra character, which means it is skipping the escapped char
-    if (scanner->current == '\\') GQL_SCAN_NEXT(scanner);
-
-    // Move the cursor and reset the end size
+    // Move the cursor
     GQL_SCAN_NEXT(scanner);
-    end_size = 0;
   }
 
   // Regardless if a quote comes next, this is now a valid string
+  scanner->last_pos = scanner->current_pos - 1;
   return (start_size == 3) ? gql_iv_heredoc : gql_iv_string;
 }
 
 /* MOST IMPORTANT TOKEN READ FUNCTION */
-void gql_next_token(struct gql_scanner *scanner)
+void gql_next_lexeme(struct gql_scanner *scanner)
 {
+  // Save the last location it was at
+  scanner->last_pos = scanner->current_pos;
+  scanner->last_line = scanner->current_line;
+
   // Skip all the ignorables
-  GQL_READ_WHILE(scanner, GQL_S_IGNORE(scanner->current));
+  GQL_SCAN_WHILE(scanner, GQL_S_IGNORE(scanner->current));
+
+  // TODO: Maybe check if the current is equal to the last position to skip this process
 
   // Mark where something interesting has started
   scanner->start_pos = scanner->current_pos;
@@ -248,52 +253,118 @@ void gql_next_token(struct gql_scanner *scanner)
 
   // Find what might be the next interesting thing
   if (scanner->current == '\0')
-    scanner->token = gql_i_eof;
+    scanner->lexeme = gql_i_eof;
   else if (GQL_S_CHARACTER(scanner->current))
-    scanner->token = gql_read_name(scanner);
+    scanner->lexeme = gql_read_name(scanner);
   else if (scanner->current == '#')
-    scanner->token = gql_read_comment(scanner);
+    scanner->lexeme = gql_read_comment(scanner);
   else if (GQL_S_DIGIT(scanner->current) || scanner->current == '-')
-    scanner->token = gql_read_number(scanner);
+    scanner->lexeme = gql_read_number(scanner);
   else if (scanner->current == '"')
-    scanner->token = gql_read_string(scanner, 1);
-  else if (scanner->current == '{')
-    scanner->token = gql_is_op_curly;
-  else if (scanner->current == '(')
-    scanner->token = gql_is_op_paren;
+    scanner->lexeme = gql_read_string(scanner, 1);
   else if (scanner->current == '[')
-    scanner->token = gql_is_op_brack;
+    scanner->lexeme = gql_is_op_brack;
+  else if (scanner->current == '{')
+    scanner->lexeme = gql_is_op_curly;
+  else if (scanner->current == '}')
+    scanner->lexeme = gql_is_cl_curly;
+  else if (scanner->current == '(')
+    scanner->lexeme = gql_is_op_paren;
+  else if (scanner->current == ')')
+    scanner->lexeme = gql_is_cl_paren;
   else if (scanner->current == ':')
-    scanner->token = gql_is_colon;
+    scanner->lexeme = gql_is_colon;
+  else if (scanner->current == '=')
+    scanner->lexeme = gql_is_equal;
+  else if (scanner->current == '.')
+    scanner->lexeme = gql_is_period;
   else if (scanner->current == '@')
-    scanner->token = gql_i_directive;
+    scanner->lexeme = gql_i_directive;
   else if (scanner->current == '$')
-    scanner->token = gql_i_variable;
+    scanner->lexeme = gql_i_variable;
   else
-    scanner->token = gql_i_unknown;
+    scanner->lexeme = gql_i_unknown;
 }
 
-/* RUBY-BASED HELPERS */
+// Skip all comment lexemes
+void gql_next_lexeme_no_comments(struct gql_scanner *scanner)
+{
+  do
+  {
+    gql_next_lexeme(scanner);
+  } while (scanner->lexeme == gql_i_comment);
+}
+
+/* TOKEN CLASS HELPERS AND METHODS */
+// Simply add the type of the token and return self for simplicity
+VALUE gql_set_token_type(VALUE self, const char *type)
+{
+  rb_iv_set(self, "@type", ID2SYM(rb_intern(type)));
+  return self;
+}
+
 // Just simply format the string with the token prefix
 VALUE gql_inspect_token(VALUE self)
 {
-  return rb_sprintf("<GQLParser::Token %" PRIsVALUE ">", rb_call_super(0, 0));
+  VALUE type = rb_iv_get(self, "@type");
+  VALUE text = rb_call_super(0, 0);
+
+  if (NIL_P(type))
+    return rb_sprintf("<GQLParser::Token %" PRIsVALUE ">", text);
+  else
+    return rb_sprintf("<GQLParser::Token [%" PRIsVALUE "] %" PRIsVALUE ">", type, text);
+}
+
+// Check if the token is of the given type
+VALUE gql_token_of_type_check(VALUE self, VALUE other)
+{
+  VALUE type = rb_iv_get(self, "@type");
+  if (NIL_P(type)) return Qfalse;
+  return rb_obj_equal(type, other);
 }
 
 // Add the token module to the object and assign its location information
-VALUE gql_as_token(VALUE self, struct gql_scanner *scanner)
+VALUE gql_as_token(VALUE self, struct gql_scanner *scanner, int save_type)
 {
+  // Initialize the instance
   VALUE instance = rb_class_new_instance(1, &self, QLGParserToken);
+
+  // Add the location instance variables
   rb_iv_set(instance, "@begin_line", ULONG2NUM(scanner->start_line));
   rb_iv_set(instance, "@begin_column", ULONG2NUM(scanner->start_pos - scanner->last_nl_at));
-  rb_iv_set(instance, "@end_line", ULONG2NUM(scanner->current_line));
-  rb_iv_set(instance, "@end_column", ULONG2NUM(scanner->current_pos - scanner->last_nl_at));
-  // Save the token type as a symbol
-  // Add a method to check the type of the token
+  rb_iv_set(instance, "@end_line", ULONG2NUM(scanner->last_line));
+  rb_iv_set(instance, "@end_column", ULONG2NUM(scanner->last_pos - scanner->last_nl_at));
+
+  // Check if it has to save the type
+  if (save_type == 1)
+  {
+    // This only covers value types
+    if (scanner->lexeme == gql_iv_integer)
+      gql_set_token_type(instance, "integer");
+    else if (scanner->lexeme == gql_iv_float)
+      gql_set_token_type(instance, "float");
+    else if (scanner->lexeme == gql_iv_string)
+      gql_set_token_type(instance, "string");
+    else if (scanner->lexeme == gql_iv_true)
+      gql_set_token_type(instance, "bool");
+    else if (scanner->lexeme == gql_iv_false)
+      gql_set_token_type(instance, "bool");
+    else if (scanner->lexeme == gql_iv_enum)
+      gql_set_token_type(instance, "enum");
+    else if (scanner->lexeme == gql_iv_array)
+      gql_set_token_type(instance, "array");
+    else if (scanner->lexeme == gql_iv_hash)
+      gql_set_token_type(instance, "hash");
+    else if (scanner->lexeme == gql_iv_heredoc)
+      gql_set_token_type(instance, "heredoc");
+  }
+
+  // Return the token instance
   return instance;
 }
 
-// Creates a Ruby String from the scanner and mark it as a parser token
+/* RUBY-BASED HELPERS */
+// Creates a Ruby String from the scanner
 VALUE gql_scanner_to_s(struct gql_scanner *scanner)
 {
   return rb_str_new(scanner->doc + scanner->start_pos, GQL_SCAN_SIZE(scanner));
@@ -302,66 +373,97 @@ VALUE gql_scanner_to_s(struct gql_scanner *scanner)
 // Same as the above, but already extend it to a parser token
 VALUE gql_scanner_to_token(struct gql_scanner *scanner)
 {
-  return gql_as_token(gql_scanner_to_s(scanner), scanner);
+  return gql_as_token(gql_scanner_to_s(scanner), scanner, 0);
 }
 
-// Turn the current token into its proper ruby object
-VALUE gql_value_to_rb(struct gql_scanner *scanner)
+// Goes over an array and grab all the elements
+VALUE gql_array_to_rb(struct gql_scanner *scanner)
 {
-  VALUE tmp;
-  char *str;
+  // Start the array and the temporary element
+  VALUE result = rb_ary_new();
+  VALUE element;
 
-  // EXPERIMENTAL! Skip all the possible comments
-  do {
-    gql_next_token(scanner);
-  } while(scanner->token == gql_i_comment);
+  // Save the scan and grab the next char
+  unsigned long mem[2];
+  GQL_SCAN_SAVE(scanner, mem);
+  GQL_SCAN_NEXT(scanner);
 
-  // Perform necessary actions based on the current token
-  switch (scanner->token)
+  // Iterate until it finds the end of the array
+  while (scanner->current != ']')
   {
-  case gql_i_name:
-    // This can mean an enum value or true/false/null
-    scanner->token = gql_identifier_to_keyword(scanner, GQL_VALUE_KEYWORDS);
-    switch (scanner->token)
+    // If we got to the end of the file and the array was not closed, then we have something wrong
+    if (scanner->current == '\0')
     {
-      case gql_iv_true:
-        return Qtrue;
-      case gql_iv_false:
-        return Qfalse;
-      case gql_iv_null:
-        return Qnil;
-      case gql_i_name:
-        scanner->token = gql_iv_enum;
-        return gql_scanner_to_s(scanner);
+      scanner->lexeme = gql_i_unknown;
+      return Qnil;
     }
-  case gql_iv_int:
-    // TODO: Maybe just simply use substr and to proper to_i function
-    // Turn this string into an integer, it's safe
-    // ruby-2.7.5/bignum.c:4239
-    return rb_int_parse_cstr(
-        (scanner->doc + scanner->start_pos),
-        (long)GQL_SCAN_SIZE(scanner),
-        NULL, NULL, 10, RB_INT_PARSE_DEFAULT);
-  case gql_iv_float:
-    // TODO: Maybe just simply use substr and to proper to_f function
-    // Turn this string into a float, it's safe
-    // ruby-2.7.5/object.c:3574
-    str = gql_scanner_to_char(scanner);
-    tmp = DBL2NUM(rb_cstr_to_dbl(str, 0));
-    free(str);
-    return tmp;
-  case gql_iv_string:
-    return Qnil;
-  default:
-    scanner->token = gql_i_unknown;
-    return Qnil;
+
+    // Save the element as an rb token, because we may need the type of each element afterwards
+    element = gql_value_to_token(scanner, 0);
+
+    // If it found an unknown, then we bubble the problem up
+    if (scanner->lexeme == gql_i_unknown)
+      return Qnil;
+
+    // Add the value to the array and scan through the ignorables
+    rb_ary_push(result, element);
+    GQL_SCAN_WHILE(scanner, GQL_S_IGNORE(scanner->current));
   }
+
+  // Recover the start location, set the lexeme to array and return it
+  GQL_SCAN_LOAD(scanner, mem);
+  scanner->lexeme = gql_iv_array;
+  return result;
+}
+
+// Turn the current lexeme into its proper ruby object
+VALUE gql_value_to_rb(struct gql_scanner *scanner, int accept_var)
+{
+  // EXPERIMENTAL! Skip all the comments
+  gql_next_lexeme_no_comments(scanner);
+
+  // If got a variable and accepts variables,
+  // then it's fine and it won't be resolved in here
+  if (accept_var == 1 && scanner->lexeme == gql_i_variable)
+    return Qnil;
+
+  // If it's a name, then it can be a keyword or a enum value
+  if (scanner->lexeme == gql_i_name)
+  {
+    scanner->lexeme = gql_name_to_keyword(scanner, GQL_VALUE_KEYWORDS);
+    if (scanner->lexeme == gql_iv_true)
+      return Qtrue;
+    else if (scanner->lexeme == gql_iv_false)
+      return Qfalse;
+    else if (scanner->lexeme == gql_iv_null)
+      return Qnil;
+    else
+      scanner->lexeme = gql_iv_enum;
+  }
+
+  // Dealing with an array is way more complex, because you have to turn each
+  // individual value as an rb value
+  if (scanner->lexeme == gql_is_op_brack)
+    return gql_array_to_rb(scanner);
+
+  // If it is a hash, then we can just read through it and later get as a string
+  if (scanner->lexeme == gql_is_op_curly)
+    scanner->lexeme = gql_read_hash(scanner);
+
+  // By getting here with a proper value, just return the string of it, which
+  // will be delt in the request
+  if (GQL_I_VALUE(scanner->lexeme))
+    return gql_scanner_to_s(scanner);
+
+  // If it got to this point, then it's an unknown
+  scanner->lexeme = gql_i_unknown;
+  return Qnil;
 }
 
 // Same as the above, but already extend it to a parser token
 // IMPORTANT! This might generate a problem because nil, true, and false won't
 // become parser tokens
-VALUE gql_value_to_token(struct gql_scanner *scanner)
+VALUE gql_value_to_token(struct gql_scanner *scanner, int accept_var)
 {
-  return gql_as_token(gql_value_to_rb(scanner), scanner);
+  return gql_as_token(gql_value_to_rb(scanner, accept_var), scanner, 1);
 }

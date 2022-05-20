@@ -33,14 +33,15 @@
 #define GQL_S_DIGIT(x) (x >= '0' && x <= '9')
 #define GQL_S_FLOAT_MARK(x) (x == '.' || x == 'e' || x == 'E')
 
+#define GQL_SCAN_ERROR(scanner) (scanner->lexeme == gql_i_eof || scanner->lexeme == gql_i_unknown)
 #define GQL_SCAN_SIZE(scanner) (scanner->current_pos - scanner->start_pos)
 #define GQL_SCAN_CHAR(scanner) (scanner->doc[scanner->current_pos])
 #define GQL_SCAN_LOOK(scanner, bytes) (scanner->doc[scanner->current_pos + bytes])
-#define GQL_SCAN_NEXT(scanner) ({                        \
-  scanner->current_pos++;                                \
-  scanner->current = scanner->doc[scanner->current_pos]; \
+#define GQL_SCAN_NEXT(scanner) ({            \
+  scanner->current_pos++;                    \
+  scanner->current = GQL_SCAN_CHAR(scanner); \
 })
-#define GQL_READ_WHILE(scanner, check) ({         \
+#define GQL_SCAN_WHILE(scanner, check) ({         \
   while (check)                                   \
   {                                               \
     if (GQL_SCAN_CHAR(scanner) == '\n')           \
@@ -51,14 +52,23 @@
     GQL_SCAN_NEXT(scanner);                       \
   }                                               \
 })
+#define GQL_SCAN_SAVE(scanner, memory) ({ \
+  memory[0] = scanner->start_pos;         \
+  memory[1] = scanner->start_line;        \
+})
+#define GQL_SCAN_LOAD(scanner, memory) ({})
+// #define GQL_SCAN_LOAD(scanner, memory) ({ \
+//   scanner->start_pos = memory[0];         \
+//   scanner->start_line = memory[1];        \
+// })
 
 #define GQL_SAFE_PUSH(source, value) ({ \
   if (NIL_P(source))                    \
-    x = rb_ary_new();                   \
+    source = rb_ary_new();              \
   rb_ary_push(source, value);           \
 })
 
-enum gql_identifier
+enum gql_lexeme
 {
   // Basic identifiers
   gql_i_eof              = 0x00,
@@ -75,16 +85,18 @@ enum gql_identifier
   gql_is_op_brack        = 0x14,
   gql_is_cl_brack        = 0x15,
   gql_is_colon           = 0x16,
+  gql_is_equal           = 0x17,
+  gql_is_period          = 0x18,
 
   // Value based types
-  gql_iv_int             = 0x20,
+  gql_iv_integer         = 0x20,
   gql_iv_float           = 0x21,
   gql_iv_string          = 0x22,
   gql_iv_true            = 0x23,
   gql_iv_false           = 0x24,
   gql_iv_null            = 0x25,
   gql_iv_enum            = 0x26,
-  gql_iv_list            = 0x27,
+  gql_iv_array           = 0x27,
   gql_iv_hash            = 0x28,
   gql_iv_heredoc         = 0x2f,
 
@@ -109,18 +121,20 @@ enum gql_identifier
   gql_id_repeatable      = 0x4a,
 
   // Something went wrong
-  gql_i_unknown          = 0xff,
+  gql_i_unknown          = 0xff
 };
 
 struct gql_scanner {
+  unsigned long last_pos;
   unsigned long start_pos;
   unsigned long current_pos;
+  unsigned long last_line;
   unsigned long start_line;
   unsigned long current_line;
   unsigned long last_nl_at;
   char *doc;
   char current;
-  enum gql_identifier token;
+  enum gql_lexeme lexeme;
 };
 
 VALUE GQLParser;
@@ -133,23 +147,27 @@ const char *GQL_DEFINITION_KEYWORDS[12];
 
 void gql_debug_print(const char *message);
 struct gql_scanner gql_new_scanner(VALUE source);
-char *gql_scanner_to_char(struct gql_scanner *scanner);
 
-enum gql_identifier gql_upgrade_basis(const char *upgrade_from[]);
-enum gql_identifier gql_identifier_to_keyword(struct gql_scanner *scanner, const char *upgrade_from[]);
+enum gql_lexeme gql_upgrade_basis(const char *upgrade_from[]);
+enum gql_lexeme gql_name_to_keyword(struct gql_scanner *scanner, const char *upgrade_from[]);
 
-enum gql_identifier gql_read_name(struct gql_scanner *scanner);
-enum gql_identifier gql_read_comment(struct gql_scanner *scanner);
-enum gql_identifier gql_read_hash(struct gql_scanner *scanner);
-enum gql_identifier gql_read_float(struct gql_scanner *scanner);
-enum gql_identifier gql_read_number(struct gql_scanner *scanner);
-enum gql_identifier gql_read_string(struct gql_scanner *scanner, int allow_heredoc);
+enum gql_lexeme gql_read_name(struct gql_scanner *scanner);
+enum gql_lexeme gql_read_comment(struct gql_scanner *scanner);
+enum gql_lexeme gql_read_hash(struct gql_scanner *scanner);
+enum gql_lexeme gql_read_float(struct gql_scanner *scanner);
+enum gql_lexeme gql_read_number(struct gql_scanner *scanner);
+enum gql_lexeme gql_read_string(struct gql_scanner *scanner, int allow_heredoc);
 
-void gql_next_token(struct gql_scanner *scanner);
+void gql_next_lexeme(struct gql_scanner *scanner);
+void gql_next_lexeme_no_comments(struct gql_scanner *scanner);
 
+VALUE gql_set_token_type(VALUE self, const char *type);
 VALUE gql_inspect_token(VALUE self);
-VALUE gql_as_token(VALUE self, struct gql_scanner *scanner);
+VALUE gql_token_of_type_check(VALUE self, VALUE other);
+VALUE gql_as_token(VALUE self, struct gql_scanner *scanner, int save_type);
+
 VALUE gql_scanner_to_s(struct gql_scanner *scanner);
 VALUE gql_scanner_to_token(struct gql_scanner *scanner);
-VALUE gql_value_to_rb(struct gql_scanner *scanner);
-VALUE gql_value_to_token(struct gql_scanner *scanner);
+VALUE gql_array_to_rb(struct gql_scanner *scanner);
+VALUE gql_value_to_rb(struct gql_scanner *scanner, int accept_var);
+VALUE gql_value_to_token(struct gql_scanner *scanner, int accept_var);
