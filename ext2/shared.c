@@ -46,9 +46,10 @@ struct gql_scanner gql_new_scanner(VALUE source)
 {
   char *doc = RSTRING_PTR(source);
   struct gql_scanner scanner = {
+      .start_pos = 1, // Set to 1 just to begin different from the current position
       .current_pos = 0,
       .current_line = 1,
-      .last_nl_at = 0,
+      .last_ln_at = 0,
       .current = doc[0],
       .doc = doc};
 
@@ -105,15 +106,14 @@ enum gql_lexeme gql_read_name(struct gql_scanner *scanner)
 {
   // Read all the chars and digits
   GQL_SCAN_WHILE(scanner, GQL_S_CHARACTER(scanner->current) || GQL_S_DIGIT(scanner->current));
-  scanner->last_pos = scanner->current_pos - 1;
   return gql_i_name;
 }
 
 enum gql_lexeme gql_read_comment(struct gql_scanner *scanner)
 {
-  // Move forward until it finds a new line
+  // Move forward until it finds a new line, change the line indicator and return
   GQL_SCAN_WHILE(scanner, scanner->current != '\n');
-  scanner->last_pos = scanner->current_pos - 1;
+  GQL_SCAN_NEW_LINE(scanner);
   return gql_i_comment;
 }
 
@@ -133,13 +133,14 @@ enum gql_lexeme gql_read_hash(struct gql_scanner *scanner)
       curly_opens++;
     else if (scanner->current == '}')
       curly_opens--;
+    else if (scanner->current == '\n')
+      GQL_SCAN_NEW_LINE(scanner);
 
     // Just move to the next char
     GQL_SCAN_NEXT(scanner);
   }
 
   // Save the last position, move to the next and return as hash
-  scanner->last_pos = scanner->current_pos;
   GQL_SCAN_NEXT(scanner);
   return gql_iv_hash;
 }
@@ -168,7 +169,6 @@ enum gql_lexeme gql_read_float(struct gql_scanner *scanner)
     return gql_read_float(scanner);
 
   // Otherwise save the last position and just finish the float
-  scanner->last_pos = scanner->current_pos - 1;
   return gql_iv_float;
 }
 
@@ -185,7 +185,6 @@ enum gql_lexeme gql_read_number(struct gql_scanner *scanner)
   GQL_SCAN_WHILE(scanner, GQL_S_DIGIT(scanner->current));
 
   // Save the last position and halt the process if it's not a float marker
-  scanner->last_pos = scanner->current_pos - 1;
   return (GQL_S_FLOAT_MARK(scanner->current)) ? gql_read_float(scanner) : gql_iv_integer;
 }
 
@@ -198,13 +197,16 @@ enum gql_lexeme gql_read_string(struct gql_scanner *scanner, int allow_heredoc)
   start_size = GQL_SCAN_SIZE(scanner);
 
   // 4, 5, or more than 6 means an invalid tripple-quotes block
-  if (start_size == 4 || start_size == 5 || start_size > 6) return gql_i_unknown;
+  if (start_size == 4 || start_size == 5 || start_size > 6)
+    return gql_i_unknown;
 
   // 3 but not accepting heredoc returns an unknown
-  if (allow_heredoc == 0 && start_size == 3) return gql_i_unknown;
+  if (allow_heredoc == 0 && start_size == 3)
+    return gql_i_unknown;
 
   // 2 or 6 means empty string
-  if (start_size == 2 || start_size == 6) return gql_iv_string;
+  if (start_size == 2 || start_size == 6)
+    return gql_iv_string;
 
   // Read until the start and end number of quotes matches
   while (start_size != end_size)
@@ -220,10 +222,16 @@ enum gql_lexeme gql_read_string(struct gql_scanner *scanner, int allow_heredoc)
       end_size = 0;
 
       // If we get to the end of the file, return an unknown
-      if (scanner->current == '\0') return gql_i_unknown;
+      if (scanner->current == '\0')
+        return gql_i_unknown;
+
+      // Make sure to mark any new lines
+      if (scanner->current == '\n')
+        GQL_SCAN_NEW_LINE(scanner);
 
       // Skip one extra character, which means it is skipping the escapped char
-      if (scanner->current == '\\') GQL_SCAN_NEXT(scanner);
+      if (scanner->current == '\\')
+        GQL_SCAN_NEXT(scanner);
     }
 
     // Move the cursor
@@ -231,25 +239,22 @@ enum gql_lexeme gql_read_string(struct gql_scanner *scanner, int allow_heredoc)
   }
 
   // Regardless if a quote comes next, this is now a valid string
-  scanner->last_pos = scanner->current_pos - 1;
   return (start_size == 3) ? gql_iv_heredoc : gql_iv_string;
 }
 
 /* MOST IMPORTANT TOKEN READ FUNCTION */
 void gql_next_lexeme(struct gql_scanner *scanner)
 {
-  // Save the last location it was at
-  scanner->last_pos = scanner->current_pos;
-  scanner->last_line = scanner->current_line;
+  // Temporary save the end line and end column
+  GQL_SCAN_SET_END(scanner, 0);
 
   // Skip all the ignorables
   GQL_SCAN_WHILE(scanner, GQL_S_IGNORE(scanner->current));
 
-  // TODO: Maybe check if the current is equal to the last position to skip this process
-
-  // Mark where something interesting has started
+  // Mark where the new interesting thing has started
   scanner->start_pos = scanner->current_pos;
-  scanner->start_line = scanner->current_line;
+  scanner->begin_line = scanner->current_line;
+  scanner->begin_column = scanner->current_pos - scanner->last_ln_at;
 
   // Find what might be the next interesting thing
   if (scanner->current == '\0')
@@ -330,10 +335,13 @@ VALUE gql_as_token(VALUE self, struct gql_scanner *scanner, int save_type)
   VALUE instance = rb_class_new_instance(1, &self, QLGParserToken);
 
   // Add the location instance variables
-  rb_iv_set(instance, "@begin_line", ULONG2NUM(scanner->start_line));
-  rb_iv_set(instance, "@begin_column", ULONG2NUM(scanner->start_pos - scanner->last_nl_at));
-  rb_iv_set(instance, "@end_line", ULONG2NUM(scanner->last_line));
-  rb_iv_set(instance, "@end_column", ULONG2NUM(scanner->last_pos - scanner->last_nl_at));
+  int offset = scanner->begin_line == 1 ? 1 : 0;
+  rb_iv_set(instance, "@begin_line", ULONG2NUM(scanner->begin_line));
+  rb_iv_set(instance, "@begin_column", ULONG2NUM(scanner->begin_column + offset));
+
+  offset = scanner->end_line == 1 ? 1 : 0;
+  rb_iv_set(instance, "@end_line", ULONG2NUM(scanner->end_line));
+  rb_iv_set(instance, "@end_column", ULONG2NUM(scanner->end_column + offset - 1));
 
   // Check if it has to save the type
   if (save_type == 1)
@@ -426,6 +434,9 @@ VALUE gql_value_to_rb(struct gql_scanner *scanner, int accept_var)
   // then it's fine and it won't be resolved in here
   if (accept_var == 1 && scanner->lexeme == gql_i_variable)
     return Qnil;
+
+  // Make sure to save the end position of the value
+  GQL_SCAN_SET_END(scanner, 0);
 
   // If it's a name, then it can be a keyword or a enum value
   if (scanner->lexeme == gql_i_name)

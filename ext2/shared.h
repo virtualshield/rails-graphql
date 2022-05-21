@@ -41,26 +41,28 @@
   scanner->current_pos++;                    \
   scanner->current = GQL_SCAN_CHAR(scanner); \
 })
-#define GQL_SCAN_WHILE(scanner, check) ({         \
-  while (check)                                   \
-  {                                               \
-    if (GQL_SCAN_CHAR(scanner) == '\n')           \
-    {                                             \
-      scanner->current_line++;                    \
-      scanner->last_nl_at = scanner->current_pos; \
-    }                                             \
-    GQL_SCAN_NEXT(scanner);                       \
-  }                                               \
+#define GQL_SCAN_NEW_LINE(scanner) ({         \
+  scanner->last_ln_at = scanner->current_pos; \
+  scanner->current_line++;                    \
+})
+#define GQL_SCAN_WHILE(scanner, check) ({ \
+  while (check)                           \
+  {                                       \
+    if (GQL_SCAN_CHAR(scanner) == '\n')   \
+    {                                     \
+      GQL_SCAN_NEW_LINE(scanner);         \
+    }                                     \
+    GQL_SCAN_NEXT(scanner);               \
+  }                                       \
+})
+#define GQL_SCAN_SET_END(scanner, offset) ({                                 \
+  scanner->end_line = scanner->begin_line;                                   \
+  scanner->end_column = scanner->current_pos - offset - scanner->last_ln_at; \
 })
 #define GQL_SCAN_SAVE(scanner, memory) ({ \
-  memory[0] = scanner->start_pos;         \
-  memory[1] = scanner->start_line;        \
+  memory[0] = scanner->begin_line;        \
+  memory[1] = scanner->begin_column;      \
 })
-#define GQL_SCAN_LOAD(scanner, memory) ({})
-// #define GQL_SCAN_LOAD(scanner, memory) ({ \
-//   scanner->start_pos = memory[0];         \
-//   scanner->start_line = memory[1];        \
-// })
 
 #define GQL_SAFE_PUSH(source, value) ({ \
   if (NIL_P(source))                    \
@@ -124,14 +126,16 @@ enum gql_lexeme
   gql_i_unknown          = 0xff
 };
 
-struct gql_scanner {
-  unsigned long last_pos;
+struct gql_scanner
+{
   unsigned long start_pos;
   unsigned long current_pos;
-  unsigned long last_line;
-  unsigned long start_line;
   unsigned long current_line;
-  unsigned long last_nl_at;
+  unsigned long last_ln_at;
+  unsigned long begin_line;
+  unsigned long begin_column;
+  unsigned long end_line;
+  unsigned long end_column;
   char *doc;
   char current;
   enum gql_lexeme lexeme;
