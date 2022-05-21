@@ -485,26 +485,26 @@ VALUE gql_parse_spread(struct gql_scanner *scanner)
   scanner->current = GQL_SCAN_CHAR(scanner);
   gql_next_lexeme_no_comments(scanner);
 
-  // If we don't have a name after, we have a problem
-  if (scanner->lexeme != gql_i_name)
-    return gql_nil_and_unknown(scanner);
-
-  // Upgrade the name because it will decide if it is an inline spread or not
-  scanner->lexeme = gql_name_to_keyword(scanner, GQL_EXECUTION_KEYWORDS);
-
-  // If we are at "on" then we have an inline spread, otherwise a fragment reference
-  if (scanner->lexeme != gql_ie_on)
-    GQL_ASSIGN_TOKEN_AND_NEXT(pieces[0], scanner);
-  else
+  // According to the spec, the type condition or the name are optional
+  if (scanner->lexeme == gql_i_name)
   {
-    gql_next_lexeme_no_comments(scanner);
+    // Upgrade the name because it will decide if it is an inline spread or not
+    scanner->lexeme = gql_name_to_keyword(scanner, GQL_EXECUTION_KEYWORDS);
 
-    // If we don't have a name after, we have a problem
-    if (scanner->lexeme != gql_i_name)
-      return gql_nil_and_unknown(scanner);
+    // If we are at "on" then we have an inline spread, otherwise a fragment referenced by name
+    if (scanner->lexeme == gql_ie_on)
+    {
+      gql_next_lexeme_no_comments(scanner);
 
-    // Save it as the type of the spread
-    GQL_ASSIGN_TOKEN_AND_NEXT(pieces[1], scanner);
+      // If we don't have a name after, we have a problem
+      if (scanner->lexeme != gql_i_name)
+        return gql_nil_and_unknown(scanner);
+
+      // Save it as the type of the spread
+      GQL_ASSIGN_TOKEN_AND_NEXT(pieces[1], scanner);
+    }
+    else
+      GQL_ASSIGN_TOKEN_AND_NEXT(pieces[0], scanner);
   }
 
   // Save the directives of the field
@@ -616,6 +616,7 @@ void Init_gql_parser()
 {
   GQLParser = rb_define_module("GQLParser");
   rb_define_singleton_method(GQLParser, "parse_execution", gql_parse_execution, 1);
+  rb_define_const(GQLParser, "VERSION", rb_str_new2("October 2021"));
 
   QLGParserToken = rb_define_class_under(GQLParser, "Token", rb_path2class("SimpleDelegator"));
   rb_define_method(QLGParserToken, "of_type?", gql_token_of_type_check, 1);

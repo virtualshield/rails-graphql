@@ -1,3 +1,0 @@
-[submodule "ext/libgraphqlparser"]
-	path = ext/libgraphqlparser
-	url = https://github.com/graphql/libgraphqlparser.git
