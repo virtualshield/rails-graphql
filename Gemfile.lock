@@ -1,8 +1,7 @@
 PATH
   remote: .
   specs:
-    rails-graphql (0.3.6)
-      ffi (~> 1.12)
+    rails-graphql (0.3.6.alpha)
       rails (>= 5.0)
 
 GEM
@@ -74,7 +73,6 @@ GEM
     crass (1.0.6)
     docile (1.4.0)
     erubi (1.10.0)
-    ffi (1.15.5)
     globalid (1.0.0)
       activesupport (>= 5.0)
     i18n (1.10.0)

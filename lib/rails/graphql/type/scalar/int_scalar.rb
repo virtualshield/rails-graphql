@@ -11,14 +11,15 @@ module Rails
         self.spec_object = true
         aliases :integer
 
-        desc 'The Int scalar type represents a signed 32‐bit numeric non‐fractional value.'
+        desc 'The Int scalar type represents a signed 32-bit numeric non-fractional value.'
 
         max_value = (1 << 31)
         RANGE = (-max_value...max_value).freeze
 
         class << self
           def valid_input?(value)
-            value.is_a?(Integer) && RANGE.cover?(value)
+            (valid_token?(value) && RANGE.cover?(value.to_i)) ||
+              (value.is_a?(Integer) && RANGE.cover?(value))
           end
 
           def valid_output?(value)

@@ -13,7 +13,7 @@ module Rails
       # TODO: Add a exclusive cache for the build process
       def id_columns
         @id_columns ||= begin
-          result = Set.new(primary_key.then)
+          result = Set.new(GraphQL.enumerate(primary_key))
           each_reflection.each_with_object(result) do |item, arr|
             arr << item.foreign_key.to_s if item.belongs_to?
           end
@@ -23,7 +23,7 @@ module Rails
       # Get all unique attribute names that exists in the current model
       # TODO: Improve this by combining with the above method
       def reflection_attributes(holder)
-        result = Set.new(primary_key.then)
+        result = Set.new(GraphQL.enumerate(primary_key))
         each_reflection(holder).each_with_object(result) do |item, items|
           next unless item.belongs_to?
           items << item.foreign_key.to_s

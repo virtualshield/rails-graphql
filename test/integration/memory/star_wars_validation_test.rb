@@ -23,7 +23,7 @@ class Integration_Memory_StarWarsValidationTest < GraphQL::IntegrationTestCase
 
   def test_invalid_query
     errors = [{
-      message: 'syntax error, unexpected EOF',
+      message: 'Parser error: unexpected "EOF"',
       locations: [{ line: 2, column: 1 }],
     }]
 

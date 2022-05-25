@@ -15,7 +15,7 @@ module Rails
 
         class << self
           def valid_input?(value)
-            value.is_a?(Float)
+            valid_token?(value) || value.is_a?(Float)
           end
 
           def valid_output?(value)

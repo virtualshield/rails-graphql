@@ -16,9 +16,9 @@ module Rails
         class << self
           alias type kind
 
-          # Helper method to initialize an operation given the data
-          def build(request, node, data)
-            request.build(const_get(data[:kind].classify), request, node, data)
+          # Helper method to initialize an operation given the node
+          def build(request, node)
+            request.build(const_get(node.type.to_s.classify), request, node)
           end
 
           # Rewrite the kind to always return +:operation+
@@ -58,11 +58,11 @@ module Rails
         alias vars variables
         alias all_arguments arguments
 
-        def initialize(request, node, data)
-          @name = data[:name]
+        def initialize(request, node)
+          @name = node[1]
           @request = request
 
-          super(node, data)
+          super(node)
 
           check_invalid_operation!
         end
@@ -114,9 +114,9 @@ module Rails
           # Perform the organization step
           def organize_then(&block)
             super(block) do
-              parse_variables
-              parse_directives(type)
-              parse_selection
+              parse_variables(@node[2])
+              parse_directives(@node[3], type)
+              parse_selection(@node[4])
             end
           end
 
@@ -137,11 +137,13 @@ module Rails
             @display_name ||= +"#{type.to_s.titlecase} #{name.presence || '__default__'}"
           end
 
-          # Add an error for each not used variable and then clean up some data
+          # Add an error for each not used variable
           def report_unused_variables
+            return if arguments.nil?
+
             (arguments.keys - used_variables.to_a).each do |key|
               argument = arguments[key]
-              request.report_node_error((+<<~MSG).squish, argument.node || @node)
+              request.report_node_error((+<<~MSG).squish, argument.node)
                 Variable $#{argument.gql_name} was provided to #{log_source} but not used.
               MSG
             end
@@ -158,22 +160,22 @@ module Rails
           # raise an error. If an anonymous was started, then any other
           # operatios is invalid.
           def check_invalid_operation!
-            if request.operations.key?(nil)
-              invalidate!
+            other = request.document[0].find do |other|
+              other != @node && name == other[1]
+            end
 
-              request.report_node_error((+<<~MSG).squish, @node)
+            return if other.nil?
+            invalidate!
+
+            if name.nil?
+              request.report_node_error((+<<~MSG).squish, self)
                 Unable to process the operation #{display_name} when the document
                 contain multiple anonymous operations.
               MSG
-            elsif request.operations.key?(name)
-              invalidate!
-
-              other_node = request.operations[name].instance_variable_get(:@node)
-              location = GraphQL::Native.get_location(other_node)
-
-              request.report_node_error((+<<~MSG).squish, @node)
+            else
+              request.report_node_error((+<<~MSG).squish, self)
                 Duplicated operation named "#{name}" defined on
-                line #{location.begin_line}:#{location.begin_column}.
+                line #{other.begin_line}:#{other.begin_column}.
               MSG
             end
           end

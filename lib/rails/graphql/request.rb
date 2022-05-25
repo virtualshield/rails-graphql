@@ -60,7 +60,7 @@ module Rails
       end
 
       attr_reader :args, :controller, :errors, :fragments, :operations, :response, :schema,
-        :stack, :strategy, :visitor
+        :stack, :strategy, :document
 
       alias arguments args
 
@@ -153,11 +153,19 @@ module Rails
 
       # A little helper to report an error on a given node
       def report_node_error(message, node, **xargs)
-        node = node.instance_variable_get(:@node) if node.is_a?(Request::Component)
-        location = GraphQL::Native.get_location(node)
-
-        xargs[:locations] ||= location.to_errors unless xargs.key?(:line)
+        xargs[:locations] ||= location_of(node) unless xargs.key?(:line)
         report_error(message, **xargs)
+      end
+
+      # Get the location object of a given node
+      def location_of(node)
+        node = node.instance_variable_get(:@node) if node.is_a?(Request::Component)
+        return unless node.is_a?(GQLParser::Token)
+
+        [
+          { 'line' => node.begin_line, 'column' => node.begin_column },
+          { 'line' => node.end_line,   'column' => node.end_column },
+        ]
       end
 
       # The final helper that facilitates how errors are reported
@@ -224,7 +232,6 @@ module Rails
 
           @args = build_ostruct(@args).freeze
           @errors = Request::Errors.new(self)
-          @visitor = GraphQL::Native::Visitor.new
           @operation_name = operation_name
           @controller = controller
 
@@ -241,42 +248,36 @@ module Rails
         # them as defined by the schema
         def execute!(document)
           log_execution(document) do
-            @document = GraphQL::Native.parse(document)
+            @document = ::GQLParser.parse_execution(document)
             collect_definitions!
 
             @strategy = find_strategy!
             @strategy.trigger_event(:request)
             @strategy.resolve!
           end
-        rescue ParseError => err
-          parts = err.message.match(/\A(\d+)\.(\d+)(?:-\d+)?: (.*)\z/)
-          errors.add(parts[3], line: parts[1], col: parts[2])
+        rescue ::GQLParser::ParserError => err
+          parts = err.message.match(/\A(Parser error: .*) at \[(\d+), (\d+)\]\z/)
+          errors.add(parts[1], line: parts[2], col: parts[3])
         ensure
           report_unused_variables
 
           # File.binwrite('/var/www/graphql/gem/tmp/doc.cache', Marshal.dump(@document))
 
           @cache.clear
-          @fragments.clear
+          @fragments&.clear
           @operations.clear
 
-          @visitor.terminate
-          @visitor = nil
-
-          GraphQL::Native.free_node(@document) if defined?(@document)
           @response.try(:append_errors, errors)
         end
 
-        # Use the visitor to collect the operations and fragments
+        # Organize the list of definitions from the document
         def collect_definitions!
-          visitor.collect_definitions(@document) do |kind, node, data|
-            case kind
-            when :operation
-              operations[data[:name]] = Component::Operation.build(self, node, data)
-            when :fragment
-              fragments[data[:name]] = build(Component::Fragment, self, node, data)
-            end
-          end
+          @operations = @document[0]&.each_with_object({}) { |n, h| h[n[1]] = n }
+          @fragments = @document[1]&.each_with_object({}) { |n, h| h[n[0]] = n }
+
+          raise ::ArgumentError, (+<<~MSG).squish if operations.blank?
+            The document does not contains operations.
+          MSG
         end
 
         # Find the best strategy to resolve the request
@@ -376,7 +377,9 @@ module Rails
         # used
         def report_unused_variables
           (@arg_names.keys - @used_variables.to_a).each do |key|
-            errors.add(+"Variable $#{@arg_names[key]} was provided but not used.")
+            errors.add((+<<~MSG).squish)
+              Variable $#{@arg_names[key]} was provided but not used.
+            MSG
           end
         end
     end

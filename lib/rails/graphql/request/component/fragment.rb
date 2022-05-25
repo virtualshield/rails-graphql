@@ -14,11 +14,11 @@ module Rails
 
         attr_reader :name, :type_klass, :request
 
-        def initialize(request, node, data)
-          @name = data[:name]
+        def initialize(request, node)
+          @name = node[0]
           @request = request
 
-          super(node, data)
+          super(node)
 
           check_duplicated_fragment!
         end
@@ -61,11 +61,11 @@ module Rails
           # Perform the organization step
           def organize_then(&block)
             super(block) do
-              @type_klass = find_type!(data[:type])
-              parse_directives(:fragment_definition)
+              @type_klass = find_type!(@node[1])
+              parse_directives(@node[2], :fragment_definition)
 
               check_assignment!
-              parse_selection
+              parse_selection(@node[3])
             end
           end
 
@@ -100,16 +100,16 @@ module Rails
           # If there is another fragment with the same name already defined,
           # raise an error
           def check_duplicated_fragment!
-            return unless request.fragments.key?(name)
+            other = request.document[1].find do |other|
+              other != @node && name == other[0]
+            end
 
+            return if other.nil?
             invalidate!
 
-            other_node = request.fragments[name].instance_variable_get(:@node)
-            location = GraphQL::Native.get_location(other_node)
-
-            request.report_node_error((+<<~MSG).squish, @node)
+            request.report_node_error((+<<~MSG).squish, self)
               Duplicated fragment named "#{name}" defined on
-              line #{location.begin_line}:#{location.begin_column}
+              line #{other.begin_line}:#{other.begin_column}
             MSG
           end
       end

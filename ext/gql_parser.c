@@ -41,10 +41,10 @@ VALUE gql_parse_directives(struct gql_scanner *scanner);
 // DIRECTIVE [name, ARGUMENT*]
 VALUE gql_parse_directive(struct gql_scanner *scanner);
 
-// FIELD [alias?, name, ARGUMENT*, DIRECTIVE*, FIELD*]*
+// FIELD [name, alias?, ARGUMENT*, DIRECTIVE*, FIELD*]*
 VALUE gql_parse_fields(struct gql_scanner *scanner);
 
-// FIELD [alias?, name, ARGUMENT*, DIRECTIVE*, FIELD*]
+// FIELD [name, alias?, ARGUMENT*, DIRECTIVE*, FIELD*]
 VALUE gql_parse_field(struct gql_scanner *scanner);
 
 // ARGUMENT [name, value?, var_name?]*
@@ -133,8 +133,8 @@ VALUE gql_parse_operation(struct gql_scanner *scanner)
   if (QGL_I_OPERATION(scanner->lexeme))
   {
     // Save the operation type
+    type = RSTRING_PTR(gql_scanner_to_s(scanner));
     GQL_ASSIGN_TOKEN_AND_NEXT(pieces[0], scanner);
-    type = RSTRING_PTR(pieces[0]);
 
     // Save the name of the operation
     if (scanner->lexeme == gql_i_name)
@@ -240,6 +240,7 @@ VALUE gql_parse_variable(struct gql_scanner *scanner)
 
   // Skip the $
   GQL_SCAN_NEXT(scanner);
+  scanner->start_pos++;
 
   // If we don't have a name indicator, we return an error
   if (!GQL_S_CHARACTER(scanner->current))
@@ -253,9 +254,12 @@ VALUE gql_parse_variable(struct gql_scanner *scanner)
   if (scanner->lexeme != gql_is_colon)
     return gql_nil_and_unknown(scanner);
 
+  // Skip the :
+  GQL_SCAN_NEXT(scanner);
+
   // Now check for the type, which can be a brack for array or just the type
   gql_next_lexeme_no_comments(scanner);
-  if (scanner->lexeme != gql_is_op_brack || scanner->lexeme != gql_i_name)
+  if (scanner->lexeme != gql_is_op_brack && scanner->lexeme != gql_i_name)
     return gql_nil_and_unknown(scanner);
 
   // Save the type of the variable
@@ -300,6 +304,7 @@ VALUE gql_parse_directive(struct gql_scanner *scanner)
 
   // Skip the @
   GQL_SCAN_NEXT(scanner);
+  scanner->start_pos++;
 
   // If we don't have a name indicator, we return an error
   if (!GQL_S_CHARACTER(scanner->current))
@@ -452,14 +457,16 @@ VALUE gql_parse_argument(struct gql_scanner *scanner)
   {
     // Skip the $ for a variable
     GQL_SCAN_NEXT(scanner);
+    scanner->start_pos++;
 
     // If we don't have a name indicator, we return an error
     if (!GQL_S_CHARACTER(scanner->current))
       return gql_nil_and_unknown(scanner);
 
-    // Read and save the name
+    // Read and save only the name
     scanner->lexeme = gql_read_name(scanner);
-    GQL_ASSIGN_TOKEN_AND_NEXT(pieces[2], scanner);
+    pieces[2] = gql_set_token_type(gql_scanner_to_token(scanner), "variable");
+    gql_next_lexeme_no_comments(scanner);
   }
   else
     return gql_nil_and_unknown(scanner);
@@ -607,7 +614,15 @@ void gql_throw_parser_error(struct gql_scanner *scanner)
 {
   VALUE line = ULONG2NUM(scanner->begin_line);
   VALUE column = ULONG2NUM(scanner->begin_column);
-  VALUE token = GQL_SCAN_SIZE(scanner) == 0 ? rb_str_new(&scanner->current, 1) : gql_scanner_to_s(scanner);
+  VALUE token;
+
+  if (GQL_SCAN_SIZE(scanner) > 0)
+    token = gql_scanner_to_s(scanner);
+  else if (scanner->current != '\0')
+    token = rb_str_new(&scanner->current, 1);
+  else
+    token = rb_str_new2("EOF");
+
   const char *message = "Parser error: unexpected \"%" PRIsVALUE "\" at [%" PRIsVALUE ", %" PRIsVALUE "]";
   rb_raise(gql_eParserError, message, token, line, column);
 }
@@ -625,6 +640,7 @@ void Init_gql_parser()
   rb_define_attr(QLGParserToken, "begin_column", 1, 0);
   rb_define_attr(QLGParserToken, "end_line", 1, 0);
   rb_define_attr(QLGParserToken, "end_column", 1, 0);
+  rb_define_attr(QLGParserToken, "type", 1, 0);
 
   gql_eParserError = rb_define_class_under(GQLParser, "ParserError", rb_eStandardError);
 }

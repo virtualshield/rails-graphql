@@ -14,7 +14,7 @@ module Rails
 
         class << self
           def valid_input?(value)
-            value.is_a?(Hash)
+            valid_token?(value, :hash) || value.is_a?(Hash)
           end
 
           def valid_output?(value)
@@ -27,6 +27,10 @@ module Rails
 
           def as_json(value)
             value.as_json
+          end
+
+          def deserialize(value)
+            value.is_a?(::GQLParser::Token) ? JSON.parse(value) : value
           end
         end
       end

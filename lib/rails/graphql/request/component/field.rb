@@ -24,13 +24,13 @@ module Rails
 
         alias args arguments
 
-        def initialize(parent, node, data)
+        def initialize(parent, node)
           @parent = parent
 
-          @name = data[:name]
-          @alias_name = data[:alias]
+          @name = node[0]
+          @alias_name = node[1]
 
-          super(node, data)
+          super(node)
         end
 
         # Return both the field directives and the request directives
@@ -108,7 +108,7 @@ module Rails
         # When the field is invalid, there's no much to do
         # TODO: Maybe add a invalid event trigger here
         def resolve_invalid(error = nil)
-          request.exception_to_error(error, @node) if error.present?
+          request.exception_to_error(error, self) if error.present?
 
           validate_output!(nil)
           response.safe_add(gql_name, nil)
@@ -138,9 +138,9 @@ module Rails
               check_assignment!
               check_authorization!
 
-              parse_arguments
-              parse_directives
-              parse_selection
+              parse_arguments(@node[2])
+              parse_directives(@node[3])
+              parse_selection(@node[4])
             end
           end
 
@@ -211,16 +211,17 @@ module Rails
               The "#{gql_name}" was assigned to a non-output type of field: #{field.inspect}.
             MSG
 
-            empty_selection = data[:selection].nil? || data[:selection].null?
-            raise FieldError, (+<<~MSG).squish if field.leaf_type? && !empty_selection
-              The "#{gql_name}" was assigned to the #{type_klass.gql_name} which
-              is a leaf type and does not have nested fields.
-            MSG
-
-            raise FieldError, (+<<~MSG).squish if !field.leaf_type? && empty_selection
-              The "#{gql_name}" was assigned to the #{type_klass.gql_name} which
-              is not a leaf type and requires a selection of fields.
-            MSG
+            if @node[4].nil?
+              raise FieldError, (+<<~MSG).squish if !field.leaf_type?
+                The "#{gql_name}" was assigned to the #{type_klass.gql_name} which
+                is not a leaf type and requires a selection of fields.
+              MSG
+            else
+              raise FieldError, (+<<~MSG).squish if field.leaf_type?
+                The "#{gql_name}" was assigned to the #{type_klass.gql_name} which
+                is a leaf type and does not have nested fields.
+              MSG
+            end
 
             raise DisabledFieldError, (+<<~MSG).squish if field.disabled?
               The "#{gql_name}" was found but it is marked as disabled.

@@ -20,7 +20,8 @@ module Rails
 
         class << self
           def valid_input?(value)
-            super || value.is_a?(Integer)
+            valid_token?(value, :string) || valid_token?(value, :int) ||
+              value.is_a?(String) || value.is_a?(Integer)
           end
 
           def as_json(value)
@@ -30,7 +31,7 @@ module Rails
           end
 
           def deserialize(value)
-            value.to_s
+            value.is_a?(::GQLParser::Token) ? value[1..-2] : value
           end
         end
       end

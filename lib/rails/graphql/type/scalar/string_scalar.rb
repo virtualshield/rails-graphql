@@ -16,10 +16,25 @@ module Rails
         DESC
 
         class << self
+          def valid_input?(value)
+            super || valid_token?(value, :heredoc)
+          end
+
           def as_json(value)
             value = value.to_s unless value.is_a?(String)
             value = value.encode(Encoding::UTF_8) unless value.encoding.eql?(Encoding::UTF_8)
             value
+          end
+
+          def deserialize(value)
+            if valid_token?(value, :string)
+              value[1..-2] # Remove the quotes
+            elsif valid_token?(value, :heredoc)
+              value[3..-4] # Remove the quotes
+              # TODO: Fix identation
+            else
+              value
+            end
           end
         end
       end

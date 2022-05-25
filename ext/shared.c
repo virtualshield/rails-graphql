@@ -245,6 +245,10 @@ enum gql_lexeme gql_read_string(struct gql_scanner *scanner, int allow_heredoc)
 /* MOST IMPORTANT TOKEN READ FUNCTION */
 void gql_next_lexeme(struct gql_scanner *scanner)
 {
+  // Do not move forward if it is unknown
+  if (scanner->lexeme == gql_i_unknown)
+    return;
+
   // Temporary save the end line and end column
   GQL_SCAN_SET_END(scanner, 0);
 
@@ -311,13 +315,13 @@ VALUE gql_set_token_type(VALUE self, const char *type)
 // Just simply format the string with the token prefix
 VALUE gql_inspect_token(VALUE self)
 {
-  VALUE type = rb_iv_get(self, "@type");
   VALUE text = rb_call_super(0, 0);
 
-  if (NIL_P(type))
+  if (rb_ivar_defined(self, rb_intern("@type")) == Qfalse)
     return rb_sprintf("<GQLParser::Token %" PRIsVALUE ">", text);
-  else
-    return rb_sprintf("<GQLParser::Token [%" PRIsVALUE "] %" PRIsVALUE ">", type, text);
+
+  VALUE type = rb_iv_get(self, "@type");
+  return rb_sprintf("<GQLParser::Token [%" PRIsVALUE "] %" PRIsVALUE ">", type, text);
 }
 
 // Check if the token is of the given type
@@ -341,22 +345,22 @@ VALUE gql_as_token(VALUE self, struct gql_scanner *scanner, int save_type)
 
   offset = scanner->end_line == 1 ? 1 : 0;
   rb_iv_set(instance, "@end_line", ULONG2NUM(scanner->end_line));
-  rb_iv_set(instance, "@end_column", ULONG2NUM(scanner->end_column + offset - 1));
+  rb_iv_set(instance, "@end_column", ULONG2NUM(scanner->end_column + offset));
 
   // Check if it has to save the type
   if (save_type == 1)
   {
     // This only covers value types
     if (scanner->lexeme == gql_iv_integer)
-      gql_set_token_type(instance, "integer");
+      gql_set_token_type(instance, "int");
     else if (scanner->lexeme == gql_iv_float)
       gql_set_token_type(instance, "float");
     else if (scanner->lexeme == gql_iv_string)
       gql_set_token_type(instance, "string");
     else if (scanner->lexeme == gql_iv_true)
-      gql_set_token_type(instance, "bool");
+      gql_set_token_type(instance, "boolean");
     else if (scanner->lexeme == gql_iv_false)
-      gql_set_token_type(instance, "bool");
+      gql_set_token_type(instance, "boolean");
     else if (scanner->lexeme == gql_iv_enum)
       gql_set_token_type(instance, "enum");
     else if (scanner->lexeme == gql_iv_array)
@@ -392,8 +396,6 @@ VALUE gql_array_to_rb(struct gql_scanner *scanner)
   VALUE element;
 
   // Save the scan and grab the next char
-  unsigned long mem[2];
-  GQL_SCAN_SAVE(scanner, mem);
   GQL_SCAN_NEXT(scanner);
 
   // Iterate until it finds the end of the array
@@ -418,8 +420,8 @@ VALUE gql_array_to_rb(struct gql_scanner *scanner)
     GQL_SCAN_WHILE(scanner, GQL_S_IGNORE(scanner->current));
   }
 
-  // Recover the start location, set the lexeme to array and return it
-  GQL_SCAN_LOAD(scanner, mem);
+  // Save where the array has actually ended, change the lexeme and return
+  GQL_SCAN_SET_END(scanner, 0);
   scanner->lexeme = gql_iv_array;
   return result;
 }

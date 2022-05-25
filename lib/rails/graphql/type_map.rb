@@ -208,7 +208,7 @@ module Rails
       def each_from(namespaces, base_class: nil, exclusive: false, base_classes: nil, &block)
         register_pending!
 
-        base_classes ||= (base_class || :Type).then
+        base_classes = GraphQL.enumerate(base_class || base_classes || :Type)
 
         iterated = Set.new
         namespaces = sanitize_namespaces(namespaces: namespaces, exclusive: exclusive)
@@ -232,7 +232,7 @@ module Rails
       # Get the list of all registred objects
       # TODO: Maybe keep it as a lazy enumerator
       def objects(base_classes: nil, namespaces: nil)
-        base_classes = base_classes&.then || self.class.base_classes
+        base_classes ||= self.class.base_classes
         each_from(namespaces || @index.keys, base_classes: base_classes).select do |obj|
           obj.is_a?(Helpers::Registerable)
         end.force

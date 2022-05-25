@@ -81,7 +81,7 @@ module Rails
           end
         rescue UnauthorizedFieldError => error
           request.rescue_with_handler(error)
-          request.exception_to_error(error, @node)
+          request.exception_to_error(error, self)
           invalidate!
         end
 

@@ -110,6 +110,11 @@ module Rails
             redefine_singleton_method(:output_type?) { true } if options[:output]
           end
 
+          # Check if the value is a valid parser token
+          def valid_token?(value, type = to_sym)
+            value.is_a?(::GQLParser::Token) && value.of_type?(type)
+          end
+
         private
 
           # Reset some class attributes, meaning that they are not cascade

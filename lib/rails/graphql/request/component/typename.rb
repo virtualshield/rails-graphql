@@ -23,13 +23,13 @@ module Rails
           :field
         end
 
-        def initialize(parent, node, data)
+        def initialize(parent, node)
           @parent = parent
 
-          @name = data[:name]
-          @alias_name = data[:alias]
+          @name = node[0]
+          @alias_name = node[1]
 
-          super(node, data)
+          super(node)
         end
 
         # Set the value that the field will be resolved as
@@ -63,7 +63,7 @@ module Rails
 
           # Perform the organization step
           def organize_then(&block)
-            super(block) { parse_directives(:field) }
+            super(block) { parse_directives(@node[3], :field) }
           end
 
           # Go through the right flow to write the value

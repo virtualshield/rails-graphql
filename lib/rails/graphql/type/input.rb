@@ -46,6 +46,7 @@ module Rails
 
           # Check if a given value is a valid non-deserialized input
           def valid_input?(value)
+            value = JSON.parse(value) if valid_token?(value, :hash)
             value = value.to_h if value.respond_to?(:to_h)
             return false unless value.is_a?(Hash)
 
@@ -83,6 +84,7 @@ module Rails
           private
 
             def parse_arguments(value, using:, key: :name)
+              value = JSON.parse(value) if valid_token?(value, :hash)
               value = value.to_h if value.respond_to?(:to_h)
               value = {} unless value.is_a?(Hash)
               value = value.stringify_keys

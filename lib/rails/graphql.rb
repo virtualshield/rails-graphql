@@ -12,7 +12,6 @@ require 'rails/graphql/uri'
 ActiveSupport::Inflector.inflections(:en) do |inflect|
   inflect.acronym 'GraphiQL'
   inflect.acronym 'GraphQL'
-  inflect.acronym 'GQLAst'
 end
 
 module Rails
@@ -50,7 +49,7 @@ module Rails
     include ActiveSupport::Configurable
 
     # Stores the version of the GraphQL spec used for this implementation
-    SPEC_VERSION = 'June 2018'
+    SPEC_VERSION = ::GQLParser::VERSION
 
     # Runtime registry for request execution time
     RuntimeRegistry = Class.new { thread_mattr_accessor :gql_runtime }
@@ -78,7 +77,6 @@ module Rails
     end
 
     eager_autoload do
-      autoload :Native
       autoload :TypeMap
       autoload :Request
     end
@@ -124,6 +122,12 @@ module Rails
 
       alias to_graphql to_gql
 
+      # A generic helper to not create a new array when just iterating over
+      # something that may or may not be an array
+      def enumerate(value)
+        value.respond_to?(:to_ary) ? value : value.then
+      end
+
       # Returns a set instance with uniq directives from the given list.
       # If the same directive class is given twice, it will raise an exception,
       # since they must be uniq within a list of directives.
@@ -142,7 +146,7 @@ module Rails
         end
 
         others = others&.to_set
-        list.then.each_with_object(Set.new) do |item, result|
+        enumerate(list).each_with_object(Set.new) do |item, result|
           raise ArgumentError, (+<<~MSG).squish unless item.kind_of?(GraphQL::Directive)
             The "#{item.class}" is not a valid directive.
           MSG

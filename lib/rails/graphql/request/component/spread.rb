@@ -18,13 +18,13 @@ module Rails
 
         attr_reader :name, :parent, :fragment, :type_klass
 
-        def initialize(parent, node, data)
+        def initialize(parent, node)
           @parent = parent
 
-          @name = data[:name]
-          @inline = data[:inline]
+          @name = node[0]
+          @inline = name.nil?
 
-          super(node, data)
+          super(node)
         end
 
         # Check if the object is an inline spread
@@ -51,13 +51,13 @@ module Rails
           end
 
           # Just provide the correct location for directives
-          def parse_directives
-            super(inline? ? :inline_fragment : :fragment_spread)
+          def parse_directives(nodes)
+            super(nodes, (inline? ? :inline_fragment : :fragment_spread))
           end
 
           # Scope the arguments whenever stacked within a spread
           def stacked(*)
-            Request::Arguments.scoped(operation) { super }
+            Arguments.scoped(operation) { super }
           end
 
           # Normal mode of the organize step
@@ -74,16 +74,16 @@ module Rails
           def organize_then(&block)
             super(block) do
               if inline?
-                @type_klass = find_type!(data[:type])
-                parse_selection
+                @type_klass = find_type!(@node[1])
+                parse_directives(@node[2])
+                parse_selection(@node[3])
               else
-                @fragment = request.fragments[name]
+                parse_directives(@node[2])
+                @fragment = collect_fragment
                 raise ArgumentError, (+<<~MSG).squish if @fragment.nil?
                   The "#{name}" fragment is not defined in this request.
                 MSG
               end
-
-              parse_directives
             end
           end
 
@@ -111,7 +111,14 @@ module Rails
           # Most of the things that are redirected to the fragment needs to run
           # inside a arguments scoped
           def run_on_fragment(method_name, *args)
-            Request::Arguments.scoped(operation) { fragment.public_send(method_name, *args) }
+            Arguments.scoped(operation) { fragment.public_send(method_name, *args) }
+          end
+
+          # Make sure to instantiate the fragment only when the spread request it
+          def collect_fragment
+            node = request.fragments[name]
+            return node if node.is_a?(Component::Fragment)
+            request.fragments[name] = request.build(Component::Fragment, request, node)
           end
       end
     end

@@ -38,7 +38,8 @@ module Rails
 
           # Check if a given value is a valid non-deserialized input
           def valid_input?(value)
-            value.is_a?(String) && all_values.include?(value)
+            (valid_token?(value, :enum) && all_values.include?(value.to_s)) ||
+              (value.is_a?(String) && all_values.include?(value))
           end
 
           # Check if a given value is a valid non-serialized output
@@ -61,7 +62,7 @@ module Rails
 
           # Turn a user input of this given type into an ruby object
           def deserialize(value)
-            new(value) if valid_input?(value)
+            new(value.is_a?(::GQLParser::Token) ? value.to_s : value) if valid_input?(value)
           end
 
           # Use the instance as decorator

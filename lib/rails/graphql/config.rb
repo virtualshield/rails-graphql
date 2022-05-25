@@ -67,7 +67,7 @@ module Rails
       config.request_strategies = [
         'Rails::GraphQL::Request::Strategy::MultiQueryStrategy',
         'Rails::GraphQL::Request::Strategy::SequencedStrategy',
-        'Rails::GraphQL::Request::Strategy::CachedStrategy',
+        # 'Rails::GraphQL::Request::Strategy::CachedStrategy',
       ]
 
       # A list of all possible rails-graphql-compatible sources

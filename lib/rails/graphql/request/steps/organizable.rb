@@ -5,14 +5,9 @@ module Rails
     class Request
       # Helper methods for the organize step of a request
       module Organizable
-        # Check if it is already organized
-        def organized?
-          data.nil?
-        end
-
         # Organize the object if it is not already organized
         def organize!
-          capture_exception(:organize, true) { organize unless organized? }
+          capture_exception(:organize, true) { organize }
         end
 
         protected
@@ -35,26 +30,31 @@ module Rails
               trigger_event(:organized)
               after_block.call if after_block.present?
             end
-          ensure
-            @data = nil
           end
 
           # Helper parser for request arguments (operation variables) that
           # collect necessary arguments from the request
-          def parse_variables
+          # Default values forces this method to run even without nodes
+          def parse_variables(nodes)
             @arguments = {}
 
-            visitor.collect_variables(*data[:variables]) do |data, node|
-              arg_name = data[:name]
+            nodes&.each do |node|
+              arg_name, type, value, _directives = node
               raise ExecutionError, (+<<~MSG).squish if arguments.key?(arg_name)
                 The "#{arg_name}" argument is already defined for this #{kind}.
               MSG
 
-              extra = data.to_h.except(:name, :type).merge(owner: schema)
-              item = arguments[arg_name] = Argument.new(arg_name, data[:type], **extra)
+              # TODO: Move this to a better builder of the type
+              type_name, dimensions, nullability = type
+              xargs = { owner: schema, default: value, array: dimensions > 0 }
+              xargs[:nullable] = (nullability & 0b10) == 0
+              xargs[:null] = (nullability & 0b01) == 0
+
+              # TODO: Follow up with the support for directives
+              item = arguments[arg_name.to_s] = Argument.new(arg_name, type_name, **xargs)
               item.node = node
               item.validate!
-            end unless data[:variables].blank?
+            end
 
             args = collect_arguments(self, request.args, var_access: false)
 
@@ -67,17 +67,16 @@ module Rails
           end
 
           # Helper parser for arguments that also collect necessary variables
-          def parse_arguments
-            args = nil
+          # Default values forces this method to run even without nodes
+          def parse_arguments(nodes)
+            args = {}
 
-            visitor.collect_arguments(*data[:arguments]) do |data|
-              args ||= {}
-              args[data[:name]] = variable = data[:variable]
-              args[data[:name]] = data[:value] if variable.nil? || variable.null?
-            end unless data[:arguments].blank?
+            nodes&.each do |(name, value, var_name)|
+              args[name.to_s] = var_name.nil? ? value : var_name
+            end
 
             args = collect_arguments(self, args)
-            @arguments = request.build(Request::Arguments, args).freeze unless args.nil?
+            @arguments = request.build(Request::Arguments, args).freeze
           rescue ArgumentsError => error
             raise ArgumentsError, (+<<~MSG).squish
               Invalid arguments for #{gql_name} #{kind}: #{error.message}.
@@ -98,14 +97,14 @@ module Rails
             result = source.each_pair.each_with_object({}) do |(key, argument), hash|
               value = values && values[key]
 
-              # Pointer means operation variable
-              if value.is_a?(::FFI::Pointer)
-                var_name = visitor.node_name(value)
+              # Not a token means the name of a variable
+              if value.is_a?(::GQLParser::Token) && value.of_type?(:variable)
+                var_name = value.to_s
                 raise ArgumentError, (+<<~MSG).squish unless var_access
                   Unable to use variable "$#{var_name}" in the current scope
                 MSG
 
-                op_vars ||= operation.all_arguments
+                op_vars ||= operation.all_arguments || {}
                 raise ArgumentError, (+<<~MSG).squish unless (op_var = op_vars[var_name]).present?
                   The #{operation.log_source} does not define the $#{var_name} variable
                 MSG
@@ -125,7 +124,9 @@ module Rails
                 # Only when the given value is an actual value that we check if
                 # it is valid
                 raise ArgumentError, (+<<~MSG).squish unless argument.valid?(value)
-                  Invalid value provided to "#{key}" argument
+                  Invalid value "#{value.to_s}" provided to
+                  #{argument.node ? "$#{argument.name} variable" : "#{key} argument"}
+                  on #{argument.node ? operation.log_source : gql_name}
                 MSG
 
                 value = argument.deserialize(value)

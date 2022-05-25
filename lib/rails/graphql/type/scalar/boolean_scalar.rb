@@ -16,7 +16,7 @@ module Rails
 
         class << self
           def valid_input?(value)
-            value === true || value === false
+            valid_token?(value) || value === true || value === false
           end
 
           def valid_output?(value)
@@ -28,7 +28,7 @@ module Rails
           end
 
           def deserialize(value)
-            !FALSE_VALUES.include?(value)
+            value.is_a?(::GQLParser::Token) ? as_json(value) : !FALSE_VALUES.include?(value)
           end
         end
       end

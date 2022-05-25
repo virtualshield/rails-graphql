@@ -29,17 +29,19 @@ module Rails
           alias all_directives directives
 
           # Helper parser for directives that also collect necessary variables
-          def parse_directives(location = nil)
-            return if data[:directives].blank?
+          def parse_directives(nodes, location = nil)
+            return if nodes.nil?
 
             list = nil
-            visitor.collect_directives(*data[:directives]) do |data|
-              instance = find_directive!(data[:name])
+            nodes.each do |(name, arguments)|
+              instance = find_directive!(name.to_s)
+              values = arguments&.each_with_object({}) do |(name, value, var_name), hash|
+                hash[name.to_s] = var_name.nil? ? value : var_name
+              end
 
               args = directive_arguments(instance)
-              args = collect_arguments(args, data[:arguments])
+              args = collect_arguments(args, values)
 
-              # TODO: Use instance.method(:new).curry(2)[$args$]
               (list ||= []) << instance.new(request.build(Request::Arguments, args))
             rescue ArgumentsError => error
               raise ArgumentsError, (+<<~MSG).squish

@@ -38,7 +38,7 @@ module Rails
         class << self
           # Check if a given value is a valid non-deserialized input
           def valid_input?(value)
-            value.is_a?(String)
+            valid_token?(value) || value.is_a?(String)
           end
 
           # Check if a given value is a valid non-serialized output
@@ -58,7 +58,7 @@ module Rails
 
           # Turn a user input of this given type into an ruby object
           def deserialize(value)
-            value
+            value.is_a?(::GQLParser::Token) ? as_json(value) : value
           end
 
           def inspect

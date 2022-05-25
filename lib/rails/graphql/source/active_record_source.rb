@@ -47,7 +47,7 @@ module Rails
       end
 
       step(:input) do
-        extra = primary_key.then.entries.product([{ null: true }]).to_h
+        extra = GraphQL.enumerate(primary_key).entries.product([{ null: true }]).to_h
         build_attribute_fields(self, **extra)
         build_reflection_inputs(self)
 

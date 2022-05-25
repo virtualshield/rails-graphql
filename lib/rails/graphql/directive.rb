@@ -123,7 +123,7 @@ module Rails
           # used with things from both the TypeMap and the GraphQL shortcut
           # classes
           def sanitize_objects(setting)
-            setting.then.map do |item|
+            GraphQL.enumerate(setting).map do |item|
               next item unless item.is_a?(String) || item.is_a?(Symbol)
               GraphQL.type_map.fetch(item, namespaces: namespaces) ||
                 ::GraphQL.const_get(item)
@@ -174,7 +174,7 @@ module Rails
       end
 
       event_filter(:during) do |options, event|
-        event.key?(:phase) && options.then.include?(event[:phase])
+        event.key?(:phase) && GraphQL.enumerate(options).include?(event[:phase])
       end
 
       attr_reader :args

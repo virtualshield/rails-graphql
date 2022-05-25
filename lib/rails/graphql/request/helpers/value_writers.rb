@@ -31,7 +31,7 @@ module Rails
               response.next
 
               format_array_execption(error, idx)
-              request.exception_to_error(error, @node)
+              request.exception_to_error(error, self)
             end
           rescue StandardError => error
             format_array_execption(error, idx)

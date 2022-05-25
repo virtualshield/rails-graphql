@@ -21,7 +21,7 @@ module Rails
           super(*args, **xargs)
 
           @block = block
-          @fields = on&.then
+          @fields = GraphQL.enumerate(on)
         end
 
         # Check if the argument should be attached to the given +field+

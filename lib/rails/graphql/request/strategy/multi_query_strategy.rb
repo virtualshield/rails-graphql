@@ -12,7 +12,7 @@ module Rails
         self.priority = 10
 
         def self.can_resolve?(request)
-          request.operations.each_value.all?(&:query?)
+          request.operations.each_value.all? { |op| op.of_type?(:query) }
         end
 
         # Executes the strategy in the normal mode
@@ -23,13 +23,6 @@ module Rails
             for_each_operation { |op| collect_response  { op.resolve!  } }
           end
         end
-
-        private
-
-          # Execute a given block for each defined operation
-          def for_each_operation(&block)
-            operations.each_value(&block)
-          end
       end
     end
   end

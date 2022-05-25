@@ -32,8 +32,6 @@ module Rails
           end
         end
 
-        attr_reader :data
-
         delegate :visitor, :response, :strategy, to: :request
         delegate :find_type!, :find_directive!, :trigger_event, to: :strategy
         delegate :memo, :schema, to: :operation
@@ -50,9 +48,8 @@ module Rails
         autoload :Spread
         autoload :Typename
 
-        def initialize(node, data)
+        def initialize(node)
           @node = node
-          @data = data
         end
 
         # Check if the component is in a invalid state
@@ -106,7 +103,7 @@ module Rails
             invalidate! if invalidate
             stack_path = request.stack_to_path
             stack_path << gql_name if respond_to?(:gql_name) && gql_name.present?
-            request.exception_to_error(error, @node, path: stack_path, stage: stage.to_s)
+            request.exception_to_error(error, self, path: stack_path, stage: stage.to_s)
           end
       end
     end

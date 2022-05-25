@@ -32,7 +32,6 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = '>= 2.6.3'
   s.add_dependency 'rails', '>= 5.0'
-  s.add_dependency 'ffi', '~> 1.12'
 
   s.add_development_dependency 'benchmark-ips', '~> 2.8.2'
   s.add_development_dependency 'minitest', '~> 5.14.0'

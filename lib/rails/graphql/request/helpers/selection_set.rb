@@ -12,15 +12,15 @@ module Rails
 
           # Helper parser for selection fields that also asssign the actual
           # field defined under the schema structure
-          def parse_selection
-            return if data[:selection].nil? || data[:selection].null?
+          def parse_selection(nodes)
+            return if nodes.nil?
 
             @selection = {}
             assigners = Hash.new { |h, k| h[k] = [] }
 
-            visitor.collect_fields(*data[:selection]) do |kind, node, data|
-              component = add_component(kind, node, data)
-              assigners[component.name] << component if component.assignable?
+            nodes.each do |node|
+              component = add_component(node)
+              assigners[component.name.to_s] << component if component.assignable?
             end
 
             assing_fields!(assigners)
@@ -71,15 +71,15 @@ module Rails
 
         private
 
-          def add_component(kind, node, data)
-            item_name = data.try(:alias).presence || data[:name]
+          def add_component(node)
+            item_name = node[1] || node[0]
 
-            if kind === :spread
-              selection[selection.size] = request.build(Component::Spread, self, node, data)
-            elsif data[:name] === '__typename'
-              selection[item_name] ||= request.build(Component::Typename, self, node, data)
+            if node.of_type?(:spread)
+              selection[selection.size] = request.build(Component::Spread, self, node)
+            elsif node[0] === '__typename'
+              selection[item_name] ||= request.build(Component::Typename, self, node)
             else
-              selection[item_name] ||= request.build(Component::Field, self, node, data)
+              selection[item_name] ||= request.build(Component::Field, self, node)
             end
           end
       end

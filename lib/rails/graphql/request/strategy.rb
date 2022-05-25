@@ -190,6 +190,16 @@ module Rails
 
         protected
 
+          # Execute a given block for each defined operation
+          def for_each_operation
+            operations.each do |key, value|
+              operations[key] = Component::Operation.build(request, value) \
+                if value.is_a?(::GQLParser::Token)
+
+              yield(operations[key])
+            end
+          end
+
           # Clean and enable the collecting of listeners
           def release_listeners!
             @listeners = @base_listeners.dup
