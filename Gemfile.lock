@@ -105,6 +105,8 @@ GEM
     pry-byebug (3.9.0)
       byebug (~> 11.0)
       pry (~> 0.13.0)
+    psych (4.0.4)
+      stringio
     racc (1.6.0)
     rack (2.2.3)
     rack-test (1.1.0)
@@ -139,7 +141,8 @@ GEM
     rake-compiler (1.1.9)
       rake
     rake-compiler-dock (1.0.1)
-    rdoc (6.2.1)
+    rdoc (6.4.0)
+      psych (>= 4.0.0)
     ruby-prof (1.4.3)
     ruby-progressbar (1.11.0)
     simplecov (0.21.2)
@@ -156,6 +159,7 @@ GEM
       activesupport (>= 5.2)
       sprockets (>= 3.0.0)
     sqlite3 (1.4.2)
+    stringio (3.0.2)
     thor (1.2.1)
     thread_safe (0.3.6)
     tzinfo (1.2.9)
@@ -180,7 +184,7 @@ DEPENDENCIES
   rails-graphql!
   rake-compiler (~> 1.1.0)
   rake-compiler-dock (~> 1.0.1)
-  rdoc (~> 6.2.1)
+  rdoc (~> 6.4.0)
   ruby-prof
   simplecov (~> 0.20)
   sqlite3 (~> 1.4)
