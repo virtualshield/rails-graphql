@@ -79,11 +79,16 @@ module Rails
         end
       end
 
+      # Set GraphQL cache store same as rails default cache store
+      initializer 'graphql.cache', after: :initialize_cache do
+        config.graphql.cache ||= ::Rails.cache
+      end
+
       # Attempt to auto load the base schema as a dependency of the type map
       initializer 'graphql.auto_base_schema' do |app|
         ActiveSupport.on_load(:graphql) do
           file = app.railtie_name.sub(/_application$/, '_schema')
-          path = app.root.join('app').join('graphql').join(file)
+          path = app.root.join('app', 'graphql', file)
           GraphQL.type_map.add_dependencies(path.to_s, to: :base) if path.sub_ext('.rb').exist?
         end
       end

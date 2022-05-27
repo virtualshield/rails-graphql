@@ -4,6 +4,7 @@
 module GraphQL
   # List of constant shortcuts, as string to not trigger autoload
   CONST_SHORTCUTS = {
+    CacheKey:           '::Rails::GraphQL::CacheKey',
     Controller:         '::Rails::GraphQL::Controller',
     Directive:          '::Rails::GraphQL::Directive',
     Field:              '::Rails::GraphQL::Field',

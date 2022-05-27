@@ -48,5 +48,25 @@ module Rails
     # Error class related to when a field is unauthorized and can not be used,
     # similar to disabled fields
     UnauthorizedFieldError = Class.new(FieldError)
+
+    # Error class related to execution responses that don't require processing
+    StaticResponse = Class.new(Interrupt)
+
+    # Error class related to cached responses, which doesn't need processing
+    CachedResponse = Class.new(StaticResponse)
+
+    # Error class related to a persisted query that has't been persisted yet
+    PersistedQueryNotFound = Class.new(StaticResponse)
+
+    # A simple module and way to extend errors with extra information
+    ExtendedError = Module.new do
+      delegate_missing_to :@extension
+
+      def self.extend(error, extension)
+        error.instance_variable_set(:@extension, extension)
+        error.extend(self)
+        error
+      end
+    end
   end
 end

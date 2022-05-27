@@ -9,7 +9,7 @@ module Rails
     module Controller
       extend ActiveSupport::Concern
 
-      REQUEST_XARGS = %i[operation_name variables context schema].freeze
+      REQUEST_XARGS = %i[operation_name variables context schema query_cache_key].freeze
       DESCRIBE_HEADER = <<~TXT.freeze
         """
         Use the following HTTP params to modify this result:
@@ -55,6 +55,7 @@ module Rails
             result[setting] = (xargs[setting] || send(:"gql_#{setting}"))
           end
 
+          result[:hash] = result.delete(:query_cache_key)
           ::Rails::GraphQL::Request.execute(query, **request_xargs)
         end
 
@@ -81,6 +82,12 @@ module Rails
         # Get the GraphQL query to execute
         def gql_query
           params[:query]
+        end
+
+        # Get the cache key of the query for persisted queries
+        def gql_query_cache_key(key = nil, version = nil)
+          return unless (key ||= params[:query_cache_key]).present?
+          CacheKey.new(key, version || params[:query_cache_version])
         end
 
         # Get the GraphQL operation name

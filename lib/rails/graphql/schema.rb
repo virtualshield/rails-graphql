@@ -38,13 +38,20 @@ module Rails
 
       # Imports schema specific configurations
       configure do |config|
-        %i[
+        inherited_keys = %i[
           enable_introspection request_strategies
           enable_string_collector default_response_format
-          schema_type_names
-        ].each do |name|
-          config_accessor(name) { GraphQL.config.send(name) }
+          schema_type_names cache
+        ].to_set
+
+        config.default_proc = proc do |hash, key|
+          hash[key] = GraphQL.config.send(key) if inherited_keys.include?(key)
         end
+      end
+
+      rescue_from(PersistedQueryNotFound) do |error|
+        response = { errors: [{ message: +'PersistedQueryNotFound' }] }
+        error.request.force_response(response, error)
       end
 
       class << self
@@ -55,6 +62,11 @@ module Rails
           subclass.spec_object = false
           subclass.abstract = false
           super if defined? super
+
+          # The only way to actually get the namespace into the cache prefix
+          subclass.config.define_singleton_method(:cache_prefix) do
+            self[:cache_prefix] ||= "#{GraphQL.config.cache_prefix}#{subclass.namespace}/"
+          end
         end
 
         # :singleton-method:
@@ -205,6 +217,36 @@ module Rails
           type_map.fetch!(directive, **xargs)
         end
 
+        # Simple delegator to the cache store set on the schema config, mapped
+        # to +exist?+
+        def cached?(name, options = nil)
+          config.cache.exist?(expand_cache_key(name), options)
+        end
+
+        # Simple delegator to the cache store set on the schema config, mapped
+        # to +delete+
+        def delete_from_cache(name, options = nil)
+          config.cache.delete(expand_cache_key(name), options)
+        end
+
+        # Simple delegator to the cache store set on the schema config, mapped
+        # to +read+
+        def read_from_cache(name, options = nil)
+          config.cache.read(expand_cache_key(name), options)
+        end
+
+        # Simple delegator to the cache store set on the schema config, mapped
+        # to +write+
+        def write_on_cache(name, value, options = nil)
+          config.cache.write(expand_cache_key(name), value, options)
+        end
+
+        # Simple delegator to the cache store set on the schema config, mapped
+        # to +fetch+
+        def fetch_from_cache(name, options = nil)
+          config.cache.fetch(expand_cache_key(name), options)
+        end
+
         # Describe a schema as a GraphQL string
         def to_gql(**xargs)
           ToGQL.describe(self, **xargs)
@@ -260,6 +302,17 @@ module Rails
           # A syntax sugar for +load_dependencies(:source, *list)+
           def load_sources(*list)
             load_dependencies(:source, *list)
+          end
+
+          # Make sure to prefix the cache key
+          def expand_cache_key(name)
+            if name.is_a?(String)
+              name = +"#{config.cache_prefix}#{name}"
+            elsif name.respond_to?(:cache_key=)
+              name.cache_key = +"#{config.cache_prefix}#{name.cache_key}"
+            end
+
+            name
           end
 
           # Generate the helper methods to easily create types within the

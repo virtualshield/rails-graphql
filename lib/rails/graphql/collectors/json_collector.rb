@@ -50,7 +50,7 @@ module Rails
           if @current_array
             @current_value << value
           else
-            @current_value << '"' << +key.to_s << '":' << +value.to_s
+            @current_value << '"' << +key.to_s << '"' << ':' << +value.to_s
           end
         end
 
@@ -80,6 +80,8 @@ module Rails
             +'{' << @current_value.string << '}'
           end
         end
+
+        alias to_json to_s
 
         private
 

@@ -28,4 +28,12 @@ class Integration_CustomizationTest < GraphQL::IntegrationTestCase
     assert_equal(SCHEMA.mutation_type, SCHEMA.find_type('B'))
     assert_equal(SCHEMA.subscription_type, SCHEMA.find_type('C'))
   end
+
+  def test_cache_prefix
+    assert_equal('graphql/customization/', SCHEMA.config.cache_prefix)
+    SCHEMA.config.cache_prefix = 'banana'
+    assert_equal('banana', SCHEMA.config.cache_prefix)
+    SCHEMA.config.cache_prefix = nil
+    assert_equal('graphql/customization/', SCHEMA.config.cache_prefix)
+  end
 end

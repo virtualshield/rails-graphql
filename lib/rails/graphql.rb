@@ -54,6 +54,13 @@ module Rails
     # Runtime registry for request execution time
     RuntimeRegistry = Class.new { thread_mattr_accessor :gql_runtime }
 
+    # Helper class to produce a ActiveSupport-compatible versioned cache key
+    CacheKey = Struct.new(:cache_key, :cache_version) do
+      def inspect
+        cache_version ? +"#{cache_key}[#{cache_version}]" : cache_key
+      end
+    end
+
     autoload :ToGQL
     autoload :Event
     autoload :Source

@@ -6,6 +6,7 @@ class Integration_AuthorizationTest < GraphQL::IntegrationTestCase
 
     configure do |config|
       config.enable_string_collector = false
+      config.default_response_format = :json
     end
 
     query_fields do

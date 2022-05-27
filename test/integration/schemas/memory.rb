@@ -92,10 +92,12 @@ class StartWarsMemSchema < GraphQL::Schema
 
   configure do |config|
     config.enable_string_collector = false
+    config.default_response_format = :json
   end
 
   rescue_from('StandardError') do |exception|
-    !!field ? request.exception_to_error(exception, field) : raise
+    raise unless exception.source.is_a?(Rails::GraphQL::Request::Component::Field)
+    exception.request.exception_to_error(exception, exception.source)
   end
 
   enum 'Episode' do

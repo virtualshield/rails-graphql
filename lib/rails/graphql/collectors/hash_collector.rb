@@ -57,12 +57,16 @@ module Rails
           @data
         end
 
+        alias as_json to_h
+
         # Generate the JSON string result
         def to_s
           GraphQL.config.encode_with_active_support? \
             ? ::ActiveSupport::JSON.encode(@data) \
             : ::JSON.generate(@data)
         end
+
+        alias to_json to_s
 
         private
 

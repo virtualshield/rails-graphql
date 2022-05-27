@@ -119,22 +119,12 @@ module Rails
         def resolve_data_for(field, args)
           return unless args.size.zero?
 
-          rescue_with_handler(field: field) do
-            if field.try(:dynamic_resolver?)
-              prepared = @data_pool[field]
-              args << Event.trigger(:resolve, field, self, prepared: prepared, &field.resolver)
-            else
-              data_for(args, field)
-            end
+          if field.try(:dynamic_resolver?)
+            prepared = @data_pool[field]
+            args << Event.trigger(:resolve, field, self, prepared: prepared, &field.resolver)
+          else
+            data_for(args, field)
           end
-        end
-
-        # Safe trigger an event and ensure to send any exception to the request
-        # handler
-        def rescue_with_handler(**extra)
-          yield
-        rescue => error
-          request.rescue_with_handler(error, **extra)
         end
 
         # Check if the given class is in the pool, or add a new instance to the
@@ -182,10 +172,8 @@ module Rails
 
         # Only store a given +value+ for a given +field+ if it is not set yet
         def safe_store_data(field, value = nil)
-          rescue_with_handler(field: field) do
-            value ||= yield if block_given?
-            @data_pool[field] ||= value unless value.nil?
-          end
+          value ||= yield if block_given?
+          @data_pool[field] ||= value unless value.nil?
         end
 
         protected

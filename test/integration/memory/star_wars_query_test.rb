@@ -158,7 +158,7 @@ class Integration_Memory_StarWarsQueryTest < GraphQL::IntegrationTestCase
       message: 'Secret backstory is secret',
       locations: [{ line: 1, column: 35 }, { line: 1, column: 50 }],
       path: %w[HeroNameQuery hero secretBackstory],
-      extensions: { exception: 'RuntimeError' },
+      extensions: { stage: 'resolve', exception: 'RuntimeError' },
     }]
 
     assert_result({ data: { hero: hero }, errors: errors }, <<~GQL)
@@ -174,7 +174,7 @@ class Integration_Memory_StarWarsQueryTest < GraphQL::IntegrationTestCase
         message: 'Secret backstory is secret',
         locations: [{ line: 1, column: 50 }, { line: 1, column: 65 }],
         path: ['HeroNameQuery', 'hero', 'friends', n, 'secretBackstory'],
-        extensions: { exception: 'RuntimeError' },
+        extensions: { stage: 'resolve', exception: 'RuntimeError' },
       }
     end
 
@@ -189,7 +189,7 @@ class Integration_Memory_StarWarsQueryTest < GraphQL::IntegrationTestCase
       message: 'Secret backstory is secret',
       locations: [{ line: 1, column: 35 }, { line: 1, column: 57 }],
       path: %w[HeroNameQuery hero story],
-      extensions: { exception: 'RuntimeError' },
+      extensions: { stage: 'resolve', exception: 'RuntimeError' },
     }]
 
     assert_result({ data: { hero: hero }, errors: errors }, <<~GQL)

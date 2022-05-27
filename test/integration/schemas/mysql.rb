@@ -49,6 +49,7 @@ class StartWarsMySQLSchema < GraphQL::Schema
 
   configure do |config|
     config.enable_string_collector = false
+    config.default_response_format = :json
   end
 
   source JediType do

@@ -26,14 +26,15 @@ module Rails
         return unless logger.debug?
 
         payload = event.payload
+        doc = payload[:document]&.gsub(REMOVE_COMMENTS, '')&.squish ||
+          payload[:hash].inspect
 
         desc = +'GraphQL'
         desc << '[CACHE]' if payload[:cached]
         desc << ' ' << payload[:name] if payload[:name].present?
         desc << ' ' << '(' << event.duration.round(1).to_s << 'ms' << ')'
 
-        desc = (+color(desc, MAGENTA, true))
-        desc << ' ' << payload[:document].gsub(REMOVE_COMMENTS, '').squish
+        desc = (+color(desc, MAGENTA, true)) << ' ' << doc
         desc << debug_variables(payload[:variables]) unless payload[:variables].blank?
 
         debug(desc)

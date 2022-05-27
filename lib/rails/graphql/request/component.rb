@@ -99,7 +99,7 @@ module Rails
           # errors
           def capture_exception(stage, invalidate = false)
             yield
-          rescue StandardError => error
+          rescue => error
             invalidate! if invalidate
             stack_path = request.stack_to_path
             stack_path << gql_name if respond_to?(:gql_name) && gql_name.present?

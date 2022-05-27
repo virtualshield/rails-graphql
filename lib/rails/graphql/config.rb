@@ -9,6 +9,15 @@ module Rails
       # beware to stick to 8 characters.
       config.version = nil
 
+      # This will be automatically mapped to +Rails.cache+. Manually setting
+      # this property means that the object in it complies with
+      # +ActiveSupport::Cache::Store+.
+      config.cache = nil
+
+      # This is the prefix key of all the cache entries for the GraphQL cached
+      # things.
+      config.cache_prefix = 'graphql/'
+
       # This exposes the clean path from where a GraphQL request was started.
       config.verbose_logs = true
 

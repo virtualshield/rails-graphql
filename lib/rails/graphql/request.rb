@@ -31,10 +31,10 @@ module Rails
       extend ActiveSupport::Autoload
 
       RESPONSE_FORMATS = {
-        string: :to_s,
-        object: :to_h,
-        json: :to_h,
-        hash: :to_h,
+        string: :to_json,
+        object: :as_json,
+        json: :as_json,
+        hash: :as_json,
       }.freeze
 
       eager_autoload do
@@ -117,16 +117,26 @@ module Rails
       # Execute a given document with the given arguments
       def execute(document, **xargs)
         output = xargs.delete(:as) || schema.config.default_response_format
-        reset!(**xargs)
-
+        hash = xargs.delete(:hash)
         formatter = RESPONSE_FORMATS[output]
-        @response = initialize_response(output, formatter)
 
-        execute!(document)
+        reset!(**xargs)
+        @response = initialize_response(output, formatter)
+        execute!(document, hash)
+
+        response.public_send(formatter)
+      rescue StaticResponse
         response.public_send(formatter)
       end
 
       alias perform execute
+
+      # This is used by cache and static responses to jump from executing to
+      # delivery a response right away
+      def force_response(response, error = StaticResponse)
+        @response = response
+        raise error
+      end
 
       # Build a easy-to-access object representing the current information of
       # the execution to be used on +rescue_with_handler+
@@ -142,7 +152,8 @@ module Rails
 
       # Use schema handlers for exceptions caught during the execution process
       def rescue_with_handler(exception, **extra)
-        schema.rescue_with_handler(exception, object: build_rescue_object(**extra))
+        ExtendedError.extend(exception, build_rescue_object(**extra))
+        schema.rescue_with_handler(exception)
       end
 
       # Add the given +exception+ to the errors using the +node+ location
@@ -182,8 +193,6 @@ module Rails
       def stacked(object, &block)
         stack.unshift(object)
         block.call
-      rescue => exception
-        rescue_with_handler(exception) || raise
       ensure
         stack.shift
       end
@@ -246,9 +255,9 @@ module Rails
 
         # This executes the whole process capturing any exceptions and handling
         # them as defined by the schema
-        def execute!(document)
-          log_execution(document) do
-            @document = ::GQLParser.parse_execution(document)
+        def execute!(document, hash)
+          log_execution(document, hash) do
+            @document = initialize_document(document, hash)
             collect_definitions!
 
             @strategy = find_strategy!
@@ -313,8 +322,9 @@ module Rails
         end
 
         # Log the execution of a GraphQL document
-        def log_execution(document)
-          ActiveSupport::Notifications.instrument('request.graphql', document: document) do |payload|
+        def log_execution(document, hash)
+          data = { document: document, hash: hash }
+          ActiveSupport::Notifications.instrument('request.graphql', **data) do |payload|
             yield.tap { log_payload(payload) }
           end
         end
@@ -332,6 +342,24 @@ module Rails
             cached: false,
             variables: map_variables.presence,
           )
+        end
+
+        # When document is empty and the hash has been provided, then
+        def initialize_document(document, hash)
+          if document.present?
+            result = ::GQLParser.parse_execution(document)
+            # TODO: Store more than just the result of the parser
+            schema.write_on_cache(hash, result) if hash.present?
+            result
+          elsif hash.nil?
+            raise ::ArgumentError, +'Unable to execute an empty document.'
+          elsif schema.cached?(hash)
+            schema.read_from_cache(hash)
+          else
+            error = PersistedQueryNotFound.new(+"Unable to find #{hash} query.")
+            schema.rescue_with_handler(error)
+            raise error
+          end
         end
 
         # Initialize the class that responsible for storaging the response

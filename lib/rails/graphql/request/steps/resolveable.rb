@@ -16,6 +16,9 @@ module Rails
           def resolve
             return if skipped?
             invalid? ? try(:resolve_invalid) : resolve_then
+          rescue
+            try(:resolve_invalid)
+            raise
           end
 
           # The actual process that resolve the object
