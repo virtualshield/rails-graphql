@@ -41,6 +41,7 @@ module Rails
         %i[
           enable_introspection request_strategies
           enable_string_collector default_response_format
+          schema_type_names
         ].each do |name|
           config_accessor(name) { GraphQL.config.send(name) }
         end

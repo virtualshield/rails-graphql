@@ -46,6 +46,7 @@ module Rails
       autoload :InputField
       autoload :OutputField
       autoload :MutationField
+      autoload :SubscriptionField
 
       attr_reader :name, :gql_name, :owner
 

@@ -73,7 +73,7 @@ module Rails
 
         # Return the object name for a given +type+ of list of fields
         def type_name_for(type)
-          GraphQL.config.schema_type_names[type]
+          (respond_to?(:config) ? config : GraphQL.config).schema_type_names[type]
         end
 
         # Only add the field if it is not already defined

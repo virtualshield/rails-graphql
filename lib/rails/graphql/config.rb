@@ -38,6 +38,16 @@ module Rails
       # set at per schema.
       config.enable_introspection = true
 
+      # Define the names of the schema/operations types. The single "_" is a
+      # suggestion so that in an application that has, most likely, a
+      # Subscription type, it does not generate a conflict. Plus, it is easy to
+      # spot that it is something internal.
+      config.schema_type_names = {
+        query: '_Query',
+        mutation: '_Mutation',
+        subscription: '_Subscription',
+      }
+
       # For performance purposes, this gem implements a
       # {JsonCollector}[rdoc-ref:Rails::GraphQL::Collectors::JsonCollector].
       # If you prefer to use the normal hash to string serialization, you can
@@ -92,13 +102,6 @@ module Rails
         directive: {
           cached:    "#{__dir__}/directive/cached_directive",
         },
-      }
-
-      # GlobalID for types
-      config.schema_type_names = {
-        query: '_Query',
-        mutation: '_Mutation',
-        subscription: '_Subscription',
       }
 
       # TODO: To be implemented

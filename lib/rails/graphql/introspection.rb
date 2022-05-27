@@ -12,8 +12,7 @@ module Rails
         # Although this is not necessary besides for introspection, there is no
         # real disadvantage on adding it
         Helpers::WithSchemaFields::TYPE_FIELD_CLASS.each_key do |type|
-          name = type_name_for(type)
-          GraphQL.type_map.register_alias(name, namespace: namespace) do
+          GraphQL.type_map.register_alias(type_name_for(type), namespace: namespace) do
             result = public_send(:"#{type}_type")
             type.eql?(:query) || result.present? ? result : nil
           end
