@@ -7,6 +7,13 @@ module Rails
     # Most of the fields in a GraphQL operation are output fields or similar or
     # proxies of it. They can express both leaf and branch data. They can also
     # be the entry point of a GraphQL request.
+    #
+    # ==== Options
+    #
+    # * <tt>:method_name</tt> - The name of the method used to fetch the field data
+    #   (defaults to nil).
+    # * <tt>:deprecated</tt> - A shortcut to adding a deprecated directive to the field
+    #   (defaults to nil).
     class Field::OutputField < Field
       # Do not change this order because it can affect how events work. Callback
       # must always come after events
@@ -22,11 +29,6 @@ module Rails
       include Field::TypedField
 
       module Proxied # :nodoc: all
-        def initialize(*args, **xargs, &block)
-          @method_name = xargs.delete(:method_name) if xargs.key?(:method_name)
-          super(*args, **xargs, &block)
-        end
-
         def all_arguments
           field.arguments.merge(super)
         end
@@ -54,6 +56,12 @@ module Rails
         end
 
         super(*args, **xargs, &block)
+      end
+
+      # Accept changes to the method name through the +apply_changes+
+      def apply_changes(**xargs, &block)
+        @method_name = xargs.delete(:method_name) if xargs.key?(:method_name)
+        super
       end
 
       # By default, output fields that belongs to a schema is a query field

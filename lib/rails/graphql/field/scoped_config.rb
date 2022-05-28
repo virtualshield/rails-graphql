@@ -6,16 +6,16 @@ module Rails # :nodoc:
     # instance of this class works as proxy for changes to the actual field.
     Field::ScopedConfig = Struct.new(:field, :receiver) do
       delegate :argument, :ref_argument, :id_argument, :use, :internal?, :disabled?,
-        :enabled?, :disable!, :enable!, :authorize, to: :field
+        :enabled?, :disable!, :enable!, :authorize, :desc, to: :field
 
       delegate_missing_to :receiver
 
-      def method_name(value)
-        field.instance_variable_set(:@method_name, value.to_sym)
+      def rename!(name)
+        field.instance_variable_set(:@gql_name, name.to_s)
       end
 
-      def desc(value)
-        field.instance_variable_set(:@desc, value.strip_heredoc.chomp)
+      def method_name(value)
+        field.instance_variable_set(:@method_name, value.to_sym)
       end
     end
   end

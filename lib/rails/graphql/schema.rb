@@ -25,12 +25,7 @@ module Rails
 
       include ActiveSupport::Configurable
       include ActiveSupport::Rescuable
-
-      # The purpose of instantiating an schema is to have access to its
-      # public methods. It then runs from the strategy perspective, pointing
-      # out any other methods to the manually set event
-      delegate_missing_to :event
-      attr_reader :event
+      include Helpers::Instantiable
 
       self.abstract = true
       self.spec_object = true
@@ -56,18 +51,6 @@ module Rails
 
       class << self
         delegate :type_map, :logger, to: '::Rails::GraphQL'
-
-        # Mark the given class to be pending of registration
-        def inherited(subclass)
-          subclass.spec_object = false
-          subclass.abstract = false
-          super if defined? super
-
-          # The only way to actually get the namespace into the cache prefix
-          subclass.config.define_singleton_method(:cache_prefix) do
-            self[:cache_prefix] ||= "#{GraphQL.config.cache_prefix}#{subclass.namespace}/"
-          end
-        end
 
         # :singleton-method:
         # Since there are only one schema per namespace, the name is constant
@@ -151,14 +134,14 @@ module Rails
 
         # Check if the schema is valid
         def valid?
-          !!defined?(@validated)
+          defined?(@validated) && @validated
         end
 
         # Only run the validated process if it has not yet been validated
         def validate
           validate! unless valid?
         rescue StandardError
-          puts (+"\e[1m\e[31mSchema #{name} is invalid!\e[0m")
+          GraphQL.logger.warn(+"\e[1m\e[31mSchema #{name} is invalid!\e[0m")
           raise
         end
 
@@ -253,6 +236,18 @@ module Rails
         end
 
         protected
+
+          # Mark the given class to be pending of registration
+          def inherited(subclass)
+            subclass.spec_object = false
+            subclass.abstract = false
+            super if defined? super
+
+            # The only way to actually get the namespace into the cache prefix
+            subclass.config.define_singleton_method(:cache_prefix) do
+              self[:cache_prefix] ||= "#{GraphQL.config.cache_prefix}#{subclass.namespace}/"
+            end
+          end
 
           # Indicate to type map that the current schema depends on all the
           # files in the provided +path+ directory

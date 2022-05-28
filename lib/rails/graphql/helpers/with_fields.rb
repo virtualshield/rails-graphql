@@ -18,13 +18,25 @@ module Rails
             return unless defined?(@fields)
             fields.each_value(&subclass.method(:proxy_field))
           end
+
+          # Return the list of fileds, only initialize when explicitly told
+          def fields(initialize = nil)
+            return @fields if defined?(@fields)
+            return unless initialize
+
+            @fields = Concurrent::Map.new
+          end
+
+          # Check if there are any fields defined
+          def fields?
+            defined?(@fields) && @fields.present?
+          end
         end
 
         def self.extended(other)
           other.extend(WithFields::ClassMethods)
-          other.define_singleton_method(:fields) { @fields ||= Concurrent::Map.new }
-          other.class_attribute(:field_type, instance_writer: false)
-          other.class_attribute(:valid_field_types, instance_writer: false, default: [])
+          other.class_attribute(:field_type, instance_accessor: false)
+          other.class_attribute(:valid_field_types, instance_accessor: false, default: [])
         end
 
         # Check if the field is already defined before actually creating it
@@ -44,7 +56,7 @@ module Rails
             The #{name.inspect} field is already defined and can't be redefined.
           MSG
 
-          fields[object.name] = object
+          fields(true)[object.name] = object
         rescue DefinitionError => e
           raise e.class, +"#{e.message}\n  Defined at: #{caller(2)[0]}"
         end
@@ -52,7 +64,7 @@ module Rails
         # Add a new field to the list but use a proxy instead of a hard copy of
         # a given +field+
         def proxy_field(field, *args, **xargs, &block)
-          raise ArgumentError, (+<<~MSG).squish unless field.is_a?(GraphQL::Field)
+          raise ArgumentError, (+<<~MSG).squish unless field.is_a?(field_type)
             The #{field.class.name} is not a valid field.
           MSG
 
@@ -62,7 +74,7 @@ module Rails
             The #{field.name.inspect} field is already defined and can't be replaced.
           MSG
 
-          fields[object.name] = object
+          fields(true)[object.name] = object
         end
 
         # Overwrite attributes of a given field named as +name+, it also allows
@@ -90,17 +102,19 @@ module Rails
 
         # Check wheter a given field +object+ is defined in the list of fields
         def field?(object)
+          return false unless fields?
           object = object.name if object.is_a?(GraphQL::Field)
           fields.key?(object.is_a?(String) ? object.underscore.to_sym : object)
         end
 
         # Allow accessing fields using the hash notation
-        def [](object)
+        def find_field(object)
+          return unless fields?
           object = object.name if object.is_a?(GraphQL::Field)
           fields[object.is_a?(String) ? object.underscore.to_sym : object]
         end
 
-        alias find_field []
+        alias [] find_field
 
         # If the field is not found it will raise an exception
         def find_field!(object)
@@ -111,12 +125,43 @@ module Rails
 
         # Get the list of GraphQL names of all the fields difined
         def field_names(enabled_only = true)
-          (enabled_only ? enabled_fields : lazy_each_field).map(&:gql_name).eager
+          (enabled_only ? enabled_fields : lazy_each_field)&.map(&:gql_name)&.eager
         end
 
         # Return a lazy enumerator for enabled fields
         def enabled_fields
-          lazy_each_field.select(&:enabled?)
+          lazy_each_field&.select(&:enabled?)
+        end
+
+        # Import one or more field into the current list of fields
+        def import(klass, ignore_abstract: false)
+          return if ignore_abstract && klass.try(:abstract?)
+
+          case klass
+          when Alternative::Query
+            # Import an alternative declaration of a field
+            proxy_field(klass.field)
+          when Helpers::WithFields
+            # Import a set of fields
+            klass.fields.each_value { |field| proxy_field(field) }
+          else
+            return if GraphQL.config.silence_import_warnings
+            GraphQL.logger.warn(+"Unable to import #{klass.inspect} into #{self.name}.")
+          end
+        end
+
+        # Import a module containing several classes to be imported
+        def import_all(mod, recursive: false, ignore_abstract: false)
+          mod.constants.each do |const_name|
+            object = mod.const_get(const_name)
+
+            if object.is_a?(Class)
+              import(object, ignore_abstract: ignore_abstract)
+            elsif object.is_a?(Module) && recursive
+              # TODO: Maybe add deepness into the recursive value
+              import_all(object, recursive: recursive, ignore_abstract: ignore_abstract)
+            end
+          end
         end
 
         # Validate all the fields to make sure the definition is valid
@@ -125,7 +170,7 @@ module Rails
 
           # TODO: Maybe find a way to freeze the fields, since after validation
           # the best thing to do is block changes
-          fields.each_value(&:validate!)
+          fields&.each_value(&:validate!)
         end
 
         # Find a specific field using its id as +gql_name.type+
@@ -144,7 +189,7 @@ module Rails
         private
 
           def lazy_each_field
-            fields.each_pair.lazy.each_entry.map(&:last)
+            fields.each_pair.lazy.each_entry.map(&:last) if fields?
           end
       end
     end

@@ -20,8 +20,6 @@ module Rails
     #   (defaults to true).
     # * <tt>:full</tt> - Shortcut for +null: false, nullable: false, array: true+
     #   (defaults to false).
-    # * <tt>:method_name</tt> - The name of the method used to fetch the field data
-    #   (defaults to nil).
     # * <tt>:enabled</tt> - Mark the field as enabled
     #   (defaults to true).
     # * <tt>:disabled</tt> - Works as the oposite of the enabled option
@@ -51,6 +49,8 @@ module Rails
       attr_reader :name, :gql_name, :owner
 
       alias gid_base_class owner
+      alias proxied_owner owner
+      alias to_sym name
 
       delegate :namespaces, to: :owner
       delegate :input_type?, :output_type?, :leaf_type?, :proxy?,
@@ -135,7 +135,7 @@ module Rails
         disable! if xargs.fetch(:disabled, false)
         enable! if xargs.fetch(:enabled, false)
 
-        @desc = xargs[:desc].strip_heredoc.chomp if xargs.key?(:desc)
+        desc(xargs[:desc]) if xargs.key?(:desc)
         configure(&block) if block.present?
       end
 
@@ -151,7 +151,13 @@ module Rails
 
       # Returns the name of the method used to retrieve the information
       def method_name
-        defined?(@method_name) ? @method_name : @name
+        if defined?(@method_name)
+          @method_name
+        elsif proxied_owner.is_a?(Alternative::Query)
+          :resolve
+        else
+          @name
+        end
       end
 
       # Return the description of the argument
@@ -222,6 +228,11 @@ module Rails
       # This method must be overridden by children classes
       def valid_output?(*)
         enabled?
+      end
+
+      # Provides a similar behavior to setting the name in Named obejcts
+      def desc(value)
+        @desc = value.strip_heredoc.chomp
       end
 
       # Transforms the given value to its representation in a JSON string

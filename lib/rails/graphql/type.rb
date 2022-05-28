@@ -22,7 +22,7 @@ module Rails
 
       # A +base_object+ helps to identify what methods are actually available
       # to work as resolvers
-      class_attribute :base_object, instance_writer: false, default: false
+      class_attribute :base_object, instance_accessor: false, default: false
 
       self.spec_object = true
       self.base_object = true

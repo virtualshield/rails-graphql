@@ -14,13 +14,7 @@ module Rails
       delegate :input_type?, :output_type?, :leaf_type?, :kind, to: :type_klass
 
       def initialize(name, type, *args, **xargs, &block)
-        if type.is_a?(Module) && type < GraphQL::Type
-          @type_klass = type
-          @type = type.to_sym
-        else
-          @type = type
-        end
-
+        assign_type(type)
         super(name, *args, **xargs, &block)
       end
 
@@ -93,6 +87,18 @@ module Rails
           result << ']' if array?
           result << '!' unless null?
           result
+        end
+
+        # A little hidden helper to support forcing reasignment of type, which
+        # should only be done with caution
+        def assign_type(type)
+          if type.is_a?(Module) && type < GraphQL::Type
+            @type_klass = type
+            @type = type.to_sym
+          else
+            @type_klass = nil
+            @type = type
+          end
         end
 
         def proxied

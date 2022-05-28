@@ -54,9 +54,9 @@ module Rails
             value = value.transform_keys { |key| key.to_s.camelize(:lower) }
             value = build_defaults.merge(value)
 
-            return false unless value.size.eql?(fields.count)
+            return false unless value.size.eql?(fields&.count || 0)
 
-            fields.all? { |item| item.valid_input?(value[item.gql_name]) }
+            fields&.all? { |item| item.valid_input?(value[item.gql_name]) }
           end
 
           # Turn the given value into an isntance of the input object
@@ -68,7 +68,10 @@ module Rails
 
           # Build a hash with the default values for each of the given fields
           def build_defaults
-            enabled_fields.map { |field| [field.gql_name, field.default] }.to_h
+            return {} unless fields?
+            enabled_fields.each.with_object({}) do |field, hash|
+              hash[field.gql_name] = field.default
+            end
           end
 
           def inspect

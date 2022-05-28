@@ -7,6 +7,8 @@ module Rails
     # Source is an abstract object that can contains fields, objects, and
     # informations that them are delivered to the relative schemas throughout
     # proxies, ensuring that it still kepps the main ownership of the objects
+    #
+    # TODO: Create a PlainSource as a super set of alternative sets
     class Source
       extend ActiveSupport::Autoload
 
@@ -16,6 +18,8 @@ module Rails
       extend Helpers::WithNamespace
       extend Helpers::WithEvents
       extend Helpers::WithCallbacks
+
+      include Helpers::Instantiable
 
       DEFAULT_NAMESPACES = %i[base].freeze
 
@@ -39,13 +43,13 @@ module Rails
       # If a source is marked as abstract, it means that it generates a new
       # source describer and any non-abstract class inherited from it will be
       # described by this new abstraction
-      class_attribute :abstract, instance_writer: false, default: false
+      class_attribute :abstract, instance_accessor: false, default: false
 
       # List of hook names used while describing a new source. This basically
       # set the order of the execution of the hooks while validating the hooks
       # callbacks using the +on+ method. Make sure to kepp the +finish+ hook
       # always at the end of the list
-      class_attribute :hook_names, instance_writer: false,
+      class_attribute :hook_names, instance_accessor: false,
         default: %i[start object input query mutation finish].to_set
 
       # The list of hooks defined in order to describe a source
@@ -53,17 +57,17 @@ module Rails
 
       # The name of the class (or the class itself) to be used as superclass for
       # the generate GraphQL object type of this source
-      class_attribute :object_class, instance_writer: false,
+      class_attribute :object_class, instance_accessor: false,
         default: '::Rails::GraphQL::Type::Object'
 
       # The name of the class (or the class itself) to be used as superclass for
       # the generate GraphQL input type of this source
-      class_attribute :input_class, instance_writer: false,
+      class_attribute :input_class, instance_accessor: false,
         default: '::Rails::GraphQL::Type::Input'
 
       # Mark if the objects created from this source will build fields for
       # associations associated to the object
-      class_attribute :with_associations, instance_writer: false, default: true
+      class_attribute :with_associations, instance_accessor: false, default: true
 
       # A list of fields to skip when performing shared methods
       inherited_collection :skip_fields, instance_reader: false
@@ -71,17 +75,9 @@ module Rails
       # A list of fields to skip but segmented by holder source
       inherited_collection :segmented_skip_fields, instance_reader: false, type: :hash_set
 
-      # The purpose of instantiating a source is to have access to its public
-      # methods. It then runs from the strategy perspective, pointing out any
-      # other methods to the manually set event
-      delegate_missing_to :event
-      attr_reader :event
-
       self.abstract = true
 
       class << self
-        attr_reader :schemas
-
         delegate :field, :proxy_field, :overwrite_field, :field?, :field_names,
           :gql_name, to: :object
 
@@ -97,16 +93,6 @@ module Rails
         # Get the main name of the source
         def base_name
           name.demodulize[0..-7] unless abstract?
-        end
-
-        # Wait the end of the class in order to create the objects
-        def inherited(subclass)
-          subclass.abstract = false
-          super if defined? super
-
-          # TODO: Base here is not ideal but works
-          load_proc = -> { subclass.build! unless subclass.abstract? }
-          GraphQL.type_map.add_dependencies(load_proc, to: :base)
         end
 
         # :singleton-method:
@@ -170,28 +156,27 @@ module Rails
         # Attach all defined schema fields into the schemas using the namespaces
         # configured for the source
         def attach_fields!
-          refresh_schemas!
-          schemas.each_value do |schema|
-            Helpers::WithSchemaFields::TYPE_FIELD_CLASS.each_key do |type|
-              list = public_send(:"#{type}_fields")
-              next if list.empty?
-
-              list.each_value do |field|
-                next if schema.has_field?(type, field)
-                schema.add_proxy_field(type, field)
-              end
-            end
-          end
+          schemas.each { |schema| schema.import_into(:all, self) }
         end
 
         # Find all the schemas associated with the configured namespaces
-        def refresh_schemas!
-          @schemas = (namespaces.presence || DEFAULT_NAMESPACES).map do |ns|
-            (schema = Schema.find(ns)).present? ? [ns, schema] : nil
-          end.compact.to_h
+        def schemas
+          (namespaces.presence || DEFAULT_NAMESPACES).lazy.filter_map do |ns|
+            Schema.find(ns)
+          end
         end
 
         protected
+
+          # Wait the end of the class in order to create the objects
+          def inherited(subclass)
+            subclass.abstract = false
+            super if defined? super
+
+            # TODO: Base here is not ideal but works
+            load_proc = -> { subclass.build! unless subclass.abstract? }
+            GraphQL.type_map.add_dependencies(load_proc, to: :base)
+          end
 
           # Find a given +type+ on the same namespaces of the source. It will
           # raise an exception if the +type+ can not be found

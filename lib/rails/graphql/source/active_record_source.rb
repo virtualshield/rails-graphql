@@ -22,8 +22,7 @@ module Rails
 
       # The name of the class (or the class itself) to be used as superclass for
       # the generate GraphQL interface type of this source
-      class_attribute :interface_class, instance_writer: false
-      alias interface interface_class
+      class_attribute :interface_class, instance_accessor: false
 
       %i[object interface input].each do |type|
         settings = { abstract: true, with_owner: true }
@@ -110,6 +109,7 @@ module Rails
         delegate :singular, :plural, :param_key, to: :model_name
         delegate :adapter_name, to: 'model.connection'
 
+        alias interface interface_class
         alias model assigned_class
         alias model= assigned_to=
 

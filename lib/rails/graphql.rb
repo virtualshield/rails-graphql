@@ -40,9 +40,6 @@ module Rails
   # * <tt>Fields:</tt> Many other types and helper containers holds a serie of
   #   fields, which means that fields with the same name will probably behave
   #   differently.
-  #
-  # TODO: Create the concept of MutationSet as a way to group mutations under
-  # the same class but placed onto a reference
   module GraphQL
     extend ActiveSupport::Autoload
 
@@ -68,6 +65,7 @@ module Rails
     autoload :Callback
     autoload :GlobalID
     autoload :Collectors
+    autoload :Alternative
 
     autoload :Argument
     autoload :Directive

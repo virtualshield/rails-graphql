@@ -81,6 +81,11 @@ module Rails
       # to the calling method.
       config.callback_inject_named_arguments = true
 
+      # When importing fields into other places, if the given class is
+      # incompatible it will display an warning. This can make such warning be
+      # silenced.
+      config.silence_import_warnings = false
+
       # A list of execution strategies. Each application can add their own by
       # simply append a class name, preferable as string, in this list.
       config.request_strategies = [

@@ -9,11 +9,14 @@ module GraphQL
     Directive:          '::Rails::GraphQL::Directive',
     Field:              '::Rails::GraphQL::Field',
     GlobalID:           '::Rails::GraphQL::GlobalID',
-    Mutation:           '::Rails::GraphQL::Mutation',
     Request:            '::Rails::GraphQL::Request',
     Schema:             '::Rails::GraphQL::Schema',
     Source:             '::Rails::GraphQL::Source',
     Type:               '::Rails::GraphQL::Type',
+
+    Query:              '::Rails::GraphQL::Alternative::Query',
+    Mutation:           '::Rails::GraphQL::Alternative::Mutation',
+    Subscription:       '::Rails::GraphQL::Alternative::Subscription',
 
     Enum:               '::Rails::GraphQL::Type::Enum',
     Input:              '::Rails::GraphQL::Type::Input',

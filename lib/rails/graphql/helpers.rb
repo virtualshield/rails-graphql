@@ -9,6 +9,7 @@ module Rails
 
       autoload :AttributeDelegator
       autoload :InheritedCollection
+      autoload :Instantiable
       autoload :LeafFromAr
       autoload :Registerable
 
@@ -19,6 +20,7 @@ module Rails
       autoload :WithEvents
       autoload :WithFields
       autoload :WithGlobalID
+      autoload :WithName
       autoload :WithNamespace
       autoload :WithOwner
       autoload :WithSchemaFields

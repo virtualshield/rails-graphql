@@ -56,9 +56,7 @@ module Rails
 
         # Find the scope on which the object is applied to
         def scope_of(object)
-          case object.gid_base_class
-          when Helpers::WithSchemaFields then object.try(:schema_type)
-          end
+          object.try(:schema_type) if object.gid_base_class.is_a?(Helpers::WithSchemaFields)
         end
       end
 

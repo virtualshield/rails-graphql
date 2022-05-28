@@ -6,12 +6,40 @@ module Rails
     #
     # This is an extension of a normal output field, which just add extra
     # validation and ensurance that the +perform+ step can be executed
+    #
+    # ==== Options
+    #
+    # * <tt>:call</tt> - The alternative method to call to actually perform the mutation.
+    #   (defaults to nil).
     class Field::MutationField < Field::OutputField
       redefine_singleton_method(:mutation?) { true }
 
       module Proxied # :nodoc: all
         def performer
           super || field.performer
+        end
+      end
+
+      # Intercept the initializer to maybe set the +perform_method_name+
+      def initialize(*args, call: nil, **xargs, &block)
+        @perform_method_name = call.to_sym unless call.nil?
+        super(*args, **xargs, &block)
+      end
+
+      # Accept changes to the perform method name through the +apply_changes+
+      def apply_changes(**xargs, &block)
+        @perform_method_name = xargs.delete(:call) if xargs.key?(:call)
+        super
+      end
+
+      # Allows overrides for the default bang method
+      def perform_method_name
+        if defined?(@perform_method_name)
+          @perform_method_name
+        elsif proxied_owner.is_a?(Alternative::Mutation)
+          :perform
+        else
+          :"#{method_name}!"
         end
       end
 
@@ -30,8 +58,8 @@ module Rails
       # Get the performer that can be already defined or used through the
       # +method_name+ if that is callable
       def performer
-        @performer ||= callable?(:"#{method_name}!") \
-          ? Callback.new(self, :perform, :"#{method_name}!") \
+        @performer ||= callable?(perform_method_name) \
+          ? Callback.new(self, :perform, perform_method_name) \
           : false
       end
 

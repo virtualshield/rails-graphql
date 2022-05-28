@@ -13,6 +13,8 @@ module Rails
         extend Helpers::WithAssignment
         extend Helpers::WithFields
 
+        include Helpers::Instantiable
+
         setup! output: true
 
         self.field_type = Field::OutputField
@@ -33,12 +35,6 @@ module Rails
 
         # Define the methods for accessing the interfaces of the object
         inherited_collection :interfaces, instance_reader: false
-
-        # The purpose of instantiating an object is to have access to its
-        # public methods. It then runs from the strategy perspective, pointing
-        # out any other methods to the manually set event
-        delegate_missing_to :event
-        attr_reader :event
 
         class << self
           # Plain objects can check if a given value is a valid member

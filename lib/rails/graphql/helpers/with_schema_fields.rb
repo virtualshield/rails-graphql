@@ -51,10 +51,13 @@ module Rails
                 typed_methods = typed_methods.zip(typed_methods).to_h
                 typed_methods.merge(
                   fields:      :fields_for,
+                  fields?:     :fields_for?,
                   safe_field:  :safe_add_field,
                   field:       :add_field,
                   proxy_field: :add_proxy_field,
                   field?:      :has_field?,
+                  import:      :import_into,
+                  import_all:  :import_all_into,
                 )
               end
             end
@@ -65,8 +68,15 @@ module Rails
         end
 
         # A little helper for getting the list of fields of a given type
-        def fields_for(type)
-          public_send("#{type}_fields")
+        def fields_for(type, initialize = nil)
+          public_send("#{type}_fields") || initialize && begin
+            instance_variable_set(:"@#{type}_fields", Concurrent::Map.new)
+          end
+        end
+
+        # Check if there are fields set fot he given type
+        def fields_for?(type)
+          public_send("#{type}_fields?")
         end
 
         alias [] :fields_for
@@ -96,7 +106,7 @@ module Rails
             cannot be redefined.
           MSG
 
-          fields_for(type)[object.name] = object
+          fields_for(type, true)[object.name] = object
         rescue DefinitionError => e
           raise e.class, +"#{e.message}\n  Defined at: #{caller(2)[0]}"
         end
@@ -120,7 +130,7 @@ module Rails
             and cannot be replaced.
           MSG
 
-          fields_for(type)[object.name] = object
+          fields_for(type, true)[object.name] = object
         end
 
         # Find a field and then change some flexible attributes of it
@@ -148,6 +158,7 @@ module Rails
         # Check if a field of the given +type+ exists. The +object+ can be the
         # +gql_name+, +name+, or an actual field.
         def has_field?(type, object)
+          return false unless fields_for?(type)
           object = object.name if object.is_a?(GraphQL::Field)
           fields_for(type).key?(object.is_a?(String) ? object.underscore.to_sym : object)
         end
@@ -155,6 +166,7 @@ module Rails
         # Find a specific field on the given +type+ list. The +object+ can be
         # the +gql_name+, +name+, or an actual field.
         def find_field(type, object)
+          return unless fields_for?(type)
           object = object.name if object.is_a?(GraphQL::Field)
           fields_for(type)[object.is_a?(String) ? object.underscore.to_sym : object]
         end
@@ -168,8 +180,10 @@ module Rails
 
         # Get the list of GraphQL names of all the fields difined
         def field_names_for(type, enabled_only = true)
-          (enabled_only ? fields_for(type).select(&:enabled?) : fields_for(type))
-            .map(&:gql_name).compact
+          return unless fields_for?(type)
+          list = fields_for(type)
+          list = list.select(&:enabled?) if enabled_only
+          list.map(&:gql_name).compact
         end
 
         # Run a configuration block for the given +type+
@@ -177,15 +191,54 @@ module Rails
           schema_scoped_config(self, type).instance_exec(&block)
         end
 
+        # Import a class of fields into the given section of schema fields
+        def import_into(type, klass, ignore_abstract: false)
+          return if ignore_abstract && klass.try(:abstract?)
+
+          case klass
+          when Alternative::Query
+            # Import an alternative declaration of a field
+            add_proxy_field(type, klass.field)
+          when Helpers::WithFields
+            # Import a set of fields
+            klass.fields.each_value { |field| add_proxy_field(type, field) }
+          when Helpers::WithSchemaFields
+            # Import other schema fields
+            (type == :all ? TYPE_FIELD_CLASS.each_key : type.then).each do |import_type|
+              klass.fields_for(import_type)&.each_value do |field|
+                add_proxy_field(import_type, field)
+              end
+            end
+          else
+            return if GraphQL.config.silence_import_warnings
+            GraphQL.logger.warn(+"Unable to import #{klass.inspect} into #{self.name}.")
+          end
+        end
+
+        # Import a module containing several classes to be imported
+        def import_all_into(type, mod, recursive: false, ignore_abstract: false)
+          mod.constants.each do |const_name|
+            object = mod.const_get(const_name)
+
+            if object.is_a?(Class)
+              import_into(type, object, ignore_abstract: ignore_abstract)
+            elsif object.is_a?(Module) && recursive
+              # TODO: Maybe add deepness into the recursive value
+              import_all_into(type, object,
+                recursive: recursive,
+                ignore_abstract: ignore_abstract,
+              )
+            end
+          end
+        end
+
         # Validate all the fields to make sure the definition is valid
         def validate!(*)
           super if defined? super
 
-          # TODO: Maybe find a way to freeze the fields, since after validation
-          # the best thing to do is block changes
           TYPE_FIELD_CLASS.each_key do |kind|
-            next unless instance_variable_defined?("@#{kind}_fields")
-            instance_variable_get("@#{kind}_fields")&.each_value(&:validate!)
+            next unless public_send("#{kind}_fields?")
+            fields_for(kind).each_value(&:validate!)
           end
         end
 
@@ -208,10 +261,13 @@ module Rails
               add_field(:#{kind}, *args, **xargs, &block)
             end
 
+            def #{kind}_fields?
+              defined?(@#{kind}_fields) && @#{kind}_fields.present?
+            end
+
             def #{kind}_fields(&block)
-              return @#{kind}_fields ||= Concurrent::Map.new if block.nil?
-              configure_fields(:#{kind}, &block)
-              @#{kind}_fields
+              configure_fields(:#{kind}, &block) if block.present?
+              @#{kind}_fields if defined?(@#{kind}_fields)
             end
 
             def #{kind}_type_name

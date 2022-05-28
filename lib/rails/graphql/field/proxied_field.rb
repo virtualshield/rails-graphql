@@ -26,7 +26,7 @@ module Rails
     module Field::ProxiedField
       delegate_missing_to :field
       delegate :leaf_type?, :array?, :internal?, :valid_input?, :valid_output?,
-        :to_json, :as_json, :deserialize, :valid?, to: :field
+        :to_json, :as_json, :deserialize, :valid?, :proxied_owner, to: :field
 
       Field.proxyable_methods %w[name gql_name method_name resolver description
         null? nullable? enabled?], klass: self
@@ -64,11 +64,6 @@ module Rails
         super
       end
 
-      # Return the original owner from +field+
-      def proxied_owner
-        field.owner
-      end
-
       # Override this to include proxied owners
       def all_owners
         super + proxied_owner.all_owners
@@ -96,15 +91,10 @@ module Rails
         field.all_directives + super
       end
 
-      # It is important to ensure that the proxied field is also valid. If the
-      # proxied owner is registered, then it is safe to assume that it is valid
+      # It is important to ensure that the proxied field is also valid
       def validate!(*)
         super if defined? super
-        field.validate! unless GraphQL.type_map.object_exist?(
-          proxied_owner,
-          namespaces: namespaces,
-          exclusive: true,
-        )
+        field.validate!
       end
 
       protected
@@ -130,7 +120,7 @@ module Rails
 
         # Display the source of the proxy for inspection
         def inspect_source
-          +"@source=#{proxied_owner.name}[:#{field.name}] [proxied]"
+          +"@source=#{field.owner.name}[:#{field.name}] [proxied]"
         end
 
         # This is trigerred when the field is proxied

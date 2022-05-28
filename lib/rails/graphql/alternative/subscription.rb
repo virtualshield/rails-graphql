@@ -1,0 +1,13 @@
+# frozen_string_literal: true
+
+module Rails
+  module GraphQL
+    # = GraphQL Alternative Subscription
+    #
+    # Same as it's parent class, but for subscription
+    class Alternative::Subscription < Alternative::Query
+      redefine_singleton_method(:type_field_class) { :subscription }
+      self.abstract = true
+    end
+  end
+end

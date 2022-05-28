@@ -9,6 +9,8 @@ module Rails
       # Object types.
       # See http://spec.graphql.org/June2018/#UnionTypeDefinition
       class Union < Type
+        include Helpers::Instantiable
+
         setup! output: true
 
         # The list of accepted classes for members
@@ -16,12 +18,6 @@ module Rails
 
         # Define the methods for accessing the members attribute
         inherited_collection :members
-
-        # The purpose of instantiating an interface is to have access to its
-        # public methods. It then runs from the strategy perspective, pointing
-        # out any other methods to the manually set event
-        delegate_missing_to :event
-        attr_reader :event
 
         class << self
           # Return the base type of the objects on this union

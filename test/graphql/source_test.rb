@@ -77,17 +77,6 @@ class GraphQL_SourceTest < GraphQL::TestCase
     skip
   end
 
-  def test_refresh_schemas_bang
-    described_class.stub(:namespaces, [:base]) do
-      schema = unmapped_class(Rails::GraphQL::Schema)
-      Rails::GraphQL::Schema.stub(:find, schema) do
-        described_class.refresh_schemas!
-        result = described_class.instance_variable_get(:@schemas)
-        assert_equal({ base: schema }, result)
-      end
-    end
-  end
-
   def test_find_type_bang
     described_class.stub(:namespaces, :a) do
       Rails::GraphQL.stub(:type_map, double(fetch!: passallthrough)) do

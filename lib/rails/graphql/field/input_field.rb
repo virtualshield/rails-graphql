@@ -13,8 +13,6 @@ module Rails
     # ==== Options
     #
     # * <tt>:default</tt> - Sets a default value for the argument (defaults to nil).
-    # * <tt>:directives</tt> - The list of directives associated with the value
-    #   (defaults to nil).
     class Field::InputField < Field
       include Field::TypedField
 

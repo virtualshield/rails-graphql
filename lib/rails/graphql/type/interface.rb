@@ -16,19 +16,13 @@ module Rails
         extend Helpers::WithAssignment
         extend Helpers::WithFields
 
+        include Helpers::Instantiable
+
         setup! output: true
 
         self.field_type = Field::OutputField
 
-        # The purpose of instantiating an interface is to have access to its
-        # public methods. It then runs from the strategy perspective, pointing
-        # out any other methods to the manually set event
-        delegate_missing_to :event
-        attr_reader :event
-
         class << self
-          # TODO: Use inherited attribute for types
-
           # Stores the list of types associated with the interface so it can
           # be used during the execution step to find the right object type
           def types

@@ -12,10 +12,10 @@ module Rails
         def self.extended(other)
           # Defines which type exactly represents the scalar type on the
           # ActiveRecord adapter for casting purposes
-          other.class_attribute :ar_adapter_type, instance_writer: false, default: {}
+          other.class_attribute :ar_adapter_type, instance_accessor: false, default: {}
 
           # A list of ActiveRecord aliases per adapter to skip casting
-          other.class_attribute :ar_adapter_aliases, instance_writer: false,
+          other.class_attribute :ar_adapter_aliases, instance_accessor: false,
             default: (Hash.new { |h, k| h[k] = Set.new })
         end
 

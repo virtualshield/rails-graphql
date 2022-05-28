@@ -1,79 +1,50 @@
 # frozen_string_literal: true
 
-require 'active_support/core_ext/module/anonymous'
-
 module Rails
   module GraphQL
     module Helpers
-      # Helper module responsible for name stuff and also responsible for
-      # registering the objects to the type map, which also checks for the
-      # uniqueness of the name of things.
+      # Helper module responsible for registering the objects to the type map,
+      # which also checks for the uniqueness of the name of things.
       module Registerable
-        NAME_EXP = /GraphQL::(?:Type::\w+::|Directive::)?([:\w]+?)([A-Z][a-z]+)?\z/.freeze
-
         # Here we define a couple of attributes used by registration
         def self.extended(other)
-          other.extend(Registerable::ClassMethods)
           other.extend(Helpers::WithNamespace)
-
-          # If a type is marked as abstract, it's then used as a base and it
-          # won't appear in the introspection
-          other.class_attribute :abstract, instance_writer: false, default: false
+          other.extend(Helpers::WithName)
 
           # Marks if the object is one of those defined on the spec, which
           # marks the object as part of the introspection system
-          other.class_attribute :spec_object, instance_writer: false, default: false
-
-          # The given description of the type
-          other.class_attribute :description, instance_writer: false
+          other.class_attribute :spec_object, instance_accessor: false, default: false
         end
 
-        module ClassMethods
-          # Here we wait for the class to be fully loaded so that we can
-          # correctly trigger the registration
-          def inherited(subclass)
-            super if defined? super
-            return if subclass.try(:abstract)
-            GraphQL.type_map.postpone_registration(subclass)
-          end
-
-          # Check if the class is already registered in the typemap
-          def registered?
-            GraphQL.type_map.object_exist?(self, exclusive: true)
-          end
-
-          # The process to register a class and it's name on the index
-          def register!
-            return if abstract? || gql_name.blank?
-
-            raise DuplicatedError, (+<<~MSG).squish if registered?
-              The "#{gql_name}" is already defined, the only way to change its
-              definition is by using extensions.
-            MSG
-
-            invalid_internal = !spec_object && gql_name.start_with?('__')
-            raise NameError, (+<<~MSG).squish if invalid_internal
-              The name "#{gql_name}" is invalid. Only internal objects from the
-              spec can have a name starting with "__".
-            MSG
-
-            super if defined? super
-            GraphQL.type_map.register(self)
-          end
+        # Here we wait for the class to be fully loaded so that we can
+        # correctly trigger the registration
+        def inherited(subclass)
+          super if defined? super
+          GraphQL.type_map.postpone_registration(subclass)
         end
 
-        # Return the name of the object as a GraphQL name
-        def gql_name
-          @gql_name ||= begin
-            name.match(NAME_EXP).try(:[], 1)&.tr(':', '')
-          end unless anonymous?
+        # Check if the class is already registered in the typemap
+        def registered?
+          GraphQL.type_map.object_exist?(self, exclusive: true)
         end
 
-        alias graphql_name gql_name
+        # The process to register a class and it's name on the index
+        def register!
+          return if abstract? || gql_name.blank?
 
-        # Return the name of the object as a symbol
-        def to_sym
-          @gql_key ||= gql_name&.underscore&.to_sym
+          raise DuplicatedError, (+<<~MSG).squish if registered?
+            The "#{gql_name}" is already defined, the only way to change its
+            definition is by using extensions.
+          MSG
+
+          invalid_internal = !spec_object && gql_name.start_with?('__')
+          raise NameError, (+<<~MSG).squish if invalid_internal
+            The name "#{gql_name}" is invalid. Only internal objects from the
+            spec can have a name starting with "__".
+          MSG
+
+          super if defined? super
+          GraphQL.type_map.register(self)
         end
 
         # Get or set a list of aliases for this object
@@ -87,18 +58,8 @@ module Rails
           end
         end
 
-        protected
-
-          # An alias for +description = value.strip_heredoc.chomp+ that can be
-          # used as method
-          def desc(value)
-            self.description = value.strip_heredoc.chomp
-          end
-
-          # Change the gql name of the object
-          def rename!(name)
-            @gql_name = name
-          end
+        # TODO: When an object is frozen, it was successfully validated
+        # alias valid? frozen?
       end
     end
   end

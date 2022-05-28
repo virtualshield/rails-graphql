@@ -35,7 +35,7 @@ module Rails
             pending = assigners.map(&:size).reduce(:+) || 0
             return if pending.zero?
 
-            fields_source.each_value do |field|
+            fields_source&.each_value do |field|
               next unless assigners.key?(field.gql_name)
 
               items = assigners[field.gql_name]

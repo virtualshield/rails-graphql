@@ -9,7 +9,6 @@ module Rails
       autoload :HashCollector
       autoload :IdentedCollector
       autoload :JsonCollector
-
     end
   end
 end

@@ -15,7 +15,7 @@ module Rails
 
         # A +base_object+ helps to identify what methods are actually available
         # to work as resolvers
-        class_attribute :precision, instance_writer: false, default: 6
+        class_attribute :precision, instance_accessor: false, default: 6
 
         class << self
           def valid_input?(value)

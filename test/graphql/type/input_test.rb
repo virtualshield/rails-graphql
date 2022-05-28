@@ -37,8 +37,7 @@ class GraphQL_Type_InputTest < GraphQL::TestCase
   end
 
   def test_valid_input_ask
-    assert(DESCRIBED_CLASS.valid_input?(nil))
-
+    refute(DESCRIBED_CLASS.valid_input?(nil))
     refute(DESCRIBED_CLASS.valid_input?(1))
     refute(DESCRIBED_CLASS.valid_input?('abc'))
 
@@ -77,8 +76,10 @@ class GraphQL_Type_InputTest < GraphQL::TestCase
 
   def test_build_defaults
     field = double(gql_name: 'a', default: 'b')
-    DESCRIBED_CLASS.stub(:enabled_fields, [field]) do
-      assert_equal({ 'a' => 'b' }, DESCRIBED_CLASS.build_defaults)
+    DESCRIBED_CLASS.stub(:fields?, true) do
+      DESCRIBED_CLASS.stub(:enabled_fields, [field]) do
+        assert_equal({ 'a' => 'b' }, DESCRIBED_CLASS.build_defaults)
+      end
     end
 
     DESCRIBED_CLASS.stub(:enabled_fields, []) do
@@ -126,13 +127,17 @@ class GraphQL_Type_InputTest < GraphQL::TestCase
 
     validate = ->(*) { raise Rails::GraphQL::InvalidValueError }
     field = { 'a' => double(validate_output!: validate) }
-    object.stub(:fields, [field]) do
-      assert_raises(StandardError) { object.validate! }
+    object.stub(:resource, double(gql_name: 'B')) do
+      object.stub(:fields, field) do
+        assert_raises(Rails::GraphQL::InvalidValueError) { object.validate! }
+      end
     end
 
-    field = { 'a' => double(validate_output!: ->(*) {}) }
-    object.stub(:fields, [field]) do
-      assert(DESCRIBED_CLASS.validate!)
+    counter = 0
+    field = { 'a' => double(validate_output!: ->(*) { counter += 1 }) }
+    object.stub(:fields, field) do
+      object.validate!
+      assert_equal(1, counter)
     end
   end
 end

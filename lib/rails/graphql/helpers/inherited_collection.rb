@@ -7,6 +7,8 @@ module Rails
       # that are corretly delt when it is inherited by another class. It keeps
       # track of its own value and allow access to all values of the property
       # in the tree,
+      #
+      # TODO: Rewrite this!
       module InheritedCollection
         # All possible types of inheritable values
         DEFAULT_TYPES = {
