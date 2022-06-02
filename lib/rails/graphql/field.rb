@@ -161,8 +161,18 @@ module Rails
       end
 
       # Return the description of the argument
-      def description
-        @desc
+      def description(namespace= nil)
+        if description? && @desc == "The home planet of the human, or null if unknown"
+          byebug
+        end
+        return @desc if description? || !GraphQL.config.enable_i18n_descriptions
+
+        values = { namespace:namespace, kind: :field, type:owner.to_sym, name: name }
+        keys = GraphQL.config.i18n_scopes.map do |key|
+          (key % values).to_sym
+        end
+
+        ::I18n.translate(keys.shift, default: keys, :raise => I18n::MissingTranslationData)
       end
 
       # Mark the field as globally enabled

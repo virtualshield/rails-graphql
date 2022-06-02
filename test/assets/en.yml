@@ -1,0 +1,8 @@
+en:
+  hello: "Hello world"
+
+
+  start_wars_mem:
+    field:
+      human:
+        home_planet: "The home planet of the human, or null if unknown"

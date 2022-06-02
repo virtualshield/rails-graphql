@@ -85,6 +85,18 @@ module Rails
       # incompatible it will display an warning. This can make such warning be
       # silenced.
       config.silence_import_warnings = false
+      # Enable the ability to active custom descriptions by i18n
+      config.enable_i18n_descriptions = true
+
+      # Specify the scopes for I18n translations
+      config.i18n_scopes = [
+        'graphql.%{namespace}.%{kind}.%{type}.%{name}',
+        'graphql.%{namespace}.%{type}.%{name}',
+        'graphql.%{namespace}.%{name}',
+        'graphql.%{kind}.%{type}.%{name}',
+        'graphql.%{type}.%{name}',
+        'graphql.%{name}'
+      ]
 
       # A list of execution strategies. Each application can add their own by
       # simply append a class name, preferable as string, in this list.
@@ -119,8 +131,6 @@ module Rails
       }
 
       # TODO: To be implemented
-      # enable_i18n_descriptions
-      # enable_auto_descriptions
       # allow_query_serialization
       # source_generate_dependencies
     end

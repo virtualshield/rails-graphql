@@ -18,12 +18,18 @@ module Rails
           a value of a specific type.
         DESC
 
+
+
         field :name,               :string,        null: false, method_name: :gql_name
         field :description,        :string
         field :args,               '__InputValue', full: true
         field :type,               '__Type',       null: false, method_name: :build_type
         field :is_deprecated,      :boolean,       null: false, method_name: :deprecated?
         field :deprecation_reason, :string
+
+        def description
+          current.description(schema.namespace)
+        end
 
         def build_type
           result = current.type_klass

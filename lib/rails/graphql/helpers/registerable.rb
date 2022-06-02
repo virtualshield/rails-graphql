@@ -47,6 +47,10 @@ module Rails
           GraphQL.type_map.register(self)
         end
 
+        def description(*)
+          @description
+        end
+
         # Get or set a list of aliases for this object
         def aliases(*list)
           if list.empty?

@@ -37,6 +37,7 @@ module Rails
         collector ||= Collectors::IdentedCollector.new
         @with_descriptions = with_descriptions
         @with_spec = with_spec.nil? ? schema.introspection? : with_spec
+        @schema = schema
 
         accept(schema, collector).eol
 
@@ -296,14 +297,15 @@ module Rails
 
         def visit_description(o, collector)
           return unless @with_descriptions && o.description?
+          desc = o.description(@schema)
 
-          if o.description.lines.size === 1
-            collector << o.description.inspect
+          if desc.lines.size === 1
+            collector << desc.inspect
           else
             collector << '"""'
             collector.eol
 
-            collector << o.description
+            collector << desc
             collector.eol
 
             collector << '"""'
