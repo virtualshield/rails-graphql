@@ -17,6 +17,7 @@ module Rails
       autoload :WithAssignment
       autoload :WithCallbacks
       autoload :WithDirectives
+      autoload :WithDescription
       autoload :WithEvents
       autoload :WithFields
       autoload :WithGlobalID

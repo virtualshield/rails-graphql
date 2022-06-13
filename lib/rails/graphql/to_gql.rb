@@ -37,11 +37,11 @@ module Rails
         collector ||= Collectors::IdentedCollector.new
         @with_descriptions = with_descriptions
         @with_spec = with_spec.nil? ? schema.introspection? : with_spec
-        @schema = schema
+        @namespace = schema.namespace
 
         accept(schema, collector).eol
 
-        GraphQL.type_map.each_from(schema.namespace, base_class: :Type)
+        GraphQL.type_map.each_from(@namespace, base_class: :Type)
           .group_by(&:kind).values_at(*DESCRIBE_TYPES)
           .each do |items|
             items&.sort_by(&:gql_name)&.each do |item|
@@ -297,7 +297,7 @@ module Rails
 
         def visit_description(o, collector)
           return unless @with_descriptions && o.description?
-          desc = o.description(@schema)
+          desc = o.description(@namespace)
 
           if desc.lines.size === 1
             collector << desc.inspect

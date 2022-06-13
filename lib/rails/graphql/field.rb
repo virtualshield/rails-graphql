@@ -33,6 +33,7 @@ module Rails
     class Field
       extend ActiveSupport::Autoload
       include Helpers::WithDirectives
+      include Helpers::WithDescription
 
       autoload :ScopedConfig
 
@@ -116,7 +117,7 @@ module Rails
         @array    = full ? true  : xargs.fetch(:array, false)
         @nullable = full ? false : xargs.fetch(:nullable, true)
 
-        @desc = xargs[:desc]&.strip_heredoc&.chomp
+        self.description = xargs[:desc]
         @enabled = xargs.fetch(:enabled, !xargs.fetch(:disabled, false))
 
         configure(&block) if block.present?
@@ -135,7 +136,7 @@ module Rails
         disable! if xargs.fetch(:disabled, false)
         enable! if xargs.fetch(:enabled, false)
 
-        desc(xargs[:desc]) if xargs.key?(:desc)
+        self.description = xargs[:desc] if xargs.key?(:desc)
         configure(&block) if block.present?
       end
 
@@ -158,21 +159,6 @@ module Rails
         else
           @name
         end
-      end
-
-      # Return the description of the argument
-      def description(namespace= nil)
-        if description? && @desc == "The home planet of the human, or null if unknown"
-          byebug
-        end
-        return @desc if description? || !GraphQL.config.enable_i18n_descriptions
-
-        values = { namespace:namespace, kind: :field, type:owner.to_sym, name: name }
-        keys = GraphQL.config.i18n_scopes.map do |key|
-          (key % values).to_sym
-        end
-
-        ::I18n.translate(keys.shift, default: keys, :raise => I18n::MissingTranslationData)
       end
 
       # Mark the field as globally enabled
@@ -220,9 +206,9 @@ module Rails
         !enabled?
       end
 
-      # Checks if a description was provided
-      def description?
-        defined?(@desc) && !!@desc
+      # Override to add the kind
+      def description(namespace = nil, *)
+        super(namespace, :field)
       end
 
       # Check if the field is an internal one

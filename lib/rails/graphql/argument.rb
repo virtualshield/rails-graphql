@@ -31,6 +31,7 @@ module Rails
     #   (defaults to nil).
     class Argument
       include Helpers::WithValidator
+      include Helpers::WithDescription
 
       # TODO: When arguments are attached to output fields they can have
       # directives so add this possibility
@@ -67,7 +68,7 @@ module Rails
         @nullable = full ? false : nullable
 
         @default = default
-        @desc = desc&.strip_heredoc&.chomp
+        self.description = desc
       end
 
       def initialize_copy(*)
@@ -114,14 +115,10 @@ module Rails
         !!@nullable
       end
 
-      # Return the description of the argument
-      def description
-        @desc
-      end
-
-      # Checks if a description was provided
-      def description?
-        !!@desc
+      # TODO: Fix namespace
+      # Override to add the kind
+      def description(namespace = nil, *)
+        super(namespace || owner.try(:namespaces)&.first, :argument)
       end
 
       # Checks if a given default value was provided

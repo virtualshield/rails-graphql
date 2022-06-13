@@ -17,6 +17,10 @@ module Rails # :nodoc:
       def method_name(value)
         field.instance_variable_set(:@method_name, value.to_sym)
       end
+
+      def desc(value)
+        field.description = value
+      end
     end
   end
 end

@@ -1,8 +1,6 @@
 en:
-  hello: "Hello world"
-
-
-  start_wars_mem:
+  translate:
     field:
-      human:
-        home_planet: "The home planet of the human, or null if unknown"
+      query:
+        sample1: "A"
+
