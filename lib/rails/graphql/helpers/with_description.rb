@@ -15,12 +15,14 @@ module Rails
           return @description if description? || !GraphQL.config.enable_i18n_descriptions
 
           kind ||= try(:kind)
+          parent = try(:owner)&.to_sym
           namespace ||= try(:namespaces)&.first
-          values = { namespace: namespace, kind: kind, type: owner.to_sym, name: name }
+          use_name = is_a?(Module) ? to_sym : name
+
+          values = { namespace: namespace, kind: kind, parent: parent, name: use_name }
           keys = GraphQL.config.i18n_scopes.map do |key|
             (key % values).to_sym
           end
-
           ::I18n.translate!(keys.shift, default: keys)
         rescue I18n::MissingTranslationData
           nil

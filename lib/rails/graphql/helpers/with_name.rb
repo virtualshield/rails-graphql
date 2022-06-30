@@ -14,9 +14,6 @@ module Rails
           # An abstract type won't appear in the introspection and will not be
           # instantiated by requests
           other.class_attribute :abstract, instance_accessor: false, default: false
-
-          # The given description of the element
-          other.class_attribute :description, instance_writer: false
         end
 
         # Return the name of the object as a GraphQL name

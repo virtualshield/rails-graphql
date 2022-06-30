@@ -1,6 +1,29 @@
 en:
-  translate:
+  graphql:
+    sample_1: "A"
+    translate:
+      sample_2: "B"
+      field:
+        sample_3: "C"
+        schema:
+          sample_field: "Field"
+          sample_4: "D"
+      argument:
+        sample_field:
+          arg_sample: "Argument"
+      interface:
+        translate: "Interface"
+      enum:
+        translate: "Enum"
+      object:
+        translate: "Object"
+      union:
+        translate: "Union"
+      input_object:
+        translate_input: "Input"
+      scalar:
+        translate: "Scalar"
     field:
-      query:
-        sample1: "A"
-
+      sample_5: "E"
+      schema:
+        sample_6: "F"

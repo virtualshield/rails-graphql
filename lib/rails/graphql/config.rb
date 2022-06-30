@@ -90,11 +90,11 @@ module Rails
 
       # Specify the scopes for I18n translations
       config.i18n_scopes = [
-        'graphql.%{namespace}.%{kind}.%{type}.%{name}',
-        'graphql.%{namespace}.%{type}.%{name}',
+        'graphql.%{namespace}.%{kind}.%{parent}.%{name}',
+        'graphql.%{namespace}.%{kind}.%{name}',
         'graphql.%{namespace}.%{name}',
-        'graphql.%{kind}.%{type}.%{name}',
-        'graphql.%{type}.%{name}',
+        'graphql.%{kind}.%{parent}.%{name}',
+        'graphql.%{kind}.%{name}',
         'graphql.%{name}'
       ]
 

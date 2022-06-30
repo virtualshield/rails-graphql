@@ -7,6 +7,8 @@ module GraphQL
     SCHEMAS = Pathname.new(__dir__).join('schemas')
     ASSETS = Pathname.new(__dir__).join('../assets')
 
+    I18n.load_path <<  ASSETS.join("en.yml")
+
     BASE_SCHEMA = ::Rails::GraphQL::Schema
 
     def run(*)
