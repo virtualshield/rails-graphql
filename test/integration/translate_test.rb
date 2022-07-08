@@ -3,7 +3,6 @@ require 'integration/config'
 class Translate_test < GraphQL::IntegrationTestCase
 
   class SCHEMA < GraphQL::Schema
-
     query_fields do
       field :sample_5, :string
       field :sample_6, :string
@@ -11,9 +10,13 @@ class Translate_test < GraphQL::IntegrationTestCase
 
     namespace :translate
 
+    configure do |config|
+      config.enable_string_collector = false
+      config.default_response_format = :json
+    end
+
     query_fields do
-      field :sample_field, :string,
-        arguments: arg(:arg_sample, "Sample")
+      field :sample_field, :string
       field :sample_1, :string
       field :sample_2, :string
       field :sample_3, :string
@@ -35,7 +38,6 @@ class Translate_test < GraphQL::IntegrationTestCase
 
   def test_simple_translate
     assert_equal("Field", SCHEMA[:query][:sample_field].description )
-    assert_equal("Argument", SCHEMA[:query][:sample_field].arguments[:arg_sample].description )
     assert_equal("Enum", GraphQL::TranslateEnum.description )
     assert_equal("Interface", GraphQL::TranslateInterface.description )
     assert_equal("Object", GraphQL::TranslateObject.description )
@@ -54,12 +56,14 @@ class Translate_test < GraphQL::IntegrationTestCase
   end
 
   def test_request_translate
-
+    assert_result({ data: { __type: { name: 'TranslateInput', description: "Input" } } }, <<~GQL)
+      { __type(name: "TranslateInput") { name description } }
+    GQL
   end
 
-# def test_gql_introspection
-#   File.write('test/assets/translate.gql', SCHEMA.to_gql)
-#   result = gql_file('translate').split('').sort.join.squish
-#   assert_equal(result, SCHEMA.to_gql.split('').sort.join.squish)
-# end
+  def test_gql_introspection
+    # File.write('test/assets/translate.gql', SCHEMA.to_gql)
+    result = gql_file('translate').split('').sort.join.squish
+    assert_equal(result, SCHEMA.to_gql.split('').sort.join.squish)
+  end
 end
