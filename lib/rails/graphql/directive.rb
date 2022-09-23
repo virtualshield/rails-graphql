@@ -22,7 +22,6 @@ module Rails
     #   add :old_value, directives: DeprecatedDirective(reason: 'not used anymore')
     class Directive
       extend ActiveSupport::Autoload
-      extend Helpers::InheritedCollection
       extend Helpers::WithEvents
       extend Helpers::WithCallbacks
       extend Helpers::WithArguments
@@ -81,7 +80,7 @@ module Rails
         # correctly parsing the arguments
         def build(**xargs)
           xargs = xargs.stringify_keys
-          result = all_arguments.each_pair.each_with_object({}) do |(name, argument), hash|
+          result = all_arguments&.each&.each_with_object({}) do |(name, argument), hash|
             hash[name] = argument.deserialize(xargs[argument.gql_name] || xargs[name.to_s])
           end
 
@@ -98,7 +97,8 @@ module Rails
         def inspect
           return super if eql?(GraphQL::Directive)
 
-          args = arguments.each_value.map(&:inspect)
+          args = all_arguments&.each_value&.map(&:inspect)
+          args = args.force if args.respond_to?(:force)
           args = args.presence && "(#{args.join(', ')})"
           +"#<GraphQL::Directive @#{gql_name}#{args}>"
         end
@@ -185,7 +185,7 @@ module Rails
       end
 
       # Once the directive is correctly prepared, we need to assign the owner
-      def assing_owner!(owner)
+      def assign_owner!(owner)
         raise ArgumentError, (+<<~MSG).squish if defined?(@owner)
           Owner already assigned for @#{gql_name} directive.
         MSG
@@ -193,18 +193,18 @@ module Rails
         @owner = owner
       end
 
-      # Corretly turn all the arguments into their +as_json+ version and return
+      # Correctly turn all the arguments into their +as_json+ version and return
       # a hash of them
       def args_as_json
-        all_arguments.each_pair.each_with_object({}) do |(name, argument), hash|
+        all_arguments&.each&.with_object({}) do |(name, argument), hash|
           hash[argument.gql_name] = argument.as_json(@args[name])
         end
       end
 
-      # Corretly turn all the arguments into their +to_json+ version and return
+      # Correctly turn all the arguments into their +to_json+ version and return
       # a hash of them
       def args_to_json
-        all_arguments.each_pair.each_with_object({}) do |(name, argument), hash|
+        all_arguments&.each&.with_object({}) do |(name, argument), hash|
           hash[argument.gql_name] = argument.to_json(@args[name])
         end
       end
@@ -212,6 +212,8 @@ module Rails
       # When fetching all the events, embed the actual instance as the context
       # of the callback
       def all_events
+        return unless self.class.events?
+
         @all_events ||= self.class.all_events.transform_values do |events|
           events.map { |item| Callback.set_context(item, self) }
         end
@@ -223,8 +225,8 @@ module Rails
           The @#{gql_name} directive is unbounded.
         MSG
 
-        invalid = all_arguments.reject { |name, arg| arg.valid?(@args[name]) }
-        return if invalid.empty?
+        invalid = all_arguments&.reject { |name, arg| arg.valid?(@args[name]) }
+        return if invalid.blank?
 
         invalid = invalid.each_key.map { |name| (+<<~MSG).squish }
           invalid value "#{@args[name].inspect}" for #{name} argument
@@ -236,9 +238,9 @@ module Rails
       end
 
       def inspect
-        args = all_arguments.map do |name, arg|
+        args = all_arguments&.map do |name, arg|
           +"#{arg.gql_name}: #{@args[name].inspect}" unless @args[name].nil?
-        end.compact
+        end&.compact
 
         args = args.presence && +"(#{args.join(', ')})"
         unbound = ' # unbound' unless defined?(@owner)
@@ -247,7 +249,7 @@ module Rails
 
       %i[to_global_id to_gid to_gid_param].each do |method_name|
         define_method(method_name) do
-          self.class.public_send(method_name, args_as_json.compact)
+          self.class.public_send(method_name, args_as_json&.compact || '')
         end
       end
 

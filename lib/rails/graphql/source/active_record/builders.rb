@@ -37,7 +37,7 @@ module Rails
       def each_attribute(holder, skip_primary_key = true)
         adapter_key = GraphQL.ar_adapter_key(adapter_name)
 
-        skip_fields = skips_for(holder).map(&:to_s)
+        skip_fields = skips_for(holder)&.map(&:to_s) || Set.new
         skip_fields << model.inheritance_column
         skip_fields << primary_key unless skip_primary_key
 
@@ -48,7 +48,7 @@ module Rails
 
       # Iterate over all the model reflections
       def each_reflection(holder = nil, &block)
-        skip_fields = skips_for(holder).map(&:to_s).to_set if holder
+        skip_fields = skips_for(holder)&.map(&:to_s)&.to_set if holder
         model._reflections.each_value.select do |reflection|
           next if skip_fields&.include?(reflection.name.to_s)
 

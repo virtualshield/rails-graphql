@@ -15,8 +15,8 @@ module Rails
           array:      '[]',
           set:        'Set.new',
           hash:       '{}',
-          hash_array: 'Hash.new { |h, k| h[k] = [] }',
-          hash_set:   'Hash.new { |h, k| h[k] = Set.new }',
+          hash_array: '::Hash.new { |h, k| h[k] = [] }',
+          hash_set:   '::Hash.new { |h, k| h[k] = Set.new }',
         }.freeze
 
         # Declare a class-level attribute whose value is both isolated and also
@@ -67,20 +67,19 @@ module Rails
           type: :set
         )
           attrs.each do |name|
-            module_eval(<<~RUBY, __FILE__, __LINE__ + 1)
-              def self.all_#{name}
-                ::Rails::GraphQL::Helpers::AttributeDelegator.new do
-                  fetch_inherited_#{type}('@#{name}'.freeze)
-                end
+            instance_eval(<<~RUBY, __FILE__, __LINE__ + 1)
+              def all_#{name}
+                return superclass.try(:all_#{name}) unless defined?(@#{name})
+                InheritedCollection::Base.handle(self, :@#{name}, :#{type})
               end
 
-              def self.#{name}
+              def #{name}
                 @#{name} ||= #{DEFAULT_TYPES[type]}
               end
             RUBY
 
-            module_eval(<<~RUBY, __FILE__, __LINE__ + 1) if instance_predicate
-              def self.#{name}?
+            instance_eval(<<~RUBY, __FILE__, __LINE__ + 1) if instance_predicate
+              def #{name}?
                 (defined?(@#{name}) && @#{name}.present?) || superclass.try(:#{name}?)
               end
             RUBY
@@ -91,69 +90,12 @@ module Rails
             end
           end
         end
-
-        protected
-
-          # Combine an inherited list of arrays
-          def fetch_inherited_array(ivar)
-            inherited_ancestors.each_with_object([]) do |klass, result|
-              next result unless klass.instance_variable_defined?(ivar)
-              val = klass.instance_variable_get(ivar)
-              result.merge(val) unless val.blank?
-            end
-          end
-
-          # Combine an inherited list of set objects
-          def fetch_inherited_set(ivar)
-            inherited_ancestors.each_with_object(Set.new) do |klass, result|
-              next result unless klass.instance_variable_defined?(ivar)
-              val = klass.instance_variable_get(ivar)
-              result.merge(val) unless val.blank?
-            end
-          end
-
-          # Combine an inherited list of hashes but keeping only the most recent
-          # value, which means that keys might be replaced
-          def fetch_inherited_hash(ivar)
-            inherited_ancestors.each_with_object({}) do |klass, result|
-              next result unless klass.instance_variable_defined?(ivar)
-              val = klass.instance_variable_get(ivar)
-              result.merge!(val) unless val.blank?
-            end
-          end
-
-          # Right now we can't use Hash with default proc for equivalency due to
-          # a bug on Ruby https://bugs.ruby-lang.org/issues/17181
-
-          # Combine an inherited list of hashes, which also will combine arrays,
-          # ensuring that same key items will be combined
-          def fetch_inherited_hash_array(ivar)
-            inherited_ancestors.inject({}) do |result, klass|
-              next result unless klass.instance_variable_defined?(ivar)
-              val = klass.instance_variable_get(ivar)
-              Helpers.merge_hash_array(result, val)
-            end
-          end
-
-          # Combine an inherited list of hashes, which also will combine arrays,
-          # ensuring that same key items will be combined
-          def fetch_inherited_hash_set(ivar)
-            inherited_ancestors.inject({}) do |result, klass|
-              next result unless klass.instance_variable_defined?(ivar)
-              val = klass.instance_variable_get(ivar)
-              Helpers.merge_hash_array(result, val)
-            end
-          end
-
-        private
-
-          # Return a list of all the ancestor classes up until object
-          def inherited_ancestors
-            [self].tap do |list|
-              list.unshift(list.first.superclass) until list.first.superclass === Object
-            end
-          end
       end
     end
   end
 end
+
+require_relative 'inherited_collection/base'
+
+require_relative 'inherited_collection/array'
+require_relative 'inherited_collection/hash'

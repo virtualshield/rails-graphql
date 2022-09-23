@@ -10,7 +10,7 @@ module Rails
 
         protected
 
-          # Helper parser for selection fields that also asssign the actual
+          # Helper parser for selection fields that also assign the actual
           # field defined under the schema structure
           def parse_selection(nodes)
             return if nodes.nil?
@@ -23,15 +23,15 @@ module Rails
               assigners[component.name.to_s] << component if component.assignable?
             end
 
-            assing_fields!(assigners)
+            assign_fields!(assigners)
             @selection.freeze
           end
 
           # Using +fields_source+, find the needed ones to be assigned to the
           # current requested fields. As shown by benchmark, since the index is
           # based on Symbols, the best way to find +gql_name+ based fields is
-          # through interation and search. Complexity O(n)
-          def assing_fields!(assigners)
+          # through iteration and search. Complexity O(n)
+          def assign_fields!(assigners)
             pending = assigners.map(&:size).reduce(:+) || 0
             return if pending.zero?
 
@@ -39,7 +39,7 @@ module Rails
               next unless assigners.key?(field.gql_name)
 
               items = assigners[field.gql_name]
-              items.each_with_object(field).each(&:assing_to)
+              items.each_with_object(field).each(&:assign_to)
               break if (pending -= items.size) === 0
             end
           end

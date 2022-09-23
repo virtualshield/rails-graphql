@@ -51,12 +51,27 @@ module Rails
 
       # Add the listeners from the associated type
       def all_listeners
-        type_klass.all_listeners + super
+        inherited = super
+        return inherited unless type_klass.listeners?
+        inherited.present? ? inherited + type_klass.all_listeners : type_klass.all_listeners
+      end
+
+      # Make sure to check the associated type
+      def listeners?
+        super || type_klass.listeners?
       end
 
       # Add the events from the associated type
       def all_events
-        Helpers.merge_hash_array(type_klass.all_events, super)
+        inherited = super
+        return inherited unless type_klass.events?
+        return type_klass.all_events if inherited.blank?
+        Helpers.merge_hash_array(inherited, type_klass.all_events)
+      end
+
+      # Make sure to check the associated type
+      def events?
+        super || type_klass.events?
       end
 
       # Checks if the type of the field is valid
@@ -89,7 +104,7 @@ module Rails
           result
         end
 
-        # A little hidden helper to support forcing reasignment of type, which
+        # A little hidden helper to support forcing reassignment of type, which
         # should only be done with caution
         def assign_type(type)
           if type.is_a?(Module) && type < GraphQL::Type

@@ -7,26 +7,38 @@ module Rails
       # fields.
       module Directives
         # Get the list of listeners from directives set during the request only
-        def all_listeners
-          directives.map(&:all_listeners).reduce(:+) || Set.new
+        def directive_listeners
+          return unless directives?
+          return @directive_listeners if defined?(@directive_listeners)
+          @directive_listeners = directives.map(&:all_listeners).compact.reduce(:+)
         end
+
+        alias all_listeners directive_listeners
 
         # Get the list of events from directives set during the request only and
         # then caches it by request
-        def all_events
-          @all_events ||= directives.map(&:all_events).inject({}) do |lhash, rhash|
-            Helpers.merge_hash_array(lhash, rhash)
+        def directive_events
+          return unless directives?
+          @directive_events ||= begin
+            directives.map(&:all_events).compact.inject({}) do |lhash, rhash|
+              Helpers.merge_hash_array(lhash, rhash)
+            end
           end
         end
+
+        alias all_events directive_events
 
         protected
 
           # Make sure to always return a set
           def directives
-            defined?(@directives) && @directives || Set.new
+            @directives if directives?
           end
 
-          alias all_directives directives
+          # Check if any execution directive was added
+          def directives?
+            defined?(@directives)
+          end
 
           # Helper parser for directives that also collect necessary variables
           def parse_directives(nodes, location = nil)
@@ -58,9 +70,10 @@ module Rails
 
           # Get and cache all the arguments for this given +directive+
           def directive_arguments(directive)
-            request.cache(:arguments)[directive] ||= begin
-              result = directive.all_arguments
-              result.each_value.map(&:gql_name).zip(result.each_value).to_h
+            request.nested_cache(:arguments, directive) do
+              directive.all_arguments&.each_value&.with_object({}) do |directive, hash|
+                hash[directive.gql_name] = directive
+              end
             end
           end
       end

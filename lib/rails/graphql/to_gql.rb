@@ -264,7 +264,7 @@ module Rails
         end
 
         def visit_arguments(list, collector)
-          return if list.empty?
+          return if list.blank?
 
           indented = @with_descriptions && list.values.any?(&:description?)
 

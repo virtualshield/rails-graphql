@@ -14,11 +14,9 @@ module Rails
         include Directives
 
         delegate :decorate, to: :type_klass
-        delegate :operation, :variables, to: :parent
+        delegate :operation, :variables, :request, to: :parent
         delegate :method_name, :resolver, :performer, :type_klass, :leaf_type?,
           :dynamic_resolver?, :mutation?, to: :field
-
-        parent_memoize :request
 
         attr_reader :name, :alias_name, :parent, :field, :arguments, :current_object
 
@@ -33,35 +31,42 @@ module Rails
           super(node)
         end
 
-        # Return both the field directives and the request directives
-        def all_directives
-          field.all_directives + super
-        end
-
         # Override that considers the requested field directives and also the
         # definition field events, both from itself and its directives events
         def all_listeners
-          (request.cache(:listeners)[field] ||= field.all_listeners) + super
+          result = request.nested_cache(:listeners, field) do
+            if !field.listeners?
+              directive_listeners
+            elsif !directives?
+              field.all_listeners
+            else
+              local = directive_listeners
+              local.blank? ? field.all_listeners : field.all_listeners + local
+            end
+          end
         end
 
         # Override that considers the requested field directives and also the
         # definition field events, both from itself and its directives events
         def all_events
-          @all_events ||= Helpers.merge_hash_array(
-            (request.cache(:events)[field] ||= field.all_events),
-            super,
-          )
+          request.nested_cache(:events, field) do
+            if !field.events?
+              directive_events
+            elsif !directives?
+              field.all_events
+            else
+              Helpers.merge_hash_array(field.all_events, directive_events)
+            end
+          end
         end
 
         # Get and cache all the arguments for the field
         def all_arguments
           return unless field.arguments?
 
-          request.cache(:arguments)[field] ||= begin
-            if (result = field.all_arguments).any?
-              result.each_value.map(&:gql_name).zip(result.each_value).to_h
-            else
-              {}
+          request.nested_cache(:arguments, field) do
+            field.all_arguments.each_value.with_object({}) do |argument, hash|
+              hash[argument.gql_name] = argument
             end
           end
         end
@@ -69,7 +74,7 @@ module Rails
         # Assign a given +field+ to this class. The field must be an output
         # field, which means that +output_type?+ must be true. It also must be
         # called exactly once per field.
-        def assing_to(field)
+        def assign_to(field)
           raise ArgumentError, (+<<~MSG).squish if defined?(@assigned)
             The "#{gql_name}" field is already assigned to #{@field.inspect}.
           MSG
@@ -124,6 +129,7 @@ module Rails
           return resolve! if invalid?
 
           old_field, @field = @field, object[@field.name]
+          request.nested_cache(:listeners, field) { strategy.add_listeners_from(self) }
           @current_object = object
           resolve!
         ensure
@@ -181,23 +187,6 @@ module Rails
                 trigger_event(:finalize)
               end
             end
-          end
-
-          # This override allows reasigned fields to perform events. This
-          # happens when fields are originally organized from interfaces. If
-          # the event is stopped for the object, then it doesn't proceed to the
-          # strategy implementation, ensuring compatibility
-          def trigger_event(event_name, **xargs)
-            return super if !defined?(@current_object) || @current_object.nil?
-
-            listeners = request.cache(:listeners)[field] ||= field.all_listeners
-            return super unless listeners.include?(event_name)
-
-            callbacks = request.cache(:events)[field] ||= field.all_events
-            old_events, @all_events = @all_events, callbacks
-            super
-          ensure
-            @all_events = old_events
           end
 
           # Check if the field was assigned correctly to an output field

@@ -88,7 +88,14 @@ module Rails
 
       # Prepend the proxy directives and then the source directives
       def all_directives
-        field.all_directives + super
+        inherited = field.all_directives
+        return inherited unless defined?(@directives)
+        inherited.present? ? inherited + super : super
+      end
+
+      # Check if the field has directives locally or in the proxied field
+      def directives?
+        super || field.directives?
       end
 
       # It is important to ensure that the proxied field is also valid

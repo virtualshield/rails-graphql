@@ -7,17 +7,6 @@ module Rails
     # request
     module Field::ResolvedField
       module Proxied # :nodoc: all
-        def all_listeners
-          field.all_listeners + super
-        end
-
-        def all_events
-          events = defined?(@events) ? @events : {}
-          Helpers.merge_hash_array(field.all_events, events).transform_values do |arr|
-            arr.sort_by { |cb| cb.try(:target).is_a?(GraphQL::Field) ? 0 : 1 }
-          end
-        end
-
         def resolver
           super || field.resolver
         end

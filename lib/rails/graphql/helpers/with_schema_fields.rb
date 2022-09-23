@@ -69,8 +69,10 @@ module Rails
 
         # A little helper for getting the list of fields of a given type
         def fields_for(type, initialize = nil)
-          public_send("#{type}_fields") || initialize && begin
-            instance_variable_set(:"@#{type}_fields", Concurrent::Map.new)
+          if instance_variable_defined?(ivar = :"@#{type}_fields")
+            instance_variable_get(ivar)
+          elsif initialize
+            instance_variable_set(ivar, Concurrent::Map.new)
           end
         end
 
@@ -97,9 +99,8 @@ module Rails
         # Add a new field of the give +type+
         # See {OutputField}[rdoc-ref:Rails::GraphQL::OutputField] class.
         def add_field(type, *args, **xargs, &block)
-          xargs[:owner] = self
           klass = Field.const_get(TYPE_FIELD_CLASS[type])
-          object = klass.new(*args, **xargs, &block)
+          object = klass.new(*args, **xargs, owner: self, &block)
 
           raise DuplicatedError, (+<<~MSG).squish if has_field?(type, object.name)
             The "#{object.name}" field is already defined on #{type} fields and

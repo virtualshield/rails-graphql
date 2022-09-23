@@ -11,10 +11,8 @@ module Rails
         include SelectionSet
         include Directives
 
-        delegate :operation, :typename, to: :parent
+        delegate :operation, :typename, :request, to: :parent
         delegate :variables, to: :operation
-
-        parent_memoize :request
 
         attr_reader :name, :parent, :fragment, :type_klass
 
@@ -66,7 +64,6 @@ module Rails
           def organize
             inline? ? organize_then { organize_fields } : organize_then do
               run_on_fragment(:organize!)
-              # Ensure necessary variables
             end
           end
 

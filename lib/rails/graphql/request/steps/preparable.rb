@@ -4,17 +4,18 @@ module Rails
   module GraphQL
     class Request
       # Helper methods for the prepare step of a request
-      module Prepareable
+      module Preparable
         # Prepare the object
         def prepare!
-          capture_exception(:prepare) { prepare }
+          prepare
+        rescue => error
+          report_exception(error)
         end
 
         protected
 
           # Normal mode of the prepare step
           def prepare
-            return if unresolvable?
             prepare_then { prepare_fields }
           end
 

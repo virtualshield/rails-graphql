@@ -70,13 +70,13 @@ module Rails
 
           # Write a value based on a Union type
           def write_union(value)
-            object = type_klass.all_members.reverse_each.find { |t| t.valid_member?(value) }
+            object = type_klass.all_members&.reverse_each&.find { |t| t.valid_member?(value) }
             object.nil? ? raise_invalid_member! : resolve_fields(object)
           end
 
           # Write a value based on a Interface type
           def write_interface(value)
-            object = type_klass.all_types.reverse_each.find { |t| t.valid_member?(value) }
+            object = type_klass.all_types&.reverse_each&.find { |t| t.valid_member?(value) }
             object.nil? ? raise_invalid_member! : resolve_fields(object)
           end
 

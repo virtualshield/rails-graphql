@@ -21,7 +21,7 @@ module Rails
             end if using_object
 
             # Authorize through events
-            using_events = cache[1] ||= (events || object.all_events[:authorize]).presence
+            using_events = cache[1] ||= (events || object.all_events.try(:[], :authorize))
             using_events&.each { |block| block.call(self, *args, **xargs) }
 
             # Does any authorize process ran
@@ -61,7 +61,7 @@ module Rails
 
           catch(:authorized) do
             event = authorization_event
-            schema_events = request.all_events[:authorize]
+            schema_events = request.all_events.try(:[], :authorize)
             executed = event.authorize_using(schema, args, schema_events)
 
             element = field

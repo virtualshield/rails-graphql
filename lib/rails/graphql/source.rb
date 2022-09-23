@@ -70,7 +70,7 @@ module Rails
       class_attribute :with_associations, instance_accessor: false, default: true
 
       # A list of fields to skip when performing shared methods
-      inherited_collection :skip_fields, instance_reader: false
+      inherited_collection :skip_fields, instance_reader: false, type: :hash_set
 
       # A list of fields to skip but segmented by holder source
       inherited_collection :segmented_skip_fields, instance_reader: false, type: :hash_set
@@ -220,8 +220,6 @@ module Rails
               superclass = superclass.constantize
             end
 
-            # binding.pry if with_owner
-
             source = self
             Schema.send(:create_type, name, superclass, **xargs) do
               include Helpers::WithOwner if with_owner
@@ -298,7 +296,10 @@ module Rails
             segment = holder.kind
             segment = :input if segment.eql?(:input_object)
             segmented = all_segmented_skip_fields[segment]
-            segmented.present? ? all_skip_fields + segmented : all_skip_fields
+
+            inherited = all_skip_fields
+            return inherited if segmented.blank?
+            inherited.blank? ? segmented : inherited + segmented
           end
 
         private
@@ -323,7 +324,7 @@ module Rails
             class_eval <<-RUBY, __FILE__, __LINE__ + 1
               def run_#{key}_hooks(list = nil)
                 source_config = Source::ScopedConfig.new(self, #{object})
-                Array.wrap(list.presence || all_hooks[:#{key}]).reverse_each do |block|
+                ::Array.wrap(list.presence || all_hooks.try(:[], :#{key})).reverse_each do |block|
                   source_config.instance_exec(&block)
                 end
               end

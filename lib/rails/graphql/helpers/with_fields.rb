@@ -49,8 +49,7 @@ module Rails
 
         # See {Field}[rdoc-ref:Rails::GraphQL::Field] class.
         def field(name, *args, **xargs, &block)
-          xargs[:owner] = self
-          object = field_type.new(name, *args, **xargs, &block)
+          object = field_type.new(name, *args, **xargs, owner: self, &block)
 
           raise DuplicatedError, (+<<~MSG).squish if field?(object.name)
             The #{name.inspect} field is already defined and can't be redefined.

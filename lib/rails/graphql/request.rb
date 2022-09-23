@@ -41,8 +41,8 @@ module Rails
         autoload_under :steps do
           autoload :Authorizable
           autoload :Organizable
-          autoload :Prepareable
-          autoload :Resolveable
+          autoload :Preparable
+          autoload :Resolvable
         end
 
         autoload_under :helpers do
@@ -65,6 +65,7 @@ module Rails
       alias arguments args
 
       delegate :action_name, to: :controller, allow_nil: true
+      delegate :all_listeners, :all_events, to: :schema
 
       class << self
         # Shortcut for initialize, set context, and execute
@@ -92,16 +93,6 @@ module Rails
         @extensions = {}
 
         ensure_schema!
-      end
-
-      # Cache all the schema listeners for this current request
-      def all_listeners
-        @all_listeners ||= schema.all_listeners
-      end
-
-      # Cache all the schema events for this current request
-      def all_events
-        @all_events ||= schema.all_events
       end
 
       # Get the context of the request
@@ -223,6 +214,12 @@ module Rails
       # A shared way to cache information across the execution of an request
       def cache(key, init_value = nil, &block)
         @cache[key] ||= (init_value || block&.call || {})
+      end
+
+      # A better way to ensure that nil values in a hash cache won't be
+      # reinitialized
+      def nested_cache(key, sub_key)
+        (source = cache(key)).key?(sub_key) ? source[sub_key] : source[sub_key] = yield
       end
 
       private

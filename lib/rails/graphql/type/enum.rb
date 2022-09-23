@@ -23,7 +23,7 @@ module Rails
         inherited_collection :value_description, type: :hash
 
         # Define the methods for accessing the directives of each enum value
-        inherited_collection :value_directives, type: :hash
+        inherited_collection :value_directives, type: :hash_set
 
         class << self
           # Mark the enum as indexed, allowing values being set by number
@@ -89,11 +89,11 @@ module Rails
             MSG
 
             value = value.upcase
-            raise ArgumentError, (+<<~MSG).squish if all_values.include?(value)
+            raise ArgumentError, (+<<~MSG).squish if all_values&.include?(value)
               The "#{value}" is already defined for #{gql_name} enum.
             MSG
 
-            directives = Array.wrap(directives)
+            directives = ::Array.wrap(directives)
             directives << deprecated_klass.new(
               reason: (deprecated.is_a?(String) ? deprecated : nil),
             ) if deprecated.present?
@@ -105,7 +105,7 @@ module Rails
 
             values << value
             value_description[value] = desc unless desc.nil?
-            value_directives[value] = directives
+            value_directives[value] = directives if directives
           end
 
           # Check if a given +value+ is using a +directive+
@@ -114,16 +114,16 @@ module Rails
               The provided #{item_or_symbol.inspect} is not a valid directive.
             MSG
 
-            !!value_directives[as_json(value)]&.any? { |item| item.is_a?(directive) }
+            !!all_value_directives.try(:[], as_json(value))&.any?(directive)
           end
 
           # Build a hash with deprecated values and their respective reason for
           # logging and introspection purposes
           def all_deprecated_values
             @all_deprecated_values ||= begin
-              all_value_directives.to_a.inject({}) do |list, (value, dirs)|
+              all_value_directives&.each&.with_object({}) do |(value, dirs), hash|
                 obj = dirs&.find { |dir| dir.is_a?(deprecated_klass) }
-                obj ? list.merge(value => obj.args.reason) : list
+                hash[value] = obj.args.reason || true unless obj.nil?
               end
             end.freeze
           end
@@ -160,7 +160,7 @@ module Rails
 
         # Allow finding the indexed position of the value
         def to_i
-          self.class.all_values.find_index(@value)
+          values.find_index(@value)
         end
 
         # Checks if the current value is valid
@@ -170,33 +170,28 @@ module Rails
 
         # Gets all the description of the current value
         def description
-          @description ||= @value && self.class.all_value_description[@value]
+          return unless @value
+          @description ||= all_value_description.try(:[], @value)
         end
 
         # Gets all the directives associated with the current value
         def directives
-          @directives ||= @value && self.class.all_value_directives[@value]
+          return unless @value
+          @directives ||= all_value_directives.try(:[], @value)
         end
 
         # Checks if the current value is marked as deprecated
         def deprecated?
-          self.class.all_deprecated_values.include?(@value)
+          !!directives&.any?(Directive::DeprecatedDirective)
         end
 
         # Return the deprecated reason
         def deprecated_reason
-          deprecated_directive&.args&.reason
+          return unless deprecated?
+          directives.find do |dir|
+            dir.is_a?(Directive::DeprecatedDirective)
+          end.args.reason
         end
-
-        private
-
-          # Find and store the directive that marked the current value as
-          # deprecated
-          def deprecated_directive
-            @deprecated_directive ||= directives.find do |dir|
-              dir.is_a?(Directive::DeprecatedDirective)
-            end
-          end
       end
     end
   end

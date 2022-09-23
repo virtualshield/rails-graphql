@@ -19,7 +19,12 @@ module Rails
           other.delegate(:event_types, to: :class)
 
           other.define_method(:events) { @events ||= Hash.new { |h, k| h[k] = [] } }
+          other.define_method(:all_events) { @events if defined?(@events) }
+          other.define_method(:events?) { defined?(@events) && @events.present? }
+
           other.define_method(:listeners) { @listeners ||= Set.new }
+          other.define_method(:all_listeners) { @listeners if defined?(@listeners) }
+          other.define_method(:listeners?) { defined?(@listeners) && @listeners.present? }
         end
 
         # Helper module to define static list of valid event types
@@ -47,19 +52,6 @@ module Rails
                 end
               end
             end
-        end
-
-        # Mostly for correct inheritance on instances
-        def all_events
-          current = defined?(@events) ? @events : {}
-          return current unless defined? super
-          Helpers.merge_hash_array(current, super)
-        end
-
-        # Mostly for correct inheritance on instances
-        def all_listeners
-          current = (defined?(@listeners) && @listeners) || Set.new
-          defined?(super) ? (current + super) : current
         end
 
         # Add a new event listener for the given +event_name+. It is possible

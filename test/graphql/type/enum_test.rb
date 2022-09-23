@@ -186,8 +186,11 @@ class GraphQL_Type_EnumTest < GraphQL::TestCase
 
   def test_deprecated_reason
     obj = DESCRIBED_CLASS.new('A')
-    obj.stub(:deprecated_directive, double(args: double(reason: 'sample'))) do
-      assert_equal('sample', obj.deprecated_reason)
+    dir = double(args: double(reason: 'sample'), is_a?: ->(*) { true })
+    obj.stub(:deprecated?, true) do
+      obj.stub(:directives, [dir]) do
+        assert_equal('sample', obj.deprecated_reason)
+      end
     end
   end
 end

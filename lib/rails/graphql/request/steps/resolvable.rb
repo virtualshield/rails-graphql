@@ -4,15 +4,19 @@ module Rails
   module GraphQL
     class Request
       # Helper methods for the resolve step of a request
-      module Resolveable
+      module Resolvable
         # Resolve the object
         def resolve!
-          capture_exception(:resolve) { resolve }
+          resolve
+        rescue => error
+          report_exception(error)
         end
 
         protected
 
           # Normal mode of the resolve step
+          # TODO: Field a way to cache the resolved result, mostly for
+          # performance improvement in recursion
           def resolve
             return if skipped?
             invalid? ? try(:resolve_invalid) : resolve_then

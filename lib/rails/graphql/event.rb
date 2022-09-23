@@ -91,7 +91,7 @@ module Rails
         old_items, old_object, old_result, @object = @items, @object, @last_result, object
 
         catchable(:object) do
-          events ||= object.all_events[name]
+          events ||= object.all_events.try(:[], name)
           stop if events.blank?
 
           @items = @reverse ? events.reverse_each : events.each
@@ -138,7 +138,7 @@ module Rails
           @layers.unshift(layer)
           catch(layer) { yield }
         ensure
-          @layers.pop
+          @layers.shift
         end
 
         # Check for data based readers

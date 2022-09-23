@@ -13,22 +13,22 @@ module Rails
 
         def self.included(other)
           other.define_method(:arguments) do
-            defined?(@arguments) ? @arguments : {}
+            @arguments ||= {}
           end
 
           other.define_method(:all_arguments) do
-            arguments
+            @arguments if defined?(@arguments)
           end
 
           other.define_method(:arguments?) do
-            !!defined?(@arguments)
+            defined?(@arguments) && @arguments.present?
           end
         end
 
         module ClassMethods
           def inherited(subclass)
             super if defined? super
-            return if arguments.empty?
+            return if arguments.blank?
 
             new_arguments = Helpers.dup_all_with_owner(arguments.transform_values, subclass)
             subclass.instance_variable_set(:@arguments, new_arguments)
@@ -36,13 +36,13 @@ module Rails
         end
 
         def initialize(*args, arguments: nil, **xargs, &block)
-          @arguments = GraphQL.enumerate(arguments).map do |object|
-            raise ArgumentError, (+<<~MSG).squish unless object.is_a?(Argument)
-              The given "#{object.inspect}" is not a valid Argument object.
+          @arguments = GraphQL.enumerate(arguments).each_with_object({}) do |item, hash|
+            raise ArgumentError, (+<<~MSG).squish unless item.is_a?(Argument)
+              The given "#{item.inspect}" is not a valid Argument object.
             MSG
 
-            [object.name, Helpers.dup_with_owner(object, self)]
-          end.to_h unless arguments.nil?
+            hash[item.name] = Helpers.dup_with_owner(item, self)
+          end unless arguments.nil?
 
           super(*args, **xargs, &block)
         end
@@ -60,14 +60,13 @@ module Rails
 
         # See {Argument}[rdoc-ref:Rails::GraphQL::Argument] class.
         def argument(name, base_type, **xargs)
-          xargs[:owner] = self
-          object = GraphQL::Argument.new(name, base_type, **xargs)
+          object = GraphQL::Argument.new(name, base_type, **xargs, owner: self)
 
           raise DuplicatedError, (+<<~MSG).squish if has_argument?(object.name)
             The #{name.inspect} argument is already defined and can't be redefined.
           MSG
 
-          (@arguments ||= {})[object.name] = object
+          arguments[object.name] = object
         rescue DefinitionError => e
           raise e.class, +"#{e.message}\n  Defined at: #{caller(2)[0]}"
         end
@@ -113,14 +112,16 @@ module Rails
 
           # Show all the arguments as their inspect version
           def inspect_arguments
-            args = all_arguments.each_value.map(&:inspect)
+            args = all_arguments&.each_value&.map(&:inspect)
             args.presence && +"(#{args.join(', ')})"
           end
 
           # Check the equivalency of arguments
           def match_arguments?(other)
             l_args, r_args = all_arguments, other.all_arguments
-            l_args.size <= r_args.size && l_args.all? { |key, arg| arg =~ r_args[key] }
+            l_args.class == r_args.class &&
+              l_args.size <= r_args.size &&
+              l_args.all? { |key, arg| arg =~ r_args[key] }
           end
       end
     end

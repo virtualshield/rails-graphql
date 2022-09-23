@@ -17,7 +17,7 @@ module Rails
         VALID_MEMBER_TYPES = [Type::Object].freeze
 
         # Define the methods for accessing the members attribute
-        inherited_collection :members
+        inherited_collection :members, instance_reader: false
 
         class << self
           # Return the base type of the objects on this union

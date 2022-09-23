@@ -16,6 +16,7 @@ module Rails
         When true, the underlying element will be automatically marked as null.
       DESC
 
+      # TODO: On attach does not covers default value per operation variable scenario
       on(:attach) do |source|
         source.skip! if args[:if]
       end

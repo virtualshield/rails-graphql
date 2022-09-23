@@ -5,7 +5,7 @@ module Rails
     class Type
       # The introspection object for any kind of type
       class Object::TypeObject < Object
-        # List and not null are not actully types, but they still need to
+        # List and not null are not actually types, but they still need to
         # some how exist for introspection purposes
         FAKE_TYPES = {
           list: {
@@ -90,47 +90,53 @@ module Rails
           desc: 'NON_NULL and LIST only'
 
         def fields(include_deprecated:)
-          return [] unless current.object? || current.interface?
+          return EMPTY_ARRAY unless current.object? || current.interface?
 
-          list = current.fields.enum_for(:each_value)
-          list = list.reject { |field| field.using?(deprecated_directive) } \
-            unless include_deprecated
+          list =
+            if current.respond_to?(:enabled_fields)
+              current.enabled_fields
+            else
+              current.fields.values.select(&:enabled?)
+            end
+
+          unless include_deprecated
+            list = list.reject { |field| field.using?(deprecated_directive) }
+          end
 
           list
         end
 
         def enum_values(include_deprecated:)
-          return [] unless current.enum?
+          return EMPTY_ARRAY unless current.enum?
 
-          descs = all_value_description
+          descriptions = all_value_description
           deprecated = all_deprecated_values
 
           list = all_values.lazy
           list = list.reject { |value| deprecated.key?(value) } \
-            unless include_deprecated
+            unless include_deprecated || deprecated.nil?
 
           list.map do |value|
             OpenStruct.new(
               name: value,
-              description: descs[value],
-              is_deprecated: deprecated.key?(value),
-              deprecation_reason: deprecated[value],
+              description: descriptions[value],
+              is_deprecated: (deprecated.nil? ? false : deprecated.key?(value)),
+              deprecation_reason: deprecated.try(:[], value),
             )
           end
         end
 
         def interfaces
-          return [] unless current.object?
-          current.all_interfaces || []
+          (current.object? && current.all_interfaces) || EMPTY_ARRAY
         end
 
         def possible_types
-          return all_types if current.interface?
-          current.union? ? all_members : []
+          (current.interface? && current.all_types) ||
+            (current.union? && current.all_members) || EMPTY_ARRAY
         end
 
         def input_fields
-          current.input? ? current.fields.enum_for(:each_value) : []
+          (current.input? && current.enabled_fields) || EMPTY_ARRAY
         end
       end
     end

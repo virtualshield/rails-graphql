@@ -55,14 +55,13 @@ module Rails
           def implements(*others)
             return if others.blank?
 
-            cache = all_interfaces.dup
+            current = all_interfaces&.dup
             others.flat_map do |item|
               item = find_interface!(item)
-              next if cache.include?(item)
+              next if current&.include?(item) || interfaces.include?(item)
 
               item.implemented(self)
               interfaces << item
-              cache << item
             end
           end
 

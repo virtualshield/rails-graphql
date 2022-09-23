@@ -15,7 +15,8 @@ module Rails
         def self.included(other)
           other.extend(WithDirectives::DirectiveLocation)
           other.define_method(:directives) { @directives ||= Set.new }
-          other.class_attribute(:directive_location, instance_writer: false)
+          other.define_method(:all_directives) { @directives if defined?(@directives) }
+          other.define_method(:directives?) { defined?(@directives) && @directives.present? }
         end
 
         def initialize_copy(orig)
@@ -43,11 +44,6 @@ module Rails
           end
         end
 
-        # Mostly for correct inheritance on instances
-        def all_directives
-          defined?(@directives) ? @directives : Set.new
-        end
-
         # Use this method to assign directives to the given definition. You can
         # also provide a symbol as a first argument and extra named-arguments
         # to auto initialize a new instance of that directive.
@@ -63,9 +59,7 @@ module Rails
             list << item_or_symbol
           end
 
-          current = try(:all_directives) || @directives
-          items = GraphQL.directives_to_set(list, current, source: self)
-          directives.merge(items)
+          directives += GraphQL.directives_to_set(list, all_directives, source: self)
         rescue DefinitionError => e
           raise e.class, +"#{e.message}\n  Defined at: #{caller(2)[0]}"
         end
@@ -77,7 +71,7 @@ module Rails
             The provided #{item_or_symbol.inspect} is not a valid directive.
           MSG
 
-          all_directives.any? { |item| item.is_a?(directive) }
+          !!all_directives&.any?(directive)
         end
 
         alias has_directive? using?
@@ -85,22 +79,44 @@ module Rails
         # Override the +all_listeners+ method since callbacks can eventually be
         # attached to objects that have directives, which then they need to
         # be combined
-        def all_listeners
-          current = all_directives.map(&:all_listeners).reduce(:+) || Set.new
-          (defined?(super) ? super : Set.new) + current
+        def all_directive_listeners
+          inherited = super if defined?(super)
+          return inherited unless directives?
+
+          current = all_directives.map(&:all_listeners).compact.reduce(:+)
+          inherited.nil? ? current : inherited + current
         end
+
+        alias all_listeners all_directive_listeners
+
+        # Make sure to consider directive listeners while checking for listeners
+        def directive_listeners?
+          (defined?(super) && super) || all_directives&.any?(&:listeners?)
+        end
+
+        alias listeners? directive_listeners?
 
         # Override the +all_events+ method since callbacks can eventually be
         # attached to objects that have directives, which then they need to
         # be combined
-        def all_events
-          Helpers::AttributeDelegator.new do
-            base = defined?(super) ? super : {}
-            all_directives.map(&:all_events).inject(base) do |lhash, rhash|
-              Helpers.merge_hash_array(lhash, rhash)
-            end
+        def all_directive_events
+          inherited = super if defined?(super)
+          return inherited unless directives?
+
+          all_directives.inject(inherited || {}) do |result, directive|
+            next result if (val = directive.all_events).blank?
+            Helpers.merge_hash_array(result, val)
           end
         end
+
+        alias all_events all_directive_events
+
+        # Make sure to consider directive events while checking for events
+        def directive_events?
+          (defined?(super) && super) || all_directives&.any?(&:events?)
+        end
+
+        alias events? directive_events?
 
         # Validate all the directives to make sure the definition is valid
         def validate!(*)
@@ -115,7 +131,7 @@ module Rails
 
           # Helper method to inspect the directives
           def inspect_directives
-            all_directives.map(&:inspect).join(' ')
+            all_directives&.map(&:inspect)&.join(' ')
           end
 
         private

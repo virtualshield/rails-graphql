@@ -30,6 +30,7 @@ module Rails
         end
 
         # Access the operation through the Request::Arguments
+        # TODO: Operations will always be stack[1]
         def operation
           Request::Arguments.operation
         end

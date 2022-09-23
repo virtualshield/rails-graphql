@@ -73,6 +73,7 @@ GEM
     crass (1.0.6)
     docile (1.4.0)
     erubi (1.10.0)
+    flamegraph (0.9.5)
     globalid (1.0.0)
       activesupport (>= 5.0)
     i18n (1.10.0)
@@ -159,6 +160,7 @@ GEM
       activesupport (>= 5.2)
       sprockets (>= 3.0.0)
     sqlite3 (1.4.2)
+    stackprof (0.2.19)
     stringio (3.0.2)
     thor (1.2.1)
     thread_safe (0.3.6)
@@ -175,6 +177,7 @@ PLATFORMS
 DEPENDENCIES
   benchmark-ips (~> 2.8.2)
   bootsnap
+  flamegraph
   minitest (~> 5.14.0)
   minitest-reporters (~> 1.4.2)
   mysql2 (~> 0.5)
@@ -188,6 +191,7 @@ DEPENDENCIES
   ruby-prof
   simplecov (~> 0.20)
   sqlite3 (~> 1.4)
+  stackprof
 
 BUNDLED WITH
    2.1.4

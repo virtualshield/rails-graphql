@@ -30,7 +30,9 @@ module Rails
 
       module Proxied # :nodoc: all
         def all_arguments
-          field.arguments.merge(super)
+          inherited = field.all_arguments
+          return inherited unless defined?(@arguments)
+          inherited.blank? ? super : inherited + super
         end
 
         def has_argument?(name)
@@ -39,6 +41,34 @@ module Rails
 
         def arguments?
           super || field.arguments?
+        end
+
+        def all_events
+          if (inherited = super).nil?
+            field.all_events
+          elsif (proxied = field.all_events).nil?
+            inherited
+          else
+            Helpers.merge_hash_array(proxied, inherited)
+          end
+        end
+
+        def events?
+          super || field.events?
+        end
+
+        def all_listeners
+          if (inherited = super).nil?
+            field.all_listeners
+          elsif (proxied = field.all_listeners).nil?
+            inherited
+          else
+            proxied + inherited
+          end
+        end
+
+        def listeners?
+          super || field.listeners?
         end
       end
 
@@ -98,6 +128,34 @@ module Rails
         raise ArgumentError, (+<<~MSG).squish unless type_klass.output_type?
           The "#{type_klass.gql_name}" is not a valid output type.
         MSG
+      end
+
+      def all_events
+        if !defined?(@events) || !(local = @events).present?
+          super
+        elsif (inherited = super).nil?
+          local
+        else
+          Helpers.merge_hash_array(inherited, local)
+        end
+      end
+
+      def events?
+        super || directive_events?
+      end
+
+      def all_listeners
+        if !defined?(@listeners) || !(local = @listeners).present?
+          super
+        elsif (inherited = super).nil?
+          local
+        else
+          inherited + local
+        end
+      end
+
+      def listeners?
+        super || directive_listeners?
       end
 
       protected

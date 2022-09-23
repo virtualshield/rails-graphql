@@ -11,10 +11,8 @@ module Rails
         include ValueWriters
         include Directives
 
-        delegate :operation, to: :parent
+        delegate :operation, :request, to: :parent
         delegate :variables, to: :operation
-
-        parent_memoize :request
 
         attr_reader :name, :alias_name, :parent
 

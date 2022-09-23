@@ -7,7 +7,12 @@ module Rails
       module Organizable
         # Organize the object if it is not already organized
         def organize!
-          capture_exception(:organize, true) { organize }
+          organize unless defined?(@organized)
+        rescue => error
+          invalidate!
+          report_exception(error)
+        ensure
+          @organized = true
         end
 
         protected
@@ -26,7 +31,7 @@ module Rails
           def organize_then(after_block, &block)
             stacked do
               block.call
-              strategy.add_listener(self)
+              strategy.add_listeners_from(self)
               trigger_event(:organized)
               after_block.call if after_block.present?
             end
@@ -104,8 +109,8 @@ module Rails
                   Unable to use variable "$#{var_name}" in the current scope
                 MSG
 
-                op_vars ||= operation.all_arguments || {}
-                raise ArgumentError, (+<<~MSG).squish unless (op_var = op_vars[var_name]).present?
+                op_var = (op_vars ||= operation.all_arguments).try(:[], var_name)
+                raise ArgumentError, (+<<~MSG).squish unless op_var.present?
                   The #{operation.log_source} does not define the $#{var_name} variable
                 MSG
 

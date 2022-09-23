@@ -23,7 +23,7 @@ module Rails
 
         delegate :operations, :errors, :response, :schema, to: :request
 
-        attr_reader :listeners, :request, :context
+        attr_reader :listeners, :request, :context, :stage
 
         class << self
           # Check if the strategy can resolve the given +request+. By default,
@@ -37,7 +37,8 @@ module Rails
         def initialize(request)
           @request = request
           @objects_pool = {}
-          collect_request_listeners
+          @listeners = Hash.new { |h, k| h[k] = Set.new }
+          add_listeners_from(request)
         end
 
         # Executes the strategy in the normal mode
@@ -47,17 +48,12 @@ module Rails
 
         # Find a given +type+ and store it on request cache
         def find_type!(type)
-          request.cache(:types)[type] ||= schema.find_type!(type)
+          request.nested_cache(:types, type) { schema.find_type!(type) }
         end
 
         # Find a given +directive+ and store it on request cache
         def find_directive!(directive)
-          request.cache(:directives)[directive] ||= schema.find_directive!(directive)
-        end
-
-        # Check if it's enabled to collect listeners
-        def add_listeners?
-          !listeners.frozen?
+          request.nested_cache(:directives, directive) { schema.find_directive!(directive) }
         end
 
         # Check if any listener were actually added
@@ -156,11 +152,9 @@ module Rails
         end
 
         # Check what kind of event listeners the object have, in order to speed
-        # up processing by avoiding unnecesary event instances
-        def add_listener(object)
-          return unless add_listeners?
-
-          object.all_listeners.each do |event_name|
+        # up processing by avoiding unnecessary event instances
+        def add_listeners_from(object)
+          object.all_listeners&.each do |event_name|
             listeners[event_name] << object
           end
         end
@@ -188,26 +182,16 @@ module Rails
             end
           end
 
-          # Clean and enable the collecting of listeners
-          def release_listeners!
-            @listeners = @base_listeners.dup
-          end
-
-          # Disable the collecting of listeners
-          def lock_listeners!
-            listeners.freeze
-          end
-
-          # A shortcut for +release_listeners!+ and +lock_listeners!+
+          # A start of the organize step
           def collect_listeners
-            release_listeners!
+            @stage = :organize
             yield
-            lock_listeners!
           end
 
           # This is where the strategy is most effective. By preparing the tree,
           # it can load data in a pretty smart way
           def collect_data(force = false)
+            @stage = :prepare
             @data_pool = {}
             @context = request.build(Request::Context)
 
@@ -215,10 +199,9 @@ module Rails
             yield if force || listening_to?(:prepare)
           end
 
-          # Initiate the response context, named
-          # ({Request::Context}[rdoc-ref:Rails::GraphQL::Request::Context])
-          # and start collecting results
+          # Start collecting results
           def collect_response
+            @stage = :resolve
             yield
           ensure
             @context = @objects_pool = @data_pool = @listeners = nil
@@ -234,17 +217,6 @@ module Rails
             return result << current.public_send(key) if current.respond_to?(key)
 
             result << current[key] if current.respond_to?(:key?) && current.key?(key)
-          end
-
-        private
-
-          # Collect the base listeners from the request
-          def collect_request_listeners
-            @listeners = Hash.new { |h, k| h[k] = [] }
-            add_listener(request)
-
-            lock_listeners!
-            @base_listeners = @listeners
           end
       end
     end

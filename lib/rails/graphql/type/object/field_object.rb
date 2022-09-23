@@ -38,16 +38,22 @@ module Rails
         end
 
         def args
-          all_arguments.values
+          all_arguments&.values || EMPTY_ARRAY
         end
 
         def deprecated?
-          current.using?(deprecated_directive)
+          !deprecated_instance.nil?
         end
 
         def deprecation_reason
-          current.all_directives.find { |item| item.is_a?(deprecated_directive) }&.args&.reason
+          deprecated_instance&.args&.reason
         end
+
+        private
+
+          def deprecated_instance
+            current.all_directives&.find(deprecated_directive)
+          end
       end
     end
   end

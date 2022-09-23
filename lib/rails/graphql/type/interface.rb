@@ -22,18 +22,10 @@ module Rails
 
         self.field_type = Field::OutputField
 
+        # Define the methods for accessing the types attribute
+        inherited_collection :types, instance_reader: false
+
         class << self
-          # Stores the list of types associated with the interface so it can
-          # be used during the execution step to find the right object type
-          def types
-            @types ||= Set.new
-          end
-
-          # Get the list of all inherited-aware associated types
-          def all_types
-            (superclass.try(:all_types) || Set.new) + (defined?(@types) ? @types : Set.new)
-          end
-
           # Check if the other type is equivalent, by checking if the other is
           # an object and the object implements this interface
           def =~(other)
@@ -60,7 +52,7 @@ module Rails
 
           def inspect
             return super if self.eql?(Type::Interface)
-            fields = @fields.values.map(&:inspect)
+            fields = @fields.values.map(&:inspect) if defined?(@fields)
             fields = fields.presence && +" {#{fields.join(', ')}}"
 
             directives = inspect_directives

@@ -8,27 +8,18 @@ module Rails
       # Component is an abstraction of any possible type of object represented
       # by a not of the document of a request. This class helps building
       # cross-component features, like holding event listeners, setting up
-      # commom initializer and providing helpers
+      # common initializer and providing helpers
       class Component
         extend ActiveSupport::Autoload
 
         include Request::Organizable
-        include Request::Prepareable
-        include Request::Resolveable
+        include Request::Preparable
+        include Request::Resolvable
 
         class << self
           # Return the kind of the component
           def kind
             @kind ||= name.demodulize.underscore.to_sym
-          end
-
-          # Helper to memoize results from parent delegation
-          def parent_memoize(*methods)
-            methods.each do |method_name|
-              define_method(method_name) do
-                parent.public_send(method_name)
-              end
-            end
           end
         end
 
@@ -77,7 +68,7 @@ module Rails
           @skipped = true
         end
 
-        # Normaly, components are not assignable, only fields are
+        # Normally, components are not assignable, only fields are
         def assignable?
           false
         end
@@ -97,13 +88,10 @@ module Rails
 
           # Run a given block and ensure to capture exceptions to set them as
           # errors
-          def capture_exception(stage, invalidate = false)
-            yield
-          rescue => error
-            invalidate! if invalidate
+          def report_exception(error)
             stack_path = request.stack_to_path
             stack_path << gql_name if respond_to?(:gql_name) && gql_name.present?
-            request.exception_to_error(error, self, path: stack_path, stage: stage.to_s)
+            request.exception_to_error(error, self, path: stack_path, stage: strategy.stage.to_s)
           end
       end
     end

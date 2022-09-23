@@ -48,6 +48,9 @@ module Rails
     # Stores the version of the GraphQL spec used for this implementation
     SPEC_VERSION = ::GQLParser::VERSION
 
+    # Just a reusable instance of an empty array
+    EMPTY_ARRAY = [].freeze
+
     # Runtime registry for request execution time
     RuntimeRegistry = Class.new { thread_mattr_accessor :gql_runtime }
 
@@ -165,8 +168,9 @@ module Rails
 
           unless event.nil?
             begin
-              item.assing_owner!(event.source)
+              item.assign_owner!(event.source)
               event.trigger_object(item)
+              item.validate!
             rescue => error
               raise StandardError, (+<<~MSG).squish
                 Unable to #{event.name} the @#{item.gql_name} directive: #{error.message}
@@ -174,7 +178,6 @@ module Rails
             end
           end
 
-          others << item
           result << item
         end
       end
