@@ -55,7 +55,7 @@ module Rails
             result[setting] = (xargs[setting] || send(:"gql_#{setting}"))
           end
 
-          result[:hash] = result.delete(:query_cache_key)
+          request_xargs[:hash] = gql_query_cache_key
           ::Rails::GraphQL::Request.execute(query, **request_xargs)
         end
 
