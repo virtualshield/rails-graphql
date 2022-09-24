@@ -381,7 +381,7 @@ module Rails
         # Little helper to build an +OpenStruct+ ensure the given +value+ is a
         # +Hash+. It can also +transform_keys+ with the given block
         def build_ostruct(value, &block)
-          raise ::ArgumentError, (+<<~MSG).squish unless value.is_a?(Hash)
+          raise ::ArgumentError, (+<<~MSG).squish unless value.is_a?(::Hash)
             The "#{value.class.name}" is not a valid hash.
           MSG
 

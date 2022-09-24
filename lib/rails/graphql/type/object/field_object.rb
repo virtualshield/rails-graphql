@@ -52,7 +52,11 @@ module Rails
         private
 
           def deprecated_instance
-            current.all_directives&.find(deprecated_directive)
+            current.all_directives&.reverse_each do |item|
+              return item if item.class <= deprecated_directive
+            end
+
+            nil
           end
       end
     end

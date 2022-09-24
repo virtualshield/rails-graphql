@@ -167,11 +167,11 @@ module Rails
       # namespace or in the base +:base+ namespace
       def fetch(key_or_name, prevent_register: nil, **xargs)
         if prevent_register != true
-          skip_register << Array.wrap(prevent_register)
+          skip_register << ::Array.wrap(prevent_register)
           register_pending!
         end
 
-        possibilities = Array.wrap(key_or_name)
+        possibilities = ::Array.wrap(key_or_name)
         possibilities << xargs[:fallback] if xargs.key?(:fallback)
 
         base_class = xargs.fetch(:base_class, :Type)

@@ -7,6 +7,7 @@ module Rails
         def find(value = nil, &block)
           block ||= !value.is_a?(Module) ? value.method(:==) : ->(val) { val.class <= value }
           reverse_each { |item| return item if block.call(item) }
+          nil
         end
 
         # Check if a given +value+ is included in any of the definitions
@@ -27,6 +28,13 @@ module Rails
         # Overrides the lazy operator
         def lazy
           (@type == :set) ? super.uniq : super
+        end
+
+        # Allow concatenating objects
+        def +(other)
+          result = to_a
+          result = result.to_set if @type == :set
+          result + other
         end
       end
     end

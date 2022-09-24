@@ -84,7 +84,7 @@ module Rails
 
         # Check if the given +value+ is a valid array as input
         def valid_input_array?(value, deep)
-          return false unless value.is_a?(Array)
+          return false unless value.is_a?(::Array)
 
           value.all? do |val|
             (val.nil? && nullable?) || (leaf_type? || !deep) ||

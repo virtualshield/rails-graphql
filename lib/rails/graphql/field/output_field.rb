@@ -79,7 +79,7 @@ module Rails
         @method_name = method_name.to_s.underscore.to_sym unless method_name.nil?
 
         if deprecated.present?
-          xargs[:directives] = Array.wrap(xargs[:directives])
+          xargs[:directives] = ::Array.wrap(xargs[:directives])
           xargs[:directives] << Directive::DeprecatedDirective.new(
             reason: (deprecated.is_a?(String) ? deprecated : nil),
           )
@@ -141,7 +141,7 @@ module Rails
       end
 
       def events?
-        super || directive_events?
+        super || defined?(@events) && @events.present?
       end
 
       def all_listeners
@@ -155,7 +155,7 @@ module Rails
       end
 
       def listeners?
-        super || directive_listeners?
+        super || defined?(@listeners) && @listeners.present?
       end
 
       protected

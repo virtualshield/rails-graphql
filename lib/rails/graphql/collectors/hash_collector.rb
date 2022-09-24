@@ -28,7 +28,7 @@ module Rails
 
         # Add the given +value+ to the given +key+.
         def add(key, value)
-          @data.is_a?(Array) ? @data << value : @data[key.to_s] = value
+          @data.is_a?(::Array) ? @data << value : @data[key.to_s] = value
         end
 
         alias safe_add add
@@ -40,7 +40,7 @@ module Rails
 
         # Mark the start of a new element on the array.
         def next
-          return unless @stack.last.is_a?(Array)
+          return unless @stack.last.is_a?(::Array)
           @stack.last << @data
           @data = {}
         end

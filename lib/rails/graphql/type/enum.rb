@@ -94,7 +94,7 @@ module Rails
             MSG
 
             directives = ::Array.wrap(directives)
-            directives << deprecated_klass.new(
+            directives << Directive::DeprecatedDirective.new(
               reason: (deprecated.is_a?(String) ? deprecated : nil),
             ) if deprecated.present?
 
@@ -114,7 +114,7 @@ module Rails
               The provided #{item_or_symbol.inspect} is not a valid directive.
             MSG
 
-            !!all_value_directives.try(:[], as_json(value))&.any?(directive)
+            all_value_directives.try(:[], as_json(value))&.any?(directive) || false
           end
 
           # Build a hash with deprecated values and their respective reason for
@@ -122,7 +122,7 @@ module Rails
           def all_deprecated_values
             @all_deprecated_values ||= begin
               all_value_directives&.each&.with_object({}) do |(value, dirs), hash|
-                obj = dirs&.find { |dir| dir.is_a?(deprecated_klass) }
+                obj = dirs&.find { |dir| dir.is_a?(Directive::DeprecatedDirective) }
                 hash[value] = obj.args.reason || true unless obj.nil?
               end
             end.freeze
@@ -137,12 +137,6 @@ module Rails
               #{inspect_directives}
             INFO
           end
-
-          private
-
-            def deprecated_klass
-              Directive::DeprecatedDirective
-            end
         end
 
         attr_reader :value
@@ -182,7 +176,7 @@ module Rails
 
         # Checks if the current value is marked as deprecated
         def deprecated?
-          !!directives&.any?(Directive::DeprecatedDirective)
+          directives&.any?(Directive::DeprecatedDirective) || false
         end
 
         # Return the deprecated reason

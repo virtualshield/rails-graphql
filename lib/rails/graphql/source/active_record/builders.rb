@@ -62,7 +62,7 @@ module Rails
       # Build arguments that correctly reflect the primary key, as a single
       # column or as an array of columns
       def build_primary_key_arguments(holder)
-        if primary_key.is_a?(Array)
+        if primary_key.is_a?(::Array)
           primary_key.each { |key| holder.argument(key, :id, null: false) }
         else
           holder.argument(primary_key, :id, null: false)

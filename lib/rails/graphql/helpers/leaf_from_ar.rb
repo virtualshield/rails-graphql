@@ -99,7 +99,7 @@ module Rails
             if settings.key?(:cast)
 
           ar_adapter_type[adapter] = settings[:type] if settings.key?(:type)
-          ar_adapter_aliases[adapter] += Array.wrap(settings[:aliases]) \
+          ar_adapter_aliases[adapter] += ::Array.wrap(settings[:aliases]) \
             if settings.key?(:aliases)
         end
 

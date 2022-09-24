@@ -32,20 +32,23 @@ class GraphQL_Type_EnumTest < GraphQL::TestCase
   end
 
   def test_as_json
-    assert_nil(DESCRIBED_CLASS.as_json(nil))
+    sample_class = unmapped_class(Rails::GraphQL::Type::Enum)
+    %w[A B C].each(&sample_class.method(:add))
 
-    test_value = DESCRIBED_CLASS.new('A')
-    assert_equal('A', DESCRIBED_CLASS.as_json(test_value))
+    assert_nil(sample_class.as_json(nil))
 
-    DESCRIBED_CLASS.stub(:indexed?, true) do
-      assert_equal('B', DESCRIBED_CLASS.as_json(1))
+    test_value = sample_class.new('A')
+    assert_equal('A', sample_class.as_json(test_value))
+
+    sample_class.stub(:indexed?, true) do
+      assert_equal('B', sample_class.as_json(1))
     end
 
-    DESCRIBED_CLASS.stub(:indexed?, false) do
-      assert_equal('1', DESCRIBED_CLASS.as_json(1))
+    sample_class.stub(:indexed?, false) do
+      assert_equal('1', sample_class.as_json(1))
     end
 
-    assert_equal('ABC', DESCRIBED_CLASS.as_json('abc'))
+    assert_equal('ABC', sample_class.as_json('abc'))
   end
 
   def test_deserialize
@@ -74,20 +77,25 @@ class GraphQL_Type_EnumTest < GraphQL::TestCase
 
       DESCRIBED_CLASS.add('D')
       assert_includes(DESCRIBED_CLASS.values, 'D')
-      assert_includes(DESCRIBED_CLASS.value_directives.keys, 'D')
+      refute_includes(DESCRIBED_CLASS.value_directives.keys, 'D')
+      refute_includes(DESCRIBED_CLASS.value_description.keys, 'D')
 
       DESCRIBED_CLASS.add('D', desc: 'Just D')
       assert_includes(DESCRIBED_CLASS.value_description.keys, 'D')
       assert_equal('Just D', DESCRIBED_CLASS.value_description['D'])
 
-      DESCRIBED_CLASS.stub(:deprecated_klass, fake_directive) do
-        stubbed_directives_to_set do
-          DESCRIBED_CLASS.add('D', deprecated: 'done')
-          assert_equal([{ reason: 'done' }], DESCRIBED_CLASS.value_directives['D'])
+      stubbed_directives_to_set do
+        DESCRIBED_CLASS.add('D', deprecated: 'done')
+        directives = DESCRIBED_CLASS.value_directives['D']
+        assert_equal(1, directives.size)
+        assert_instance_of(deprecated_directive, directives[0])
+        assert_equal('done', directives[0].args.reason)
 
-          DESCRIBED_CLASS.add('D', directives: 'Other', deprecated: true)
-          assert_equal(['Other', { reason: nil }], DESCRIBED_CLASS.value_directives['D'])
-        end
+        DESCRIBED_CLASS.add('D', directives: 'other', deprecated: true)
+        directives = DESCRIBED_CLASS.value_directives['D']
+        assert_equal(2, directives.size)
+        assert_equal('other', directives[0])
+        assert_instance_of(deprecated_directive, directives[1])
       end
     end
   end
@@ -100,7 +108,7 @@ class GraphQL_Type_EnumTest < GraphQL::TestCase
     test_values = { 'B' => [], 'C' => [test_directive.new] }
 
     DESCRIBED_CLASS.stub(:as_json, passthrough) do
-      DESCRIBED_CLASS.stub(:value_directives, test_values) do
+      DESCRIBED_CLASS.stub(:all_value_directives, test_values) do
         refute(DESCRIBED_CLASS.value_using?('A', test_directive))
         refute(DESCRIBED_CLASS.value_using?('B', test_directive))
         refute(DESCRIBED_CLASS.value_using?('C', missing_directive))
@@ -111,20 +119,18 @@ class GraphQL_Type_EnumTest < GraphQL::TestCase
   end
 
   def test_all_deprecated_values
-    with_reaons = OpenStruct.new(args: double(reason: 'sample'))
-    without_reason = OpenStruct.new(args: double(reason: nil))
+    with_reaons = deprecated_directive.new(reason: 'sample')
+    without_reason = deprecated_directive.new(reason: nil)
     test_values = { 'A' => [], 'B' => [''], 'C' => [with_reaons], 'D' => ['', without_reason] }
 
     DESCRIBED_CLASS.stub(:all_value_directives, test_values) do
-      DESCRIBED_CLASS.stub(:deprecated_klass, OpenStruct) do
-        result = DESCRIBED_CLASS.all_deprecated_values
+      result = DESCRIBED_CLASS.all_deprecated_values
 
-        assert_kind_of(Hash, result)
-        assert_includes(result.keys, 'C')
-        assert_includes(result.keys, 'D')
-        assert_equal('sample', result['C'])
-        assert_nil(result['D'])
-      end
+      assert_kind_of(Hash, result)
+      assert_includes(result.keys, 'C')
+      assert_includes(result.keys, 'D')
+      assert_equal('sample', result['C'])
+      assert(result['D'])
     end
   end
 
@@ -177,7 +183,8 @@ class GraphQL_Type_EnumTest < GraphQL::TestCase
   end
 
   def test_deprecated_ask
-    DESCRIBED_CLASS.stub(:all_deprecated_values, { 'A' => 'test' }) do
+    test_directive = unmapped_class(deprecated_directive).new
+    DESCRIBED_CLASS.stub(:all_value_directives, { 'A' => [test_directive] }) do
       assert(DESCRIBED_CLASS.new('A').deprecated?)
       refute(DESCRIBED_CLASS.new(nil).deprecated?)
       refute(DESCRIBED_CLASS.new(1).deprecated?)
@@ -192,5 +199,9 @@ class GraphQL_Type_EnumTest < GraphQL::TestCase
         assert_equal('sample', obj.deprecated_reason)
       end
     end
+  end
+
+  def deprecated_directive
+    Rails::GraphQL::Directive::DeprecatedDirective
   end
 end

@@ -46,7 +46,7 @@ module Rails
       # Allow chaging most of the general kind-independent initialize settings
       def apply_changes(**xargs, &block)
         if (deprecated = xargs[:deprecated])
-          xargs[:directives] = Array.wrap(xargs[:directives])
+          xargs[:directives] = ::Array.wrap(xargs[:directives])
           xargs[:directives] << Directive::DeprecatedDirective.new(
             reason: (deprecated.is_a?(String) ? deprecated : nil),
           )

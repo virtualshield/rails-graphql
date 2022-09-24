@@ -42,7 +42,7 @@ module Rails
           item['locations'] ||= [{ line: line.to_i, column: col.to_i }] \
             if line.present? && col.present?
 
-          item['path'] = path if path.present? && path.is_a?(Array)
+          item['path'] = path if path.present? && path.is_a?(::Array)
           item['extensions'] = extra.deep_stringify_keys if extra.present?
           item['locations']&.map!(&:stringify_keys)
 

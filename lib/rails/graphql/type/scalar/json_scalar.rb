@@ -14,11 +14,11 @@ module Rails
 
         class << self
           def valid_input?(value)
-            valid_token?(value, :hash) || value.is_a?(Hash)
+            valid_token?(value, :hash) || value.is_a?(::Hash)
           end
 
           def valid_output?(value)
-            value.is_a?(Hash)
+            value.is_a?(::Hash)
           end
 
           def to_json(value)

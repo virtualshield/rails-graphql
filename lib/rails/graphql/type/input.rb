@@ -48,7 +48,7 @@ module Rails
           def valid_input?(value)
             value = JSON.parse(value) if valid_token?(value, :hash)
             value = value.to_h if value.respond_to?(:to_h)
-            return false unless value.is_a?(Hash)
+            return false unless value.is_a?(::Hash)
 
             fields = enabled_fields
             value = value.transform_keys { |key| key.to_s.camelize(:lower) }
@@ -89,7 +89,7 @@ module Rails
             def parse_arguments(value, using:, key: :name)
               value = JSON.parse(value) if valid_token?(value, :hash)
               value = value.to_h if value.respond_to?(:to_h)
-              value = {} unless value.is_a?(Hash)
+              value = {} unless value.is_a?(::Hash)
               value = value.stringify_keys
 
               enabled_fields.each.with_object({}) do |field, hash|

@@ -40,8 +40,8 @@ module Rails
           # Plain objects can check if a given value is a valid member
           def valid_member?(value)
             return true if valid_assignment?(value)
-            checker = value.is_a?(Hash) ? :key? : :respond_to?
-            value = value.with_indifferent_access if value.is_a?(Hash)
+            checker = value.is_a?(::Hash) ? :key? : :respond_to?
+            value = value.with_indifferent_access if value.is_a?(::Hash)
             fields.values.all? { |field| value.public_send(checker, field.method_name) }
           end
 
