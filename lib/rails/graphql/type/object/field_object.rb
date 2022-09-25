@@ -18,8 +18,6 @@ module Rails
           a value of a specific type.
         DESC
 
-
-
         field :name,               :string,        null: false, method_name: :gql_name
         field :description,        :string
         field :args,               '__InputValue', full: true
@@ -28,7 +26,11 @@ module Rails
         field :deprecation_reason, :string
 
         def description
-          current.description(schema.namespace)
+          if current.method(:description).arity == 0
+            current.description
+          else
+            current.description(schema.namespace)
+          end
         end
 
         def build_type

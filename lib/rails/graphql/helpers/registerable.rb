@@ -15,14 +15,6 @@ module Rails
           # Marks if the object is one of those defined on the spec, which
           # marks the object as part of the introspection system
           other.class_attribute :spec_object, instance_accessor: false, default: false
-
-          # If a type is marked as abstract, it's then used as a base and it
-          # won't appear in the introspection
-          other.class_attribute :abstract, instance_writer: false, default: false
-
-          # Marks if the object is one of those defined on the spec, which
-          # marks the object as part of the introspection system
-          other.class_attribute :spec_object, instance_writer: false, default: false
         end
 
         # Here we wait for the class to be fully loaded so that we can
@@ -76,11 +68,6 @@ module Rails
           # used as method
           def desc(value)
             self.description = value
-          end
-
-          # Change the gql name of the object
-          def rename!(name)
-            @gql_name = name
           end
       end
     end

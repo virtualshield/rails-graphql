@@ -145,8 +145,10 @@ class Integration_Memory_StarWarsIntrospectionTest < GraphQL::IntegrationTestCas
   end
 
   def test_gql_introspection
-    # File.write('test/assets/mem.gql', SCHEMA.to_gql)
-    result = gql_file('mem').split('').sort.join.squish
-    assert_equal(result, SCHEMA.to_gql.split('').sort.join.squish)
+    result = SCHEMA.to_gql
+    expected = gql_file('mem').split('').sort.join.squish
+
+    # File.write('test/assets/mem.gql', result)
+    assert_equal(expected, result.split('').sort.join.squish)
   end
 end

@@ -85,7 +85,8 @@ module Rails
       # incompatible it will display an warning. This can make such warning be
       # silenced.
       config.silence_import_warnings = false
-      # Enable the ability to active custom descriptions by i18n
+
+      # Enable the ability to active custom descriptions using i18n
       config.enable_i18n_descriptions = true
 
       # Specify the scopes for I18n translations

@@ -21,6 +21,8 @@ module Rails # :nodoc:
       def desc(value)
         field.description = value
       end
+
+      alias description desc
     end
   end
 end

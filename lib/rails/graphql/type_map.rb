@@ -94,6 +94,7 @@ module Rails
           fetch(object_key, base_class: base_class, namespaces: namespaces[0], exclusive: true)
         end
 
+        # TODO Warn when the base key is being assigned to a different object
         # Register the main type object for both key and name
         add(namespaces[0], base_class, object_key, object)
         add(namespaces[0], base_class, object_name, alias_proc)

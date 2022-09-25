@@ -1,29 +1,29 @@
 en:
   graphql:
-    sample_1: "A"
+    sample_a: A
     translate:
-      sample_2: "B"
+      sample_b: B
       field:
-        sample_3: "C"
+        sample_c: C
         schema:
-          sample_field: "Field"
-          sample_4: "D"
+          sample_field: Field
+          sample_d: D
       argument:
         sample_field:
-          arg_sample: "Argument"
+          arg_sample: Argument
       interface:
-        translate: "Interface"
+        interface_desc: Interface
       enum:
-        translate: "Enum"
+        enum_desc: Enum
       object:
-        translate: "Object"
+        object_desc: Object
       union:
-        translate: "Union"
+        union_desc: Union
       input_object:
-        translate_input: "Input"
+        input_desc_input: Input
       scalar:
-        translate: "Scalar"
+        scalar_desc: Scalar
     field:
-      sample_5: "E"
+      sample_e: E
       schema:
-        sample_6: "F"
+        sample_f: F

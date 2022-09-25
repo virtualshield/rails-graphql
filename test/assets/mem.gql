@@ -144,19 +144,19 @@ interface Character {
 "A mechanical creature in the Star Wars universe"
 # Assigned to MemoryTest::Droid class
 type Droid implements Character {
-  "The id of the character"
+  "The id of the droid"
   id: ID!
   
-  "The name of the character"
+  "The name of the droid"
   name: String
   
-  "The friends of the character, or an empty list if they have none"
+  "The friends of the droid, or an empty list if they have none"
   friends: [Character]
   
   "Which movies they appear in"
   appearsIn: [Episode]
   
-  "All secrets about their past"
+  "Construction date and the name of the designer"
   secretBackstory: String
   
   "The primary function of the droid"
@@ -166,19 +166,19 @@ type Droid implements Character {
 "A humanoid creature in the Star Wars universe"
 # Assigned to MemoryTest::Human class
 type Human implements Character {
-  "The id of the character"
+  "The id of the human"
   id: ID!
   
-  "The name of the character"
+  "The name of the human"
   name: String
   
-  "The friends of the character, or an empty list if they have none"
+  "The friends of the human, or an empty list if they have none"
   friends: [Character]
   
   "Which movies they appear in"
   appearsIn: [Episode]
   
-  "All secrets about their past"
+  "Where are they from and how they came to be who they are"
   secretBackstory: String
   
   "The home planet of the human, or null if unknown"

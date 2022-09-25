@@ -20,7 +20,7 @@ module GraphQL
 
     def setup
       BASE_SCHEMA.type_map.base_classes.each do |base_class|
-        GraphQL.const_get(base_class).descendants.each(&:register!)
+        ::GraphQL.const_get(base_class).descendants.each(&:register!)
       end
 
       index = BASE_SCHEMA.type_map.instance_variable_get(:@index)[:base][:Type]

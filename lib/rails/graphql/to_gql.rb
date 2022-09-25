@@ -183,7 +183,7 @@ module Rails
           visit_directives(o.directives, collector)
 
           collector.indented(' {', '}') do
-            o.fields.each_value { |x| visit(x, collector) }
+            o.fields&.each_value { |x| visit(x, collector) }
           end
         end
 
@@ -195,7 +195,7 @@ module Rails
           visit_directives(o.directives, collector)
 
           collector.indented(' {', '}') do
-            o.fields.each_value { |x| visit(x, collector) }
+            o.fields&.each_value { |x| visit(x, collector) }
           end
         end
 
@@ -216,7 +216,7 @@ module Rails
           visit_directives(o.directives, collector)
 
           collector.indented(' {', '}') do
-            o.fields.each_value { |x| visit(x, collector) }
+            o.fields&.each_value { |x| visit(x, collector) }
           end
         end
 
@@ -296,8 +296,10 @@ module Rails
         end
 
         def visit_description(o, collector)
-          return unless @with_descriptions && o.description?
-          desc = o.description(@namespace)
+          return unless @with_descriptions
+
+          args = o.method(:description).arity == 0 ? [] : [@namespace]
+          return if (desc = o.description(*args)).nil?
 
           if desc.lines.size === 1
             collector << desc.inspect

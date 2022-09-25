@@ -11,6 +11,7 @@ module Rails
 
         # Here we define a couple of attributes used by registration
         def self.extended(other)
+          # TODO: Move to registerable
           # An abstract type won't appear in the introspection and will not be
           # instantiated by requests
           other.class_attribute :abstract, instance_accessor: false, default: false
