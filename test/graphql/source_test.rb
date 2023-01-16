@@ -24,10 +24,6 @@ class GraphQL_SourceTest < GraphQL::TestCase
   end
 
   def test_base_name
-    described_class.stub(:abstract?, true) do
-      assert_nil(described_class.base_name)
-    end
-
     described_class.stub(:abstract?, false) do
       assert_equal('DESCRIBED', described_class.base_name)
     end
@@ -62,15 +58,7 @@ class GraphQL_SourceTest < GraphQL::TestCase
   end
 
   def test_built_ask
-    refute_predicate(described_class, :built?)
-
-    described_class.stub_ivar(:@built, false) do
-      refute_predicate(described_class, :built?)
-    end
-
-    described_class.stub_ivar(:@built, true) do
-      assert_predicate(described_class, :built?)
-    end
+    skip
   end
 
   def test_attach_fields_bang
@@ -166,30 +154,8 @@ class GraphQL_SourceTest < GraphQL::TestCase
     end
   end
 
-  def test_skips_for
-    described_class.stub(:all_segmented_skip_fields, { input: Set[:a] }) do
-      described_class.stub(:all_skip_fields, Set[:b]) do
-        result = described_class.send(:skips_for, double(kind: :input_object))
-        assert_equal(Set[:b, :a], result)
-
-        result = described_class.send(:skips_for, double(kind: :object))
-        assert_equal(Set[:b], result)
-      end
-    end
-  end
-
   def test_build_bang
     skip
-  end
-
-  def test_run_hooks
-    assert_respond_to(described_class, :run_start_hooks)
-    assert_respond_to(described_class, :run_finish_hooks)
-    assert_respond_to(described_class, :run_object_hooks)
-    assert_respond_to(described_class, :run_input_hooks)
-    assert_respond_to(described_class, :run_query_hooks)
-    assert_respond_to(described_class, :run_mutation_hooks)
-    assert_respond_to(described_class, :run_subscription_hooks)
   end
 
   protected

@@ -190,30 +190,36 @@ module Rails
 
         # Run a configuration block for the given +type+
         def configure_fields(type, &block)
-          schema_scoped_config(self, type).instance_exec(&block)
+          WithSchemaFields::ScopedConfig.new(self, type).instance_exec(&block)
         end
 
         # Import a class of fields into the given section of schema fields
-        def import_into(type, klass, ignore_abstract: false)
-          return if ignore_abstract && klass.try(:abstract?)
+        def import_into(type, source, ignore_abstract: false)
+          return if ignore_abstract && source.try(:abstract?)
 
-          case klass
+          case source
           when Alternative::Query
             # Import an alternative declaration of a field
-            add_proxy_field(type, klass.field)
+            add_proxy_field(type, source.field)
+          when Array
+            # Import a list of fields
+            source.each { |field| add_proxy_field(type, field) }
+          when Hash, Concurrent::Map
+            # Import a keyed list of fields
+            source.each_value { |field| add_proxy_field(type, field) }
           when Helpers::WithFields
             # Import a set of fields
-            klass.fields.each_value { |field| add_proxy_field(type, field) }
+            source.fields.each_value { |field| add_proxy_field(type, field) }
           when Helpers::WithSchemaFields
             # Import other schema fields
             (type == :all ? TYPE_FIELD_CLASS.each_key : type.then).each do |import_type|
-              klass.fields_for(import_type)&.each_value do |field|
+              source.fields_for(import_type)&.each_value do |field|
                 add_proxy_field(import_type, field)
               end
             end
           else
             return if GraphQL.config.silence_import_warnings
-            GraphQL.logger.warn(+"Unable to import #{klass.inspect} into #{self.name}.")
+            GraphQL.logger.warn(+"Unable to import #{source.inspect} into #{self.name}.")
           end
         end
 
@@ -295,13 +301,6 @@ module Rails
             end
           RUBY
         end
-
-        protected
-
-          # Create a new instace of the +ScopedConfig+ class
-          def schema_scoped_config(*args)
-            WithSchemaFields::ScopedConfig.new(*args)
-          end
       end
     end
   end

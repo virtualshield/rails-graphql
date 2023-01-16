@@ -12,6 +12,17 @@ module Rails
           report_exception(error)
         end
 
+        # Marks that the field has prepared data that came outside from the
+        # request
+        def prepared_data!
+          @prepared_data = true
+        end
+
+        # Checks if the field has prepared data
+        def prepared_data?
+          defined?(@prepared_data) && @prepared_data
+        end
+
         protected
 
           # Normal mode of the prepare step

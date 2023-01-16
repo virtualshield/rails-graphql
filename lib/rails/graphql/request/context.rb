@@ -23,9 +23,14 @@ module Rails
           @stack.shift
         end
 
-        # Find the parent object
-        def parent
-          @stack[1]
+        # Return a duplicated version of the stack, for safety
+        def stack
+          @stack.dup
+        end
+
+        # Get a value at the given +index+
+        def at(index)
+          @stack[index]
         end
 
         # Get all ancestors objects
@@ -33,10 +38,15 @@ module Rails
           @stack[1..-1]
         end
 
+        # Find the parent object
+        def parent
+          at(1)
+        end
+
         # Get the current value, which basically means basically the first item
-        # on the current stafck
+        # on the current stack
         def current_value
-          @stack[0]
+          at(0)
         end
 
         # Change the current value, either form hits or the actual value

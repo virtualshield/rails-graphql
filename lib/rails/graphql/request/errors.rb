@@ -5,7 +5,7 @@ module Rails
     class Request
       # = GraphQL Request Errors
       #
-      # This class is inspired by +ActiveModel::Erros+. The idea is to hold all
+      # This class is inspired by +ActiveModel::Errors+. The idea is to hold all
       # the errors that happened during the execution of a request. It also
       # helps to export such information to the result object.
       class Errors
@@ -27,7 +27,7 @@ module Rails
           @items.deep_dup
         end
 
-        # Add +message+ to the list of errors. Any other keywork argument will
+        # Add +message+ to the list of errors. Any other keyword argument will
         # be used on set on the +:extensions+ part.
         #
         # ==== Options
@@ -47,6 +47,16 @@ module Rails
           item['locations']&.map!(&:stringify_keys)
 
           @items << item.compact
+        end
+
+        # Dump the necessary information from errors to a cached operation
+        def cache_dump
+          @items.select { |item| item.dig('extensions', 'stage') == 'organize' }
+        end
+
+        # Load the necessary information from a cached request data
+        def cache_load(data)
+          @items += data
         end
       end
     end

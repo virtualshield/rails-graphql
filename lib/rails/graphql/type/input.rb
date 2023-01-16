@@ -46,7 +46,9 @@ module Rails
 
           # Check if a given value is a valid non-deserialized input
           def valid_input?(value)
-            value = JSON.parse(value) if valid_token?(value, :hash)
+            value = GraphQL.config.literal_input_parser.call(value) \
+              if valid_token?(value, :hash)
+
             value = value.to_h if value.respond_to?(:to_h)
             return false unless value.is_a?(::Hash)
 
@@ -59,8 +61,9 @@ module Rails
             fields&.all? { |item| item.valid_input?(value[item.gql_name]) }
           end
 
-          # Turn the given value into an isntance of the input object
-          def deserialize(value)
+          # Turn the given value into an instance of the input object
+          def deserialize(value = nil, **value_as_hash)
+            value = value_as_hash if value.nil?
             new(OpenStruct.new(parse_arguments(value, using: :deserialize)))
           end
 
@@ -87,7 +90,9 @@ module Rails
           private
 
             def parse_arguments(value, using:, key: :name)
-              value = JSON.parse(value) if valid_token?(value, :hash)
+              value = GraphQL.config.literal_input_parser.call(value) \
+                if valid_token?(value, :hash)
+
               value = value.to_h if value.respond_to?(:to_h)
               value = {} unless value.is_a?(::Hash)
               value = value.stringify_keys

@@ -65,6 +65,13 @@ class Integration_PersistedQueryTest < GraphQL::IntegrationTestCase
     assert_result('One!', :one, hash: key, cache_only: true)
   end
 
+  def test_execute_compiled_query
+    query = GraphQL.compile('{ one }', schema: SCHEMA)
+    result = GraphQL.execute(query, compiled: true, schema: SCHEMA)
+
+    assert_equal('One!', result.dig('data', 'one'))
+  end
+
   private
 
     def cache_key(key = nil, version = nil)

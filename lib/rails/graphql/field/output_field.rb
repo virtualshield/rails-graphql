@@ -77,6 +77,7 @@ module Rails
 
       def initialize(*args, method_name: nil, deprecated: false, **xargs, &block)
         @method_name = method_name.to_s.underscore.to_sym unless method_name.nil?
+        @broadcastable = xargs.delete(:broadcastable) if xargs.key?(:broadcastables)
 
         if deprecated.present?
           xargs[:directives] = ::Array.wrap(xargs[:directives])
@@ -156,6 +157,10 @@ module Rails
 
       def listeners?
         super || defined?(@listeners) && @listeners.present?
+      end
+
+      def broadcastable?
+        defined?(@broadcastable) && @broadcastable
       end
 
       protected

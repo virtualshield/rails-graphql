@@ -3,10 +3,10 @@ source 'https://rubygems.org'
 
 gemspec
 
-gem 'rails', '~> 6.0.3'
+gem 'rails', '~> 7.0.4'
 gem 'bootsnap' # required by the Rails apps generated in tests
 gem 'ruby-prof', platform: :ruby
-gem 'pry-byebug'
+gem 'debug'
 
 gem 'flamegraph'
 gem 'stackprof'

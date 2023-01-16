@@ -89,14 +89,40 @@ module Rails
           response.safe_add(name, nil) if stacked_selection?
         end
 
-        # Stores all the used arguments to report not used ones
+        # Stores all the used variables to report not used ones
         def used_variables
           @used_variables ||= Set.new
+        end
+
+        # Stores all the used fragments
+        def used_fragments
+          @used_fragments ||= Set.new
         end
 
         # A fast way to access the correct display name for log or errors
         def log_source
           @log_source ||= name.blank? ? type : +"#{name} #{type}"
+        end
+
+        # The hash of operations must take into consideration the used fragments
+        def hash
+          return super unless defined?(@used_fragments)
+
+          super ^ used_fragments.reduce(0) do |value, fragment|
+            request.fragments[fragment].hash
+          end
+        end
+
+        # Build the cache object
+        def cache_dump
+          super.merge(type: self.class)
+        end
+
+        # Organize from cache data
+        def cache_load(data)
+          @name = data[:node][1]
+
+          super
         end
 
         protected
@@ -152,13 +178,12 @@ module Rails
             request.instance_variable_get(:@used_variables).merge(arguments.keys)
 
             # Clear anything that is not necessary anymore
-            @arguments = nil
             @used_variables = nil
           end
 
           # If there is another operation with the same name already defined,
           # raise an error. If an anonymous was started, then any other
-          # operatios is invalid.
+          # operations is invalid.
           def check_invalid_operation!
             other = request.document[0].find do |other|
               other != @node && name == other[1]

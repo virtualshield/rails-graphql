@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-module Rails # :nodoc:
-  module GraphQL # :nodoc:
+module Rails
+  module GraphQL
     # Helper class to be used while configuring a field using a block. An
     # instance of this class works as proxy for changes to the actual field.
-    Field::ScopedConfig = Struct.new(:field, :receiver) do
+    class Field::ScopedConfig < Struct.new(:field, :receiver)
       delegate :argument, :ref_argument, :id_argument, :use, :internal?, :disabled?,
-        :enabled?, :disable!, :enable!, :authorize, :desc, to: :field
+        :enabled?, :disable!, :enable!, :authorize, to: :field
 
       delegate_missing_to :receiver
 

@@ -4,30 +4,30 @@ SimpleCov.start do
 
   add_filter '/test/'
 
-  add_group 'Collectors', '/graphql/collectors'
-  add_group 'Definition', ['/graphql/type', '/graphql/introspection', '/graphql/schema',
-    '/graphql/directive']
-  add_group 'Field', '/graphql/field'
+  add_group 'Definition', ['/graphql/type', '/graphql/directive']
+  add_group 'Field', ['/graphql/alternative', '/graphql/field']
   add_group 'Helpers', '/graphql/helpers'
-  add_group 'Native', '/graphql/native'
   add_group 'Rails', '/graphql/railties'
-  add_group 'Request', '/graphql/request'
-  add_group 'Source', '/graphql/source'
+  add_group 'Request', ['/graphql/collectors', '/graphql/request']
+  add_group 'Subscription', '/graphql/subscription'
+  add_group 'Source', ['/graphql/adapters', '/graphql/source']
 end
 
 require 'minitest/autorun'
 require 'minitest/reporters'
+require 'active_record'
 require 'rails-graphql'
-require 'pry'
+require 'debug'
 
 $config = Rails::GraphQL.config
 $config.logger = ActiveSupport::TaggedLogging.new(Logger.new('/dev/null'))
+# ActiveRecord::Base.logger = Logger.new(STDOUT)
 
 require_relative './test_ext'
 
 Minitest::Reporters.use!(Minitest::Reporters::SpecReporter.new)
 
-# Load all files for coverage ensurance
+# Load all files for coverage insurance
 Rails::GraphQL.eager_load!
 
 module GraphQL

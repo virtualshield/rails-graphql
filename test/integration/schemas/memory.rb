@@ -25,7 +25,7 @@ module MemoryTest
   end
 
   class Human < Character
-    attr_accessor :home_planet
+    attr_accessor :home_planet, :greeting
   end
 
   class Droid < Character
@@ -39,33 +39,38 @@ module MemoryTest
         name: 'Luke Skywalker',
         friends: ['1002', '1003', '2000', '2001'],
         appears_in: [0, 1, 2],
-        home_planet: 'Tatooine'
+        home_planet: 'Tatooine',
+        greeting: 'Hi %s!',
       ),
       '1001' => Human.new(
         id: '1001',
         name: 'Darth Vader',
         friends: ['1004'],
         appears_in: [0, 1, 2],
-        home_planet: 'Tatooine'
+        home_planet: 'Tatooine',
+        greeting: 'Be gone %s!',
       ),
       '1002' => Human.new(
         id: '1002',
         name: 'Han Solo',
         friends: ['1000', '1003', '2001'],
-        appears_in: [0, 1, 2]
+        appears_in: [0, 1, 2],
+        greeting: 'Hello %s!',
       ),
       '1003' => Human.new(
         id: '1003',
         name: 'Leia Organa',
         friends: ['1000', '1002', '2000', '2001'],
         appears_in: [0, 1, 2],
-        home_planet: 'Alderaan'
+        home_planet: 'Alderaan',
+        greeting: 'Greetings %s!',
       ),
       '1004' => Human.new(
         id: '1004',
         name: 'Wilhuff Tarkin',
         friends: ['1001'],
-        appears_in: [0]
+        appears_in: [0],
+        greeting: 'Sup %s!',
       ),
     },
     droids: {
@@ -151,6 +156,14 @@ class StartWarsMemSchema < GraphQL::Schema
 
     field :home_planet, :string,
       desc: 'The home planet of the human, or null if unknown'
+
+    field :greeting, :string,
+      desc: 'A greeting phrase from this person to someone',
+      arguments: arg(:name, :string, null: false)
+
+    def greeting(name:)
+      format(current_value.greeting, name)
+    end
   end
 
   object 'Droid' do

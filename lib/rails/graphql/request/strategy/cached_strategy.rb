@@ -20,9 +20,10 @@ module Rails
 
           # Resolve whenever it has a cache directive on any of the operations
           def can_resolve?(request)
-            request.operations.each_value.any? do |op|
-              op.data&.directives&.any? { |dir| directive_name(dir) == 'cached' }
-            end
+            false
+            # request.operations.each_value.any? do |op|
+            #   op.data&.directives&.any? { |dir| directive_name(dir) == 'cached' }
+            # end
           end
 
           private

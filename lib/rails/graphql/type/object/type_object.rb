@@ -103,7 +103,7 @@ module Rails
             list = list.reject { |field| field.using?(deprecated_directive) }
           end
 
-          list
+          list.reject(&:internal?)
         end
 
         def enum_values(include_deprecated:)

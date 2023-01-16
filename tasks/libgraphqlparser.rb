@@ -9,8 +9,4 @@ Rake::ExtensionTask.new(:gql_parser, gem_spec) do |ext|
   ext.lib_dir = 'lib'
   ext.cross_compile = true
   ext.cross_platform = %w[x86-mingw32 x64-mingw32]
-
-  ext.cross_compiling do |spec|
-    spec.files.reject! { |path| File.fnmatch?('ext/*', path) }
-  end
 end

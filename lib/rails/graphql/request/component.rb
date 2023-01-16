@@ -45,7 +45,7 @@ module Rails
 
         # Check if the component is in a invalid state
         def invalid?
-          defined?(@invalid) && @invalid
+          defined?(@invalid) && @invalid.present?
         end
 
         # Check if the component is marked as skipped
@@ -59,8 +59,8 @@ module Rails
         end
 
         # Mark the component as invalid
-        def invalidate!
-          @invalid = true
+        def invalidate!(type = true)
+          @invalid = type
         end
 
         # Skip the component
@@ -71,6 +71,28 @@ module Rails
         # Normally, components are not assignable, only fields are
         def assignable?
           false
+        end
+
+        # Get an identifier of the component
+        def hash
+          @node.hash
+        end
+
+        # Build the cache object
+        def cache_dump
+          hash = { node: @node }
+          hash[:invalid] = @invalid if defined?(@invalid) && @invalid != :authorization
+          hash[:skipped] = @skipped if defined?(@skipped) && @skipped
+          hash.merge!(super)
+          hash
+        end
+
+        # Organize from cache data
+        def cache_load(data)
+          @node = data[:node]
+          @invalid = data[:invalid] if data.key?(:invalid)
+          @skipped = data[:skipped] if data.key?(:skipped)
+          super
         end
 
         protected
@@ -89,9 +111,27 @@ module Rails
           # Run a given block and ensure to capture exceptions to set them as
           # errors
           def report_exception(error)
+            Backtrace.print(error, self, request)
+
             stack_path = request.stack_to_path
             stack_path << gql_name if respond_to?(:gql_name) && gql_name.present?
             request.exception_to_error(error, self, path: stack_path, stage: strategy.stage.to_s)
+          end
+
+        private
+
+          # Properly transform values to string gid
+          def all_to_gid(enum)
+            (enum.is_a?(Enumerable) ? enum : enum.then).each do |item|
+              item.to_gid.to_s
+            end
+          end
+
+          # Properly recover values from gid string
+          def all_from_gid(enum)
+            (enum.is_a?(Enumerable) ? enum : enum.then).each do |item|
+              GraphQL::GlobalID.find(item)
+            end
           end
       end
     end

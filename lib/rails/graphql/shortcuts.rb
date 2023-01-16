@@ -5,6 +5,7 @@ module GraphQL
   # List of constant shortcuts, as string to not trigger autoload
   CONST_SHORTCUTS = {
     CacheKey:           '::Rails::GraphQL::CacheKey',
+    Channel:            '::Rails::GraphQL::Channel',
     Controller:         '::Rails::GraphQL::Controller',
     Directive:          '::Rails::GraphQL::Directive',
     Field:              '::Rails::GraphQL::Field',
@@ -28,6 +29,7 @@ module GraphQL
     ProxyField:         '::Rails::GraphQL::Field::ProxyField',
     AssociationField:   '::Rails::GraphQL::Field::AssociationField',
 
+    BaseSource:         '::Rails::GraphQL::Source::BaseSource',
     ActiveRecordSource: '::Rails::GraphQL::Source::ActiveRecordSource',
   }.freeze
 
@@ -58,6 +60,16 @@ module GraphQL
     end
 
     alias perform execute
+
+    # See {Request}[rdoc-ref:Rails::GraphQL::Request]
+    def compile(*args, **xargs)
+      Rails::GraphQL::Request.compile(*args, **xargs)
+    end
+
+    # See {Request}[rdoc-ref:Rails::GraphQL::Request]
+    def valid?(*args, **xargs)
+      Rails::GraphQL::Request.valid?(*args, **xargs)
+    end
 
     # See {CONST_SHORTCUTS}[rdoc-ref:GraphQL::CONST_SHORTCUTS]
     def const_defined?(name, *)

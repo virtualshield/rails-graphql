@@ -5,16 +5,12 @@ module Rails
     # = GraphQL Source
     #
     # Source is an abstract object that can contains fields, objects, and
-    # informations that them are delivered to the relative schemas throughout
-    # proxies, ensuring that it still kepps the main ownership of the objects
-    #
-    # TODO: Create a PlainSource as a super set of alternative sets
+    # information that them are delivered to the relative schemas throughout
+    # proxies, ensuring that it still keeps the main ownership of the objects
     class Source
       extend ActiveSupport::Autoload
 
       extend Helpers::InheritedCollection
-      extend Helpers::WithSchemaFields
-      extend Helpers::WithAssignment
       extend Helpers::WithNamespace
       extend Helpers::WithEvents
       extend Helpers::WithCallbacks
@@ -22,12 +18,29 @@ module Rails
       include Helpers::Instantiable
 
       DEFAULT_NAMESPACES = %i[base].freeze
+      ATTACH_FIELDS_STEP = -> do
+        if fields?
+          attach_fields!(type, fields)
+          attach_scoped_arguments_to(fields.values)
+        end
+      end
+
+      autoload :Base
+      autoload :Builder
 
       autoload :ScopedArguments
       autoload :ActiveRecordSource
 
+      extend Source::Builder
+
       # Helper class to be used as the +self+ in configuration blocks
-      ScopedConfig = Struct.new(:receiver, :self_object) do
+      ScopedConfig = Struct.new(:receiver, :self_object, :type) do
+        def safe_field(name, *args, **xargs, &block)
+          return if receiver.send(:skip_field?, name, on: type)
+          self_object.safe_field(name, *args, **xargs, &block)
+        end
+
+        # skip_field?(item.name, on: holder.kind)
         def respond_to_missing?(method_name, include_private = false)
           self_object.respond_to?(method_name, include_private) ||
             receiver.respond_to?(method_name, include_private)
@@ -47,33 +60,22 @@ module Rails
 
       # List of hook names used while describing a new source. This basically
       # set the order of the execution of the hooks while validating the hooks
-      # callbacks using the +on+ method. Make sure to kepp the +finish+ hook
-      # always at the end of the list
+      # callbacks using the +on+ method
       class_attribute :hook_names, instance_accessor: false,
-        default: %i[start object input query mutation finish].to_set
+        default: %i[start object input query mutation subscription].to_set
 
       # The list of hooks defined in order to describe a source
       inherited_collection :hooks, instance_reader: false, type: :hash_array
-
-      # The name of the class (or the class itself) to be used as superclass for
-      # the generate GraphQL object type of this source
-      class_attribute :object_class, instance_accessor: false,
-        default: '::Rails::GraphQL::Type::Object'
-
-      # The name of the class (or the class itself) to be used as superclass for
-      # the generate GraphQL input type of this source
-      class_attribute :input_class, instance_accessor: false,
-        default: '::Rails::GraphQL::Type::Input'
-
-      # Mark if the objects created from this source will build fields for
-      # associations associated to the object
-      class_attribute :with_associations, instance_accessor: false, default: true
 
       # A list of fields to skip when performing shared methods
       inherited_collection :skip_fields, instance_reader: false, type: :hash_set
 
       # A list of fields to skip but segmented by holder source
       inherited_collection :segmented_skip_fields, instance_reader: false, type: :hash_set
+
+      # A list of fields that should only be included. Available only when using
+      # individual builders
+      inherited_collection :segmented_only_fields, instance_reader: false, type: :hash_set
 
       self.abstract = true
 
@@ -92,7 +94,7 @@ module Rails
 
         # Get the main name of the source
         def base_name
-          name.demodulize[0..-7] unless abstract?
+          name.demodulize[0..-7]
         end
 
         # :singleton-method:
@@ -112,51 +114,10 @@ module Rails
           base_sources.reverse_each.find { |source| object <= source.assigned_class }
         end
 
-        # Return the GraphQL object type associated with the source. It will
-        # create one if it's not defined yet. The created class will be added
-        # to the +::GraphQL+ namespace with the addition of any namespace of the
-        # currect class
-        def object
-          @object ||= create_type(superclass: object_class)
-        end
-
-        # Return the GraphQL input type associated with the source. It will
-        # create one if it's not defined yet. The created class will be added
-        # to the +::GraphQL+ namespace with the addition of any namespace of the
-        # currect class
-        def input
-          @input ||= create_type(superclass: input_class)
-        end
-
-        # Check if the object was already built
-        def built?
-          defined?(@built) && !!@built
-        end
-
-        # Build all the objects associated with this source
-        def build!
-          return if built?
-
-          raise DefinitionError, (+<<~MSG).squish if abstract
-            Abstract source #{name} cannot be built.
-          MSG
-
-          @built = true
-
-          catch(:done) do
-            hook_names.each do |hook_name|
-              break if hook_name === :finish
-              catch(:skip) { send(:"run_#{hook_name}_hooks") }
-            end
-          end
-
-          catch(:skip) { send(:run_finish_hooks) } if respond_to?(:run_finish_hooks, true)
-        end
-
         # Attach all defined schema fields into the schemas using the namespaces
         # configured for the source
-        def attach_fields!
-          schemas.each { |schema| schema.import_into(:all, self) }
+        def attach_fields!(type = :all, from = self)
+          schemas.each { |schema| schema.import_into(type, from) }
         end
 
         # Find all the schemas associated with the configured namespaces
@@ -168,16 +129,6 @@ module Rails
 
         protected
 
-          # Wait the end of the class in order to create the objects
-          def inherited(subclass)
-            subclass.abstract = false
-            super if defined? super
-
-            # TODO: Base here is not ideal but works
-            load_proc = -> { subclass.build! unless subclass.abstract? }
-            GraphQL.type_map.add_dependencies(load_proc, to: :base)
-          end
-
           # Find a given +type+ on the same namespaces of the source. It will
           # raise an exception if the +type+ can not be found
           def find_type!(type, **xargs)
@@ -187,50 +138,11 @@ module Rails
           end
 
           # A little bypass to the actual type map after register method which
-          # just add the namesapace by default
+          # just add the namespace by default
           # See {TypeMap#after_register}[rdoc-ref:Rails::GraphQL::TypeMap#after_register]
           def type_map_after_register(*args, **xargs, &block)
             xargs[:namespaces] ||= namespaces
             GraphQL.type_map.after_register(*args, **xargs, &block)
-          end
-
-          # A helper method to create an enum type
-          def create_enum(enum_name, values, **xargs, &block)
-            enumerator = values.each_pair if values.respond_to?(:each_pair)
-            enumerator ||= values.each.with_index
-
-            xargs = xargs.reverse_merge(once: true)
-            create_type(:enum, as: enum_name.classify, **xargs) do
-              indexed! if enumerator.first.last.is_a?(Numeric)
-              enumerator.sort_by(&:last).map(&:first).each(&method(:add))
-              instance_exec(&block) if block.present?
-            end
-          end
-
-          # Helper method to create a class based on the given +type+ and allows
-          # several other settings to be executed on it
-          def create_type(type = nil, **xargs, &block)
-            name = "#{gql_module.name}::#{xargs.delete(:as) || base_name}"
-            superclass = xargs.delete(:superclass)
-            with_owner = xargs.delete(:with_owner)
-
-            if superclass.nil?
-              superclass = type.to_s.classify
-            elsif superclass.is_a?(String)
-              superclass = superclass.constantize
-            end
-
-            source = self
-            Schema.send(:create_type, name, superclass, **xargs) do
-              include Helpers::WithOwner if with_owner
-              set_namespaces(*source.namespaces)
-
-              self.owner = source if respond_to?(:owner=)
-              self.assigned_to = source.safe_assigned_class \
-                if source.assigned? && is_a?(Helpers::WithAssignment)
-
-              instance_exec(&block) if block.present?
-            end
           end
 
           # Add fields to be skipped on the given +source+ as the segment
@@ -247,8 +159,8 @@ module Rails
               The #{hook_name.inspect} is not a valid hook method.
             MSG
 
-            if built?
-              catch(:skip) { send(:"run_#{hook_name}_hooks", block) }
+            if built?(hook_name)
+              hook_scope_for(hook_name).instance_exec(&block)
             else
               hooks[hook_name.to_sym].public_send(unshift ? :unshift : :push, block)
             end
@@ -290,47 +202,42 @@ module Rails
             name.start_with?('GraphQL::') ? module_parent : ::GraphQL
           end
 
-          # Get the list of fields to be skipped from the given +holder+ as the
-          # segment source
-          def skips_for(holder)
-            segment = holder.kind
-            segment = :input if segment.eql?(:input_object)
-            segmented = all_segmented_skip_fields[segment]
+          # Check if a given field +name+ should be skipped on the give type
+          def skip_field?(name, on:)
+            on = :input if on == :input_object
+            name = name.to_s.underscore
 
-            inherited = all_skip_fields
-            return inherited if segmented.blank?
-            inherited.blank? ? segmented : inherited + segmented
+            all_skip_fields&.include?(name) ||
+              all_segmented_skip_fields.try(:[], on)&.include?(name) ||
+              all_segmented_only_fields.try(:[], on)&.exclude?(name)
+          end
+
+          # Run a list of hooks using the +source+ as the instance of the block
+          def run_hooks(hook_name, source = self)
+            all_hooks.try(:[], hook_name.to_sym)&.reverse_each do |block|
+              source.instance_exec(&block)
+            end
           end
 
         private
 
+          # Make sure to reset the value of +abstract+
+          def inherited(subclass)
+            subclass.abstract = false
+            super if defined? super
+          end
+
           # Find all classes that inherits from source that are abstract,
           # meaning that they are a base sources
           def base_sources
-            @@base_sources ||= begin
-              GraphQL.config.sources.map(&:constantize).to_set
-            end
+            @@base_sources ||= GraphQL.config.sources.map(&:constantize).to_set
           end
 
-          {
-            start:        'self',
-            finish:       'self',
-            object:       'Helpers::AttributeDelegator.new(self, :object)',
-            input:        'Helpers::AttributeDelegator.new(self, :input)',
-            query:        format('schema_scoped_config(self, %s)', ':query'),
-            mutation:     format('schema_scoped_config(self, %s)', ':mutation'),
-            subscription: format('schema_scoped_config(self, %s)', ':subscription'),
-          }.each do |key, object|
-            class_eval <<-RUBY, __FILE__, __LINE__ + 1
-              def run_#{key}_hooks(list = nil)
-                source_config = Source::ScopedConfig.new(self, #{object})
-                ::Array.wrap(list.presence || all_hooks.try(:[], :#{key})).reverse_each do |block|
-                  source_config.instance_exec(&block)
-                end
-              end
-            RUBY
-          end
       end
+
+      step(:query, &ATTACH_FIELDS_STEP)
+      step(:mutation, &ATTACH_FIELDS_STEP)
+      step(:subscription, &ATTACH_FIELDS_STEP)
     end
   end
 end

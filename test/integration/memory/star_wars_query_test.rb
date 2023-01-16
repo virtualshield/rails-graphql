@@ -123,6 +123,15 @@ class Integration_Memory_StarWarsQueryTest < GraphQL::IntegrationTestCase
     GQL
   end
 
+  def test_query_with_field_argument
+    vader = { name: 'Darth Vader', greeting: 'Be gone Luke!' }
+    assert_result({ data: { human: vader } }, <<~GQL, variables: { name: 'Luke' })
+      query WithFieldArgument($name: String!) {
+        human(id: "1001") { name greeting(name: $name) }
+      }
+    GQL
+  end
+
   def test_query_with_fragment
     luke = { name: 'Luke Skywalker', homePlanet: 'Tatooine' }
     leia = { name: 'Leia Organa', homePlanet: 'Alderaan' }
@@ -136,6 +145,33 @@ class Integration_Memory_StarWarsQueryTest < GraphQL::IntegrationTestCase
         name
         homePlanet
       }
+    GQL
+  end
+
+  def test_query_with_fragment_and_field_argument
+    vader = { name: 'Darth Vader', greeting: 'Be gone Luke!' }
+    assert_result({ data: { human: vader } }, <<~GQL, variables: { name: 'Luke' })
+      query WithFieldArgument($name: String!) {
+        human(id: "1001") { ...HumanFragment }
+      }
+
+      fragment HumanFragment on Human { name greeting(name: $name) }
+    GQL
+  end
+
+  def test_query_with_fragment_and_field_argument_and_default_values
+    first = { human: { name: 'Darth Vader', greeting: 'Be gone Luke!' } }
+    second = { human: { name: 'Darth Vader', greeting: 'Be gone Leia!' } }
+    assert_result({ data: { first: first, second: second } }, <<~GQL)
+      query first($id: ID! = 1001, $name: String! = "Luke") {
+        human(id: $id) { ...HumanFragment }
+      }
+
+      query second($id: ID! = 1001, $name: String! = "Leia") {
+        human(id: $id) { ...HumanFragment }
+      }
+
+      fragment HumanFragment on Human { name greeting(name: $name) }
     GQL
   end
 

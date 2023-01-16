@@ -15,19 +15,10 @@ module Rails
         @id_columns ||= begin
           result = Set.new(GraphQL.enumerate(primary_key))
           each_reflection.each_with_object(result) do |item, arr|
-            arr << item.foreign_key.to_s if item.belongs_to?
+            next unless item.belongs_to?
+            arr << item.foreign_key.to_s
+            arr << item.foreign_key if item.polymorphic?
           end
-        end
-      end
-
-      # Get all unique attribute names that exists in the current model
-      # TODO: Improve this by combining with the above method
-      def reflection_attributes(holder)
-        result = Set.new(GraphQL.enumerate(primary_key))
-        each_reflection(holder).each_with_object(result) do |item, items|
-          next unless item.belongs_to?
-          items << item.foreign_key.to_s
-          items << item.foreign_key if item.polymorphic?
         end
       end
 
@@ -37,7 +28,7 @@ module Rails
       def each_attribute(holder, skip_primary_key = true)
         adapter_key = GraphQL.ar_adapter_key(adapter_name)
 
-        skip_fields = skips_for(holder)&.map(&:to_s) || Set.new
+        skip_fields = Set.new
         skip_fields << model.inheritance_column
         skip_fields << primary_key unless skip_primary_key
 
@@ -47,11 +38,8 @@ module Rails
       end
 
       # Iterate over all the model reflections
-      def each_reflection(holder = nil, &block)
-        skip_fields = skips_for(holder)&.map(&:to_s)&.to_set if holder
+      def each_reflection(&block)
         model._reflections.each_value.select do |reflection|
-          next if skip_fields&.include?(reflection.name.to_s)
-
           reflection = model._reflections[reflection.to_s] \
             unless reflection.is_a?(abstract_reflection)
 
@@ -84,23 +72,22 @@ module Rails
         def build_enum_types
           return remove_instance_variable(:@enums) if enums.blank?
 
-          @enums = enums.map do |attribute, setting|
+          @enums = enums.each_with_object({}) do |(attribute, setting), hash|
             class_name = base_name + attribute.to_s.classify
-            [attribute.to_s, create_enum(class_name, setting, once: true)]
+            hash[attribute.to_s] = create_enum(class_name, setting, once: true)
           rescue DuplicatedError
             next
-          end.compact.to_h.freeze
+          end.freeze
         end
 
         # Build all necessary attribute fields into the given +holder+
         def build_attribute_fields(holder, **field_options)
-          attributes_as_ids = reflection_attributes(holder)
           each_attribute(holder) do |key, type, **options|
             next if skip.include?(key) || holder.field?(key)
 
             str_key = key.to_s
             type = (defined?(@enums) && @enums.key?(str_key) && @enums[str_key]) ||
-              (attributes_as_ids.include?(str_key) && :id) || type
+              (id_columns.include?(str_key) && :id) || type
 
             options[:null] = !attr_required?(key) unless options.key?(:null)
             holder.field(key, type, **options.merge(field_options[key] || {}))
@@ -109,15 +96,18 @@ module Rails
 
         # Build all necessary reflection fields into the given +holder+
         def build_reflection_fields(holder)
-          each_reflection(holder) do |item|
-            next if holder.field?(item.name)
+          return unless with_associations?
+
+          each_reflection do |item|
+            next if holder.field?(item.name) || skip_field?(item.name, on: holder.kind)
+
             type_map_after_register(item.klass) do |type|
               next unless (type.object? && type.try(:assigned_to) != item.klass) ||
                 type.interface?
 
               options = reflection_to_options(item)
 
-              if type <= Source::ActiveRecordSource
+              if type <= Source::Base
                 source_name = item.collection? ? type.plural : type.singular
                 proxy_options = options.merge(alias: reflection.name, of_type: :proxy)
 
@@ -137,6 +127,8 @@ module Rails
 
         # Build all +accepts_nested_attributes_for+ inside the input object
         def build_reflection_inputs(holder)
+          return unless with_associations?
+
           model.nested_attributes_options.each_key do |reflection_name|
             next if (reflection = model._reflect_on_association(reflection_name)).nil?
 
@@ -151,7 +143,7 @@ module Rails
           end
         end
 
-        # Transform a replection into a field options
+        # Transform a reflection into a field options
         def reflection_to_options(reflection)
           options = { array: reflection.collection? }
 

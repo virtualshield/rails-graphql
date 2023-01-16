@@ -11,6 +11,7 @@ module Rails
       autoload :InheritedCollection
       autoload :Instantiable
       autoload :LeafFromAr
+      autoload :Unregisterable
       autoload :Registerable
 
       autoload :WithArguments

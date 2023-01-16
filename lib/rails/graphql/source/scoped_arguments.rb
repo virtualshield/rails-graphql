@@ -5,9 +5,6 @@ module Rails
     # This is a helper class that allows sources to have scoped-based arguments,
     # meaning that when an argument is present, it triggers the underlying block
     # on the fields where the argument was attached to
-    #
-    # TODO: Easy the usage of scoped arguments with AR, to map model scopes as
-    # arguments using the abilities here provided
     module Source::ScopedArguments
       def self.included(other)
         other.extend(ClassMethods)
@@ -80,9 +77,9 @@ module Rails
       # Find all the executable arguments attached to the running field and
       # call them with the given object
       def inject_scopes(object, assigned_to = nil)
-        return object if event.field.nil? || (field_args = event.field.all_arguments).blank? ||
-          (args_source = event.send(:args_source)).blank?
+        return object if event.field.nil? || (field_args = event.field.all_arguments).blank?
 
+        args_source = event.send(:args_source)
         event.data[assigned_to] ||= object unless assigned_to.nil?
         field_args.each_value.inject(object) do |result, argument|
           arg_value = args_source.key?(argument.name) \

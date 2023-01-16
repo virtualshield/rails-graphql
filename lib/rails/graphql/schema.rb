@@ -11,7 +11,7 @@ module Rails
     # namespaces, where each schema is associated with one and only one
     # namespace, guiding requests and types searching.
     #
-    # This class works similary to the {TypeMap}[rdoc-ref:Rails::base_classMap]
+    # This class works similarly to the {TypeMap}[rdoc-ref:Rails::base_classMap]
     # class, where its purpose is to know which QueryFields, Mutations, and
     # Subscriptions are available. The main difference is that it doesn't hold
     # namespace-based objects, since each schema is associated to a single
@@ -37,6 +37,7 @@ module Rails
           enable_introspection request_strategies
           enable_string_collector default_response_format
           schema_type_names cache
+          default_subscription_provider default_subscription_broadcastable
         ].to_set
 
         config.default_proc = proc do |hash, key|
@@ -51,6 +52,7 @@ module Rails
 
       class << self
         delegate :type_map, :logger, to: '::Rails::GraphQL'
+        delegate :version, to: :type_map
 
         # :singleton-method:
         # Since there are only one schema per namespace, the name is constant
@@ -132,6 +134,21 @@ module Rails
           Set.new([namespace])
         end
 
+        # Return the subscription provider for the current schema
+        def subscription_provider
+          if !defined?(@subscription_provider)
+            @subscription_provider = config.default_subscription_provider
+            subscription_provider
+          elsif @subscription_provider.is_a?(String)
+            provider = (name = @subscription_provider).safe_constantize
+            return @subscription_provider = provider.new(logger: logger) unless provider.nil?
+
+            raise ::NameError, +"uninitialized constant #{name}"
+          else
+            @subscription_provider
+          end
+        end
+
         # Check if the schema is valid
         def valid?
           defined?(@validated) && @validated
@@ -151,7 +168,7 @@ module Rails
           @validated = true
         end
 
-        # Check if the class is already registered in the typemap
+        # Check if the class is already registered in the type map
         def registered?
           type_map.object_exist?(self, exclusive: true)
         end
@@ -159,11 +176,7 @@ module Rails
         # The process to register a class and it's name on the index
         def register!
           return if self == GraphQL::Schema
-
-          unless registered?
-            super if defined? super
-            return type_map.register(self)
-          end
+          return super unless registered?
 
           current = type_map.fetch(:schema,
             namespaces: namespace,
@@ -175,6 +188,12 @@ module Rails
             The #{namespace.inspect} namespace is already assigned to "#{current.name}".
             Please change the namespace for "#{klass.name}" class.
           MSG
+        end
+
+        # Hook into the unregister process to reset the subscription provider
+        def unregister!
+          restart_subscriptions
+          super
         end
 
         # Find a given +type+ associated with the schema
@@ -198,6 +217,30 @@ module Rails
           xargs[:base_class] = :Directive
           xargs[:namespaces] = namespaces
           type_map.fetch!(directive, **xargs)
+        end
+
+        # Remove subscriptions by their provided +sids+
+        def remove_subscriptions(*sids)
+          subscription_provider&.remove(*sids)
+        end
+
+        # Add a new subscription using all the provided request subscription
+        # objects
+        def add_subscriptions(*subscriptions)
+          subscription_provider.add(*subscriptions)
+        end
+
+        # The the schema is unloaded, we need to make sure that the provider
+        # can smoothly shutdown itself
+        def restart_subscriptions
+          return unless defined?(@subscription_provider) && !@subscription_provider.nil?
+          subscription_provider.shutdown
+        end
+
+        # This receives a request subscription object and return an id for that.
+        # By default, it just produces a random uuid
+        def subscription_id_for(*)
+          SecureRandom.uuid
         end
 
         # Simple delegator to the cache store set on the schema config, mapped
@@ -237,6 +280,8 @@ module Rails
 
         protected
 
+          attr_writer :subscription_provider
+
           # Mark the given class to be pending of registration
           def inherited(subclass)
             subclass.spec_object = false
@@ -259,17 +304,13 @@ module Rails
             dir = File.expand_path(dir, File.dirname(source)) unless absolute
 
             list = Dir.glob(File.join(dir, path)).select do |file_name|
-              next if file_name == source
-              file_name.chomp!('.rb')
+              file_name != source
             end
 
             type_map.add_dependencies(list, to: namespace)
           end
 
-          # An alias to the above metho that does not accept arguments
-          def load_current_directory
-            load_directory
-          end
+          alias load_current_directory load_directory
 
           # Load a list of known dependencies based on the given +type+
           def load_dependencies(type, *list)
@@ -295,8 +336,18 @@ module Rails
           end
 
           # A syntax sugar for +load_dependencies(:source, *list)+
-          def load_sources(*list)
+          def load_sources(*list, build: false)
             load_dependencies(:source, *list)
+            build_all_sources if build
+          end
+
+          # Build all sources that has the belongs to the current namespace
+          def build_all_sources
+            GraphQL::Source.descendants.each do |klass|
+              ns = klass.namespaces
+              klass.build_all if ns.include?(namespace) ||
+                (ns.empty? && namespace == :base)
+            end
           end
 
           # Make sure to prefix the cache key
@@ -325,11 +376,13 @@ module Rails
           end
 
           # Helper method to create a single source
-          def source(object, superclass = nil, **xargs, &block)
+          def source(object, superclass = nil, build: true, **xargs, &block)
             superclass ||= GraphQL::Source.find_for!(object)
 
             xargs[:suffix] = 'Source'
+            create_and_build = build
             schema_namespace = namespace
+
             create_klass(object, superclass, GraphQL::Source, **xargs) do
               set_namespace schema_namespace
 
@@ -339,16 +392,16 @@ module Rails
               end
 
               instance_exec(&block) if block.present?
-              build!
+              build_all if create_and_build
             end
           end
 
           # Helper method to create multiple sources with the same type
-          def sources(*list, of_type: nil, &block)
+          def sources(*list, of_type: nil, build: true, &block)
             list = list.flatten
 
             of_type ||= GraphQL::Source.find_for!(list.first)
-            list.each { |object| source(object, of_type, &block) }
+            list.each { |object| source(object, of_type, build: build, &block) }
           end
 
           # A simpler way to create a new type object without having to create
@@ -385,6 +438,10 @@ module Rails
                 A constant named "#{klass_name}" already exists for the
                 "#{base_module.name}" module.
               MSG
+
+              # This likely happened because the classes are being reloaded, so
+              # call inherited again as if the class has just been created
+              superclass.inherited(klass)
             else
               base_class ||= superclass.ancestors.find { |k| k.superclass === Class }
 
@@ -402,7 +459,7 @@ module Rails
               klass.is_a?(Helpers::WithAssignment)
 
             klass.set_namespace(namespace)
-            klass.instance_exec(&block) if block.present?
+            klass.module_exec(&block) if block.present?
             klass
           end
       end

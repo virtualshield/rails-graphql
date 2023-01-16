@@ -8,6 +8,31 @@ module Rails
       module SelectionSet
         attr_reader :selection
 
+        # Build the cache object
+        def cache_dump
+          return super unless defined?(@selection)
+
+          selection = @selection.transform_values do |field|
+            field.cache_dump.merge(type: field.class)
+          end
+
+          super.merge(selection: selection)
+        end
+
+        # Organize from cache data
+        def cache_load(data)
+          return super unless data.key?(:selection)
+
+          @selection = data[:selection].transform_values do |data|
+            component = request.build_from_cache(data[:type])
+            component.instance_variable_set(:@parent, self)
+            component.cache_load(data)
+            component
+          end.freeze
+
+          super
+        end
+
         protected
 
           # Helper parser for selection fields that also assign the actual

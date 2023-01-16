@@ -8,11 +8,12 @@ module Rails
       # A small extension of the original event to support extra methods and
       # helpers when performing events during a request
       class Event < GraphQL::Event
-        OBJECT_BASED_READERS = %i[fragment operation spread].freeze
+        OBJECT_BASED_READERS = %i[fragment spread].freeze
 
         delegate :errors, :context, to: :request
         delegate :instance_for, to: :strategy
         delegate :memo, :schema, to: :source
+        delegate :subscription_field, to: :schema
 
         attr_reader :strategy, :request, :index
 
@@ -43,6 +44,11 @@ module Rails
         # Provide a way to set the current value
         def current_value=(value)
           resolver&.override_value(value)
+        end
+
+        # Get the operation for the current source
+        def operation
+          (object.kind == :operation) ? object : source.operation
         end
 
         # Return the strategy context as the resolver
@@ -99,7 +105,7 @@ module Rails
           # it will return the object
           def method_missing(method_name, *args, **xargs, &block)
             if OBJECT_BASED_READERS.include?(method_name)
-              object if object.kind === method_name
+              object if object.kind == method_name
             elsif current_value&.respond_to?(method_name)
               current_value&.public_send(method_name, *args, **xargs, &block)
             else

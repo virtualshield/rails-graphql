@@ -14,14 +14,33 @@ module Rails
       # the spread and operation.
       class Arguments < OpenStruct
         THREAD_KEY = :_rails_graphql_operation
-        LAZY_LOADER = ->(key, object) { object.variables[key] }.curry
+
+        class Lazy < Delegator
+          attr_reader :var_name
+
+          def self.[](key)
+            new(key)
+          end
+
+          def initialize(var_name)
+            @var_name = var_name
+          end
+
+          def __getobj__
+            Arguments.operation&.variables&.dig(var_name)
+          end
+
+          def __setobj__(*)
+            raise FrozenError
+          end
+        end
 
         delegate :key?, to: :@table
 
         class << self
           # Easy access to the easy loader method
           def lazy
-            LAZY_LOADER
+            Lazy
           end
 
           # Get the current operation thread safely
@@ -42,50 +61,6 @@ module Rails
           def scoped?
             operation.present?
           end
-
-          # If it's running under a scope, transform proc based values
-          def transform(value)
-            return if value.nil?
-            scoped? && value.is_a?(Proc) ? value.call(operation) : value
-          end
-        end
-
-        # Transform any proc by its actual value before returning the hash
-        def to_h(*)
-          super.transform_values(&self.class.method(:transform))
-        end
-
-        # Before iterating, transform any needed value
-        def each_pair
-          enum = to_h.to_enum
-          return enum unless block_given?
-          enum.each { |v| yield v }
-          self
-        end
-
-        # rubocop:disable Style/MissingRespondToMissing
-        # Transform the value before returning
-        def method_missing(*)
-          self.class.transform(super)
-        end
-        # rubocop:enable Style/MissingRespondToMissing
-
-        # Transform the value before returning
-        def [](*)
-          self.class.transform(super)
-        end
-
-        # Transform the value before returning
-        def dig(name, *names)
-          result = self.class.transform(super(name))
-          names.empty? ? result : result&.dig(*names)
-        end
-
-        # Override the freeze method to just freeze the table and do not create
-        # the getters and setter methods
-        def freeze
-          @table.freeze
-          super
         end
       end
     end

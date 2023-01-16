@@ -25,7 +25,7 @@ module Rails
     #   it can also be collected by the name of the single operation in the
     #   request
     # * <tt>:schema</tt> - The schema on which the request should run on. It
-    #   has higher precedence than the namesace
+    #   has higher precedence than the namespace
     # * <tt>:variables</tt> - The variables of the request
     class Request
       extend ActiveSupport::Autoload
@@ -52,17 +52,22 @@ module Rails
         end
 
         autoload :Arguments
+        autoload :Backtrace
         autoload :Component
         autoload :Context
         autoload :Errors
         autoload :Event
+        autoload :PreparedData
         autoload :Strategy
+        autoload :Subscription
       end
 
-      attr_reader :args, :controller, :errors, :fragments, :operations, :response, :schema,
-        :stack, :strategy, :document
+      attr_reader :args, :origin, :errors, :fragments, :operations, :response, :schema,
+        :stack, :strategy, :document, :operation_name, :subscriptions
 
       alias arguments args
+      alias controller origin
+      alias channel origin
 
       delegate :action_name, to: :controller, allow_nil: true
       delegate :all_listeners, :all_events, to: :schema
@@ -73,6 +78,16 @@ module Rails
           result = new(schema, namespace: namespace)
           result.context = context if context.present?
           result.execute(*args, **xargs)
+        end
+
+        # Shortcut for initialize and compile
+        def compile(*args, schema: nil, namespace: :base, **xargs)
+          new(schema, namespace: namespace).compile(*args, **xargs)
+        end
+
+        # Shortcut for initialize and validate
+        def valid?(*args, schema: nil, namespace: :base, **xargs)
+          new(schema, namespace: namespace).valid?(*args, **xargs)
         end
 
         # Allow accessing component-based objects through the request
@@ -90,9 +105,15 @@ module Rails
       def initialize(schema = nil, namespace: :base)
         @namespace = schema&.namespace || namespace
         @schema = GraphQL::Schema.find!(@namespace)
+        @prepared_data = {}
         @extensions = {}
 
         ensure_schema!
+      end
+
+      # Check if any new subscription was added
+      def subscriptions?
+        defined?(@subscriptions) && @subscriptions.any?
       end
 
       # Get the context of the request
@@ -108,12 +129,16 @@ module Rails
       # Execute a given document with the given arguments
       def execute(document, **xargs)
         output = xargs.delete(:as) || schema.config.default_response_format
-        hash = xargs.delete(:hash)
+        cache = xargs.delete(:hash)
         formatter = RESPONSE_FORMATS[output]
 
+        document, cache = nil, document if xargs.delete(:compiled)
+        prepared_data = xargs.delete(:data_for)
+
         reset!(**xargs)
+        prepared_data&.each { |key, value| prepare_data_for(key, value) }
         @response = initialize_response(output, formatter)
-        execute!(document, hash)
+        execute!(document, cache)
 
         response.public_send(formatter)
       rescue StaticResponse
@@ -122,11 +147,62 @@ module Rails
 
       alias perform execute
 
+      # Compile a given document
+      def compile(document, compress: true)
+        reset!
+
+        log_execution(document, event: 'compile.graphql') do
+          @document = initialize_document(document)
+          run_document(with: :compile)
+
+          result = Marshal.dump(cache_dump)
+          result = Zlib.deflate(result) if compress
+
+          @log_extra[:total] = result.bytesize
+          result
+        end
+      end
+
+      # Check if the given document is valid by piggybacking on the compile
+      # process
+      def valid?(document)
+        reset!
+
+        log_execution(document, event: 'validate.graphql') do
+          @document = initialize_document(document)
+          run_document(with: :compile)
+          @log_extra[:result] = @errors.empty?
+        end
+      end
+
       # This is used by cache and static responses to jump from executing to
       # delivery a response right away
       def force_response(response, error = StaticResponse)
         @response = response
         raise error
+      end
+
+      # Add a new prepared data from +value+ to the given +field+
+      def prepare_data_for(field, value, **options)
+        field = PreparedData.lookup(self, field)
+
+        if @prepared_data.key?(field)
+          @prepared_data[field].push(value)
+        else
+          @prepared_data[field] = PreparedData.new(field, value, **options)
+        end
+      end
+
+      # Recover the next prepared data for the given field
+      def prepared_data_for(field)
+        field = field.field if field.is_a?(Component::Field)
+        @prepared_data[field]
+      end
+
+      # Check if the given field has prepared data
+      def prepared_data_for?(field)
+        field = field.field if field.is_a?(Component::Field)
+        defined?(@prepared_data) && @prepared_data.key?(field)
       end
 
       # Build a easy-to-access object representing the current information of
@@ -211,6 +287,14 @@ module Rails
         obj
       end
 
+      # This allocates a new object which is aware of extensions
+      def build_from_cache(klass)
+        ext_module = extensions[klass]
+        obj = klass.allocate
+        obj.extend(ext_module) if ext_module
+        obj
+      end
+
       # A shared way to cache information across the execution of an request
       def cache(key, init_value = nil, &block)
         @cache[key] ||= (init_value || block&.call || {})
@@ -222,12 +306,66 @@ module Rails
         (source = cache(key)).key?(sub_key) ? source[sub_key] : source[sub_key] = yield
       end
 
+      # Show if the current cached operation is still valid
+      def valid_cache?
+        defined?(@valid_cache) && @valid_cache
+      end
+
+      # Write the request into the cache so it can run again faster
+      def write_cache_request(hash, data = cache_dump)
+        schema.write_on_cache(hash, Marshal.dump(data))
+      end
+
+      # Read the request from the cache to run it faster
+      def read_cache_request(data = @document)
+        begin
+          data = Zlib.inflate(data) if data[0] == 'x'
+          data = Marshal.load(data)
+        rescue Zlib::BufError, ArgumentError
+          raise ::ArgumentError, +'Unable to recover the cached request.'
+        end
+
+        cache_load(data)
+      end
+
+      # Build the object that represent the request in the cache format
+      def cache_dump
+        {
+          strategy: @strategy.cache_dump,
+          operation_name: @operation_name,
+          type_map_version: schema.version,
+          document: @document,
+          errors: @errors.cache_dump,
+          operations: @operations.transform_values(&:cache_dump),
+          fragments: @fragments&.transform_values { |f| f.try(:cache_dump) }&.compact,
+        }
+      end
+
+      # Read the request from the cache to run it faster
+      def cache_load(data)
+        version = data[:type_map_version]
+        @document = data[:document]
+        @operation_name = data[:operation_name]
+        resolve_from_cache = (version == schema.version)
+
+        # Run the document from scratch if TypeMap has changed
+        return run_document unless resolve_from_cache
+        @valid_cache = true unless defined?(@valid_cache)
+
+        # Run the document as a cached operation
+        errors.cache_load(data[:errors])
+        @strategy = build(data[:strategy][:class], self)
+        @strategy.trigger_event(:request)
+        @strategy.cache_load(data)
+        @strategy.resolve!
+      end
+
       private
 
         attr_reader :extensions
 
         # Reset principal variables and set the given +args+
-        def reset!(args: nil, variables: {}, operation_name: nil, controller: nil)
+        def reset!(args: nil, variables: {}, operation_name: nil, origin: nil)
           @arg_names = {}
 
           @args = (args || variables || {}).transform_keys do |key|
@@ -239,47 +377,55 @@ module Rails
           @args = build_ostruct(@args).freeze
           @errors = Request::Errors.new(self)
           @operation_name = operation_name
-          @controller = controller
+          @origin = origin
 
           @stack      = [schema]
           @cache      = {}
+          @log_extra  = {}
           @fragments  = {}
           @operations = {}
+          @subscriptions = {}
           @used_variables = Set.new
 
+          @strategy = nil
           schema.validate
         end
 
         # This executes the whole process capturing any exceptions and handling
         # them as defined by the schema
-        def execute!(document, hash)
-          log_execution(document, hash) do
-            @document = initialize_document(document, hash)
-            collect_definitions!
-
-            @strategy = find_strategy!
-            @strategy.trigger_event(:request)
-            @strategy.resolve!
+        def execute!(document, cache = nil)
+          log_execution(document, cache) do
+            @document = initialize_document(document, cache)
+            @document.is_a?(String) ? read_cache_request : run_document
           end
-        rescue ::GQLParser::ParserError => err
-          parts = err.message.match(/\A(Parser error: .*) at \[(\d+), (\d+)\]\z/)
-          errors.add(parts[1], line: parts[2], col: parts[3])
         ensure
           report_unused_variables
-
-          # File.binwrite('/var/www/graphql/gem/tmp/doc.cache', Marshal.dump(@document))
+          write_cache_request(cache) if cache.present? && !valid_cache?
 
           @cache.clear
+          @strategy&.clear
           @fragments&.clear
           @operations.clear
+          @prepared_data.clear
 
           @response.try(:append_errors, errors)
         end
 
+        # Prepare the definitions, find the strategy and resolve
+        def run_document(with: :resolve!)
+          return if @document.nil?
+
+          collect_definitions!
+
+          @strategy ||= find_strategy!
+          @strategy.trigger_event(:request)
+          @strategy.public_send(with)
+        end
+
         # Organize the list of definitions from the document
         def collect_definitions!
-          @operations = @document[0]&.each_with_object({}) { |n, h| h[n[1]] = n }
-          @fragments = @document[1]&.each_with_object({}) { |n, h| h[n[0]] = n }
+          @operations = @document[0]&.index_by { |node| node[1] }
+          @fragments = @document[1]&.index_by { |node| node[0] }
 
           raise ::ArgumentError, (+<<~MSG).squish if operations.blank?
             The document does not contains operations.
@@ -319,9 +465,11 @@ module Rails
         end
 
         # Log the execution of a GraphQL document
-        def log_execution(document, hash)
+        def log_execution(document, hash = nil, event: 'request.graphql')
+          return yield if event.nil?
+
           data = { document: document, hash: hash }
-          ActiveSupport::Notifications.instrument('request.graphql', **data) do |payload|
+          ActiveSupport::Notifications.instrument(event, **data) do |payload|
             yield.tap { log_payload(payload) }
           end
         end
@@ -334,6 +482,7 @@ module Rails
             @arg_names[key.to_s]
           end
 
+          data.merge!(@log_extra)
           data.merge!(
             name: name,
             cached: false,
@@ -342,32 +491,37 @@ module Rails
         end
 
         # When document is empty and the hash has been provided, then
-        def initialize_document(document, hash)
+        def initialize_document(document, cache = nil)
           if document.present?
-            result = ::GQLParser.parse_execution(document)
-            # TODO: Store more than just the result of the parser
-            schema.write_on_cache(hash, result) if hash.present?
-            result
-          elsif hash.nil?
+            ::GQLParser.parse_execution(document)
+          elsif cache.nil?
             raise ::ArgumentError, +'Unable to execute an empty document.'
-          elsif schema.cached?(hash)
-            schema.read_from_cache(hash)
+          elsif schema.cached?(cache)
+            schema.read_from_cache(cache)
           else
-            error = PersistedQueryNotFound.new(+"Unable to find #{hash} query.")
-            schema.rescue_with_handler(error)
-            raise error
+            @valid_cache = true
+            cache
           end
+        rescue ::GQLParser::ParserError => err
+          parts = err.message.match(/\A(Parser error: .*) at \[(\d+), (\d+)\]\z/m)
+          errors.add(parts[1], line: parts[2].to_i, col: parts[3].to_i)
+          nil
         end
 
-        # Initialize the class that responsible for storaging the response
+        # Initialize the class that responsible for storing the response
         def initialize_response(as_format, to)
           raise ::ArgumentError, (+<<~MSG).squish if to.nil?
-            The given format #{as_format.inspect} is not a valid reponse format.
+            The given format #{as_format.inspect} is not a valid response format.
           MSG
 
-          klass = schema.config.enable_string_collector \
-            ? Collectors::JsonCollector \
-            : Collectors::HashCollector
+          klass =
+            if schema.config.enable_string_collector && as_format == :string
+              Collectors::JsonCollector
+            elsif RESPONSE_FORMATS.key?(as_format)
+              Collectors::HashCollector
+            else
+              as_format
+            end
 
           obj = klass.new(self)
           raise ::ArgumentError, (+<<~MSG).squish unless obj.respond_to?(to)

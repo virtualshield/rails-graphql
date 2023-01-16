@@ -13,7 +13,7 @@
   source = value;                                            \
   gql_next_lexeme_no_comments(scanner);                      \
 })
-#define GQL_BUILD_PARSE_OUTTER_TOKEN(type, size, pieces, scanner, mem) ({            \
+#define GQL_BUILD_PARSE_OUTER_TOKEN(type, size, pieces, scanner, mem) ({            \
   gql_token_start_from_mem(GQL_BUILD_PARSE_TOKEN(type, size, pieces, scanner), mem); \
 })
 #define GQL_BUILD_PARSE_TOKEN(type, size, pieces, scanner) ({                    \
@@ -66,7 +66,7 @@ VALUE gql_nil_and_unknown(struct gql_scanner *scanner);
 VALUE gql_token_start_from_mem(VALUE instance, unsigned long memory[2]);
 
 // Central error method
-void gql_throw_parser_error(struct gql_scanner *scanner);
+NORETURN(void gql_throw_parser_error(struct gql_scanner *scanner));
 
 /* STRUCTURES
  *
@@ -89,7 +89,7 @@ VALUE gql_parse_execution(VALUE self, VALUE document)
     rb_raise(rb_eArgError, "%+" PRIsVALUE " is not a string", document);
 
   // Initialize its pieces
-  VALUE pirces[] = {Qnil, Qnil};
+  VALUE pieces[] = {Qnil, Qnil};
   struct gql_scanner scanner = gql_new_scanner(document);
   gql_next_lexeme_no_comments(&scanner);
 
@@ -102,9 +102,9 @@ VALUE gql_parse_execution(VALUE self, VALUE document)
 
     // It can contain either operations or fragments, anything else is unknown and an error
     if (QGL_I_OPERATION(scanner.lexeme) || scanner.lexeme == gql_is_op_curly)
-      GQL_SAFE_PUSH(pirces[0], gql_parse_operation(&scanner));
+      GQL_SAFE_PUSH(pieces[0], gql_parse_operation(&scanner));
     else if (scanner.lexeme == gql_ie_fragment)
-      GQL_SAFE_PUSH(pirces[1], gql_parse_fragment(&scanner));
+      GQL_SAFE_PUSH(pieces[1], gql_parse_fragment(&scanner));
     else if (scanner.lexeme != gql_i_comment)
       scanner.lexeme = gql_i_unknown;
 
@@ -114,14 +114,14 @@ VALUE gql_parse_execution(VALUE self, VALUE document)
   }
 
   // Return the plain array, no need to turn into a token
-  return rb_ary_new4(2, pirces);
+  return rb_ary_new4(2, pieces);
 }
 
 // Parse an operation element
 // OPERATION [type?, name?, VARIABLE*, DIRECTIVE*, FIELD*]
 VALUE gql_parse_operation(struct gql_scanner *scanner)
 {
-  // Commom header
+  // Common header
   unsigned long mem[2];
   GQL_SCAN_SAVE(scanner, mem);
   VALUE pieces[] = {Qnil, Qnil, Qnil, Qnil, Qnil};
@@ -157,13 +157,13 @@ VALUE gql_parse_operation(struct gql_scanner *scanner)
     return gql_nil_and_unknown(scanner);
 
   // Generate the result array with proper scan location and return
-  return GQL_BUILD_PARSE_OUTTER_TOKEN(type, 5, pieces, scanner, mem);
+  return GQL_BUILD_PARSE_OUTER_TOKEN(type, 5, pieces, scanner, mem);
 }
 
 // FRAGMENT [name, type, DIRECTIVE*, FIELD*]
 VALUE gql_parse_fragment(struct gql_scanner *scanner)
 {
-  // Commom header
+  // Common header
   unsigned long mem[2];
   GQL_SCAN_SAVE(scanner, mem);
   VALUE pieces[] = {Qnil, Qnil, Qnil, Qnil};
@@ -199,7 +199,7 @@ VALUE gql_parse_fragment(struct gql_scanner *scanner)
     GQL_ASSIGN_VALUE_AND_NEXT(pieces[3], scanner, gql_parse_fields(scanner));
 
   // Generate the result array with proper scan location and return
-  return GQL_BUILD_PARSE_OUTTER_TOKEN("fragment", 4, pieces, scanner, mem);
+  return GQL_BUILD_PARSE_OUTER_TOKEN("fragment", 4, pieces, scanner, mem);
 }
 
 // VARIABLE [name, TYPE, value?, DIRECTIVE*]*
@@ -229,7 +229,7 @@ VALUE gql_parse_variables(struct gql_scanner *scanner)
 // VARIABLE [name, TYPE, value?, DIRECTIVE*]
 VALUE gql_parse_variable(struct gql_scanner *scanner)
 {
-  // Commom header
+  // Common header
   unsigned long mem[2];
   GQL_SCAN_SAVE(scanner, mem);
   VALUE pieces[] = {Qnil, Qnil, Qnil, Qnil};
@@ -277,7 +277,7 @@ VALUE gql_parse_variable(struct gql_scanner *scanner)
     GQL_ASSIGN_VALUE_AND_NEXT(pieces[3], scanner, gql_parse_directives(scanner));
 
   // Generate the result array with proper scan location and return
-  return GQL_BUILD_PARSE_OUTTER_TOKEN("variable", 4, pieces, scanner, mem);
+  return GQL_BUILD_PARSE_OUTER_TOKEN("variable", 4, pieces, scanner, mem);
 }
 
 // DIRECTIVE [name, ARGUMENT*]*
@@ -297,7 +297,7 @@ VALUE gql_parse_directives(struct gql_scanner *scanner)
 // DIRECTIVE [name, ARGUMENT*]
 VALUE gql_parse_directive(struct gql_scanner *scanner)
 {
-  // Commom header
+  // Common header
   unsigned long mem[2];
   GQL_SCAN_SAVE(scanner, mem);
   VALUE pieces[] = {Qnil, Qnil};
@@ -319,7 +319,7 @@ VALUE gql_parse_directive(struct gql_scanner *scanner)
     GQL_ASSIGN_VALUE_AND_NEXT(pieces[1], scanner, gql_parse_arguments(scanner));
 
   // Generate the result array with proper scan location and return
-  return GQL_BUILD_PARSE_OUTTER_TOKEN("directive", 2, pieces, scanner, mem);
+  return GQL_BUILD_PARSE_OUTER_TOKEN("directive", 2, pieces, scanner, mem);
 }
 
 // FIELD [alias?, name, ARGUMENT*, DIRECTIVE*, FIELD*]*
@@ -351,7 +351,7 @@ VALUE gql_parse_fields(struct gql_scanner *scanner)
 // FIELD [name, alias?, ARGUMENT*, DIRECTIVE*, FIELD*]
 VALUE gql_parse_field(struct gql_scanner *scanner)
 {
-  // Commom header
+  // Common header
   unsigned long mem[2];
   GQL_SCAN_SAVE(scanner, mem);
   VALUE pieces[] = {Qnil, Qnil, Qnil, Qnil, Qnil};
@@ -362,7 +362,7 @@ VALUE gql_parse_field(struct gql_scanner *scanner)
 
   GQL_ASSIGN_TOKEN_AND_NEXT(pieces[0], scanner);
 
-  // If we got a colon, then we actully had an alias and not the name
+  // If we got a colon, then we actually had an alias and not the name
   if (scanner->lexeme == gql_is_colon)
   {
     // Move one further and get the next lexeme
@@ -397,7 +397,7 @@ VALUE gql_parse_field(struct gql_scanner *scanner)
   }
 
   // Generate the result array with proper scan location and return
-  return GQL_BUILD_PARSE_OUTTER_TOKEN("field", 5, pieces, scanner, mem);
+  return GQL_BUILD_PARSE_OUTER_TOKEN("field", 5, pieces, scanner, mem);
 }
 
 // ARGUMENT [name, value?, var_name?]*
@@ -427,7 +427,7 @@ VALUE gql_parse_arguments(struct gql_scanner *scanner)
 // ARGUMENT [name, value?, var_name?]
 VALUE gql_parse_argument(struct gql_scanner *scanner)
 {
-  // Commom header
+  // Common header
   unsigned long mem[2];
   GQL_SCAN_SAVE(scanner, mem);
   VALUE pieces[] = {Qnil, Qnil, Qnil};
@@ -472,13 +472,13 @@ VALUE gql_parse_argument(struct gql_scanner *scanner)
     return gql_nil_and_unknown(scanner);
 
   // Generate the result array with proper scan location and return
-  return GQL_BUILD_PARSE_OUTTER_TOKEN("argument", 3, pieces, scanner, mem);
+  return GQL_BUILD_PARSE_OUTER_TOKEN("argument", 3, pieces, scanner, mem);
 }
 
 // SPREAD [name?, type?, DIRECTIVE*, FIELD*]
 VALUE gql_parse_spread(struct gql_scanner *scanner)
 {
-  // Commom header
+  // Common header
   unsigned long mem[2];
   GQL_SCAN_SAVE(scanner, mem);
   VALUE pieces[] = {Qnil, Qnil, Qnil, Qnil};
@@ -534,7 +534,7 @@ VALUE gql_parse_spread(struct gql_scanner *scanner)
   }
 
   // Generate the result array with proper scan location and return
-  return GQL_BUILD_PARSE_OUTTER_TOKEN("spread", 4, pieces, scanner, mem);
+  return GQL_BUILD_PARSE_OUTER_TOKEN("spread", 4, pieces, scanner, mem);
 }
 
 // TYPE [name, dimensions, nullability]

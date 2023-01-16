@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'i18n'
+require 'zlib'
 require 'active_model'
 require 'active_support'
 
@@ -49,8 +50,9 @@ module Rails
     # Stores the version of the GraphQL spec used for this implementation
     SPEC_VERSION = ::GQLParser::VERSION
 
-    # Just a reusable instance of an empty array
+    # Just a reusable instances of an empty array and empty hash
     EMPTY_ARRAY = [].freeze
+    EMPTY_HASH = {}.freeze
 
     # Runtime registry for request execution time
     RuntimeRegistry = Class.new { thread_mattr_accessor :gql_runtime }
@@ -70,6 +72,7 @@ module Rails
     autoload :GlobalID
     autoload :Collectors
     autoload :Alternative
+    autoload :Subscription
 
     autoload :Argument
     autoload :Directive
@@ -80,6 +83,7 @@ module Rails
 
     autoload_under :railties do
       autoload :BaseGenerator
+      autoload :Channel
       autoload :Controller
       autoload :ControllerRuntime
       autoload :LogSubscriber
@@ -132,7 +136,7 @@ module Rails
       # A generic helper to not create a new array when just iterating over
       # something that may or may not be an array
       def enumerate(value)
-        value.respond_to?(:to_ary) ? value : value.then
+        (value.is_a?(Enumerable) || value.respond_to?(:to_ary)) ? value : value.then
       end
 
       # Returns a set instance with uniq directives from the given list.

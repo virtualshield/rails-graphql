@@ -6,8 +6,8 @@ module Rails
   module GraphQL
     # = GraphQL Log Subscriber
     #
-    # This is the log tracker that workds the same way as ActiveRecord when it
-    # has to report on logs that a query was performed.
+    # This is the log tracker that works the same way as ActiveRecord when it
+    # has to report on logs that a query was performed
     class LogSubscriber < ::ActiveSupport::LogSubscriber
       class_attribute :backtrace_cleaner, default: ActiveSupport::BacktraceCleaner.new
 
@@ -26,18 +26,59 @@ module Rails
         return unless logger.debug?
 
         payload = event.payload
-        doc = payload[:document]&.gsub(REMOVE_COMMENTS, '')&.squish ||
-          payload[:hash].inspect
+        cached = '[CACHE]' if payload[:cached]
+        doc = payload[:document]&.gsub(REMOVE_COMMENTS, '')&.squish
 
-        desc = +'GraphQL'
-        desc << '[CACHE]' if payload[:cached]
-        desc << ' ' << payload[:name] if payload[:name].present?
-        desc << ' ' << '(' << event.duration.round(1).to_s << 'ms' << ')'
-
-        desc = (+color(desc, MAGENTA, true)) << ' ' << doc
+        desc = +"#{header(event, cached)}  #{doc}"
         desc << debug_variables(payload[:variables]) unless payload[:variables].blank?
 
         debug(desc)
+      end
+
+      def compile(event)
+        return unless logger.debug?
+
+        payload = event.payload
+        doc = payload[:document].gsub(REMOVE_COMMENTS, '').squish
+
+        helper = ActiveSupport::NumberHelper::NumberToHumanSizeConverter
+        total = helper.convert(payload[:total], EMPTY_HASH)
+
+        debug(+"#{header(event, 'Compile')} #{total}  #{doc}")
+      end
+
+      def validate(event)
+        return unless logger.debug?
+
+        payload = event.payload
+        doc = payload[:document].gsub(REMOVE_COMMENTS, '').squish
+        valid = payload[:result] ? color('YES', GREEN) : color('NO', RED)
+
+        debug(+"#{header(event, 'Valid?')} #{valid}  #{doc}")
+      end
+
+      def subscription(event)
+        return unless logger.info?
+
+        item, type, provider = event.payload.values_at(:item, :type, :provider)
+        provider = provider.class.name.sub(/\ARails::GraphQL::Subscription::/, '')
+        duration = event.duration.round(1)
+
+        desc = +"#{header(event, provider)} Subscription #{type}"
+
+        unless item.nil?
+          hex = { added: GREEN, removed: RED, updated: BLUE }[type]
+
+          if type == :updated
+            desc << +": #{color(item.sid, hex)}"
+          else
+            desc << +": [#{color(item.sid, hex)}] #{item.schema}.#{item.field.gql_name}"
+            desc << +" [#{(item.scope === null_subscription_scope ? nil : item.scope).inspect}"
+            desc << +", #{item.args.as_json.inspect}]"
+          end
+        end
+
+        info(desc)
       end
 
       private
@@ -50,6 +91,14 @@ module Rails
           return unless super
 
           log_query_source if GraphQL.config.verbose_logs
+        end
+
+        def header(event, suffix = '')
+          duration = event.duration.round(1)
+          parts = ['GraphQL', suffix.presence, event.payload[:name]]
+          parts << "(#{duration}ms)" unless duration.zero?
+
+          color(parts.compact.join(' '), MAGENTA, true)
         end
 
         def debug_variables(vars)
@@ -67,6 +116,10 @@ module Rails
 
         def parameter_filter
           ActiveSupport::ParameterFilter.new(GraphQL.config.filter_parameters)
+        end
+
+        def null_subscription_scope
+          Request::Subscription::NULL_SCOPE
         end
     end
   end

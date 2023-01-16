@@ -48,8 +48,21 @@ module Rails
           response.serialize(Type::Scalar::StringScalar, gql_name, value)
         end
 
+        # Typename is always broadcastable
+        def broadcastable?
+          true
+        end
+
         # Prepare is not necessary for this field
         def prepare!
+        end
+
+        # Organize from cache data
+        def cache_load(data)
+          @name = data[:node][0]
+          @alias_name = data[:node][1]
+
+          super
         end
 
         protected

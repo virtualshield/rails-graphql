@@ -31,7 +31,7 @@ module Rails
           end
 
           def deserialize(value)
-            value.is_a?(::GQLParser::Token) ? value[1..-2] : value
+            valid_token?(value, :string) ? value[1..-2] : value
           end
         end
       end

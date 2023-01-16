@@ -72,7 +72,7 @@ module Rails
       end
 
       # Mark the given object to be registered later, when a fetch is triggered
-      # TODO: Improve this with a Backtracer Cleaner
+      # TODO: Improve this with a Backtrace Cleaner
       def postpone_registration(object)
         source = caller(3).find { |item| item !~ FILTER_REGISTER_TRACE }
         @pending << [object, source]
@@ -113,11 +113,22 @@ module Rails
           end
         end
 
-        # Do not early return due to possible callback errors
-
         # Return the object for chain purposes
         @objects += 1
         object
+      end
+
+      # Unregister all the provided objects by simply assigning nil to their
+      # final value on the index
+      def unregister(*objects)
+        objects.each do |object|
+          namespaces = sanitize_namespaces(namespaces: object.namespaces.dup, exclusive: true)
+          namespaces << :base if namespaces.empty?
+          base_class = find_base_class(object)
+
+          @objects -= 1
+          @index[namespaces[0]][base_class][object.to_sym] = nil
+        end
       end
 
       # Register an item alias. Either provide a block that trigger the fetch
@@ -168,7 +179,8 @@ module Rails
       # namespace or in the base +:base+ namespace
       def fetch(key_or_name, prevent_register: nil, **xargs)
         if prevent_register != true
-          skip_register << ::Array.wrap(prevent_register)
+          items = prevent_register == true ? nil : ::Array.wrap(prevent_register)
+          skip_register << items.to_set
           register_pending!
         end
 
@@ -190,10 +202,8 @@ module Rails
       # Checks if a given key or name is already defined under the same base
       # class and namespace. If +exclusive+ is set to +false+, then it won't
       # check the +:base+ namespace when not found on the given namespace.
-      def exist?(name_or_key, base_class: :Type, **xargs)
-        sanitize_namespaces(**xargs).any? do |namespace|
-          dig(namespace, base_class)&.key?(name_or_key)
-        end
+      def exist?(name_or_key, **xargs)
+        !fetch(name_or_key, **xargs, prevent_register: true).nil?
       end
 
       # Find if a given object is already defined. If +exclusive+ is set to
@@ -207,17 +217,17 @@ module Rails
       # Iterate over the types of the given +base_class+ that are defined on the
       # given +namespaces+.
       def each_from(namespaces, base_class: nil, exclusive: false, base_classes: nil, &block)
+        namespaces = sanitize_namespaces(namespaces: namespaces, exclusive: exclusive)
+        load_dependencies!(_ns: namespaces)
         register_pending!
 
-        base_classes = GraphQL.enumerate(base_class || base_classes || :Type)
-
         iterated = Set.new
-        namespaces = sanitize_namespaces(namespaces: namespaces, exclusive: exclusive)
+        base_classes = GraphQL.enumerate(base_class || base_classes || :Type)
         enumerator = Enumerator::Lazy.new(namespaces) do |yielder, namespace|
           next unless @index.key?(namespace)
 
           base_classes.each do |a_base_class|
-            @index[namespace][a_base_class]&.each_value do |value|
+            @index[namespace][a_base_class]&.each do |key, value|
               value = value.is_a?(Proc) ? value.call : value
               next if value.blank? || iterated.include?(value.gql_name)
 
@@ -230,7 +240,7 @@ module Rails
         block.present? ? enumerator.each(&block) : enumerator
       end
 
-      # Get the list of all registred objects
+      # Get the list of all registered objects
       # TODO: Maybe keep it as a lazy enumerator
       def objects(base_classes: nil, namespaces: nil)
         base_classes ||= self.class.base_classes
@@ -309,13 +319,13 @@ module Rails
         def register_pending!
           return if @pending.blank?
 
-          skip = skip_register.flatten
+          skip = skip_register.compact.reduce(:+)
           keep = []
 
           while (klass, source = @pending.shift)
             next if klass.registered?
 
-            if skip.include?(klass)
+            if skip&.include?(klass)
               keep << [klass, source]
             else
               klass.register!

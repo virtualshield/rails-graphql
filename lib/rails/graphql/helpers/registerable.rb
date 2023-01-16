@@ -8,6 +8,7 @@ module Rails
       module Registerable
         # Here we define a couple of attributes used by registration
         def self.extended(other)
+          other.extend(Helpers::Unregisterable)
           other.extend(Helpers::WithNamespace)
           other.extend(Helpers::WithName)
           other.extend(Helpers::WithDescription)

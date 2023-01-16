@@ -14,7 +14,7 @@ module Rails
         delegate :operation, :typename, :request, to: :parent
         delegate :variables, to: :operation
 
-        attr_reader :name, :parent, :fragment, :type_klass
+        attr_reader :name, :parent, :fragment, :current_object, :type_klass
 
         def initialize(parent, node)
           @parent = parent
@@ -30,6 +30,11 @@ module Rails
           @inline.present?
         end
 
+        # Check if all the sub fields or the fragment is broadcastable
+        def broadcastable?
+          inline? ? selection.each_value.all?(&:broadcastable?) : fragment.broadcastable?
+        end
+
         # Redirect to the fragment or check the inline type before resolving
         def resolve_with!(object)
           return if unresolvable?
@@ -38,6 +43,25 @@ module Rails
           resolve!
         ensure
           @current_object = nil
+        end
+
+        # Build the cache object
+        def cache_dump
+          inline? ? super.merge(type_klass: all_to_gid(type_klass)) : super
+        end
+
+        # Organize from cache data
+        def cache_load(data)
+          @name = data[:node][0]
+          @inline = name.nil?
+
+          if inline?
+            @type_klass = all_from_gid(data[:type_klass])
+          else
+            collect_fragment
+          end
+
+          super
         end
 
         protected
@@ -111,11 +135,26 @@ module Rails
             Arguments.scoped(operation) { fragment.public_send(method_name, *args) }
           end
 
-          # Make sure to instantiate the fragment only when the spread request it
+          # Only initialize the fragment once and only when requested for the
+          # first time. It also reports to the operation the used variables
+          # within the fragment
           def collect_fragment
             node = request.fragments[name]
-            return node if node.is_a?(Component::Fragment)
-            request.fragments[name] = request.build(Component::Fragment, request, node)
+
+            if node.is_a?(Component::Fragment)
+              unless (used_variables = node.used_variables).nil?
+                operation.used_variables.merge(used_variables)
+              end
+
+              unless (used_fragments = node.used_fragments).nil?
+                operation.used_fragments.merge(used_fragments)
+              end
+
+              node
+            else
+              operation.used_fragments << name
+              request.fragments[name] = request.build(Component::Fragment, request, node)
+            end
           end
       end
     end

@@ -309,7 +309,7 @@ class GraphQL_TypeMapTest < GraphQL::TestCase
     skipped = double(registered?: false)
     other = double(registered?: true)
 
-    subject.stub(:skip_register, [skipped]) do
+    subject.stub(:skip_register, [[skipped].to_set]) do
       subject.stub_ivar(:@pending, [[skipped, :a], [object, :b], [other, :c]]) do
         subject.send(:register_pending!)
         assert(registered)

@@ -41,6 +41,13 @@ module Rails
           add_listeners_from(request)
         end
 
+        # Clear all strategy information
+        def clear
+          @listeners.clear
+          @objects_pool.clear
+          @stage = @context = @objects_pool = @data_pool = @listeners = nil
+        end
+
         # Executes the strategy in the normal mode
         def resolve!
           raise NotImplementedError
@@ -86,7 +93,13 @@ module Rails
         # block using context stack
         def prepare(field, &block)
           value = safe_store_data(field) do
-            Event.trigger(:prepare, field, self, **PREPARE_XARGS)
+            prepared = request.prepared_data_for(field)
+            if prepared.is_a?(PreparedData)
+              field.prepared_data!
+              prepared.all
+            else
+              Event.trigger(:prepare, field, self, **PREPARE_XARGS)
+            end
           end
 
           perform(field, value) if field.mutation?
@@ -112,12 +125,15 @@ module Rails
           end
         end
 
+        # Get the resolved data for a given field
         def resolve_data_for(field, args)
           return unless args.size.zero?
 
           if field.try(:dynamic_resolver?)
-            prepared = @data_pool[field]
+            prepared = prepared_data_for(field)
             args << Event.trigger(:resolve, field, self, prepared: prepared, &field.resolver)
+          elsif field.prepared_data?
+            args << prepared_data_for(field)
           else
             data_for(args, field)
           end
@@ -157,6 +173,10 @@ module Rails
           object.all_listeners&.each do |event_name|
             listeners[event_name] << object
           end
+
+          if request.prepared_data_for?(object)
+            listeners[:prepare] << object
+          end
         end
 
         # Store a given resolve +value+ for a given +field+
@@ -168,6 +188,55 @@ module Rails
         def safe_store_data(field, value = nil)
           value ||= yield if block_given?
           @data_pool[field] ||= value unless value.nil?
+        end
+
+        # Get the prepared data for the given +field+, getting ready for
+        # resolve, while ensuring to check prepared data on request
+        def prepared_data_for(field)
+          return @data_pool[field] unless field.prepared_data?
+
+          prepared = request.prepared_data_for(field).next
+          prepared unless prepared === PreparedData::NULL
+        end
+
+        # Simply run the organize step for compilation
+        def compile
+          for_each_operation { |op| collect_listeners { op.organize! } }
+        end
+
+        # Build the cache object
+        def cache_dump
+          { class: self.class }
+        end
+
+        # Organize from cache data
+        def cache_load(data)
+          data, operations, fragments = data.values_at(:strategy, :operations, :fragments)
+
+          collect_listeners do
+            # Load all operations
+            operations = operations.transform_values do |operation|
+              request.build_from_cache(operation.delete(:type)).tap do |instance|
+                instance.instance_variable_set(:@request, request)
+                instance.cache_load(operation)
+              end
+            end
+
+            # Load all fragments
+            fragments = fragments&.transform_values do |fragment|
+              request.build_from_cache(Component::Fragment).tap do |instance|
+                instance.instance_variable_set(:@request, request)
+                instance.cache_load(fragment)
+              end
+            end
+          end
+
+          # Mark itself as already organized
+          @organized = true
+
+          # Save operations and fragments into the request
+          request.instance_variable_set(:@operations, operations)
+          request.instance_variable_set(:@fragments, fragments)
         end
 
         protected
@@ -184,6 +253,7 @@ module Rails
 
           # A start of the organize step
           def collect_listeners
+            return if defined?(@organized)
             @stage = :organize
             yield
           end
@@ -203,8 +273,6 @@ module Rails
           def collect_response
             @stage = :resolve
             yield
-          ensure
-            @context = @objects_pool = @data_pool = @listeners = nil
           end
 
           # Fetch the data for a given field and set as the first element

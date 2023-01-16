@@ -38,7 +38,7 @@ module Rails
         end
 
         # This cannot be defined using alias because the +base_type+ method is
-        # overrided by children classes
+        # overridden by all children classes
         def gid_base_class
           base_type
         end

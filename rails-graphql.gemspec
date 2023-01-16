@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.summary     = 'A GraphQL server for Rails applications'
   s.description = 'A GraphQL server implementation for Rails applications that focus on performance and simpler integration with Rails DSL'
   s.metadata    = {
-    # 'homepage_uri'    => 'https://virtualshield.com/rails-graphql',
+    'homepage_uri'    => 'https://rails-graphql.dev/',
     "source_code_uri" => 'https://github.com/virtualshield/rails-graphql',
     'bug_tracker_uri' => 'https://github.com/virtualshield/rails-graphql/issues',
     # 'changelog_uri'   => 'https://github.com/virtualshield/rails-graphql/blob/master/CHANGELOG.md',

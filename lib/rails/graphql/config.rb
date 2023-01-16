@@ -14,9 +14,21 @@ module Rails
       # +ActiveSupport::Cache::Store+.
       config.cache = nil
 
+      # If Rails cache is not properly defined, by default it is set to a
+      # NullStore, than fallback to this option to get a memory store because
+      # cache is extremely important, especially for subscriptions
+      config.cache_fallback = -> do
+        ::ActiveSupport::Cache::MemoryStore.new(max_prune_time: nil)
+      end
+
       # This is the prefix key of all the cache entries for the GraphQL cached
       # things.
       config.cache_prefix = 'graphql/'
+
+      # The list of nested paths inside of the graphql folder that does not
+      # require to be in their own namespace.
+      config.paths = %w[queries mutations subscriptions directives fields
+        sources enums inputs interfaces objects scalars unions].to_set
 
       # This exposes the clean path from where a GraphQL request was started.
       config.verbose_logs = true
@@ -73,11 +85,11 @@ module Rails
       # See also https://github.com/rails/rails/blob/master/activesupport/lib/active_support/json/encoding.rb
       config.encode_with_active_support = false
 
-      # Enable the ability of a callback to dynamically inject argumnets to the
+      # Enable the ability of a callback to dynamically inject arguments to the
       # calling method.
       config.callback_inject_arguments = true
 
-      # Enable the ability of a callback to dynamically inject named argumnets
+      # Enable the ability of a callback to dynamically inject named arguments
       # to the calling method.
       config.callback_inject_named_arguments = true
 
@@ -112,6 +124,18 @@ module Rails
         'Rails::GraphQL::Source::ActiveRecordSource',
       ]
 
+      # A list of all available subscription providers which bases on
+      # Rails::GraphQL::SubscriptionProvider::Base
+      config.subscription_providers = [
+        'Rails::GraphQL::Subscription::Provider::ActionCable',
+      ]
+
+      # The default subscription provider for all the schemas
+      config.default_subscription_provider = config.subscription_providers.first
+
+      # The default value for fields about their ability of being broadcasted
+      config.default_subscription_broadcastable = nil
+
       # A list of known dependencies that can be requested and included in any
       # schema. This is the best place for other gems to add their own
       # dependencies and allow users to pick them.
@@ -127,13 +151,21 @@ module Rails
           json:      "#{__dir__}/type/scalar/json_scalar",
         },
         directive: {
-          cached:    "#{__dir__}/directive/cached_directive",
+          # cached:    "#{__dir__}/directive/cached_directive",
         },
       }
 
+      # The method that should be used to parse literal input values when they
+      # are provided as hash. +JSON.parse+ only supports keys wrapped in quotes,
+      # to support keys without quotes, you can use +Psych.method(:safe_load)+,
+      # which behaves closer to YAML, but the received value is ensure to be
+      # wrapped in "{}". If that produces unexpected results, you can assign a
+      # proc and then parse the value in any other way, like
+      # +->(value) { anything }+
+      config.literal_input_parser = JSON.method(:parse)
+
       # TODO: To be implemented
       # allow_query_serialization
-      # source_generate_dependencies
     end
 
     # This is the logger for all the operations for GraphQL

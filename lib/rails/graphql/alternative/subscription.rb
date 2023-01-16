@@ -8,6 +8,10 @@ module Rails
     class Alternative::Subscription < Alternative::Query
       redefine_singleton_method(:type_field_class) { :subscription }
       self.abstract = true
+
+      class << self
+        delegate :scope, :trigger, to: :@field, allow_nil: true
+      end
     end
   end
 end

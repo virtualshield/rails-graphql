@@ -2,7 +2,7 @@
 
 module Rails
   module GraphQL
-    # Error class tha wrappes all the other error classes
+    # Error class tha wraps all the other error classes
     StandardError = Class.new(::StandardError)
 
     # Error class related to problems during the definition process
@@ -20,7 +20,7 @@ module Rails
     # Errors related to the name of the objects
     NameError = Class.new(DefinitionError)
 
-    # Errors related to duplciated objects
+    # Errors related to duplicated objects
     DuplicatedError = Class.new(NameError)
 
     # Error class related to problems during the execution process
@@ -29,7 +29,7 @@ module Rails
     # Error related to the parsing process
     ParseError = Class.new(ExecutionError)
 
-    # Error class related to parsing the argumens
+    # Error class related to parsing the arguments
     ArgumentsError = Class.new(ParseError)
 
     # Error class related to problems that happened during execution of fields
@@ -48,6 +48,9 @@ module Rails
     # Error class related to when a field is unauthorized and can not be used,
     # similar to disabled fields
     UnauthorizedFieldError = Class.new(FieldError)
+
+    # Error class related to problems that happened while subscribing to a field
+    SubscriptionError = Class.new(FieldError)
 
     # Error class related to execution responses that don't require processing
     StaticResponse = Class.new(Interrupt)

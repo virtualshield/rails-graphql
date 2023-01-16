@@ -145,16 +145,17 @@ class GraphQL_SchemaTest < GraphQL::TestCase
 
   def test_sources
     result, passthrough = collect_all_through
+    xargs = { build: true }
     DESCRIBED_CLASS.stub(:source, passthrough) do
       result.clear && DESCRIBED_CLASS.send(:sources, :a, of_type: 1)
-      assert_equal([[:a, 1]], result)
+      assert_equal([[:a, 1, xargs]], result)
 
       result.clear && DESCRIBED_CLASS.send(:sources, :a, :b, of_type: 1)
-      assert_equal([[:a, 1], [:b, 1]], result)
+      assert_equal([[:a, 1, xargs], [:b, 1, xargs]], result)
 
       source_const.stub(:find_for!, 2) do
         result.clear && DESCRIBED_CLASS.send(:sources, %i[c d e])
-        assert_equal([[:c, 2], [:d, 2], [:e, 2]], result)
+        assert_equal([[:c, 2, xargs], [:d, 2, xargs], [:e, 2, xargs]], result)
       end
     end
   end

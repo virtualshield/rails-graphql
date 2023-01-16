@@ -75,6 +75,7 @@ module Rails
       def trigger_all(*objects)
         catchable(:stack) do
           iterator = @collect ? :map : :each
+          objects = objects.first if objects.size == 1 && objects.first.is_a?(Enumerable)
           objects.flatten.send(iterator, &method(:trigger_object))
         end
       end

@@ -10,7 +10,7 @@ module Rails
     # 2. 1 Input
     # 3. 2 Query fields (ingular and plural)
     # 4. 3 Mutation fields (create, update, destroy)
-    class Source::ActiveRecordSource < Source
+    class Source::ActiveRecordSource < Source::Base
       include Source::ScopedArguments
 
       require_relative 'active_record/builders'
@@ -19,6 +19,10 @@ module Rails
       validate_assignment('ActiveRecord::Base') do |value|
         +"The \"#{value.name}\" is not a valid Active Record model"
       end
+
+      # Mark if the objects created from this source will build fields for
+      # associations associated to the object
+      class_attribute :with_associations, instance_accessor: false, default: true
 
       # The name of the class (or the class itself) to be used as superclass for
       # the generate GraphQL interface type of this source
@@ -30,15 +34,14 @@ module Rails
       end
 
       self.abstract = true
+      self.hook_names = hook_names.to_a.insert(1, :enums).to_set
 
       delegate :primary_key, :singular, :plural, :model, :id_columns, to: :class
 
       skip_from(:input, :created_at, :updated_at)
 
-      step(:start) do
-        GraphQL.enable_ar_adapter(adapter_name)
-        build_enum_types
-      end
+      step(:start) { GraphQL.enable_ar_adapter(adapter_name) }
+      step(:enums) { build_enum_types }
 
       step(:object) do
         build_attribute_fields(self)
@@ -61,6 +64,8 @@ module Rails
       end
 
       step(:query) do
+        build_object
+
         safe_field(plural, object, full: true) do
           before_resolve(:load_records)
         end
@@ -72,6 +77,9 @@ module Rails
       end
 
       step(:mutation) do
+        build_object
+        build_input
+
         safe_field("create_#{singular}", object, null: false) do
           argument(singular, input, null: false)
           perform(:create_record)
@@ -91,19 +99,6 @@ module Rails
         end
       end
 
-      step(:finish) do
-        attach_fields!
-        attach_scoped_arguments_to(query_fields.values)
-        attach_scoped_arguments_to(mutation_fields.values)
-
-        next if model.base_class == model
-
-        # TODO: Allow nested inheritance for setting up implementation
-        type_map_after_register(model.base_class) do |type|
-          object.implements(type) if type.interface?
-        end
-      end
-
       class << self
         delegate :primary_key, :model_name, to: :model
         delegate :singular, :plural, :param_key, to: :model_name
@@ -113,7 +108,7 @@ module Rails
         alias model assigned_class
         alias model= assigned_to=
 
-        # Set the assignemnt to a model with a similar name as the source
+        # Set the assignment to a model with a similar name as the source
         def assigned_to
           @assigned_to ||= name.delete_prefix('GraphQL::')[0..-7]
         end
@@ -125,8 +120,14 @@ module Rails
         end
 
         # Just a little override to ensure that both model and table are ready
-        def build!
+        def build!(*)
           super if model&.table_exists?
+        end
+
+        # Hook into the unregister to clean enums
+        def unregister!
+          super
+          @enums = nil
         end
 
         protected
@@ -219,18 +220,26 @@ module Rails
 
         # Preload the records for a given +association+ using the current value.
         # It can be further specified with a given +scope+
+        # TODO: On Rails 7 we can use the Preloader::Branch class
         def preload(association, scope = nil)
           reflection = model._reflect_on_association(association)
           records = current_value.is_a?(preloader_association) \
             ? current_value.preloaded_records \
             : Array.wrap(current_value.itself).compact
 
-          ar_preloader.send(:preloaders_for_reflection, reflection, records, scope).first
+          klass = preload_class(reflection)
+          args = [reflection.klass, records, reflection, scope]
+          args << nil if klass.instance_method(:initialize).arity == 6 # Rails 7
+          klass.new(*args, true).run
         end
 
-        # Get the cached instance of active record prelaoder
-        def ar_preloader
-          event.request.cache(:ar_preloader) { ::ActiveRecord::Associations::Preloader.new }
+        # Get the cached instance of active record preloader
+        def preload_class(reflection)
+          if reflection.options[:through]
+            ::ActiveRecord::Associations::Preloader::ThroughAssociation
+          else
+            ::ActiveRecord::Associations::Preloader::Association
+          end
         end
 
       private

@@ -30,7 +30,7 @@ module Rails
             if valid_token?(value, :string)
               value[1..-2] # Remove the quotes
             elsif valid_token?(value, :heredoc)
-              value[3..-4].strip_heredoc # Remove the quotes and fix identation
+              value[3..-4].strip_heredoc # Remove the quotes and fix indentation
             else
               value
             end

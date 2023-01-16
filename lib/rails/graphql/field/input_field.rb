@@ -23,7 +23,9 @@ module Rails
 
       def initialize(*args, default: nil, **xargs, &block)
         super(*args, **xargs, &block)
+
         @default = default
+        @default = deserialize(@default) if @default.is_a?(::GQLParser::Token)
       end
 
       # Prevent input fields from being further configured using a block

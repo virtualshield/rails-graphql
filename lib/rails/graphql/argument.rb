@@ -68,6 +68,7 @@ module Rails
         @nullable = full ? false : nullable
 
         @default = default
+        @default = deserialize(@default) if @default.is_a?(::GQLParser::Token)
         self.description = desc
       end
 

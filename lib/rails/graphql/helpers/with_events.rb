@@ -32,10 +32,11 @@ module Rails
           # Set or get the list of possible event types when attaching events
           def event_types(*list, append: false, expose: false)
             return (defined?(@event_types) && @event_types.presence) ||
-              superclass.try(:event_types) || [] if list.blank?
+              superclass.try(:event_types) || EMPTY_ARRAY if list.blank?
 
-            new_list = append ? event_types : []
-            new_list += list.flatten.compact.map(&:to_sym)
+            new_list = list.flatten.compact.map(&:to_sym)
+            new_list = event_types + new_list if append
+
             @event_types = new_list.uniq.freeze
             expose_events!(*list) if expose
             @event_types
@@ -43,7 +44,7 @@ module Rails
 
           protected
 
-            # Auxiliar method that creates easy-accessible callback assignment
+            # Auxiliary method that creates easy-accessible callback assignment
             def expose_events!(*list)
               list.each do |event_name|
                 next if method_defined?(event_name)

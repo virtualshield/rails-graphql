@@ -34,7 +34,7 @@ module Rails
         # Override that considers the requested field directives and also the
         # definition field events, both from itself and its directives events
         def all_listeners
-          result = request.nested_cache(:listeners, field) do
+          request.nested_cache(:listeners, field) do
             if !field.listeners?
               directive_listeners
             elsif !directives?
@@ -104,6 +104,14 @@ module Rails
           true
         end
 
+        # Check if all the sub fields are broadcastable
+        # TODO: Maybe check for interfaces and if all types allow broadcast
+        def broadcastable?
+          value = field.broadcastable?
+          value = schema.config.default_subscription_broadcastable if value.nil?
+          value != false
+        end
+
         # A little extension of the +is_a?+ method that allows checking it using
         # the underlying +field+
         def of_type?(klass)
@@ -134,6 +142,21 @@ module Rails
           resolve!
         ensure
           @field, @current_object = old_field, nil
+        end
+
+        # Build the cache object
+        def cache_dump
+          super.merge(field: (field && all_to_gid(field)))
+        end
+
+        # Organize from cache data
+        def cache_load(data)
+          @name = data[:node][0]
+          @alias_name = data[:node][1]
+          @field = all_from_gid(data[:field])
+          super
+
+          check_authorization! unless unresolvable?
         end
 
         protected

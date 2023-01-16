@@ -32,20 +32,16 @@ module Rails
 
       # Describe the given +schema+ as GraphQL, with all types and directives
       def describe(schema, collector = nil, with_descriptions: true, with_spec: nil)
-        GraphQL.type_map.send(:load_dependencies!, namespace: schema.namespace)
-
         collector ||= Collectors::IdentedCollector.new
         @with_descriptions = with_descriptions
         @with_spec = with_spec.nil? ? schema.introspection? : with_spec
         @namespace = schema.namespace
 
-        accept(schema, collector).eol
-
         GraphQL.type_map.each_from(@namespace, base_class: :Type)
           .group_by(&:kind).values_at(*DESCRIBE_TYPES)
-          .each do |items|
+          .prepend([schema]).each do |items|
             items&.sort_by(&:gql_name)&.each do |item|
-              next if !@with_spec && item.internal?
+              next if !@with_spec && item.try(:internal?)
 
               next visit_Rails_GraphQL_Type_Object(item, collector).eol \
                 if item.is_a?(::OpenStruct) && item.object?

@@ -52,7 +52,7 @@ class Integration_SQLite_StarWarsQueryTest < GraphQL::IntegrationTestCase
     GQL
   end
 
-  def test_data_recusivity
+  def test_data_recursion
     faction = { name: 'Galactic Empire' }
     bases = named_list('Death Star', 'Shield Generator', 'Headquarters', faction: faction.dup)
     faction[:bases] = bases

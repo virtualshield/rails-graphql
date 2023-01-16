@@ -65,7 +65,7 @@ module Rails
           return result unless (klass = safe_assigned_class)
           return result if GraphQL.type_map.exist?(klass, namespaces: namespaces)
 
-          GraphQL.type_map.register_alias(klass, namespaces: namespaces, &method(:itself))
+          GraphQL.type_map.register_alias(klass, to_sym, namespaces: namespaces)
           result
         end
 

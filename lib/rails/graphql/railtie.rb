@@ -19,6 +19,11 @@ module Rails
 
       runner do
         require_relative './schema'
+
+        if Rails.env.test?
+          config.graphql.enable_string_collector = false
+          config.graphql.default_response_format = :hash
+        end
       end
 
       console do
@@ -79,17 +84,35 @@ module Rails
         end
       end
 
-      # Set GraphQL cache store same as rails default cache store
+      # Set GraphQL cache store same as rails default cache store, unless the
+      # default value is a Null Cache, then use the fallback instead
       initializer 'graphql.cache', after: :initialize_cache do
-        config.graphql.cache ||= ::Rails.cache
+        config.graphql.cache ||= begin
+          if !::Rails.cache.is_a?(::ActiveSupport::Cache::NullStore)
+            ::Rails.cache
+          elsif config.graphql.cache_fallback.is_a?(Proc)
+            config.graphql.cache_fallback.call
+          else
+            config.graphql.cache_fallback
+          end
+        end
       end
 
-      # Attempt to auto load the base schema as a dependency of the type map
-      initializer 'graphql.auto_base_schema' do |app|
-        ActiveSupport.on_load(:graphql) do
-          file = app.railtie_name.sub(/_application$/, '_schema')
-          path = app.root.join('app', 'graphql', file)
-          GraphQL.type_map.add_dependencies(path.to_s, to: :base) if path.sub_ext('.rb').exist?
+      # Properly setup how GraphQL reload itself
+      # TODO: Check proper support for Rails engines
+      initializer 'graphql.reloader', before: :load_config_initializers do |app|
+        next unless (path = app.root.join('app', 'graphql')).exist?
+
+        children = config.graphql.paths.join(',')
+        autoloader = app.autoloaders.main
+
+        ActiveSupport::Dependencies.autoload_paths.delete(path.to_s)
+        autoloader.collapse(path.glob("{#{children}}").select(&:directory?))
+        autoloader.push_dir(path, namespace: ::GraphQL)
+        config.watchable_dirs[path.to_s] = [:rb]
+
+        autoloader.on_unload do |_, value, _|
+          value.unregister! if value.is_a?(Helpers::Unregisterable)
         end
       end
     end

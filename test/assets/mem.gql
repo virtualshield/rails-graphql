@@ -183,6 +183,9 @@ type Human implements Character {
   
   "The home planet of the human, or null if unknown"
   homePlanet: String
+  
+  "A greeting phrase from this person to someone"
+  greeting(name: String!): String
 }
 
 type _Mutation {

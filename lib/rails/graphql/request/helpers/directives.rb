@@ -28,6 +28,22 @@ module Rails
 
         alias all_events directive_events
 
+        # Build the cache object
+        def cache_dump
+          return super unless defined?(@directives)
+
+          super.merge(directives: all_to_gid(@directives.transform_values))
+        end
+
+        # Organize from cache data
+        def cache_load(data)
+          return super unless data.key?(:directives)
+
+          @directives = all_from_gid(data[:directives].transform_values).freeze
+
+          super
+        end
+
         protected
 
           # Make sure to always return a set

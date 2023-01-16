@@ -5,7 +5,7 @@ module Rails
     # = GraphQL Controller
     #
     # The controller helper methods that allow GraphQL to be performed on a
-    # Rails Controller class.
+    # Rails Controller class
     module Controller
       extend ActiveSupport::Concern
 
@@ -31,7 +31,7 @@ module Rails
 
       # GET /describe
       def describe
-        render plain: DESCRIBE_HEADER + gql_describe_schema
+        render plain: DESCRIBE_HEADER + gql_describe_schema + gql_footer
       end
 
       protected
@@ -52,26 +52,32 @@ module Rails
         # Execute a GraphQL request
         def gql_request(query, **xargs)
           request_xargs = REQUEST_XARGS.each_with_object({}) do |setting, result|
-            result[setting] = (xargs[setting] || send(:"gql_#{setting}"))
+            result[setting] ||= (xargs[setting] || send(:"gql_#{setting}"))
           end
 
-          request_xargs[:hash] = gql_query_cache_key
+          request_xargs[:hash] ||= gql_query_cache_key
+          request_xargs[:origin] ||= self
+
+          request_xargs = request_xargs.except(*%i[query_cache_key query_cache_version])
           ::Rails::GraphQL::Request.execute(query, **request_xargs)
         end
 
         # Print a header of the current schema for the description process
         # TODO: Maybe add a way to detect from which file the schema is being loaded
         def gql_schema_header
-          schema = self.class.gql_schema
-          "# Schema #{schema.name} [#{schema.namespace}]\n"
+          "# Schema #{gql_schema.name} [#{gql_schema.namespace}]\n"
         end
 
         # The schema on which the requests will be performed from
         def gql_schema
+          return @gql_schema if defined?(@gql_schema)
+
           schema = self.class.gql_schema
-          schema = schema.safe_constantize if schema.is_a?(String)
-          schema ||= application_default_schema
-          return schema if schema.is_a?(Module) && schema < ::Rails::GraphQL::Schema
+          schema = schema.constantize if schema.is_a?(String)
+          schema ||= gql_application_default_schema
+
+          return @gql_schema = schema if schema.is_a?(Module) &&
+            schema < ::Rails::GraphQL::Schema
 
           raise ExecutionError, (+<<~MSG).squish
             Unable to find a valid schema for #{self.class.name},
@@ -110,16 +116,28 @@ module Rails
           end
         end
 
+        # Show the footer of the describe page
+        def gql_footer
+          $/ + $/ + '# Version: ' + gql_version + $/ +
+            '# Rails GraphQL ' + ::Rails::GraphQL::VERSION::STRING +
+            ' (Spec ' + ::GQLParser::VERSION + ')'
+        end
+
+        # Get the version of the running instance of GraphQL
+        def gql_version
+          ::Rails::GraphQL.type_map.version
+        end
+
       private
 
         # Find the default application schema
-        def application_default_schema
+        def gql_application_default_schema
           app_class = Rails.application.class
           source_name = app_class.respond_to?(:module_parent_name) \
             ? :module_parent_name \
             : :parent_name
 
-          klass = "::GraphQL::#{app_class.send(source_name)}Schema".constantize
+          klass = "::GraphQL::#{app_class.public_send(source_name)}Schema".constantize
           self.class.gql_schema = klass
         end
     end

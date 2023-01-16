@@ -82,7 +82,7 @@ enum gql_lexeme gql_name_to_keyword(struct gql_scanner *scanner, const char *upg
     // Move ot the next item and check the current for different size
     if(strlen(keyword) == len)
     {
-      // We cannot use the normal strcomp because we are cimparing a mid part of the string
+      // We cannot use the normal strcomp because we are comparing a mid part of the string
       for (pos = 0, valid = 1; valid == 1 && pos < len; pos++)
       {
         if (keyword[pos] != scanner->doc[scanner->start_pos + pos])
@@ -119,8 +119,9 @@ enum gql_lexeme gql_read_comment(struct gql_scanner *scanner)
 
 enum gql_lexeme gql_read_hash(struct gql_scanner *scanner)
 {
-  // Start with 1 curly open
+  // Start with 1 curly open and get the next
   int curly_opens = 1;
+  GQL_SCAN_NEXT(scanner);
 
   while (curly_opens > 0)
   {
@@ -141,13 +142,12 @@ enum gql_lexeme gql_read_hash(struct gql_scanner *scanner)
   }
 
   // Save the last position, move to the next and return as hash
-  GQL_SCAN_NEXT(scanner);
   return gql_iv_hash;
 }
 
 enum gql_lexeme gql_read_float(struct gql_scanner *scanner)
 {
-  // If what made it get in here was an '.', then it can recurse to the expoenent of a fraction
+  // If what made it get in here was an '.', then it can recurse to the exponent of a fraction
   int at_fraction = scanner->current == '.';
 
   // Skip the float mark and maybe
@@ -191,12 +191,13 @@ enum gql_lexeme gql_read_number(struct gql_scanner *scanner)
 enum gql_lexeme gql_read_string(struct gql_scanner *scanner, int allow_heredoc)
 {
   int start_size, end_size = 0;
+  unsigned long start = scanner->current_pos;
 
   // Read all the initial quotes and save the size
   GQL_SCAN_WHILE(scanner, scanner->current == '"');
-  start_size = GQL_SCAN_SIZE(scanner);
+  start_size = (int)(scanner->current_pos - start);
 
-  // 4, 5, or more than 6 means an invalid tripple-quotes block
+  // 4, 5, or more than 6 means an invalid triple-quotes block
   if (start_size == 4 || start_size == 5 || start_size > 6)
     return gql_i_unknown;
 
@@ -229,7 +230,7 @@ enum gql_lexeme gql_read_string(struct gql_scanner *scanner, int allow_heredoc)
       if (scanner->current == '\n')
         GQL_SCAN_NEW_LINE(scanner);
 
-      // Skip one extra character, which means it is skipping the escapped char
+      // Skip one extra character, which means it is skipping the escaped char
       if (scanner->current == '\\')
         GQL_SCAN_NEXT(scanner);
     }
@@ -252,7 +253,7 @@ void gql_next_lexeme(struct gql_scanner *scanner)
   // Temporary save the end line and end column
   GQL_SCAN_SET_END(scanner, 0);
 
-  // Skip all the ignorables
+  // Skip everything that can be ignored
   GQL_SCAN_WHILE(scanner, GQL_S_IGNORE(scanner->current));
 
   // Mark where the new interesting thing has started
@@ -328,8 +329,7 @@ VALUE gql_inspect_token(VALUE self)
 VALUE gql_token_of_type_check(VALUE self, VALUE other)
 {
   VALUE type = rb_iv_get(self, "@type");
-  if (NIL_P(type)) return Qfalse;
-  return rb_obj_equal(type, other);
+  return rb_equal(type, other);
 }
 
 // Add the token module to the object and assign its location information
@@ -415,7 +415,7 @@ VALUE gql_array_to_rb(struct gql_scanner *scanner)
     if (scanner->lexeme == gql_i_unknown)
       return Qnil;
 
-    // Add the value to the array and scan through the ignorables
+    // Add the value to the array and scan through everything ignorable
     rb_ary_push(result, element);
     GQL_SCAN_WHILE(scanner, GQL_S_IGNORE(scanner->current));
   }
@@ -464,7 +464,7 @@ VALUE gql_value_to_rb(struct gql_scanner *scanner, int accept_var)
     scanner->lexeme = gql_read_hash(scanner);
 
   // By getting here with a proper value, just return the string of it, which
-  // will be delt in the request
+  // will be dealt in the request
   if (GQL_I_VALUE(scanner->lexeme))
     return gql_scanner_to_s(scanner);
 
