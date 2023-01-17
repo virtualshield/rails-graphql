@@ -21,6 +21,8 @@ require 'debug'
 
 $config = Rails::GraphQL.config
 $config.logger = ActiveSupport::TaggedLogging.new(Logger.new('/dev/null'))
+Rails::GraphQL::Request::Backtrace.skip_base_class = NilClass
+
 # ActiveRecord::Base.logger = Logger.new(STDOUT)
 
 require_relative './test_ext'

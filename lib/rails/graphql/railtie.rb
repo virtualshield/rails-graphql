@@ -45,6 +45,23 @@ module Rails
         end
       end
 
+      initializer 'graphql.active_record_backtrace_print' do
+        if defined?(ActiveRecord)
+          base = Module.new
+          base.send(:define_method, :to_gql_backtrace) do
+            +"#<#{self.class.name} id: #{id}>"
+          end
+
+          relation = Module.new
+          relation.send(:define_method, :to_gql_backtrace) do
+            +"[#<#{model.name}>](#{size})"
+          end
+
+          ActiveRecord::Base.include(base)
+          ActiveRecord::Relation.include(relation)
+        end
+      end
+
       # Expose GraphQL runtime to controller for logging
       initializer 'graphql.log_runtime' do
         require_relative './railties/controller_runtime'

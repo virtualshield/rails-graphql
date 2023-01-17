@@ -13,9 +13,6 @@ module Rails
           InheritedCollection.const_get(klass).new(source, ivar, type)
         end
 
-        # If the object was instantiated, then it is not empty nor blank
-        alias empty? blank?
-
         def initialize(source, ivar, type)
           @source = source
           @ivar = ivar

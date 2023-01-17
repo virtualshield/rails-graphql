@@ -43,6 +43,12 @@ module Rails
         true
       end
 
+      # Make sure to check the original field as well
+      # TODO: Maybe not use the +==+ method, but so far so good
+      def ==(other)
+        super || field == other
+      end
+
       # Allow chaging most of the general kind-independent initialize settings
       def apply_changes(**xargs, &block)
         if (deprecated = xargs[:deprecated])

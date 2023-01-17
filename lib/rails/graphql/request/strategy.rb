@@ -161,10 +161,23 @@ module Rails
         def trigger_event(event_name, **xargs)
           return unless listening_to?(event_name)
 
-          objects = listeners[event_name.to_sym] & request.stack
-          return if objects.empty?
+          # A simpler attempt to remove select less objects (or even none) by
+          # assuming that the first item will work as exclusive and
+          # non-exclusive, and the others, only non-exclusive or anything
+          # different than a +Callback+
+          event_name = event_name.to_sym
+          list = listeners[event_name]
+          objects = request.stack.select.with_index do |obj, idx|
+            next unless list.include?(obj)
+            next true if idx == 0
 
-          Event.trigger(event_name, objects, self, **xargs)
+            obj.all_events.try(:[], event_name)&.any? do |ev|
+              !(ev.is_a?(Callback) && ev.exclusive?)
+            end
+          end
+
+          # Now trigger with more for all the selected objects
+          Event.trigger(name, objects, self, **xargs) if objects.present?
         end
 
         # Check what kind of event listeners the object have, in order to speed

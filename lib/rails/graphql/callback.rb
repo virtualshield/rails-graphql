@@ -7,6 +7,8 @@ module Rails
     # An extra powerfull proc that can handle way more situations than the
     # original block caller
     class Callback
+      EXCLUSIVE_ARGUMENT = :exclusive_callback
+
       attr_reader :event_name, :block, :target, :filters
 
       delegate :event_filters, to: :target
@@ -35,6 +37,10 @@ module Rails
         @target = target
         @event_name = event_name
 
+        @exclusive = xargs.delete(EXCLUSIVE_ARGUMENT)
+        @exclusive = target.try(:default_exclusive?, event_name) if @exclusive.nil?
+        @exclusive = true if @exclusive.nil?
+
         @pre_args = args
         @pre_xargs = xargs.slice!(*event_filters.keys)
         @filters = xargs
@@ -50,6 +56,12 @@ module Rails
         block.is_a?(Symbol) \
           ? call_symbol(event, *args, **xargs) \
           : call_proc(event, _callback_context, *args, **xargs)
+      end
+
+      # Return if this event is exclusive, so that only the original source of
+      # the callback will be allowed to receive it
+      def exclusive?
+        @exclusive
       end
 
       # Get a described source location for the callback
@@ -78,12 +90,15 @@ module Rails
 
         # Using the filters, check if the current callback can be executed
         def can_run?(event)
+          return false if exclusive? && !event.same_source?(target)
+
           filters.all? do |key, options|
             target.instance_exec(options, event, &event_filters[key])
           end
         end
 
         # Call the callback block as a symbol
+        # TODO: Maybe black calling non-public events
         def call_symbol(event, *args, **xargs)
           event.on_instance(owner) do |instance|
             block = instance.method(@block)

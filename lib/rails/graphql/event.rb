@@ -40,6 +40,16 @@ module Rails
         @layers = []
       end
 
+      # Check if the provided +other+ is equal to the source of the event. If
+      # other is a directive, then check if the source is using that directive
+      def same_source?(other)
+        if other.is_a?(Directive) || (other.is_a?(Module) && other < Directive)
+          source.using?(other)
+        else
+          source == other
+        end
+      end
+
       # Return a given +name+ information from the event
       def parameter(name)
         respond_to?(name) ? public_send(name) : data[name]

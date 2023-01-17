@@ -31,7 +31,10 @@ module Rails
         def method_missing(method_name, *args, **xargs, &block)
           return super unless method_name.to_s.start_with?('build_')
 
-          type = method_name.to_s[6..-1].singularize.to_sym
+          type = method_name.to_s[6..-1]
+          type = type.singularize unless hook_names.include?(type.to_sym)
+          type = type.to_sym
+
           import_skips_for(type, xargs)
 
           build!(type, *args, **xargs, &block) unless built?(type)

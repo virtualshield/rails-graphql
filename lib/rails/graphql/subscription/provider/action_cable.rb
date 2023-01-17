@@ -31,6 +31,10 @@ module Rails
             @pubsub = nil
           end
 
+          def accepts?(operation)
+            operation.request.origin.is_a?(::ActionCable::Channel::Base)
+          end
+
           def add(*subscriptions)
             with_pubsub do
               subscriptions.each do |item|
@@ -73,7 +77,6 @@ module Rails
           protected
 
             def stream_from(item)
-              return unless item.origin.is_a?(::ActionCable::Channel::Base)
               item.origin.stream_from(stream_name(item))
             end
 

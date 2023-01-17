@@ -73,6 +73,12 @@ module Rails
           def shutdown
           end
 
+          # Before even generating the item, check if the operation can be
+          # subscribed
+          def accepts?(operation)
+            raise NotImplementedError, +"#{self.class.name} does not implement accepts?"
+          end
+
           # Add one or more subscriptions to the provider
           def add(*subscriptions)
             raise NotImplementedError, +"#{self.class.name} does not implement add"

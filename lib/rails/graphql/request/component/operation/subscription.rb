@@ -139,6 +139,10 @@ module Rails
               raise ValidationError, (+<<~MSG).squish if element.unresolvable?
                 Field is unresolvable.
               MSG
+
+              raise ValidationError, (+<<~MSG).squish unless schema.accepts_subscription?(self)
+                Operation unaccepted.
+              MSG
             end
 
             # Very similar to the +cache_dump+ from the request, however this

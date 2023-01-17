@@ -93,6 +93,11 @@ module Rails
           gid.instantiate? ? klass.build(**gid.params) : klass
         end
 
+        # Similar to inspect, but summarized
+        def to_gql_backtrace
+          +"#<GraphQL::#{base_type.name.demodulize} #{gql_name}>"
+        end
+
         # Defines a series of question methods based on the kind
         KINDS.each { |kind| define_method(:"#{kind.downcase}?") { false } }
 

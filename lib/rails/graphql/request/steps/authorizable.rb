@@ -7,10 +7,17 @@ module Rails
       module Authorizable
         # Event used to perform an authorization step
         class Event < GraphQL::Event
+          # Same behavior as the request event
+          def same_source?(other)
+            super || (source.try(:kind) == :field && source.field == other)
+          end
+
           # Similar to trigger for object, but with an extra extension for
           # instance methods defined on the given object
           def authorize_using(object, send_args, events = nil)
-            cache = data[:request].cache(:authorize)[object] ||= []
+            @object = object
+
+            cache = data[:request].nested_cache(:authorize, object) { [] }
             return false if cache.present? && cache.none?
             args, xargs = send_args
 
@@ -63,8 +70,9 @@ module Rails
             event = authorization_event
             schema_events = request.all_events.try(:[], :authorize)
             executed = event.authorize_using(schema, args, schema_events)
+            executed = event.authorize_using(self, args) || executed
 
-            element = field
+            element = field&.owner
             while element && element != schema
               executed = event.authorize_using(element, args) || executed
               element = element.try(:owner)

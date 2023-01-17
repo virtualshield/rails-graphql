@@ -237,6 +237,11 @@ module Rails
           subscription_provider.shutdown
         end
 
+        # Checks if the given +operation+ can be subscribed to
+        def accepts_subscription?(operation)
+          subscription_provider.accepts?(operation)
+        end
+
         # This receives a request subscription object and return an id for that.
         # By default, it just produces a random uuid
         def subscription_id_for(*)

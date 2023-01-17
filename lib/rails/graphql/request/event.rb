@@ -34,6 +34,11 @@ module Rails
           super(name, source, **data)
         end
 
+        # If the source is a field, than also compare to the actual field
+        def same_source?(other)
+          super || (source.try(:kind) == :field && source.field == other)
+        end
+
         # Provide a way to access the current field value
         def current_value
           resolver&.current_value
@@ -58,7 +63,7 @@ module Rails
 
         # Return the actual field when the source is a request field
         def field
-          source.field if source.try(:kind) === :field
+          source.field if source.try(:kind) == :field
         end
 
         # Check if the event source is of the given +type+

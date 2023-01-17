@@ -82,7 +82,19 @@ class Integration_AuthorizationTest < GraphQL::IntegrationTestCase
 
       instance = auth_directive.new.tap { |dir| dir.instance_variable_set(:@owner, nil) }
       SCHEMA.stub_ivar(:@directives, [instance]) do
-        assert_executed { assert_result(SAMPLE2, '{ sample2 }') }
+        assert_executed(0) { assert_result(SAMPLE2, '{ sample2 }') }
+      end
+
+      auth_directive.events[:authorize][0].stub_ivar(:@exclusive, false) do
+        SCHEMA.stub_ivar(:@directives, [instance]) do
+          assert_executed { assert_result(SAMPLE2, '{ sample2 }') }
+        end
+      end
+
+      instance = auth_directive.new.tap { |dir| dir.instance_variable_set(:@owner, nil) }
+      method = ->(*) { @directives = Set.new([instance]) }
+      Rails::GraphQL::Request::Component::Field.stub_imethod(:parse_directives, method) do
+        assert_executed { assert_result(SAMPLE2, '{ sample2 @AuthDirective }') }
       end
     end
   end

@@ -28,6 +28,14 @@ module Rails
 
         alias all_events directive_events
 
+        # Check if the current component is using a directive
+        def using?(item)
+          return false unless directives?
+
+          directive = (item.is_a?(Symbol) || item.is_a?(String)) ? find_directive!(item) : item
+          (directive < GraphQL::Directive) && directives.any?(directive)
+        end
+
         # Build the cache object
         def cache_dump
           return super unless defined?(@directives)

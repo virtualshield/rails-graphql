@@ -51,8 +51,8 @@ module Rails
 
               if item.kind == :field
                 oidx += 1
-                data[5] ||= oidx == 0 ? '↓' : print_object(objects.at(oidx - 1))
-                data[3] ||= print_object(objects.at(oidx))
+                data[5] ||= oidx == 0 ? '↓' : print_object(objects&.at(oidx - 1))
+                data[3] ||= print_object(objects&.at(oidx))
               end
 
               suffix = nil
@@ -69,7 +69,7 @@ module Rails
             steps = cleaner.clean(steps) unless cleaner.nil?
 
             klass = +"(\e[4m#{error.class}\e[24m)"
-            stage = +" [#{request.strategy.stage}]" unless skip_base_class != StandardError
+            stage = +" [#{request.strategy.stage}]" if skip_base_class != StandardError
 
             +"\e[1m#{error.message} #{klass}#{stage}\e[0m\n#{steps.join("\n")}"
           end
@@ -118,23 +118,16 @@ module Rails
           # Better display records and other objects that might be to big to
           # show in here
           def print_object(object)
-            if object.is_a?(Module) && object < GraphQL::Type
-              +"#<GraphQL::#{object.base_type.name.demodulize} #{object.gql_name}>"
-            elsif !defined?(ActiveRecord)
-              object.inspect
-            elsif object.is_a?(ActiveRecord::Relation)
-              +"[#<#{object.model.name}>](#{object.size})"
-            elsif object.is_a?(ActiveRecord::Base)
-              +"#<#{object.class.name} id: #{object.id}>"
-            end
+            object.respond_to?(:to_gql_backtrace) ? object.to_gql_backtrace : object.inspect
           end
 
           # Visitors
           def row_for_field(data, item, suffix)
             field = item.field
+            name = +"#{field.owner.gql_name}.#{field.gql_name}#{suffix}" unless field.nil?
 
-            data.push(+"#{field.owner.gql_name}.#{field.gql_name}#{suffix}")
-            data.push(nil, item.arguments.to_json, nil)
+            data.push(name || +"*.#{item.name}")
+            data.push(nil, (item.arguments ? item.arguments.to_json : 'nil'), nil)
           end
 
           def row_for_fragment(data, item, *)

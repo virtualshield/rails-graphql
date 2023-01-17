@@ -77,7 +77,7 @@ module Rails
 
       def initialize(*args, method_name: nil, deprecated: false, **xargs, &block)
         @method_name = method_name.to_s.underscore.to_sym unless method_name.nil?
-        @broadcastable = xargs.delete(:broadcastable) if xargs.key?(:broadcastables)
+        @broadcastable = xargs.delete(:broadcastable) if xargs.key?(:broadcastable)
 
         if deprecated.present?
           xargs[:directives] = ::Array.wrap(xargs[:directives])
@@ -105,7 +105,7 @@ module Rails
         super && match_arguments?(other)
       end
 
-      # Checks if a given unserialized value is valid for this field
+      # Checks if a given raw value is valid for this field
       def valid_output?(value, deep: true)
         return false unless super
         return null? if value.nil?

@@ -17,7 +17,7 @@ module Rails
 
         def self.included(other)
           other.extend(WithCallbacks::Setup)
-          other.delegate(:event_filters, to: :class)
+          other.delegate(:event_filters, :default_exclusive?, to: :class)
         end
 
         # Add the ability to set up filters before the actual execution of the
@@ -31,7 +31,24 @@ module Rails
           # Return the list of event filters hooks
           def event_filters
             return @event_filters if defined? @event_filters
-            superclass.try(:event_filters) || {}
+            superclass.try(:event_filters) || EMPTY_HASH
+          end
+
+          # Set the default +exclusive+ value for the given +for+ event names
+          def default_exclusive(value, **xargs)
+            new_values = Array.wrap(xargs.fetch(:for)).map(&:to_sym).product([value]).to_h
+            @callback_exclusive ||= superclass.try(:callback_exclusive)&.dup || {}
+            @callback_exclusive.merge!(new_values)
+          end
+
+          # Check if the given +event_name+ should be thread as exclusive or
+          # non-exclusive by default
+          def default_exclusive?(event_name)
+            if defined?(@callback_exclusive)
+              @callback_exclusive[event_name]
+            else
+              superclass.try(:default_exclusive?, event_name)
+            end
           end
 
           protected

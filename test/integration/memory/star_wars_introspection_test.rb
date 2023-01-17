@@ -104,8 +104,6 @@ class Integration_Memory_StarWarsIntrospectionTest < GraphQL::IntegrationTestCas
     }, defaultValue: nil }
 
     fields = [
-      { name: '__schema', args: [] },
-      { name: '__type', args: [name_arg] },
       { name: 'hero', args: [epi_arg] },
       { name: 'human', args: [id_arg.merge(description: 'ID of the human')] },
       { name: 'droid', args: [id_arg.merge(description: 'ID of the droid')] },

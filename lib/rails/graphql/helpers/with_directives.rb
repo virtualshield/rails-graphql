@@ -64,11 +64,11 @@ module Rails
           raise e.class, +"#{e.message}\n  Defined at: #{caller(2)[0]}"
         end
 
-        # Check wheter a given directive is being used
-        def using?(item_or_symbol)
-          directive = item_or_symbol.is_a?(Symbol) ? fetch!(item_or_symbol) : item_or_symbol
+        # Check whether a given directive is being used
+        def using?(item)
+          directive = (item.is_a?(Symbol) || item.is_a?(String)) ? fetch!(item) : item
           raise ArgumentError, (+<<~MSG).squish unless directive < GraphQL::Directive
-            The provided #{item_or_symbol.inspect} is not a valid directive.
+            The provided #{item.inspect} is not a valid directive.
           MSG
 
           !!all_directives&.any?(directive)

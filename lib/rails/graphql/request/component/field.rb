@@ -15,7 +15,7 @@ module Rails
 
         delegate :decorate, to: :type_klass
         delegate :operation, :variables, :request, to: :parent
-        delegate :method_name, :resolver, :performer, :type_klass, :leaf_type?,
+        delegate :method_name, :resolver, :performer, :type_klass,:leaf_type?,
           :dynamic_resolver?, :mutation?, to: :field
 
         attr_reader :name, :alias_name, :parent, :field, :arguments, :current_object
@@ -41,7 +41,7 @@ module Rails
               field.all_listeners
             else
               local = directive_listeners
-              local.blank? ? field.all_listeners : field.all_listeners + local
+              local.empty? ? field.all_listeners : field.all_listeners + local
             end
           end
         end
@@ -69,6 +69,11 @@ module Rails
               hash[argument.gql_name] = argument
             end
           end
+        end
+
+        # Check if the field is using a directive
+        def using?(item_or_symbol)
+          super || field.using?(item_or_symbol)
         end
 
         # Assign a given +field+ to this class. The field must be an output
@@ -165,10 +170,11 @@ module Rails
           def organize_then(&block)
             super(block) do
               check_assignment!
+
+              parse_directives(@node[3])
               check_authorization!
 
               parse_arguments(@node[2])
-              parse_directives(@node[3])
               parse_selection(@node[4])
             end
           end
