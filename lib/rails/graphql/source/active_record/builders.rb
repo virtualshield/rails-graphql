@@ -83,7 +83,7 @@ module Rails
         # Build all necessary attribute fields into the given +holder+
         def build_attribute_fields(holder, **field_options)
           each_attribute(holder) do |key, type, **options|
-            next if skip.include?(key) || holder.field?(key)
+            next if holder.field?(key) || skip_field?(key, on: holder.kind)
 
             str_key = key.to_s
             type = (defined?(@enums) && @enums.key?(str_key) && @enums[str_key]) ||
@@ -99,7 +99,8 @@ module Rails
           return unless with_associations?
 
           each_reflection do |item|
-            next if holder.field?(item.name) || skip_field?(item.name, on: holder.kind)
+            next if holder.field?(item.name) || item.polymorphic? ||
+              skip_field?(item.name, on: holder.kind)
 
             type_map_after_register(item.klass) do |type|
               next unless (type.object? && type.try(:assigned_to) != item.klass) ||

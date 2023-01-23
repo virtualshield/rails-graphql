@@ -1,0 +1,182 @@
+// Code and syntax highlighting
+code {
+  padding: 0.2em 0.15em;
+  font-weight: 400;
+  background-color: $code-background-color;
+  border: $border $border-color;
+  border-radius: $border-radius;
+}
+
+// Avoid appearance of dark border around visited code links in Safari
+a:visited code {
+  border-color: $border-color;
+}
+
+blockquote {
+  padding: $sp-3;
+  margin: 0;
+  line-height: 1.5;
+  padding-left: 1.5rem;
+  margin-bottom: $sp-3;
+  border-left: 3px solid;
+
+  p {
+    padding: 0;
+    margin: 0;
+    border: 0;
+  }
+}
+
+// ```[LANG]...```
+div.highlighter-rouge {
+  padding: $sp-3 $sp-4;
+  margin-top: 0;
+  position: relative;
+  line-height: $body-line-height;
+  margin-bottom: $sp-3;
+  overflow-x: auto;
+  background-color: $code-background-color;
+  border-left: 3px solid;
+  border-radius: 0 $border-radius $border-radius 0;
+  box-shadow: none;
+  -webkit-overflow-scrolling: touch;
+
+  &::before {
+    right: 0;
+    bottom: 0;
+    display: block;
+    font-weight: 300;
+    position: absolute;
+    font-size: 0.75rem;
+    padding: 0.3rem 0.5rem;
+    border-radius: $border-radius 0 0 0;
+    color: var(--white);
+  }
+
+  &.language-js {
+    border-color: $yellow-200;
+
+    &::before {
+      content: "JavaScript";
+      background-color: $yellow-200;
+    }
+  }
+
+  &.language-ruby {
+    border-color: $red-200;
+
+    &::before {
+      content: "Ruby";
+      background-color: $red-200;
+    }
+  }
+
+  &.language-graphql {
+    border-color: var(--color-graphql);
+
+    &::before {
+      content: "GraphQL";
+      background-color: var(--color-graphql);
+    }
+  }
+
+  &.language-yaml {
+    border-color: $green-300;
+
+    &::before {
+      content: "YAML";
+      background-color: $green-300;
+    }
+  }
+
+  &.language-bash {
+    border-color: black;
+
+    &::before {
+      content: "CLI";
+      background-color: black;
+    }
+  }
+
+  div.highlight,
+  pre.highlight,
+  code {
+    padding: 0;
+    margin: 0;
+    border: 0;
+  }
+}
+
+// {% highlight LANG %}...{% endhighlight %},
+// {% highlight LANG linenos %}...{% endhighlight %}:
+figure.highlight {
+  padding: $sp-3;
+  margin-top: 0;
+  margin-bottom: $sp-3;
+  background-color: $code-background-color;
+  border-radius: $border-radius;
+  box-shadow: none;
+  -webkit-overflow-scrolling: touch;
+
+  pre,
+  code {
+    padding: 0;
+    margin: 0;
+    border: 0;
+  }
+}
+
+// ```[LANG]...```, kramdown line_numbers = true,
+// {% highlight LANG linenos %}...{% endhighlight %}:
+.highlight .table-wrapper {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  box-shadow: none;
+
+  td,
+  pre {
+    @include fs-2;
+    min-width: 0;
+    padding: 0;
+    background-color: $code-background-color;
+    border: 0;
+  }
+
+  td.gl {
+    padding-right: $sp-3;
+  }
+
+  pre {
+    margin: 0;
+    line-height: 2;
+  }
+}
+
+// Code examples (rendered)
+.code-example {
+  padding: $sp-3;
+  margin-bottom: $sp-3;
+  overflow: auto;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+
+  + .highlighter-rouge,
+  + figure.highlight {
+    position: relative;
+    margin-top: -$sp-4;
+    border-right: 1px solid $border-color;
+    border-bottom: 1px solid $border-color;
+    border-left: 1px solid $border-color;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+}
+
+// Text highlighting colors
+body.light {
+  @import "./code/vs";
+}
+@media (prefers-color-scheme: light) {
+  @import "./code/vs";
+}

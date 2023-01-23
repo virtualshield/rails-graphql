@@ -177,7 +177,7 @@ module Rails
           end
 
           # Now trigger with more for all the selected objects
-          Event.trigger(name, objects, self, **xargs) if objects.present?
+          Event.trigger(event_name, objects, self, **xargs) if objects.present?
         end
 
         # Check what kind of event listeners the object have, in order to speed

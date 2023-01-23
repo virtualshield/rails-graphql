@@ -59,11 +59,11 @@ class Integration_Memory_StarWarsIntrospectionTest < GraphQL::IntegrationTestCas
   def test_query_object_fields
     fields = [
       { name: 'id', type: { name: nil, kind: 'NON_NULL' } },
-      { name: 'name', type: { name: 'String', kind: 'SCALAR' } },
-      { name: 'friends', type: { name: nil, kind: 'LIST' } },
       { name: 'appearsIn', type: { name: nil, kind: 'LIST' } },
-      { name: 'secretBackstory', type: { name: 'String', kind: 'SCALAR' } },
+      { name: 'friends', type: { name: nil, kind: 'LIST' } },
+      { name: 'name', type: { name: 'String', kind: 'SCALAR' } },
       { name: 'primaryFunction', type: { name: 'String', kind: 'SCALAR' } },
+      { name: 'secretBackstory', type: { name: 'String', kind: 'SCALAR' } },
     ]
 
     assert_result({ data: { __type: { name: 'Droid', fields: fields } } }, <<~GQL)
@@ -74,11 +74,11 @@ class Integration_Memory_StarWarsIntrospectionTest < GraphQL::IntegrationTestCas
   def test_query_object_fields_with_nested_type
     fields = [
       { name: 'id', type: { name: nil, kind: 'NON_NULL', ofType: { name: 'ID', kind: 'SCALAR' } } },
-      { name: 'name', type: { name: 'String', kind: 'SCALAR', ofType: nil } },
-      { name: 'friends', type: { name: nil, kind: 'LIST', ofType: { name: 'Character', kind: 'INTERFACE' } } },
       { name: 'appearsIn', type: { name: nil, kind: 'LIST', ofType: { name: 'Episode', kind: 'ENUM' } } },
-      { name: 'secretBackstory', type: { name: 'String', kind: 'SCALAR', ofType: nil } },
+      { name: 'friends', type: { name: nil, kind: 'LIST', ofType: { name: 'Character', kind: 'INTERFACE' } } },
+      { name: 'name', type: { name: 'String', kind: 'SCALAR', ofType: nil } },
       { name: 'primaryFunction', type: { name: 'String', kind: 'SCALAR', ofType: nil } },
+      { name: 'secretBackstory', type: { name: 'String', kind: 'SCALAR', ofType: nil } },
     ]
 
     assert_result({ data: { __type: { name: 'Droid', fields: fields } } }, <<~GQL)
@@ -104,9 +104,9 @@ class Integration_Memory_StarWarsIntrospectionTest < GraphQL::IntegrationTestCas
     }, defaultValue: nil }
 
     fields = [
+      { name: 'droid', args: [id_arg.merge(description: 'ID of the droid')] },
       { name: 'hero', args: [epi_arg] },
       { name: 'human', args: [id_arg.merge(description: 'ID of the human')] },
-      { name: 'droid', args: [id_arg.merge(description: 'ID of the droid')] },
     ]
 
     assert_result({ data: { __schema: { queryType: { fields: fields } } } }, <<~GQL)

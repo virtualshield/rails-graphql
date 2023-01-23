@@ -136,11 +136,10 @@ module Rails
         def import(klass, ignore_abstract: false)
           return if ignore_abstract && klass.try(:abstract?)
 
-          case klass
-          when Alternative::Query
+          if klass.is_a?(Module) && klass <= Alternative::Query
             # Import an alternative declaration of a field
             proxy_field(klass.field)
-          when Helpers::WithFields
+          elsif klass.is_a?(Helpers::WithFields)
             # Import a set of fields
             klass.fields.each_value { |field| proxy_field(field) }
           else

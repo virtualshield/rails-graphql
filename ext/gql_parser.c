@@ -547,7 +547,7 @@ VALUE gql_parse_type(struct gql_scanner *scanner)
   unsigned int nullability = 0;
 
   // Check for all the open brackets before the type
-  while (scanner->current == '[' || GQL_S_IGNORE(scanner->current))
+  while (scanner->current == '[' || (dimensions > 0 && GQL_S_IGNORE(scanner->current)))
   {
     if (scanner->current == '\0')
       return gql_nil_and_unknown(scanner);

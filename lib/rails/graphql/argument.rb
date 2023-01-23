@@ -116,10 +116,9 @@ module Rails
         !!@nullable
       end
 
-      # TODO: Fix namespace
       # Override to add the kind
       def description(namespace = nil, *)
-        super(namespace || owner.try(:namespaces)&.first, :argument)
+        super(namespace || owner.try(:namespaces), :argument)
       end
 
       # Checks if a given default value was provided

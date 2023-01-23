@@ -103,7 +103,9 @@ module Rails
             list = list.reject { |field| field.using?(deprecated_directive) }
           end
 
-          list.reject(&:internal?)
+          list.reject(&:internal?).sort_by do |field|
+            (field.name == :id) ? '' : field.gql_name
+          end
         end
 
         def enum_values(include_deprecated:)

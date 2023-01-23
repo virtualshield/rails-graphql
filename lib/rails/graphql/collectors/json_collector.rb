@@ -35,7 +35,7 @@ module Rails
           raise
         end
 
-        # Append to the responsa data all the errors that happened during the
+        # Append to the response data all the errors that happened during the
         # request process.
         def append_errors(errors)
           return if errors.empty?
@@ -86,7 +86,7 @@ module Rails
         private
 
           # Start a new part of the collector. When set +as_array+, the result
-          # of the stack will be encolsed by +[]+.
+          # of the stack will be enclosed by +[]+.
           def start_stack(as_array = false, plain_array = false)
             @stack_value << @current_value
             @stack_array << @current_array

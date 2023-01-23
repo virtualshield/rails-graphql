@@ -30,7 +30,7 @@ module Rails
       end
 
       # Sometimes the owner does not designate this, but it is safe to assume it
-      # will be associated to the object valyd types
+      # will be associated to the object valid types
       def valid_field_types
         owner.try(:valid_field_types) || Type::Object.valid_field_types
       end

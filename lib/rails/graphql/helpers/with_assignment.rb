@@ -11,7 +11,7 @@ module Rails
             :assigned_class, to: :class
         end
 
-        # Check if the class is assgined
+        # Check if the class is assigned
         def assigned?
           assigned_to.present?
         end

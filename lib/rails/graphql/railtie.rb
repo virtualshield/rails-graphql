@@ -19,11 +19,6 @@ module Rails
 
       runner do
         require_relative './schema'
-
-        if Rails.env.test?
-          config.graphql.enable_string_collector = false
-          config.graphql.default_response_format = :hash
-        end
       end
 
       console do
@@ -101,6 +96,14 @@ module Rails
         end
       end
 
+      # Simply switch to hash output if rails is running on test mode
+      initializer 'graphql.tests' do
+        if Rails.env.test?
+          config.graphql.enable_string_collector = false
+          config.graphql.default_response_format = :hash
+        end
+      end
+
       # Set GraphQL cache store same as rails default cache store, unless the
       # default value is a Null Cache, then use the fallback instead
       initializer 'graphql.cache', after: :initialize_cache do
@@ -124,7 +127,7 @@ module Rails
         autoloader = app.autoloaders.main
 
         ActiveSupport::Dependencies.autoload_paths.delete(path.to_s)
-        autoloader.collapse(path.glob("{#{children}}").select(&:directory?))
+        autoloader.collapse(path.glob("**/{#{children}}").select(&:directory?))
         autoloader.push_dir(path, namespace: ::GraphQL)
         config.watchable_dirs[path.to_s] = [:rb]
 

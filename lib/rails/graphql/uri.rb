@@ -40,7 +40,7 @@ module URI
       #
       #   URI::GQL.create(GraphQL::Directive::DeprecatedDirective)
       def create(object, scope = nil, params = nil)
-        namespace = (object.namespaces.first || :base).to_s.tr('_', '-')
+        namespace = Rails::GraphQL.enumerate(object.namespaces).first || :base
         klass = object.gid_base_class
 
         xargs = { namespace: namespace, scope: scope, params: params }
@@ -68,7 +68,7 @@ module URI
       #   URI::GQL.build(['bcx', 'Person', '1', key: 'value'])
       def build(args)
         parts = Util.make_components_hash(self, args)
-        parts[:host] = parts[:namespace].to_s
+        parts[:host] = parts[:namespace].to_s.tr('_', '-')
         parts[:path] = [parts[:class_name], parts[:scope], parts[:name]].compact.join('/')
         parts[:path].prepend('/')
 

@@ -1,0 +1,102 @@
+// Buttons and things that look like buttons
+
+.btn {
+  display: inline-block;
+  box-sizing: border-box;
+  padding-top: 0.3em;
+  padding-right: 1em;
+  padding-bottom: 0.3em;
+  padding-left: 1em;
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 500;
+  line-height: 1.5;
+  text-decoration: none;
+  vertical-align: baseline;
+  cursor: pointer;
+  border-width: 0;
+  border-radius: $border-radius;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 3px 10px rgba(0, 0, 0, 0.08);
+  appearance: none;
+
+  transition: all $transition-duration;
+
+  @include colorize-button($body-text-color, var(--base-button-color), var(--support-button-color));
+
+  &:focus {
+    outline: none;
+    text-decoration: none;
+  }
+
+  &:hover,
+  &:active,
+  &.zeroclipboard-is-hover,
+  &.zeroclipboard-is-active {
+    text-decoration: none;
+  }
+
+  &:active,
+  &.selected,
+  &.zeroclipboard-is-active {
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+  }
+
+  &:disabled,
+  &.disabled {
+    &,
+    &:hover {
+      color: rgba(102, 102, 102, 0.5);
+      cursor: default;
+      background-color: rgba(229, 229, 229, 0.5);
+      background-image: none;
+      box-shadow: none;
+    }
+  }
+}
+
+.btn-outline {
+  color: $body-text-color;
+  background: var(--base-button-color);
+  box-shadow: inset 0 0 0 2px $grey-dk-250;
+
+  &:hover,
+  &:active,
+  &.zeroclipboard-is-hover,
+  &.zeroclipboard-is-active {
+    color: $white;
+    text-decoration: none;
+    background: $red-200;
+    box-shadow: none;
+  }
+
+  &:focus {
+    outline: none;
+    text-decoration: none;
+  }
+
+  &:active,
+  &.zeroclipboard-is-active {
+    box-shadow: inset 0 0 5px 2px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.btn-primary {
+  @include colorize-button($white, $red-100, $red-200);
+}
+
+.btn-purple {
+  @include colorize-button($white, $purple-100, $purple-200);
+}
+
+.btn-blue {
+  @include colorize-button($white, $blue-100, $blue-200);
+}
+
+.btn-green {
+  @include colorize-button($white, $green-100, $green-200);
+}
+
+.btn-yellow {
+  @include colorize-button($white, $yellow-100, $yellow-200);
+}

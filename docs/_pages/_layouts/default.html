@@ -1,0 +1,64 @@
+---
+layout: table_wrappers
+---
+
+<!DOCTYPE html>
+<html lang="{{ site.lang | default: 'en-US' }}">
+  {% include head.html %}
+  <body>
+    {% include icons.html %}
+    <header>
+      <section class="content">
+        <a href={{ "/" | absolute_path }}>
+          <img src={{ "/assets/images/logo.svg" | relative_path }} alt="Rails GraphQL" />
+        </a>
+
+        <nav>
+          <a href={{ "/guides" | relative_path }}>Guides</a>
+          <a href={{ "/handbook" | relative_path }}>Handbook</a>
+          <a href="https://github.com/virtualshield/rails-graphql" target="_blank" rel="external nofollow">Source Code</a>
+        </nav>
+
+        <section id="search">
+          {%- include search.html -%}
+        </section>
+      </section>
+
+      {% if page.url == "/" %}
+        <section id="beta">
+          <b>SITE UNDER CONSTRUCTION!</b>
+          This gem is still in Beta (v1.0.0.beta), so it's not recommended to be used in production <b>YET!</b>
+        </section>
+      {% endif %}
+    </header>
+
+    <main>
+      {% if page.banner == true %}
+        {% include banner.html %}
+      {% endif %}
+
+      <section class="content main-content{% if page.toc != false %} with-toc{% endif %}">
+        {% include breadcrumb.html %}
+
+        {% if page.toc != false %}
+          {% include table_of_contents.html content=content %}
+        {% endif %}
+
+        <section class="inner-content">
+          {{ content | inject_anchors }}
+        </section>
+      </section>
+    </main>
+
+    <footer>
+      <cite class="content">
+        Powered by
+        <a href="https://virtualshield.com/" target="_blank" rel="external nofollow">
+          <img src={{ "/assets/images/virtualshield.svg" | relative_path }} alt="Virtual Shield" />
+        </a>
+      </cite>
+    </footer>
+
+    <div class="search-overlay"></div>
+  </body>
+</html>

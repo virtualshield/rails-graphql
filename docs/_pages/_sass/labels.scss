@@ -1,0 +1,35 @@
+// Labels (not the form kind)
+
+.label,
+.label-red {
+  display: inline-block;
+  padding-top: 0.16em;
+  padding-right: 0.56em;
+  padding-bottom: 0.16em;
+  padding-left: 0.56em;
+  margin-right: $sp-2;
+  margin-left: $sp-2;
+  color: $white;
+  text-transform: uppercase;
+  vertical-align: middle;
+  background-color: $red-200;
+  @include fs-2;
+  border-radius: 24px;
+}
+
+.label-green {
+  background-color: $green-200;
+}
+
+.label-purple {
+  background-color: $purple-200;
+}
+
+.label-blue {
+  background-color: $blue-200;
+}
+
+.label-yellow {
+  color: $grey-dk-200;
+  background-color: $yellow-200;
+}

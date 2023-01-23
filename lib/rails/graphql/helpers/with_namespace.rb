@@ -10,7 +10,10 @@ module Rails
         # Returns the list of defined namespaces
         def namespaces
           return @namespaces if defined?(@namespaces)
-          superclass.try(:namespaces) || Set.new
+          superclass.try(:namespaces) || begin
+            value = GraphQL.type_map.associated_namespace_of(self)
+            @namespaces = value unless value.nil?
+          end
         end
 
         # Set or overwrite the list of namespaces

@@ -50,6 +50,10 @@ module Rails
           hd.fetch_or_store(key, Concurrent::Array.new)
         end
 
+        # A registered list of modules and to which namespaces they are
+        # associated with
+        @module_namespaces = Concurrent::Map.new
+
         # Initialize the index structure
         @index = Concurrent::Map.new do |h1, key1|                # Namespaces
           base_class = Concurrent::Map.new do |h2, key2|          # Base classes
@@ -78,37 +82,56 @@ module Rails
         @pending << [object, source]
       end
 
+      # Associate the given +module+ to a given +namespace+. If registered
+      # objects have no namespaces, but its +module_parents+ have been
+      # associated, then use the value
+      # TODO: Maybe turn this into a 1-to-Many association
+      def associate(namespace, mod)
+        @module_namespaces[mod] = namespace
+      end
+
+      # Grab all the +module_parents+ from the object and try to return the
+      # first matching result
+      def associated_namespace_of(object)
+        return if @module_namespaces.empty?
+        object.module_parents.find do |mod|
+          ns = @module_namespaces[mod]
+          break ns unless ns.nil?
+        end
+      end
+
       # Register a given object, which must be a class where the namespaces and
       # the base class can be inferred
       def register(object)
-        namespaces = sanitize_namespaces(namespaces: object.namespaces.dup, exclusive: true)
+        namespaces = sanitize_namespaces(namespaces: object.namespaces, exclusive: true)
         namespaces << :base if namespaces.empty?
 
         base_class = find_base_class(object)
         ensure_base_class!(base_class)
 
         # Cache the name, the key, and the alias proc
+        object_base = namespaces.first
         object_name = object.gql_name
         object_key = object.to_sym
         alias_proc = -> do
-          fetch(object_key, base_class: base_class, namespaces: namespaces[0], exclusive: true)
+          fetch(object_key, base_class: base_class, namespaces: object_base, exclusive: true)
         end
 
         # TODO Warn when the base key is being assigned to a different object
         # Register the main type object for both key and name
-        add(namespaces[0], base_class, object_key, object)
-        add(namespaces[0], base_class, object_name, alias_proc)
+        add(object_base, base_class, object_key, object)
+        add(object_base, base_class, object_name, alias_proc)
 
         # Register all the aliases plus the object name
         aliases = object.try(:aliases)
         aliases&.each do |alias_name|
-          add(namespaces[0], base_class, alias_name, alias_proc)
+          add(object_base, base_class, alias_name, alias_proc)
         end
 
         # For each remaining namespace, register a key and a name alias
         if namespaces.size > 1
           keys_and_names = [object_key, object_name, *aliases]
-          namespaces[1..-1].product(keys_and_names) do |(namespace, key_or_name)|
+          namespaces.drop(1).product(keys_and_names) do |(namespace, key_or_name)|
             add(namespace, base_class, key_or_name, alias_proc)
           end
         end
@@ -122,12 +145,12 @@ module Rails
       # final value on the index
       def unregister(*objects)
         objects.each do |object|
-          namespaces = sanitize_namespaces(namespaces: object.namespaces.dup, exclusive: true)
+          namespaces = sanitize_namespaces(namespaces: object.namespaces, exclusive: true)
           namespaces << :base if namespaces.empty?
           base_class = find_base_class(object)
 
           @objects -= 1
-          @index[namespaces[0]][base_class][object.to_sym] = nil
+          @index[namespaces.first][base_class][object.to_sym] = nil
         end
       end
 
@@ -255,7 +278,7 @@ module Rails
         item = fetch(name_or_key, prevent_register: true, base_class: base_class, **xargs)
         return block.call(item) unless item.nil?
 
-        namespaces = sanitize_namespaces(**xargs).to_set
+        namespaces = sanitize_namespaces(**xargs)
         callback = ->(n, b, result) do
           return unless b === base_class && (n === :base || namespaces.include?(n))
           block.call(result)
@@ -303,9 +326,9 @@ module Rails
         def sanitize_namespaces(**xargs)
           xargs[:_ns] ||= begin
             result = xargs[:namespaces] || xargs[:namespace]
-            result = result.is_a?(Set) ? result.to_a : Array.wrap(result)
+            result = result.is_a?(Set) ? result.dup : Array.wrap(result).to_set
             result << :base unless xargs.fetch(:exclusive, false)
-            result.uniq
+            result
           end
         end
 

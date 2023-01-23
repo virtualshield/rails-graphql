@@ -7,6 +7,7 @@ module Rails
       #
       # A simple way to store fields that share some logic with each other
       class FieldSet
+        extend Helpers::WithNamespace
         extend Helpers::WithFields
 
         include Helpers::Instantiable

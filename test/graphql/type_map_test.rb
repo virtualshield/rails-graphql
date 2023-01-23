@@ -190,7 +190,7 @@ class GraphQL_TypeMapTest < GraphQL::TestCase
         assert_equal([:base, :Type, :a], added[0][0..-2])
 
         subject.stub(:fetch, passallthrough) do
-          xargs = { base_class: :Type, namespaces: [:base], exclusive: true }
+          xargs = { base_class: :Type, namespaces: [:base].to_set, exclusive: true }
           assert_equal([:string, xargs], added[0][-1].call)
         end
 

@@ -27,8 +27,8 @@ module Rails
 
       # The list of nested paths inside of the graphql folder that does not
       # require to be in their own namespace.
-      config.paths = %w[queries mutations subscriptions directives fields
-        sources enums inputs interfaces objects scalars unions].to_set
+      config.paths = %w[directives fields sources enums inputs interfaces object
+        scalars unions].to_set
 
       # This exposes the clean path from where a GraphQL request was started.
       config.verbose_logs = true

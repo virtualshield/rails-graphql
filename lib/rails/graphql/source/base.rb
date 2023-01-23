@@ -20,6 +20,14 @@ module Rails
         class_attribute :input_class, instance_accessor: false,
           default: '::Rails::GraphQL::Type::Input'
 
+        # Allow defining a name for the object without going to many troubles
+        # like overriding methods
+        class_attribute :object_name, instance_accessor: false
+
+        # Allow defining a name for the input without going to many troubles
+        # like overriding methods
+        class_attribute :input_name, instance_accessor: false
+
         class << self
 
           # Unregister all objects that this source was providing
@@ -33,7 +41,7 @@ module Rails
           # to the +::GraphQL+ namespace with the addition of any namespace of
           # the current class
           def object
-            @object ||= create_type(superclass: object_class)
+            @object ||= create_type(superclass: object_class, gql_name: object_name)
           end
 
           # Return the GraphQL input type associated with the source. It will
@@ -41,7 +49,7 @@ module Rails
           # to the +::GraphQL+ namespace with the addition of any namespace of
           # the current class
           def input
-            @input ||= create_type(superclass: input_class)
+            @input ||= create_type(superclass: input_class, gql_name: input_name)
           end
 
           protected
@@ -73,9 +81,12 @@ module Rails
               end
 
               source = self
+              gql_name = xargs.delete(:gql_name)
               Schema.send(:create_type, name, superclass, **xargs) do
                 include Helpers::WithOwner if with_owner
                 set_namespaces(*source.namespaces)
+
+                instance_variable_set(:@gql_name, gql_name) unless gql_name.nil?
 
                 self.owner = source if respond_to?(:owner=)
                 self.assigned_to = source.safe_assigned_class \

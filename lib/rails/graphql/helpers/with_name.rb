@@ -33,12 +33,6 @@ module Rails
 
         protected
 
-          # An alias for +description = value.strip_heredoc.chomp+ that can be
-          # used as method
-          def desc(value)
-            self.description = value.strip_heredoc.chomp
-          end
-
           # Change the gql name of the object
           def rename!(name)
             @gql_name = name.to_s

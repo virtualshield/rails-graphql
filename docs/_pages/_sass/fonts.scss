@@ -1,0 +1,203 @@
+/* Regular non-italic */
+@font-face {
+  font-family: AvantGarde;
+  src: url('/assets/fonts/ITCAvantGardeStd-XLt.woff2') format('woff2'),
+       url('/assets/fonts/ITCAvantGardeStd-XLt.woff') format('woff2');
+  font-weight: 100;
+  font-style: normal;
+  font-stretch: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: AvantGarde;
+  src: url('/assets/fonts/ITCAvantGardeStd-Bk.woff2') format('woff2'),
+       url('/assets/fonts/ITCAvantGardeStd-Bk.woff') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-stretch: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: AvantGarde;
+  src: url('/assets/fonts/ITCAvantGardeStd-Md.woff2') format('woff2'),
+       url('/assets/fonts/ITCAvantGardeStd-Md.woff') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-stretch: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: AvantGarde;
+  src: url('/assets/fonts/ITCAvantGardeStd-Demi.woff2') format('woff2'),
+       url('/assets/fonts/ITCAvantGardeStd-Demi.woff') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-stretch: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: AvantGarde;
+  src: url('/assets/fonts/ITCAvantGardeStd-Bold.woff2') format('woff2'),
+       url('/assets/fonts/ITCAvantGardeStd-Bold.woff') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-stretch: normal;
+  font-display: swap;
+}
+
+/* Regular italic */
+@font-face {
+  font-family: AvantGarde;
+  src: url('/assets/fonts/ITCAvantGardeStd-XLtObl.woff2') format('woff2'),
+       url('/assets/fonts/ITCAvantGardeStd-XLtObl.woff') format('woff2');
+  font-weight: 100;
+  font-style: italic;
+  font-stretch: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: AvantGarde;
+  src: url('/assets/fonts/ITCAvantGardeStd-BkObl.woff2') format('woff2'),
+       url('/assets/fonts/ITCAvantGardeStd-BkObl.woff') format('woff2');
+  font-weight: 300;
+  font-style: italic;
+  font-stretch: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: AvantGarde;
+  src: url('/assets/fonts/ITCAvantGardeStd-MdObl.woff2') format('woff2'),
+       url('/assets/fonts/ITCAvantGardeStd-MdObl.woff') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-stretch: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: AvantGarde;
+  src: url('/assets/fonts/ITCAvantGardeStd-DemiObl.woff2') format('woff2'),
+       url('/assets/fonts/ITCAvantGardeStd-DemiObl.woff') format('woff2');
+  font-weight: 700;
+  font-style: italic;
+  font-stretch: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: AvantGarde;
+  src: url('/assets/fonts/ITCAvantGardeStd-BoldObl.woff2') format('woff2'),
+       url('/assets/fonts/ITCAvantGardeStd-BoldObl.woff') format('woff2');
+  font-weight: 900;
+  font-style: italic;
+  font-stretch: normal;
+  font-display: swap;
+}
+
+/* Condensed non-italic */
+@font-face {
+  font-family: AvantGarde;
+  src: url('/assets/fonts/ITCAvantGardeStd-XLtCn.woff2') format('woff2'),
+       url('/assets/fonts/ITCAvantGardeStd-XLtCn.woff') format('woff2');
+  font-weight: 100;
+  font-style: normal;
+  font-stretch: condensed;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: AvantGarde;
+  src: url('/assets/fonts/ITCAvantGardeStd-BkCn.woff2') format('woff2'),
+       url('/assets/fonts/ITCAvantGardeStd-BkCn.woff') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-stretch: condensed;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: AvantGarde;
+  src: url('/assets/fonts/ITCAvantGardeStd-MdCn.woff2') format('woff2'),
+       url('/assets/fonts/ITCAvantGardeStd-MdCn.woff') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-stretch: condensed;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: AvantGarde;
+  src: url('/assets/fonts/ITCAvantGardeStd-DemiCn.woff2') format('woff2'),
+       url('/assets/fonts/ITCAvantGardeStd-DemiCn.woff') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-stretch: condensed;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: AvantGarde;
+  src: url('/assets/fonts/ITCAvantGardeStd-BoldCn.woff2') format('woff2'),
+       url('/assets/fonts/ITCAvantGardeStd-BoldCn.woff') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-stretch: condensed;
+  font-display: swap;
+}
+
+/* Condensed italic */
+@font-face {
+  font-family: AvantGarde;
+  src: url('/assets/fonts/ITCAvantGardeStd-XLtCnObl.woff2') format('woff2'),
+       url('/assets/fonts/ITCAvantGardeStd-XLtCnObl.woff') format('woff2');
+  font-weight: 100;
+  font-style: italic;
+  font-stretch: condensed;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: AvantGarde;
+  src: url('/assets/fonts/ITCAvantGardeStd-BkCnObl.woff2') format('woff2'),
+       url('/assets/fonts/ITCAvantGardeStd-BkCnObl.woff') format('woff2');
+  font-weight: 300;
+  font-style: italic;
+  font-stretch: condensed;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: AvantGarde;
+  src: url('/assets/fonts/ITCAvantGardeStd-MdCnObl.woff2') format('woff2'),
+       url('/assets/fonts/ITCAvantGardeStd-MdCnObl.woff') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-stretch: condensed;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: AvantGarde;
+  src: url('/assets/fonts/ITCAvantGardeStd-DemiCnObl.woff2') format('woff2'),
+       url('/assets/fonts/ITCAvantGardeStd-DemiCnObl.woff') format('woff2');
+  font-weight: 700;
+  font-style: italic;
+  font-stretch: condensed;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: AvantGarde;
+  src: url('/assets/fonts/ITCAvantGardeStd-BoldCnObl.woff2') format('woff2'),
+       url('/assets/fonts/ITCAvantGardeStd-BoldCnObl.woff') format('woff2');
+  font-weight: 900;
+  font-style: italic;
+  font-stretch: condensed;
+  font-display: swap;
+}

@@ -111,17 +111,19 @@ module Rails
           type_map.each_from(namespace, base_class: base_class, &block)
         end
 
-        # Schemas are assigned to a single namespace
-        def set_namespace(*list)
-          @namespace = normalize_namespaces(list).first
+        # Schemas are assigned to a single namespace. You can provide a module
+        # as the second argument to associate that module to the same namespace
+        def set_namespace(ns, mod = nil)
+          @namespace = normalize_namespaces([ns]).first
+          type_map.associate(@namespace, mod) if mod.is_a?(Module)
         end
 
         alias set_namespaces set_namespace
 
         # Schemas are assigned to a single namespace and not inherited
-        def namespace(*list)
-          if list.present?
-            set_namespace(*list)
+        def namespace(*args)
+          if args.present?
+            set_namespace(*args)
           elsif defined?(@namespace) && !@namespace.nil?
             @namespace
           else
@@ -131,7 +133,7 @@ module Rails
 
         # Add compatibility to the list of namespaces
         def namespaces
-          Set.new([namespace])
+          namespace
         end
 
         # Return the subscription provider for the current schema
@@ -319,20 +321,7 @@ module Rails
 
           # Load a list of known dependencies based on the given +type+
           def load_dependencies(type, *list)
-            ref = GraphQL.config.known_dependencies
-
-            raise ArgumentError, (+<<~MSG).squish if (ref = ref[type]).nil?
-              There are no #{type} known dependencies.
-            MSG
-
-            list = list.flatten.compact.map do |item|
-              next item unless (item = ref[item]).nil?
-              raise ArgumentError, (+<<~MSG).squish
-                Unable to find #{item} as #{type} in known dependencies.
-              MSG
-            end
-
-            type_map.add_dependencies(list, to: namespace)
+            GraphQL.add_dependencies(type, *list, to: namespace)
           end
 
           # A syntax sugar for +load_dependencies(:directive, *list)+
@@ -349,9 +338,11 @@ module Rails
           # Build all sources that has the belongs to the current namespace
           def build_all_sources
             GraphQL::Source.descendants.each do |klass|
+              next if klass.abstract?
+
               ns = klass.namespaces
-              klass.build_all if ns.include?(namespace) ||
-                (ns.empty? && namespace == :base)
+              klass.build_all if (ns.blank? && namespace == :base) ||
+                ns == namespace || ns.try(:include?, namespace)
             end
           end
 

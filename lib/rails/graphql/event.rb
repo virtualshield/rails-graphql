@@ -4,7 +4,7 @@ module Rails
   module GraphQL
     # = GraphQL Event
     #
-    # This class is responsible for trigerring events. It also contains the
+    # This class is responsible for triggering events. It also contains the
     # +data+ that can be used on the event handlers.
     class Event
       attr_reader :source, :data, :name, :object, :last_result

@@ -95,14 +95,15 @@ module Rails
 
         def header(event, suffix = '')
           duration = event.duration.round(1)
-          parts = ['GraphQL', suffix.presence, event.payload[:name]]
+          parts = ['  GraphQL', suffix.presence, event.payload[:name]]
           parts << "(#{duration}ms)" unless duration.zero?
 
           color(parts.compact.join(' '), MAGENTA, true)
         end
 
         def debug_variables(vars)
-          +'  ' << '(' << JSON.pretty_generate(values).squish << ')'
+          vars = JSON.pretty_generate(parameter_filter.filter(vars))
+          +'  ' << '(' << vars.squish << ')'
         end
 
         def log_query_source

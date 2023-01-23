@@ -16,6 +16,7 @@ module Rails
         extend self
 
         # Check if the given +error+ should be skipped
+        # TODO: Maybe check +cause+ to proper evaluate the skip
         def skip?(error)
           error.class <= skip_base_class
         end

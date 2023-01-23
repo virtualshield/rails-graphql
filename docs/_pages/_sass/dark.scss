@@ -1,0 +1,22 @@
+// Dark mode
+
+// Variables
+:root {
+  --body-background-color: #1c1c1c;
+
+  --body-text-color: var(--grey-lt-300);
+  --body-heading-color: var(--grey-lt-300);
+  --table-background-color: #171717;
+  --main-content-background: transparent;
+  --toc-background: rgba(0, 0, 0, 0.1);
+  --footer-background: #f9f9f9;
+
+  --base-button-color: var(--grey-dk-200);
+  --support-button-color: var(--grey-dk-300);
+  --border-color: transparent;
+
+  --high-contrast: var(--white);
+}
+
+// Code
+@import "./code/onedark";

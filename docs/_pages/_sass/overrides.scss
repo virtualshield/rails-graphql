@@ -1,0 +1,28 @@
+// Override the main font of the website
+html {
+  font-size: $root-font-size !important;
+}
+
+code {
+  font-size: 14px !important;
+}
+
+a:not([class]) {
+  background-image: none;
+}
+
+.main-content {
+  a:not([class]) {
+    font-weight: bold;
+    font-style: italic;
+    text-decoration: underline;
+  }
+
+  ol > li::before {
+    top: 0;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    margin: 1.5rem 0;
+  }
+}

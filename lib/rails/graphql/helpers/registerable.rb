@@ -70,6 +70,15 @@ module Rails
           def desc(value)
             self.description = value
           end
+
+          def rename!(*)
+            GraphQL.logger.warn((+<<~MSG).squish) if registered?
+              \e[95m[GraphQL] Renaming #{name} after it has being registered
+              may cause unexpected behaviors.\e[0m
+            MSG
+
+            super
+          end
       end
     end
   end

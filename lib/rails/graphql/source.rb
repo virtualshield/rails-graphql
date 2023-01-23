@@ -17,7 +17,6 @@ module Rails
 
       include Helpers::Instantiable
 
-      DEFAULT_NAMESPACES = %i[base].freeze
       ATTACH_FIELDS_STEP = -> do
         if fields?
           attach_fields!(type, fields)
@@ -68,7 +67,7 @@ module Rails
       inherited_collection :hooks, instance_reader: false, type: :hash_array
 
       # A list of fields to skip when performing shared methods
-      inherited_collection :skip_fields, instance_reader: false, type: :hash_set
+      inherited_collection :skip_fields, instance_reader: false, type: :set
 
       # A list of fields to skip but segmented by holder source
       inherited_collection :segmented_skip_fields, instance_reader: false, type: :hash_set
@@ -122,7 +121,7 @@ module Rails
 
         # Find all the schemas associated with the configured namespaces
         def schemas
-          (namespaces.presence || DEFAULT_NAMESPACES).lazy.filter_map do |ns|
+          GraphQL.enumerate(namespaces.presence || :base).lazy.filter_map do |ns|
             Schema.find(ns)
           end
         end
@@ -200,6 +199,16 @@ module Rails
           # Return the module where the GraphQL types should be created at
           def gql_module
             name.start_with?('GraphQL::') ? module_parent : ::GraphQL
+          end
+
+          # Add one or more fields to the list of fields that needs to be
+          # ignored in all places. It converts strings to underscore
+          def skip_fields!(*list)
+            list = list.flatten.map do |value|
+              value.is_a?(Symbol) ? value.to_s : value.to_s.underscore
+            end
+
+            self.skip_fields.merge(list)
           end
 
           # Check if a given field +name+ should be skipped on the give type

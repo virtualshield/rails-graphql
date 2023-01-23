@@ -154,7 +154,7 @@ module Rails
       def method_name
         if defined?(@method_name)
           @method_name
-        elsif proxied_owner.is_a?(Alternative::Query)
+        elsif from_alternative?
           :resolve
         else
           @name
@@ -224,11 +224,6 @@ module Rails
       # This method must be overridden by children classes
       def valid_output?(*)
         enabled?
-      end
-
-      # Provides a similar behavior to setting the name in Named obejcts
-      def desc(value)
-        @desc = value.strip_heredoc.chomp
       end
 
       # Transforms the given value to its representation in a JSON string
@@ -321,6 +316,11 @@ module Rails
           elsif @name.start_with?('_')
             @gql_name.prepend('_')
           end
+        end
+
+        # Check if the field was defined as an alternative class
+        def from_alternative?
+          proxied_owner.is_a?(Module) && proxied_owner <= Alternative::Query
         end
 
         # Show the name of the owner of the object for inspection

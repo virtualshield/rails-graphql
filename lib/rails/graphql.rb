@@ -139,6 +139,24 @@ module Rails
         (value.is_a?(Enumerable) || value.respond_to?(:to_ary)) ? value : value.then
       end
 
+      # Load a given +list+ of dependencies from the given +type+
+      def add_dependencies(type, *list, to: :base)
+        ref = config.known_dependencies
+
+        raise ArgumentError, (+<<~MSG).squish if (ref = ref[type]).nil?
+          There are no #{type} known dependencies.
+        MSG
+
+        list = list.flatten.compact.map do |item|
+          next item unless (item = ref[item]).nil?
+          raise ArgumentError, (+<<~MSG).squish
+            Unable to find #{item} as #{type} in known dependencies.
+          MSG
+        end
+
+        type_map.add_dependencies(list, to: to)
+      end
+
       # Returns a set instance with uniq directives from the given list.
       # If the same directive class is given twice, it will raise an exception,
       # since they must be uniq within a list of directives.

@@ -3,6 +3,8 @@ module Rails
     module Helpers
       # A inherited collection of arrays that can be unique when it is a set
       class InheritedCollection::Array < InheritedCollection::Base
+        alias size count
+
         # Provide similar functionality of any? but returns the object instead
         def find(value = nil, &block)
           block ||= !value.is_a?(Module) ? value.method(:==) : ->(val) { val.class <= value }
@@ -13,6 +15,12 @@ module Rails
         # Check if a given +value+ is included in any of the definitions
         def include?(value)
           each_definition.any? { |definition| definition.include?(value) }
+        end
+
+        # If any elements appears, the each block will run and return true
+        def empty?
+          lazy.each { return true }
+          false
         end
 
         # The normal each is the reverse each of the definitions

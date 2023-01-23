@@ -1,0 +1,36 @@
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+
+  <title>
+    {% if page.title != nil %}
+      {{ page.title }} -
+    {% endif %}
+    {{ site.title }}
+  </title>
+
+  <link rel="apple-touch-icon" sizes="180x180" href={{ 'assets/images/apple-touch-icon.png' | relative_url }}>
+  <link rel="icon" type="image/png" sizes="32x32" href={{ 'assets/images/favicon-32x32.png' | relative_url }}>
+  <link rel="icon" type="image/png" sizes="16x16" href={{ 'assets/images/favicon-16x16.png' | relative_url }}>
+  <link rel="shortcut icon" href="{{ 'favicon.ico' | relative_url }}" type="image/x-icon">
+  <link rel="manifest" href={{ 'assets/images/site.webmanifest' | relative_url }}>
+
+  {% if jekyll.environment == "production" %}
+    {% include tracking.html %}
+  {% endif %}
+
+  <script type="text/javascript" src="{{ '/assets/js/vendor/lunr.min.js' | relative_url }}"></script>
+  <script type="text/javascript" src="{{ '/assets/js/vendor/mermaid.min.js' | relative_url }}"></script>
+  <!-- <script type="text/javascript" src="{{ '/assets/js/just-the-docs.js' | relative_url }}"></script> -->
+
+  <link rel="stylesheet" href="{{ '/assets/css/site.css' | relative_url }}">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Carlos Silva <me@carlosfsilva.com>" />
+
+  {% if page.description %}
+    <meta name="Description" content="{{ page.description }}">
+  {% endif %}
+
+  {% seo %}
+</head>

@@ -152,14 +152,6 @@ module Rails
           visit_Rails_GraphQL_Field(o, collector)
         end
 
-        def visit_Rails_GraphQL_Field_OutputField(o, collector)
-          visit_Rails_GraphQL_Field(o, collector)
-        end
-
-        def visit_Rails_GraphQL_Field_InputField(o, collector)
-          visit_Rails_GraphQL_Field(o, collector)
-        end
-
         def visit_Rails_GraphQL_Type_Enum(o, collector)
           visit_description(o, collector)
           collector << 'enum '
@@ -178,9 +170,7 @@ module Rails
           collector << o.gql_name
           visit_directives(o.directives, collector)
 
-          collector.indented(' {', '}') do
-            o.fields&.each_value { |x| visit(x, collector) }
-          end
+          collector.indented(' {', '}') { visit_fields(o.fields, collector) }
         end
 
         def visit_Rails_GraphQL_Type_Interface(o, collector)
@@ -190,9 +180,7 @@ module Rails
           collector << o.gql_name
           visit_directives(o.directives, collector)
 
-          collector.indented(' {', '}') do
-            o.fields&.each_value { |x| visit(x, collector) }
-          end
+          collector.indented(' {', '}') { visit_fields(o.fields, collector) }
         end
 
         def visit_Rails_GraphQL_Type_Object(o, collector)
@@ -211,9 +199,7 @@ module Rails
 
           visit_directives(o.directives, collector)
 
-          collector.indented(' {', '}') do
-            o.fields&.each_value { |x| visit(x, collector) }
-          end
+          collector.indented(' {', '}') { visit_fields(o.fields, collector) }
         end
 
         def visit_Rails_GraphQL_Type_Scalar(o, collector)
@@ -258,6 +244,14 @@ module Rails
           visit_description(o, collector)
           collector << o.gql_name << ': '
           visit_typed_object(o, collector)
+        end
+
+        def visit_fields(list, collector)
+          return if list.blank?
+
+          list.values.sort_by do |field|
+            field.name == :id ? '' : field.gql_name
+          end.each { |x| visit(x, collector) }
         end
 
         def visit_arguments(list, collector)

@@ -10,9 +10,16 @@
 * [Bugs](https://github.com/virtualshield/rails-graphql/issues)
 
 # Description
-`rails-graphql` is another implementation of GraphQL server that works really
-close to Rails architecture, creating shortcuts to define schemes and connecting
-directly with ActiveRecord.
+
+`rails-graphql` is a fresh new implementation of a GraphQL server, designed to be
+as close as possible to Rails architecture and interfaces, which implies that it has
+shortcuts, lots of syntax sugar, and direct connection with Rails features like
+**ActiveRecord** and **ActionCable**.
+
+This gem has its **own parser**, written from scratch, using the
+**C-API of Ruby**, which empowers it with an outstanding performance.
+Plus, all the features provided were carefully developed so that everyone will feel
+comfortable and able to apply in all application sizes and patterns.
 
 # Installation
 To install rails-graphql you need to add the following to your Gemfile:

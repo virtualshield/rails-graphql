@@ -69,7 +69,9 @@ module GraphQL
       end
 
       def fake_type_map(pass = :fetch!, *others)
-        double(**others.unshift(pass).map { |m| [m, passthrough] }.to_h)
+        methods = others.unshift(pass).product([passthrough]).to_h
+        methods[:associated_namespace_of] ||= ->(*) { }
+        double(**methods)
       end
 
       def stubbed_type_map(*others, &block)

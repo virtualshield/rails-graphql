@@ -36,7 +36,7 @@ module Rails
       def perform_method_name
         if defined?(@perform_method_name)
           @perform_method_name
-        elsif proxied_owner.is_a?(Alternative::Mutation)
+        elsif from_alternative?
           :perform
         else
           :"#{method_name}!"
@@ -66,6 +66,8 @@ module Rails
       # Ensures that the performer is defined
       def validate!(*)
         super if defined? super
+
+        binding.pry unless performer.present?
 
         raise ValidationError, (+<<~MSG).squish unless performer.present?
           The "#{gql_name}" mutation field must have a perform action through a given

@@ -194,13 +194,15 @@ module Rails
         end
 
         # Import a class of fields into the given section of schema fields
-        def import_into(type, source, ignore_abstract: false)
-          return if ignore_abstract && source.try(:abstract?)
+        def import_into(type, source)
+          return if source.try(:abstract?)
+
+          # Import an alternative declaration of a field
+          if source.is_a?(Module) && source <= Alternative::Query
+            return add_proxy_field(type, source.field)
+          end
 
           case source
-          when Alternative::Query
-            # Import an alternative declaration of a field
-            add_proxy_field(type, source.field)
           when Array
             # Import a list of fields
             source.each { |field| add_proxy_field(type, field) }
@@ -224,20 +226,27 @@ module Rails
         end
 
         # Import a module containing several classes to be imported
-        def import_all_into(type, mod, recursive: false, ignore_abstract: false)
+        # TODO: Maybe add deepness into the recursive value
+        def import_all_into(type, mod, recursive: false, **xargs)
           mod.constants.each do |const_name|
             object = mod.const_get(const_name)
 
-            if object.is_a?(Class)
-              import_into(type, object, ignore_abstract: ignore_abstract)
-            elsif object.is_a?(Module) && recursive
-              # TODO: Maybe add deepness into the recursive value
-              import_all_into(type, object,
-                recursive: recursive,
-                ignore_abstract: ignore_abstract,
-              )
-            end
+            import_into(type, object, **xargs) if object.is_a?(Class)
+            import_all_into(type, object, recursive: recursive, **xargs) if recursive
           end
+        end
+
+        # Same as above, but if the name of the module being imported already
+        # dictates the type, skip specifying it
+        def import_all(mod, **xargs)
+          type = mod.name.demodulize.underscore.singularize
+          type = TYPE_FIELD_CLASS.each_key.find { |key| key.to_s == type }
+          return import_all_into(type, mod, **xargs) unless type.nil?
+
+          raise(::ArgumentError, (+<<~MSG).squish)
+            Unable to extract type from #{mod.name}.
+            Please use "import_all_into(_type_, #{mod.name}) instead."
+          MSG
         end
 
         # Validate all the fields to make sure the definition is valid

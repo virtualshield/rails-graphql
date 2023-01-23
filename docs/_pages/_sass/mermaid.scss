@@ -1,0 +1,12 @@
+// Customize the diagrams colors
+div.mermaid {
+  // Regular box
+  .node rect,
+  .node circle,
+  .node ellipse,
+  .node polygon,
+  .node path {
+    fill: $red-000 !important;
+    stroke: $red-200 !important;
+  }
+}

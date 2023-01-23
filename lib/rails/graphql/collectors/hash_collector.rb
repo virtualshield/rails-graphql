@@ -49,7 +49,7 @@ module Rails
         # request process
         def append_errors(errors)
           return if errors.empty?
-          @data['errors'] = errors.to_a
+          @data['errors'] = errors.as_json
         end
 
         # Return the generated object
