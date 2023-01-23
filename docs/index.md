@@ -2,6 +2,7 @@
 layout: default
 banner: true
 toc: false
+image: "/assets/images/logo.png"
 ---
 
 # The Basics
