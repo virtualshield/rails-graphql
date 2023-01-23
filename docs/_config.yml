@@ -23,7 +23,6 @@ url: "https://www.rails-graphql.dev"
 
 # Build settings
 markdown: kramdown
-remote_theme: just-the-docs
 plugins:
   - jekyll-seo-tag
   - jekyll-mermaid

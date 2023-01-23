@@ -14,7 +14,6 @@
 @import "./base";
 @import "./layout";
 @import "./content";
-@import "./navigation";
 @import "./typography";
 @import "./labels";
 @import "./buttons";
@@ -29,4 +28,4 @@
 body.dark { @import "./dark"; }
 @media (prefers-color-scheme: dark) { @import "./dark"; }
 
-@import "./overrides"
+@import "./overrides";
