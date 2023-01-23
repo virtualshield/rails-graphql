@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/crashtech/just-the-docs.git
-  revision: 31e7f2e89a6f2fdd1cba8f64876cc1ace9006bf1
+  revision: f8e2958e1ed817defe120e5a3913cd695007a1fd
   specs:
     just-the-docs (0.4.0.rc4)
       jekyll (>= 3.8.5)
