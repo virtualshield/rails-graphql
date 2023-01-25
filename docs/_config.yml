@@ -77,6 +77,13 @@ exclude:
    - Rakefile
    - README.md
 
+# Front Matter Defaults
+defaults:
+  - scope:
+      path: ""
+    values:
+      toc: true
+
 # Enable or disable the site search
 # Supports true (default) or false
 search_enabled: true
@@ -129,19 +136,6 @@ back_to_top_text: "Back to top"
 last_edit_timestamp: false # show or hide edit time - page must have `last_modified_date` defined in the frontmatter
 # last_edit_time_format: "%b %e %Y at %I:%M %p"
 
-callouts_level: quiet # or loud
-callouts:
-  highlight:
-    color: yellow
-  important:
-    title: Important
-    color: purple
-  new:
-    title: New
-    color: green
-  note:
-    title: Note
-    color: blue
-  warning:
-    title: Warning
-    color: red
+# Table of contents
+toc:
+  min_level: 2

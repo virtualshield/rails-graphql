@@ -9,6 +9,7 @@
   --table-background-color: #171717;
   --main-content-background: transparent;
   --toc-background: rgba(0, 0, 0, 0.1);
+  --line-color: rgba(255, 255, 255, 0.1);
   --footer-background: #f9f9f9;
 
   --base-button-color: var(--grey-dk-200);
@@ -20,3 +21,64 @@
 
 // Code
 @import "./code/onedark";
+
+// Custom styles
+body > main {
+  border-top: 2px solid $red-200;
+}
+
+// Callouts
+blockquote {
+  &.new,
+  &.note,
+  &.warning,
+  &.important,
+  &.highlight {
+    background-color: var(--toc-background);
+  }
+
+  &.new {
+    border-left-color: $green-100;
+
+    > p:first-child > b:first-child,
+    > p:first-child > strong:first-child {
+      color: $green-100;
+    }
+  }
+
+  &.note {
+    border-left-color: $blue-100;
+
+    > p:first-child > b:first-child,
+    > p:first-child > strong:first-child {
+      color: $blue-100;
+    }
+  }
+
+  &.warning {
+    border-left-color: $red-100;
+
+    > p:first-child > b:first-child,
+    > p:first-child > strong:first-child {
+      color: $red-100;
+    }
+  }
+
+  &.important {
+    border-left-color: $yellow-100;
+
+    > p:first-child > b:first-child,
+    > p:first-child > strong:first-child {
+      color: $yellow-100;
+    }
+  }
+
+  &.highlight {
+    border-left-color: $purple-100;
+
+    > p:first-child > b:first-child,
+    > p:first-child > strong:first-child {
+      color: $purple-100;
+    }
+  }
+}

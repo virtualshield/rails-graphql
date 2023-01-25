@@ -23,6 +23,7 @@
 @import "./mermaid";
 @import "./utilities/utilities";
 @import "./print";
+@import "./callouts";
 
 // Load dark mode
 body.dark { @import "./dark"; }

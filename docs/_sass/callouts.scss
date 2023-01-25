@@ -1,0 +1,70 @@
+// Callouts
+blockquote {
+  padding: 0.5rem;
+  padding-left: 1rem;
+
+  &.new,
+  &.note,
+  &.warning,
+  &.important,
+  &.highlight {
+    > p:first-child > b:first-child,
+    > p:first-child > strong:first-child {
+      display: block;
+      font-size: 0.8rem;
+      letter-spacing: 2px;
+      margin-bottom: 0.25rem;
+      text-transform: uppercase;
+    }
+  }
+
+  &.new {
+    background-color: $green-000;
+    border-left-color: $green-300;
+
+    > p:first-child > b:first-child,
+    > p:first-child > strong:first-child {
+      color: $green-300;
+    }
+  }
+
+  &.note {
+    background-color: $blue-000;
+    border-left-color: $blue-300;
+
+    > p:first-child > b:first-child,
+    > p:first-child > strong:first-child {
+      color: $blue-300;
+    }
+  }
+
+  &.warning {
+    background-color: $red-000;
+    border-left-color: $red-300;
+
+    > p:first-child > b:first-child,
+    > p:first-child > strong:first-child {
+      color: $red-300;
+    }
+  }
+
+  &.important {
+    background-color: $yellow-000;
+    border-left-color: $yellow-300;
+
+    > p:first-child > b:first-child,
+    > p:first-child > strong:first-child {
+      color: $yellow-300;
+    }
+  }
+
+  &.highlight {
+    background-color: $purple-000;
+    border-left-color: $purple-300;
+
+    > p:first-child > b:first-child,
+    > p:first-child > strong:first-child {
+      color: $purple-300;
+    }
+  }
+}

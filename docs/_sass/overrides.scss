@@ -14,8 +14,10 @@ a:not([class]) {
 .main-content {
   a:not([class]) {
     font-weight: bold;
-    font-style: italic;
-    text-decoration: underline;
+
+    &:hover {
+      text-decoration: underline;
+    }
   }
 
   ol > li::before {
@@ -24,5 +26,19 @@ a:not([class]) {
 
   h1, h2, h3, h4, h5, h6 {
     margin: 1.5rem 0;
+
+    code {
+      padding: 0.2em 0.5em;
+      display: inline-block;
+      vertical-align: text-top;
+    }
+  }
+
+  h1, h2 {
+    color: $red-200;
+  }
+
+  h4 {
+    font-size: $font-size-4 !important;
   }
 }

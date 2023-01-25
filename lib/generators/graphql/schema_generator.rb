@@ -15,7 +15,7 @@ module GraphQL
       end
 
       def schema_name
-        @schema_name ||= options[:name].presence || "#{app_module_name}Schema"
+        @schema_name ||= "#{options[:name].presence || app_module_name}Schema"
       end
     end
   end

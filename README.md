@@ -144,7 +144,7 @@ $ bundle install
 $ bundle exec rake compile
 $ bundle exec rake test
 ```
-Finally, fix and send a pull request.
+Finally, change the code and submit a pull request.
 
 ## License
 

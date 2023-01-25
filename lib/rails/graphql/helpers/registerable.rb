@@ -25,7 +25,7 @@ module Rails
           GraphQL.type_map.postpone_registration(subclass)
         end
 
-        # Check if the class is already registered in the typemap
+        # Check if the class is already registered in the type map
         def registered?
           GraphQL.type_map.object_exist?(self, exclusive: true)
         end

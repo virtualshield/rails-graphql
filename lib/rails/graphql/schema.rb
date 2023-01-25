@@ -136,21 +136,6 @@ module Rails
           namespace
         end
 
-        # Return the subscription provider for the current schema
-        def subscription_provider
-          if !defined?(@subscription_provider)
-            @subscription_provider = config.default_subscription_provider
-            subscription_provider
-          elsif @subscription_provider.is_a?(String)
-            provider = (name = @subscription_provider).safe_constantize
-            return @subscription_provider = provider.new(logger: logger) unless provider.nil?
-
-            raise ::NameError, +"uninitialized constant #{name}"
-          else
-            @subscription_provider
-          end
-        end
-
         # Check if the schema is valid
         def valid?
           defined?(@validated) && @validated
@@ -219,6 +204,35 @@ module Rails
           xargs[:base_class] = :Directive
           xargs[:namespaces] = namespaces
           type_map.fetch!(directive, **xargs)
+        end
+
+        # See {Request}[rdoc-ref:Rails::GraphQL::Request]
+        def request
+          return if self == ::Rails::GraphQL::Schema
+          Rails::GraphQL::Request.new(self)
+        end
+
+        # See {Request}[rdoc-ref:Rails::GraphQL::Request]
+        def execute(*args, **xargs)
+          return if self == ::Rails::GraphQL::Schema
+          Rails::GraphQL::Request.execute(*args, **xargs, schema: self)
+        end
+
+        alias perform execute
+
+        # Return the subscription provider for the current schema
+        def subscription_provider
+          if !defined?(@subscription_provider)
+            @subscription_provider = config.default_subscription_provider
+            subscription_provider
+          elsif @subscription_provider.is_a?(String)
+            provider = (name = @subscription_provider).safe_constantize
+            return @subscription_provider = provider.new(logger: logger) unless provider.nil?
+
+            raise ::NameError, +"uninitialized constant #{name}"
+          else
+            @subscription_provider
+          end
         end
 
         # Remove subscriptions by their provided +sids+

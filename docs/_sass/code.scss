@@ -98,6 +98,24 @@ div.highlighter-rouge {
     }
   }
 
+  &.rails-console {
+    border-color: black;
+
+    &::before {
+      content: "Rails Console";
+      background-color: black;
+    }
+  }
+
+  &.directory {
+    border-color: $purple-200;
+
+    &::before {
+      content: "Directory";
+      background-color: $purple-200;
+    }
+  }
+
   div.highlight,
   pre.highlight,
   code {
@@ -110,10 +128,8 @@ div.highlighter-rouge {
 // {% highlight LANG %}...{% endhighlight %},
 // {% highlight LANG linenos %}...{% endhighlight %}:
 figure.highlight {
-  padding: $sp-3;
-  margin-top: 0;
-  margin-bottom: $sp-3;
-  background-color: $code-background-color;
+  margin: 0;
+  padding: 0;
   border-radius: $border-radius;
   box-shadow: none;
   -webkit-overflow-scrolling: touch;

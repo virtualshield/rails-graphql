@@ -103,6 +103,6 @@ hr {
   height: 1px;
   padding: 0;
   margin: $sp-6 0;
-  background-color: $border-color;
+  background-color: var(--line-color);
   border: 0;
 }
