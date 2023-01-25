@@ -10,7 +10,7 @@ module Rails
 
         desc <<~MSG
           The Time scalar type that represents a distance in time using hours,
-          minutes, seconds, and miliseconds.
+          minutes, seconds, and milliseconds.
         MSG
 
         # A +base_object+ helps to identify what methods are actually available

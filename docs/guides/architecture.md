@@ -51,9 +51,13 @@ is Rails-like, and encapsulates things correctly.
 Here is some examples:
 
 ```ruby
-# app/graphql/objects/sample_object.rb
-class GraphQL::SampleObject < GraphQL::Object
-# Normally Rails would expect something like Objects::SampleObjectGraphQL
+# app/graphql/objects/sample.rb
+class GraphQL::Sample < GraphQL::Object
+# Normally Rails would expect something like Objects::SampleGraphQL
+
+# app/graphql/interfaces/sample_interface.rb
+class GraphQL::SampleInterface < GraphQL::Interface
+# Normally Rails would expect something like Interfaces::SampleInterfaceGraphQL
 
 # app/graphql/interfaces/person_interface.rb
 class GraphQL::PersonInterface < GraphQL::Interface
@@ -72,14 +76,65 @@ whereas others behave as regular folders.
 This also works with nested directories, as one would expect for engines:
 
 ```ruby
-# app/graphql/admin/objects/sample_object.rb
-class GraphQL::Admin::SampleObject < GraphQL::Object
+# app/graphql/admin/objects/sample.rb
+class GraphQL::Admin::Sample < GraphQL::Object
 
 # app/graphql/admin/queries/users.rb
 class GraphQL::Admin::Queries::User < GraphQL::Query
 ```
 
 The full list of collapsed directories comes from [`config.paths`](/handbook/settings#paths) setting.
+
+### Naming
+
+The gem assumes you are following the ruby naming conventions. On top of that, there are
+some additional concepts related to how things are translated to GraphQL names. Here is
+a quick list of the naming conventions:
+
+`class SampleInput`
+: Class names should be in Pascal Case
+
+`class Sample < GraphQL::Object`
+: Objects are recommended to not have the `Object` suffix
+
+`'SampleObject'`
+: Types in GraphQL follows the same pattern
+
+`:sample_object`
+: Keys as symbol are always in snake case
+
+`'sampleField'`
+: Fields in GraphQL are always in camel case
+
+`:sample_field`
+: Field names are always symbols in snake case
+
+This is extremely important when referencing types in fields return type and argument types:
+
+```ruby
+# Each one of these blocks produces the same result
+field(:name, :string)
+field(:name, 'String')
+field(:name, GraphQL::Scalar::StringScalar)
+# For scalars it is recommended the first or the second options
+
+field(:sample, :sample)
+field(:sample, 'Sample')
+field(:sample, GraphQL::Sample)
+# For objects and other things it is recommended the second option
+
+field(:other_sample, :sample_interface)
+field(:other_sample, 'SampleInterface')
+field(:other_sample, GraphQL::SampleInterface)
+# For any other types it is also recommended the second option
+# Field names and argument names should always be symbols in snake case
+```
+
+{: .highlight }
+> As a rule of thumb: class name in Pascal Case, symbol always in snake case, string in
+> either Pascal Case for types or camel case for fields.
+
+Read more about [Naming](/guides/naming) and [Recommendations](/guides/recommendations).
 
 ### Namespaces
 
@@ -176,7 +231,7 @@ Read more about [Requests](/guides/requests).
 
 You will notice that the Rails application logs are enhanced by GraphQL in both
 the server and the console, and they have quite the same behavior as how
-<a href="https://api.rubyonrails.org/classes/ActiveSupport/LogSubscriber.html" target="_blank" rel="external nofollow">ActiveRecord</a>
+<a href="https://edgeapi.rubyonrails.org/classes/ActiveSupport/LogSubscriber.html" target="_blank" rel="external nofollow">ActiveRecord</a>
 enhances the logs.
 
 {: .rails-console }

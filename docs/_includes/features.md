@@ -33,8 +33,8 @@
 [Global ID](/guides/global-id)
 : All objects defined supports `.to_global_id`, or simply `.to_gid`
 
-[Subscriptions Provider](/guides/subscriptions-provider)
-: Current supporting only [ActionCable](/guides/subscriptions-provider/action-cable-provider) provider and [Memory](/guides/subscriptions-provider/memory-store) store
+[Subscriptions Provider](/guides/subscriptions/providers)
+: Current supporting only [ActionCable](/guides/subscriptions/providers/action-cable-provider) provider and [Memory](/guides/subscriptions/providers/memory-store) store
 
 [Introspection](/guides/introspection)
 : All necessary types for introspection with proper descriptions

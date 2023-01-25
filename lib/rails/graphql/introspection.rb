@@ -26,7 +26,7 @@ module Rails
 
       protected
 
-        # Enaqble introspection fields
+        # Enable introspection fields
         def enable_introspection!
           redefine_singleton_method(:introspection?) { true }
           introspection_dependencies!

@@ -19,6 +19,10 @@ module GraphQL
     Mutation:           '::Rails::GraphQL::Alternative::Mutation',
     Subscription:       '::Rails::GraphQL::Alternative::Subscription',
 
+    QuerySet:           '::Rails::GraphQL::Alternative::FieldSet',
+    MutationSet:        '::Rails::GraphQL::Alternative::MutationSet',
+    SubscriptionSet:    '::Rails::GraphQL::Alternative::SubscriptionSet',
+
     Enum:               '::Rails::GraphQL::Type::Enum',
     Input:              '::Rails::GraphQL::Type::Input',
     Interface:          '::Rails::GraphQL::Type::Interface',

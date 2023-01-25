@@ -13,7 +13,8 @@ module Rails
 
       delegate :input_type?, :output_type?, :leaf_type?, :kind, to: :type_klass
 
-      def initialize(name, type, *args, **xargs, &block)
+      def initialize(name, type = nil, *args, **xargs, &block)
+        type = (name == :id ? :id : :string) if type.nil?
         assign_type(type)
         super(name, *args, **xargs, &block)
       end

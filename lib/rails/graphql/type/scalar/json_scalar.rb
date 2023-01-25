@@ -9,7 +9,7 @@ module Rails
 
         desc <<~DESC
           The JSON scalar type represents an unstructured JSON data
-          with all its available kyes and values.
+          with all its available keys and values.
         DESC
 
         class << self

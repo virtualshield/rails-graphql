@@ -56,7 +56,7 @@ module Rails
             value.to_s
           end
 
-          # Turn a user input of this given type into an ruby object
+          # Turn a user input of this given type into a Ruby object
           def deserialize(value)
             value.is_a?(::GQLParser::Token) ? as_json(value) : value
           end

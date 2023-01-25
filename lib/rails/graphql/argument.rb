@@ -43,7 +43,7 @@ module Rails
 
       def initialize(
         name,
-        type,
+        type = nil,
         owner:,
         null: true,
         full: false,
@@ -56,6 +56,7 @@ module Rails
         @name = name.to_s.underscore.to_sym
         @gql_name = @name.to_s.camelize(:lower)
 
+        type = (name == :id ? :id : :string) if type.nil?
         if type.is_a?(Module) && type < GraphQL::Type
           @type_klass = type
           @type = type.name

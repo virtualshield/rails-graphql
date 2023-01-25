@@ -223,7 +223,7 @@ module Rails
         # Return the subscription provider for the current schema
         def subscription_provider
           if !defined?(@subscription_provider)
-            @subscription_provider = config.default_subscription_provider
+            @subscription_provider = config.subscription_provider || config.default_subscription_provider
             subscription_provider
           elsif @subscription_provider.is_a?(String)
             provider = (name = @subscription_provider).safe_constantize
