@@ -4,7 +4,9 @@ module Rails
   module GraphQL
     # = GraphQL Subscription Field
     #
-    # TODO: Finish and add description
+    # This is an extension of a normal output field, which will sign
+    # the request for updates of the field when the scope and arguments
+    # are the same.
     class Field::SubscriptionField < Field::OutputField
       redefine_singleton_method(:subscription?) { true }
       event_types(:subscribed, append: true)

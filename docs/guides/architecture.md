@@ -55,13 +55,13 @@ Here is some examples:
 class GraphQL::Sample < GraphQL::Object
 # Normally Rails would expect something like Objects::SampleGraphQL
 
-# app/graphql/interfaces/sample_interface.rb
-class GraphQL::SampleInterface < GraphQL::Interface
-# Normally Rails would expect something like Interfaces::SampleInterfaceGraphQL
+# app/graphql/inputs/sample_input.rb
+class GraphQL::SampleInput < GraphQL::Input
+# Normally Rails would expect something like Inputs::SampleInputGraphQL
 
-# app/graphql/interfaces/person_interface.rb
-class GraphQL::PersonInterface < GraphQL::Interface
-# Normally Rails would expect something like Interfaces::PersonInterfaceGraphQL
+# app/graphql/inputs/person_input.rb
+class GraphQL::PersonInput < GraphQL::Input
+# Normally Rails would expect something like Inputs::PersonInputGraphQL
 
 # app/graphql/queries/users.rb
 class GraphQL::Queries::User < GraphQL::Query

@@ -237,6 +237,13 @@ module Rails
         MSG
       end
 
+      # This allows combining directives
+      def +(other)
+        [self, other].flatten
+      end
+
+      alias_method :&, :+
+
       def inspect
         args = all_arguments&.map do |name, arg|
           +"#{arg.gql_name}: #{@args[name].inspect}" unless @args[name].nil?

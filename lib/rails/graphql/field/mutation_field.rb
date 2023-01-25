@@ -5,7 +5,7 @@ module Rails
     # = GraphQL Mutation Field
     #
     # This is an extension of a normal output field, which just add extra
-    # validation and ensurance that the +perform+ step can be executed
+    # validation and insurance that the +perform+ step can be executed
     #
     # ==== Options
     #

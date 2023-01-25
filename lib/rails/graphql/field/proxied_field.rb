@@ -49,7 +49,7 @@ module Rails
         super || field == other
       end
 
-      # Allow chaging most of the general kind-independent initialize settings
+      # Allow changing most of the general kind-independent initialize settings
       def apply_changes(**xargs, &block)
         if (deprecated = xargs[:deprecated])
           xargs[:directives] = ::Array.wrap(xargs[:directives])
@@ -62,7 +62,8 @@ module Rails
         @directives = GraphQL.directives_to_set(xargs[:directives], source: self) \
           if xargs.key?(:directives)
 
-        @desc    = xargs[:desc]&.strip_heredoc&.chomp if xargs.key?(:desc)
+        self.description = xargs[:desc] if xargs.key?(:desc)
+        self.description = xargs[:description] if xargs.key?(:description)
         @enabled = xargs.fetch(:enabled, !xargs.fetch(:disabled, false)) \
           if xargs.key?(:enabled) || xargs.key?(:disabled)
 

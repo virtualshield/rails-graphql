@@ -72,6 +72,7 @@ module Rails
 
           listeners << event_name
           events[event_name].send(unshift ? :unshift : :push, callback || block)
+          self
         end
       end
     end

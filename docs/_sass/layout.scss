@@ -1,5 +1,10 @@
 // Website layout
 
+@mixin content {
+  margin: 0 auto;
+  width: #{$nav-width + $content-width};
+}
+
 body {
   display: grid;
   min-height: 100vh;
@@ -112,9 +117,8 @@ body {
   }
 
   > * > .content {
-    width: #{$nav-width + $content-width};
+    @include content;
     position: relative;
-    margin: 0 auto;
   }
 
   > main {
@@ -168,6 +172,10 @@ body {
           white-space: break-spaces;
         }
       }
+    }
+
+    > h1 {
+      background-color: $white;
     }
   }
 
@@ -223,6 +231,73 @@ body {
 
     img {
       grid-area: 1 / 2 / 3 / 3;
+    }
+
+    + h1 {
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+    }
+  }
+
+  section#three-steps {
+    position: relative;
+
+    h1 {
+      @include content;
+      padding: 0 2.5rem;
+    }
+
+    div.even, div.odd {
+      @include content;
+
+      display: grid;
+      padding: 1rem 2.5rem;
+      margin-top: 1rem;
+      margin-bottom: 1rem;
+      position: relative;
+      background-color: $white;
+      grid-template-rows: 55% 1fr;
+      grid-template-columns: 60% 1fr;
+      grid-template-areas: "title code" "text code";
+
+      h2 {
+        margin: 0;
+        grid-area: title;
+        align-self: end;
+      }
+
+      p {
+        margin: 0;
+        grid-area: text;
+      }
+
+      figure.highlight {
+        padding: 1rem;
+        grid-area: code;
+      }
+    }
+
+    div.odd {
+      grid-template-columns: 1fr 60%;
+      grid-template-areas: "code title" "code text";
+
+      h2, p {
+        text-align: right;
+      }
+    }
+  }
+
+  section#banner ~ section#three-steps {
+    div.even, div.odd {
+      &:first-child {
+        margin-top: 0;
+        padding-top: 2rem;
+      }
+
+      &:last-child {
+        margin-bottom: 0;
+        padding-bottom: 2rem;
+      }
     }
   }
 }

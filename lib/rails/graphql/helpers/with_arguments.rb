@@ -67,6 +67,7 @@ module Rails
           MSG
 
           arguments[object.name] = object
+          self
         rescue DefinitionError => e
           raise e.class, +"#{e.message}\n  Defined at: #{caller(2)[0]}"
         end

@@ -36,6 +36,9 @@ layout: table_wrappers
       {% if page.banner == true %}
         {% include banner.html %}
       {% endif %}
+      {% if page.banner == true or page.steps == true %}
+        {% include 3-steps.html %}
+      {% endif %}
 
       <section class="content main-content{% if page.toc != false %} with-toc{% endif %}">
         {% include breadcrumb.html %}

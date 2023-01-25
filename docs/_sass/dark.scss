@@ -23,8 +23,42 @@
 @import "./code/onedark";
 
 // Custom styles
-body > main {
-  border-top: 2px solid $red-200;
+body {
+  > main {
+    border-top: 2px solid $red-200;
+
+    > h1 {
+      background-color: transparent;
+    }
+  }
+
+  section#three-steps {
+    div.even, div.odd {
+      padding: 0 2.5rem;
+      margin-top: 2rem;
+      margin-bottom: 2rem;
+      background-color: transparent;
+    }
+
+    &::before, &::after {
+      left: 0;
+      right: 0;
+      content: '';
+      z-index: -1;
+      height: calc(125px + 2rem);
+      display: block;
+      position: absolute;
+      background-color: rgba(black, .1);
+    }
+
+    &::before {
+      top: 1rem;
+    }
+
+    &::after {
+      bottom: 1rem;
+    }
+  }
 }
 
 // Callouts

@@ -28,11 +28,6 @@ module Rails
         @default = deserialize(@default) if @default.is_a?(::GQLParser::Token)
       end
 
-      # Prevent input fields from being further configured using a block
-      def configure
-        raise ArgumentError, +'Input fields can\'t be further configured using blocks'
-      end
-
       # Allow change the default value for the input
       def apply_changes(**xargs, &block)
         @default = xargs[:default] if xargs.key?(:default)

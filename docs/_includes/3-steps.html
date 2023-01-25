@@ -1,0 +1,38 @@
+<h1 class="content text-red-200 px-7 pt-4 pb-2">3 Simple Steps</h1>
+<section id="three-steps">
+  <div class="even">
+    <h2 class="text-red-200">Install</h1>
+    <p>Totally plug-in-play</p>
+{% highlight bash %}
+# Add the gem to your Gemfile
+$ bundle add rails
+# Then run the Rails generator
+$ rails g graphql:install
+{% endhighlight %}
+  </div>
+  <div class="odd">
+    <h2 class="text-red-200">Define</h1>
+    <p>Designed for simple and complex <a href="/guides/schemas">Schemas</a></p>
+{% highlight ruby %}
+# app/graphql/app_schema.rb
+class GraphQL::AppSchema < GraphQL::Schema
+  field(:welcome).resolve { 'Hello World!' }
+end
+{% endhighlight %}
+  </div>
+  <div class="even">
+    <h2 class="text-red-200">Run</h1>
+    <p>
+      Follows
+      <a href="https://rubyonrails.org/doctrine" target="_blank" rel="external nofollow">
+        Rails core principles
+      </a>
+    </p>
+{% highlight bash %}
+$ curl -d '{"query":"{ welcome }"}' \
+       -H "Content-Type: application/json" \
+       -X POST http://localhost:3000/graphql
+# {"data":{"welcome":"Hello World!"}}
+{% endhighlight %}
+  </div>
+</section>

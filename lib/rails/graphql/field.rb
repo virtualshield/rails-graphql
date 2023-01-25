@@ -22,7 +22,7 @@ module Rails
     #   (defaults to false).
     # * <tt>:enabled</tt> - Mark the field as enabled
     #   (defaults to true).
-    # * <tt>:disabled</tt> - Works as the oposite of the enabled option
+    # * <tt>:disabled</tt> - Works as the opposite of the enabled option
     #   (defaults to false).
     # * <tt>:directives</tt> - The list of directives associated with the value
     #   (defaults to nil).
@@ -117,7 +117,7 @@ module Rails
         @array    = full ? true  : xargs.fetch(:array, false)
         @nullable = full ? false : xargs.fetch(:nullable, true)
 
-        self.description = xargs[:desc]
+        self.description = xargs[:desc] || xargs[:description]
         @enabled = xargs.fetch(:enabled, !xargs.fetch(:disabled, false))
 
         configure(&block) if block.present?
@@ -137,12 +137,14 @@ module Rails
         enable! if xargs.fetch(:enabled, false)
 
         self.description = xargs[:desc] if xargs.key?(:desc)
+        self.description = xargs[:description] if xargs.key?(:description)
         configure(&block) if block.present?
       end
 
       # Allow extra configurations to be performed using a block
       def configure(&block)
         Field::ScopedConfig.new(self, block.binding.receiver).instance_exec(&block)
+        self
       end
 
       # Return the owner as the single item of the list

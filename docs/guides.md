@@ -12,7 +12,7 @@ description: All you need to know on how to use this gem
 
 {% include installation.md %}
 
-## Get Started
+## Using Generators
 
 The easiest way to start is by using the [generators provided](/guides/generators).
 
