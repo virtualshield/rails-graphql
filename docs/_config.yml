@@ -17,7 +17,7 @@ title: Rails GraphQL
 email: me@carlosfsilva.com
 description: >-
   A Fresh new GraphQL server for Rails applications,
-  with the focus on natural and ruby-like interfaces.
+  with a focus on natural and Ruby-like DSL.
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://www.rails-graphql.dev"
 
