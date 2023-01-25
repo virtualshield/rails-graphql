@@ -1,4 +1,4 @@
 <details open>
   <summary>Table of Contents</summary>
-  {{ content | toc_only }}
+  {% include toc.html html=content h_min=2 sanitize=true %}
 </details>
