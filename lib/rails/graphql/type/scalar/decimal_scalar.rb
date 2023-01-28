@@ -12,6 +12,8 @@ module Rails
           The values are exchange as string.
         DESC
 
+        use :specified_by, url: 'https://en.wikipedia.org/wiki/IEEE_754-2008_revision'
+
         class << self
           def valid_input?(value)
             super && value.match?(/\A[+-]?\d+\.\d+\z/)

@@ -6,6 +6,14 @@ description: Setting up a schema, its dependencies, and capabilities
 
 # Schemas
 
+```graphql
+schema {
+  query: _Query
+  mutation: _Mutation
+  subscription: _Subscription
+}
+```
+
 Schema is the place where you will coordinate what features are available. The features
 of a schema are divided into configuring, fields, dependencies,
 subscriptions, cache, error handling, inline types, and type map interaction.
@@ -78,7 +86,7 @@ However, this gem provides several other ways for you to declare your fields. Yo
 use this only for the simplest things.
 
 Read more about [Fields](/guides/fields), [Alternatives](/guides/alternatives),
-and [Field Lists](/handbook/field-lists).
+and [Field Lists](/guides/field-lists).
 
 ## Dependencies
 
@@ -104,7 +112,7 @@ module GraphQL
     # Inform the type and the names that should be loaded
     load_scalars :bigint, :date_time
 
-    # Or
+    # OR
     load_dependencies :scalar, :bigint, :date_time
   end
 end
@@ -167,9 +175,10 @@ module GraphQL
 end
 ```
 
-Sources do not require importing because they have their own mechanism for publishing their fields.
+[Sources](/guides/sources) do not require importing because they have their
+own mechanism for publishing their fields.
 
-Read more about [Alternatives](/guides/alternatives) and [Sources](/guides/sources).
+Read more about [Importing Fields](/guides/field-lists#importing) and [Alternatives](/guides/alternatives).
 
 ## Subscriptions
 

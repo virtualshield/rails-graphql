@@ -162,6 +162,11 @@ module Rails
           time:      "#{__dir__}/type/scalar/time_scalar",
           json:      "#{__dir__}/type/scalar/json_scalar",
         },
+        enum:      {},
+        input:     {},
+        interface: {},
+        object:    {},
+        union:     {},
         directive: {
           # cached:    "#{__dir__}/directive/cached_directive",
         },

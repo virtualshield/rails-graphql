@@ -6,66 +6,129 @@ title: Getting Started
 description: The basics about this gem and what you will find
 ---
 
-# The Basics
-
-> `rails-graphql` is a fresh new implementation of a GraphQL server, designed to be
-> as close as possible to Rails architecture and interfaces, which implies that it has
-> shortcuts, lots of syntax sugar, and direct connection with Rails features like
-> <a href="https://guides.rubyonrails.org/active_record_basics.html" target="_blank" rel="external nofollow">ActiveRecord</a>
-> and <a href="https://guides.rubyonrails.org/action_cable_overview.html" target="_blank" rel="external nofollow">ActionCable</a>.
-
-This gem has its [own parser](/guides/parser), written from scratch, using
-<a href="http://silverhammermba.github.io/emberb/c/" target="_blank" rel="external nofollow">Ruby C API</a>,
-which empowers it with an outstanding performance. Plus, all the features
-provided were carefully developed so that everyone will feel comfortable and
-able to apply in all application sizes and patterns.
+{: .warning }
+> **Important**
+> This gem is currently in Beta version (v1.0.0.beta), so it's not recommended to be used in production **YET!**
 
 ## Installation
 
 {% include installation.md %}
 
-## Features
+## Using Generators
 
-Here is a quick list of all the available features, a short description, and a
-link to read more about each one of them:
+The easiest way to start is by using the [generators provided](/guides/generators).
 
-{% include features.md %}
-
-## Upcoming Features
-
-Here is a quick list of all features that are planned for this version. Some of them may be
-release during the beta or after.
-
-Pagination
-: A custom implementation of pagination using a directive
-
-Compilation
-: Save your GraphQL documents in the cache to improve performance
-: Force the application to only accept documents that have been compiled
-
-Rake tasks
-: Tasks to clean up cache, list subscriptions, and many others
-
-Generators
-: More generators than just the ones for schema and controller that are available right now
-
-Rubocop COPs
-: Additional Rubocop cops to guarantee code quality
-
-RSpec integration
-: Better integration with RSpec to simplify the tests even more
-
-Relay
-: All the necessary objects and basic structure plus source support to <a href="https://relay.dev/graphql/connections.htm" target="_blank" rel="external nofollow">Relay<a>
-
-## Collaborate
-
-To start, simply fork the project.
-
-Run local tests using:
 ```bash
-$ bundle install
-$ bundle exec rake compile
-$ bundle exec rake test
+# This will create a schema where your objects will be added
+$ rails g graphql:schema
+# This will create a controller to receive and process the requests
+$ rails g graphql:controller
 ```
-Finally, change the code and submit a pull request.
+
+## Directory Structure
+
+All your application's GraphQL schema files should live inside `app/graphql`.
+However, `Rails::GraphQL` will coordinate with `Rails` the expected classes and
+modules inside of it, which differs slightly from regular Rails app folders.
+Think of it as GraphQL's own app folder.
+
+{: .directory }
+```
+/ app
+  / controllers
+    - graphql_controller.rb
+  / graphql # Consider it the root of your GraphQL app
+    / directives
+    / enums
+    / fields
+    / inputs
+    / interfaces
+    / mutations
+    / object
+    / queries
+    / scalars
+    / sources
+    / subscriptions
+    / unions
+    - app_schema.rb
+  / models
+```
+
+{: .highlight }
+> This is fully compatible with
+> <a href="https://github.com/fxn/zeitwerk" target="_blank" rel="external nofollow">Zeitwerk</a>.
+
+Those directories won't be created automatically. Use this as a reference.
+The ones listed here have special meanings.
+
+Read more about the [Directory Structure](/guides/architecture#directory-structure).
+
+## Setup your Schema
+
+Once you generate a schema, you can add fields and many other things.
+Let's set up a very simple field that will return this unique output.
+
+```ruby
+# app/graphql/app_schema.rb
+module GraphQL
+  class AppSchema < GraphQL::Schema
+    query_fields do
+      field(:welcome, :string, null: false)
+    end
+
+    def welcome
+      'Hello World!'
+    end
+  end
+end
+```
+
+Now you can try it out on your Rails console.
+
+{: .rails-console }
+```ruby
+:001 > GraphQL::AppSchema.execute('{ welcome }')
+    => {"data"=>{"welcome"=>"Hello World!"}}
+```
+
+This is the minimum required to have a very basic setup.
+
+Read more about [Schemas](/guides/schemas).
+
+## Using a Controller
+
+If you have generated a controller, you may notice that it only has a module
+added to it. All the necessary functionality is already provided by default.
+The only thing added for this example is the skip of the authenticity token since
+we will be using a `POST` method.
+
+```ruby
+# app/controllers/google_controller.rb
+class GraphQLController < ApplicationController
+  include GraphQL::Controller
+
+  # Added manually
+  skip_before_action :verify_authenticity_token
+end
+```
+
+Let’s set it up properly by adding a route and running a test.
+
+```ruby
+# config/routes.rb
+Rails.application.routes.draw do
+  post '/graphql', to: 'graphql#execute'
+end
+```
+
+Now, once you have your server running, you can try requesting the result from
+your application. For the sake of demonstration only, here is a `CURL` example.
+
+```bash
+$ curl -d '{"query":"{ welcome }"}' \
+       -H "Content-Type: application/json" \
+       -X POST http://localhost:3000/graphql
+# {"data":{"welcome":"Hello World!"}}
+```
+
+Read more about [Customizing the Controller](/guides/customizing/controller).

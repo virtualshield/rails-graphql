@@ -385,6 +385,17 @@ module Rails
             RUBY
           end
 
+          # Helper method to create unions the fastest way possible
+          def union(name, **xargs, &block)
+            types = xargs.delete(:of_types)
+            klass = create_type(name, :Union, **xargs, &block)
+            return klass if types.nil?
+
+            types = types.map { |item| item.is_a?(Class) ? item : find!(item) }
+            klass.append(*types)
+            klass
+          end
+
           # Helper method to create a single source
           def source(object, superclass = nil, build: true, **xargs, &block)
             superclass ||= GraphQL::Source.find_for!(object)
@@ -468,7 +479,9 @@ module Rails
             klass.assigned_to = name_or_object if name_or_object.is_a?(Module) &&
               klass.is_a?(Helpers::WithAssignment)
 
-            klass.set_namespace(namespace)
+            ns = xargs.delete(:namespace) || xargs.delete(:namespaces) || namespace
+            klass.set_namespace(ns)
+            klass.use(*xargs.delete(:directives)) if xargs.key?(:directives)
             klass.module_exec(&block) if block.present?
             klass
           end

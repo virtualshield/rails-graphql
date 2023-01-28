@@ -5,8 +5,8 @@ module Rails
     module Helpers
       # Callbacks is an extension of the events which works with the
       # {Callback}[rdoc-ref:Rails::GraphQL::Callback] class, then having extra
-      # powers when actually executing the event against procs or owner-based
-      # symbolic methods
+      # powers when actually executing the event against Procs or owner-based
+      # methods, when provided a symbol
       module WithCallbacks
         DEFAULT_EVENT_TYPES = %i[query mutation subscription request attach
           authorize organized prepared finalize].freeze

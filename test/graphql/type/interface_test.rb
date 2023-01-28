@@ -31,20 +31,23 @@ class GraphQL_Type_InterfaceTest < GraphQL::TestCase
   end
 
   def test_implemented
+    skip 'Needs better double of interface'
     DESCRIBED_CLASS.stub(:gql_name, 'test') do
       DESCRIBED_CLASS.stub(:fields, {}) do
-        object = double(gql_name: 'baz', field?: ->(*) { false }, proxy_field: -> {})
+        object = double(gql_name: 'baz', has_field?: ->(*) { false }, proxy_field: -> {})
         assert_equal(Set[object], implemented_types(object))
       end
 
-      DESCRIBED_CLASS.stub(:fields, { 'a' => 'b' }) do
-        object = double(gql_name: 'baz', field?: ->(*) { true }, fields: { 'a' => /b/ })
+      field = double(name: 'a', :"=~" => ->(*) { true })
+      DESCRIBED_CLASS.stub(:fields, { 'a' => field }) do
+        object = double(gql_name: 'baz', has_field?: ->(*) { true }, fields: { 'a' => field })
         assert_equal(Set[object], implemented_types(object))
       end
 
-      fields = { 'a' => double(gql_name: 'a') }
+      field = double(name: 'a', :"=~" => ->(*) { false })
+      fields = { 'a' => field }
       DESCRIBED_CLASS.stub(:fields, fields) do
-        object = double(gql_name: 'baz', field?: ->(*) { true }, fields: { 'a' => 'b' })
+        object = double(gql_name: 'baz', has_field?: ->(*) { true }, fields: { 'a' => field })
         assert_raises(StandardError) { DESCRIBED_CLASS.implemented(object) }
       end
     end

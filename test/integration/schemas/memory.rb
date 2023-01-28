@@ -116,10 +116,10 @@ class StartWarsMemSchema < GraphQL::Schema
   interface 'Character' do
     desc 'A character in the Star Wars Trilogy'
 
-    field :id, :id, null: false,
+    field :id, null: false,
       desc: 'The id of the character'
 
-    field :name, :string,
+    field :name,
       desc: 'The name of the character'
 
     field :friends, 'Character', array: true,
@@ -128,7 +128,7 @@ class StartWarsMemSchema < GraphQL::Schema
     field :appears_in, 'Episode', array: true,
       desc: 'Which movies they appear in'
 
-    field :secret_backstory, :string,
+    field :secret_backstory,
       desc: 'All secrets about their past'
   end
 

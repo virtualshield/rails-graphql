@@ -55,7 +55,7 @@ module Rails
           # Using +fields_source+, find the needed ones to be assigned to the
           # current requested fields. As shown by benchmark, since the index is
           # based on Symbols, the best way to find +gql_name+ based fields is
-          # through iteration and search. Complexity O(n)
+          # through iteration, then search and assign. Complexity O(n)
           def assign_fields!(assigners)
             pending = assigners.map(&:size).reduce(:+) || 0
             return if pending.zero?

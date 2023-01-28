@@ -59,7 +59,7 @@ module Rails
             list << item_or_symbol
           end
 
-          self.directives += GraphQL.directives_to_set(list, all_directives, source: self)
+          directives.merge(GraphQL.directives_to_set(list, all_directives, source: self))
           self
         rescue DefinitionError => e
           raise e.class, +"#{e.message}\n  Defined at: #{caller(2)[0]}"

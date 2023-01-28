@@ -141,18 +141,6 @@ module Rails
               Invalid locations for @#{gql_name}: #{invalid.force.to_sentence}.
             MSG
           end
-
-          # Allows checking value existence
-          def respond_to_missing?(method_name, *)
-            (const_defined?(method_name) rescue nil) || autoload?(method_name) || super
-          end
-
-          # Allow fast creation of values
-          def method_missing(method_name, *args, **xargs, &block)
-            const_get(method_name)&.new(*args, **xargs, &block) || super
-          rescue ::NameError
-            super
-          end
       end
 
       self.abstract = true
@@ -160,6 +148,7 @@ module Rails
       autoload :DeprecatedDirective
       autoload :IncludeDirective
       autoload :SkipDirective
+      autoload :SpecifiedByDirective
 
       autoload :CachedDirective
 

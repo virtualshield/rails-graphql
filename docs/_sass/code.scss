@@ -89,6 +89,15 @@ div.highlighter-rouge {
     }
   }
 
+  &.language-json {
+    border-color: $green-300;
+
+    &::before {
+      content: "JSON";
+      background-color: $green-300;
+    }
+  }
+
   &.language-bash {
     border-color: black;
 

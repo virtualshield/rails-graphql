@@ -413,6 +413,7 @@ module Rails
             "#{__dir__}/directive/deprecated_directive",
             "#{__dir__}/directive/include_directive",
             "#{__dir__}/directive/skip_directive",
+            "#{__dir__}/directive/specified_by_directive",
           ]
         end
 

@@ -17,20 +17,22 @@ module Rails
           def inherited(subclass)
             super if defined? super
 
-            TYPE_FIELD_CLASS.each_key do |kind|
-              fields = instance_variable_defined?("@#{kind}_fields")
-              fields = fields ? instance_variable_get("@#{kind}_fields") : {}
-              fields.each_value { |field| subclass.add_proxy_field(kind, field) }
+            TYPE_FIELD_CLASS.each_key do |type|
+              fields = instance_variable_defined?("@#{type}_fields")
+              fields = fields ? instance_variable_get("@#{type}_fields") : EMPTY_HASH
+              fields.each_value { |field| subclass.add_proxy_field(type, field) }
             end
           end
         end
 
         # Helper class to be used as the +self+ in configuration blocks
         ScopedConfig = Struct.new(:source, :type) do
-          def arg(*args, **xargs, &block)
+          def argument(*args, **xargs, &block)
             xargs[:owner] ||= source
             GraphQL::Argument.new(*args, **xargs, &block)
           end
+
+          alias arg argument
 
           private
 
@@ -55,7 +57,6 @@ module Rails
                   safe_field:  :safe_add_field,
                   field:       :add_field,
                   proxy_field: :add_proxy_field,
-                  field?:      :has_field?,
                   import:      :import_into,
                   import_all:  :import_all_into,
                 )
@@ -76,12 +77,15 @@ module Rails
           end
         end
 
+        # Allow hash access with the type or the type and the name
+        def [](type, name = nil)
+          name.nil? ? fields_for(type) : find_field(type, name)
+        end
+
         # Check if there are fields set fot he given type
         def fields_for?(type)
           public_send("#{type}_fields?")
         end
-
-        alias [] :fields_for
 
         # Return the object name for a given +type+ of list of fields
         def type_name_for(type)
@@ -180,12 +184,15 @@ module Rails
           MSG
         end
 
-        # Get the list of GraphQL names of all the fields difined
+        # Get the list of GraphQL names of all the fields defined
         def field_names_for(type, enabled_only = true)
-          return unless fields_for?(type)
-          list = fields_for(type)
-          list = list.select(&:enabled?) if enabled_only
-          list.map(&:gql_name).compact
+          source = (enabled_only ? enabled_fields_from(type) : lazy_each_field_from(type))
+          source&.map(&:gql_name)&.eager
+        end
+
+        # Return a lazy enumerator for enabled fields
+        def enabled_fields_from(type)
+          lazy_each_field_from(type)&.select(&:enabled?)
         end
 
         # Run a configuration block for the given +type+
@@ -195,8 +202,6 @@ module Rails
 
         # Import a class of fields into the given section of schema fields
         def import_into(type, source)
-          return if source.try(:abstract?)
-
           # Import an alternative declaration of a field
           if source.is_a?(Module) && source <= Alternative::Query
             return add_proxy_field(type, source.field)
@@ -232,7 +237,7 @@ module Rails
             object = mod.const_get(const_name)
 
             import_into(type, object, **xargs) if object.is_a?(Class)
-            import_all_into(type, object, recursive: recursive, **xargs) if recursive
+            import_all_into(type, object, recursive: recursive, **xargs) if recursive && object.is_a?(Module)
           end
         end
 
@@ -253,9 +258,9 @@ module Rails
         def validate!(*)
           super if defined? super
 
-          TYPE_FIELD_CLASS.each_key do |kind|
-            next unless public_send("#{kind}_fields?")
-            fields_for(kind).each_value(&:validate!)
+          TYPE_FIELD_CLASS.each_key do |type|
+            next unless public_send("#{type}_fields?")
+            fields_for(type).each_value(&:validate!)
           end
         end
 
@@ -264,52 +269,68 @@ module Rails
           find_field!(gid.scope, gid.name)
         end
 
-        TYPE_FIELD_CLASS.each_key do |kind|
+        TYPE_FIELD_CLASS.each_key do |type|
           class_eval <<-RUBY, __FILE__, __LINE__ + 1
-            def #{kind}_field?(name)
-              has_field?(:#{kind}, name)
+            def #{type}_fields?
+              defined?(@#{type}_fields) && @#{type}_fields.present?
             end
 
-            def #{kind}_field(name)
-              find_field(:#{kind}, name)
+            def #{type}_fields(&block)
+              configure_fields(:#{type}, &block) if block.present?
+              @#{type}_fields if defined?(@#{type}_fields)
             end
 
-            def add_#{kind}_field(*args, **xargs, &block)
-              add_field(:#{kind}, *args, **xargs, &block)
+            def add_#{type}_field(*args, **xargs, &block)
+              add_field(:#{type}, *args, **xargs, &block)
             end
 
-            def #{kind}_fields?
-              defined?(@#{kind}_fields) && @#{kind}_fields.present?
+            def #{type}_field?(name)
+              has_field?(:#{type}, name)
             end
 
-            def #{kind}_fields(&block)
-              configure_fields(:#{kind}, &block) if block.present?
-              @#{kind}_fields if defined?(@#{kind}_fields)
+            def #{type}_field(name)
+              find_field(:#{type}, name)
             end
 
-            def #{kind}_type_name
+            def #{type}_type_name
               source = (respond_to?(:config) ? config : GraphQL.config)
-              source.schema_type_names[:#{kind}]
+              source.schema_type_names[:#{type}]
             end
 
-            def #{kind}_type
-              if defined?(@#{kind}_fields) && @#{kind}_fields.present?
-                OpenStruct.new(
-                  name: "\#{name}[:#{kind}]",
-                  kind: :object,
-                  object?: true,
-                  kind_enum: 'OBJECT',
-                  fields: @#{kind}_fields,
-                  gql_name: #{kind}_type_name,
-                  interfaces: nil,
-                  description: nil,
-                  interfaces?: false,
-                  internal?: false,
-                ).freeze
-              end
+            def #{type}_type
+              return unless #{type}_fields?
+
+              OpenStruct.new(
+                name: "\#{name}[:#{type}]",
+                kind: :object,
+                object?: true,
+                kind_enum: 'OBJECT',
+                fields: @#{type}_fields,
+                gql_name: #{type}_type_name,
+                interfaces: nil,
+                description: nil,
+                interfaces?: false,
+                internal?: false,
+              ).freeze
             end
           RUBY
         end
+
+        protected
+
+          # A little helper to define arguments using the :arguments key
+          def argument(*args, **xargs, &block)
+            xargs[:owner] = self
+            GraphQL::Argument.new(*args, **xargs, &block)
+          end
+
+          alias arg argument
+
+        private
+
+          def lazy_each_field_from(type)
+            fields_for(type).each_pair.lazy.each_entry.map(&:last) if fields_for?(type)
+          end
       end
     end
   end

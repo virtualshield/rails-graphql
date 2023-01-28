@@ -52,7 +52,7 @@ module Rails
           end
 
           # Use this method to assign interfaces to the object
-          def implements(*others)
+          def implements(*others, import_fields: true)
             return if others.blank?
 
             current = all_interfaces&.dup
@@ -60,7 +60,7 @@ module Rails
               item = find_interface!(item)
               next if current&.include?(item) || interfaces.include?(item)
 
-              item.implemented(self)
+              item.implemented(self, import_fields: import_fields)
               interfaces << item
             end
           end

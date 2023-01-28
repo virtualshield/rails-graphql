@@ -1,5 +1,5 @@
 ---
-layout: table_wrappers
+layout: table-wrappers
 ---
 
 <!DOCTYPE html>
@@ -27,7 +27,7 @@ layout: table_wrappers
       {% if page.url == "/" %}
         <section id="beta">
           <b>SITE UNDER CONSTRUCTION!</b>
-          This gem is still in Beta (v1.0.0.beta), so it's not recommended to be used in production <b>YET!</b>
+          This gem is currently in Beta version (v1.0.0.beta), so it's not recommended to be used in production <b>YET!</b>
         </section>
       {% endif %}
     </header>
@@ -44,7 +44,7 @@ layout: table_wrappers
         {% include breadcrumb.html %}
 
         {% if page.toc != false %}
-          {% include table_of_contents.html content=content %}
+          {% include table-of-contents.html content=content %}
         {% endif %}
 
         <section class="inner-content">

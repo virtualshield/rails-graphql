@@ -9,6 +9,8 @@ module Rails
 
         desc 'The DateTime scalar type represents a ISO 8601 string value.'
 
+        use :specified_by, url: 'https://www.rfc-editor.org/rfc/rfc3339'
+
         class << self
           def valid_input?(value)
             super && !!(Time.iso8601(value) rescue false)

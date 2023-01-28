@@ -6,6 +6,10 @@ description: One of the most important leaf types of GraphQL
 
 # Scalars
 
+```graphql
+scalar String
+```
+
 Scalars are one of the essential types of GraphQL.
 While other types exist to organize the information in a way that makes sense,
 scalars deliver the data.
@@ -173,7 +177,7 @@ registered will be based on the class name and the aliases, precisely as they we
 
 Read more about the [Type Map](/guides/type-map).
 
-#### For gem Creators
+### For gem Creators
 
 Once you have created your scalars in your gem, remember to add them into
 [`config.known_dependencies`](/handbook/settings#known_dependencies).

@@ -95,7 +95,7 @@ module Rails
           def organize_then(&block)
             super(block) do
               if inline?
-                @type_klass = find_type!(@node[1])
+                @type_klass = @node[1].nil? ? parent.type_klass : find_type!(@node[1])
                 parse_directives(@node[2])
                 parse_selection(@node[3])
               else

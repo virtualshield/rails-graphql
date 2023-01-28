@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Gem Settings
+title: Setting - Handbook
 description: An easy to use guide of all the configurations available
 ---
 
@@ -341,6 +341,12 @@ and allow users to enable them.
     time:      "#{__dir__}/type/scalar/time_scalar",
     json:      "#{__dir__}/type/scalar/json_scalar",
   },
+  enum:      {},
+  input:     {},
+  interface: {},
+  object:    {},
+  union:     {},
+  directive: {},
 }
 ```
 

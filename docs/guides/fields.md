@@ -14,7 +14,7 @@ basics and intermediate of them.
 ## Basic Concepts
 
 ```ruby
-field :name, :string, null: false
+field :name, :string
 ```
 
 A field will always be composed of a `name`, a `type`, and a sequence of settings
@@ -176,33 +176,39 @@ Marks if the field is broadcastable or not, which is only relevant when working 
 
 ### Arguments
 
-Get notified whenever the current user has been upAll output fields accept additional arguments.
+All output fields accept additional arguments.
 This list of unique arguments allows for exchanging expected behaviors that the request
 has about this field. Arguments accept both leaf values or [Inputs](/guides/inputs).
 
 You have some options while adding your arguments:
 
 ```ruby
-# For a short list of arguments, these options are all the same
-field :name, :string, null: false,
+# Any of these options, that produces the same result,
+# are good for a short list of arguments (1 - 2)
+field :name, :string,
   arguments: argument(:first, :bool) + argument(:last, :bool)
-field :name, :string, null: false,
+field :name, :string,
   arguments: argument(:first, :bool) & argument(:last, :bool)
-field :name, :string, null: false,
+field :name, :string,
   arguments: [argument(:first, :bool), argument(:last, :bool)]
+
+# In this scope, you can also shorten the line by using `arg` instead
+field :name, :string, arguments: arg(:first, :bool) + arg(:last, :bool)
 
 # For a more extensive list of arguments,
 # use the block of the definition of the field
-field(:name, :string, null: false) do
-  argument :first, :bool, null: false, default: true
-  argument :last, :bool, null: false, default: true
+field(:name, :string) do
+  argument :first, :bool, default: true
+  argument :last, :bool, default: true
   argument :mid, :bool
+
+  # This scope does not support the `arg` alias
 end
 
 # You can also use a syntax sugar
-field :user, 'User', null: false, arguments: id_argument
+field :user, 'User', arguments: id_argument
 # Which is equivalent to
-field :user, 'User', null: false, arguments: argument(:id, :id, null: false)
+field :user, 'User', arguments: argument(:id, :id, null: false)
 # You can customize the name of the argument and all the other options as well
 id_argument(:pid, null: true, desc: 'ID')
 # Which is equivalent to
@@ -249,7 +255,7 @@ sign the request for updates that may happen with the data it first returned.
 ```ruby
 # app/graphql/app_schema.rb
 subscription_fields do
-  field :me, 'User', null: false,
+  field :me, 'User',
     desc: 'Get notified whenever the current user has been updated'
 end
 ```
@@ -270,7 +276,7 @@ Special types of output fields may also have special types of events. Here is ho
 listen to events:
 
 ```ruby
-field(:name, :string, null: false) do
+field(:name, :string) do
   on(:prepare) { |event| puts event.inspect }
 end
 ```
@@ -284,12 +290,18 @@ of GraphQL and this gem. Just as a reference, here is how you can add directives
 fields:
 
 ```ruby
-field :name, :string, null: false,
-  directives: GraphQL::DeprecatedDirective.new
-# It also supports chaining with + or &
+field :name, :string, directives: GraphQL::DeprecatedDirective.new
+# It also supports concatenating with + or &. These are all equivalent
+field :name, :string,
+  directives: GraphQL::ADirective.new + GraphQL::BDirective.new
+field :name, :string,
+  directives: GraphQL::ADirective.new & GraphQL::BDirective.new
+field :name, :string,
+  directives: [GraphQL::ADirective.new, GraphQL::BDirective.new]
 
-# Or the block approach
-field(:name, :string, null: false) do
+
+# OR the block approach
+field(:name, :string) do
   # These are the same thing
   use :deprecated, reason: 'Just because'
   use GraphQL::DeprecatedDirective(reason: 'Just because')
@@ -305,9 +317,9 @@ You may have noticed that in some examples, a chaining approach was used to conf
 This is widely available for the methods you would likely call within the block.
 
 ```ruby
-field(:name, :string, null: false)
-  .argument(:first, :bool, null: false)
-  .argument(:last, :bool, null: false)
+field(:name, :string)
+  .argument(:first, :bool)
+  .argument(:last, :bool)
   .use(:deprecated, reason: 'Just because')
   .on(:prepare) { |event| puts event.inspect }
   .resolve { 'The name!' }
@@ -326,7 +338,7 @@ name of the fields, the description can be defined in your YAML files.
 ```ruby
 # app/graphql/app_schema.rb
 query_fields do
-  field :user, 'User', null: false
+  field :user, 'User'
 end
 ```
 
@@ -365,7 +377,7 @@ This is useful when controlling the enabled/disabled state of fields and [proxy 
 ```ruby
 # app/graphql/interfaces/animal.rb
 class GraphQL::Animal < GraphQL::Interface
-  field :name, :string, null: false, desc: 'The name of the animal'
+  field :name, :string, desc: 'The name of the animal'
 end
 
 # app/graphql/objects/cat.rb
@@ -382,13 +394,16 @@ class GraphQL::Dog < GraphQL::Object
   # Fields are imported as proxies
   implements 'Animal'
 
-  # Changes only the local version of the field
-  change_field :name, desc: 'The name of the dog'
+  # A block allows changing other things
+  change_field(:name, desc: 'The name of the dog') do
+    argument(:nickname, :bool, null: false, default: false)
+  end
 end
 ```
 
 You are allowed to change the `null`, `nullable`, `disabled`, `enabled`, `description`,
-`default`, and `method_name` values, as well as increment the `arguments` and `directives`.
+`default`, and `method_name` values, as well as increment the `arguments` and `directives`
+within a block.
 
 Proxy fields is an advanced feature. Read more about the [Proxy Fields](/guides/advanced/fields#proxies).
 
@@ -415,7 +430,6 @@ All fields have 6 indicators of exactly what they are:
 : Is it a proxy of another field?
 
 This is the tree of field classes and what modules they implement.
-`↳` represents inheritance and `+` represents composition:
 
 ```
 Object
@@ -429,3 +443,4 @@ Object
     ↳ MutationField
     ↳ SubscriptionField
 ```
+{% include hierarchy-sub.md %}

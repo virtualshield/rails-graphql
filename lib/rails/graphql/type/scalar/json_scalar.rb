@@ -12,6 +12,8 @@ module Rails
           with all its available keys and values.
         DESC
 
+        use :specified_by, url: 'https://www.rfc-editor.org/rfc/rfc8259'
+
         class << self
           def valid_input?(value)
             valid_token?(value, :hash) || value.is_a?(::Hash)

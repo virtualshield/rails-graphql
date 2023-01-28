@@ -19,7 +19,7 @@ module Rails
             fields.each_value(&subclass.method(:proxy_field))
           end
 
-          # Return the list of fileds, only initialize when explicitly told
+          # Return the list of fields, only initialize when explicitly told
           def fields(initialize = nil)
             return @fields if defined?(@fields)
             return unless initialize
@@ -51,7 +51,7 @@ module Rails
         def field(name, *args, **xargs, &block)
           object = field_type.new(name, *args, **xargs, owner: self, &block)
 
-          raise DuplicatedError, (+<<~MSG).squish if field?(object.name)
+          raise DuplicatedError, (+<<~MSG).squish if has_field?(object.name)
             The #{name.inspect} field is already defined and can't be redefined.
           MSG
 
@@ -69,7 +69,7 @@ module Rails
 
           xargs[:owner] = self
           object = field.to_proxy(*args, **xargs, &block)
-          raise DuplicatedError, (+<<~MSG).squish if field?(object.name)
+          raise DuplicatedError, (+<<~MSG).squish if has_field?(object.name)
             The #{field.name.inspect} field is already defined and can't be replaced.
           MSG
 
@@ -99,8 +99,8 @@ module Rails
           list.flatten.map { |item| self[item]&.enable! }
         end
 
-        # Check wheter a given field +object+ is defined in the list of fields
-        def field?(object)
+        # Check whether a given field +object+ is defined in the list of fields
+        def has_field?(object)
           return false unless fields?
           object = object.name if object.is_a?(GraphQL::Field)
           fields.key?(object.is_a?(String) ? object.underscore.to_sym : object)
@@ -122,7 +122,7 @@ module Rails
           MSG
         end
 
-        # Get the list of GraphQL names of all the fields difined
+        # Get the list of GraphQL names of all the fields defined
         def field_names(enabled_only = true)
           (enabled_only ? enabled_fields : lazy_each_field)&.map(&:gql_name)&.eager
         end
@@ -133,32 +133,35 @@ module Rails
         end
 
         # Import one or more field into the current list of fields
-        def import(klass, ignore_abstract: false)
-          return if ignore_abstract && klass.try(:abstract?)
+        def import(source)
+          # Import an alternative declaration of a field
+          if source.is_a?(Module) && source <= Alternative::Query
+            return proxy_field(type, source.field)
+          end
 
-          if klass.is_a?(Module) && klass <= Alternative::Query
-            # Import an alternative declaration of a field
-            proxy_field(klass.field)
-          elsif klass.is_a?(Helpers::WithFields)
+          case source
+          when Array
+            # Import a list of fields
+            source.each { |field| proxy_field(type, field) }
+          when Hash, Concurrent::Map
+            # Import a keyed list of fields
+            source.each_value { |field| proxy_field(type, field) }
+          when Helpers::WithFields
             # Import a set of fields
-            klass.fields.each_value { |field| proxy_field(field) }
+            source.fields.each_value { |field| proxy_field(type, field) }
           else
             return if GraphQL.config.silence_import_warnings
-            GraphQL.logger.warn(+"Unable to import #{klass.inspect} into #{self.name}.")
+            GraphQL.logger.warn(+"Unable to import #{source.inspect} into #{self.name}.")
           end
         end
 
         # Import a module containing several classes to be imported
-        def import_all(mod, recursive: false, ignore_abstract: false)
+        def import_all(mod, recursive: false, **xargs)
           mod.constants.each do |const_name|
             object = mod.const_get(const_name)
 
-            if object.is_a?(Class)
-              import(object, ignore_abstract: ignore_abstract)
-            elsif object.is_a?(Module) && recursive
-              # TODO: Maybe add deepness into the recursive value
-              import_all(object, recursive: recursive, ignore_abstract: ignore_abstract)
-            end
+            import(object, **xargs) if object.is_a?(Class)
+            import_all(object, recursive: recursive, **xargs) if recursive && object.is_a?(Module)
           end
         end
 
@@ -179,10 +182,12 @@ module Rails
         protected
 
           # A little helper to define arguments using the :arguments key
-          def arg(*args, **xargs, &block)
+          def argument(*args, **xargs, &block)
             xargs[:owner] = self
             GraphQL::Argument.new(*args, **xargs, &block)
           end
+
+          alias arg argument
 
         private
 

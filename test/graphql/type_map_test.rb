@@ -261,7 +261,7 @@ class GraphQL_TypeMapTest < GraphQL::TestCase
       @base_classes=3
       @objects=0
       @pending=0
-      @dependencies={base: 14}>
+      @dependencies={base: 15}>
     INFO
   end
 

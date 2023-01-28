@@ -15,6 +15,8 @@ module Rails
           Normally used to share files and uploads.
         DESC
 
+        use :specified_by, url: 'https://www.rfc-editor.org/rfc/rfc3548'
+
         class << self
           def as_json(value)
             Base64.encode64(value.to_s).chomp

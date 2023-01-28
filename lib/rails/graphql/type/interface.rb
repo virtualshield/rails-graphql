@@ -35,16 +35,22 @@ module Rails
           # When attaching an interface to an object, copy the fields and add to
           # the list of types. Pre-existing same-named fields with are not
           # equivalent produces an exception.
-          def implemented(object)
+          def implemented(object, import_fields: true)
+            import_fields = false if abstract?
+
             fields.each do |name, field|
-              defined = object.field?(name)
-              invalid = defined && object.fields[name] !~ field
+              defined = object[field.name]
+              raise ArgumentError, (+<<~MSG).squish unless defined || import_fields
+                The "#{object.gql_name}" object must have a "#{field.gql_name}" field.
+              MSG
+
+              invalid = defined && defined !~ field
               raise ArgumentError, (+<<~MSG).squish if invalid
                 The "#{object.gql_name}" object already has a "#{field.gql_name}" field and it
                 is not equivalent to the one defined on the "#{gql_name}" interface.
               MSG
 
-              object.proxy_field(field) unless defined
+              object.proxy_field(field) if import_fields && !defined
             end
 
             types << object

@@ -137,30 +137,23 @@ type ObjectDesc {
 }
 
 type _Query {
-  "Field"
-  sampleField: String
-  
-  "A"
-  sampleA: String
-  
-  "B"
-  sampleB: String
-  
-  "C"
-  sampleC: String
-  
-  "D"
-  sampleD: String
-  
-  "E"
-  sampleE: String
-  
-  "F"
-  sampleF: String
-  
   __schema: __Schema!
   
   __type(name: String!): __Type
+  
+  sampleA: String
+  
+  sampleB: String
+  
+  sampleC: String
+  
+  sampleD: String
+  
+  sampleE: String
+  
+  sampleF: String
+  
+  sampleField: String
 }
 
 """
@@ -174,13 +167,13 @@ additional information to the executor.
 """
 # Assigned to Rails::GraphQL::Directive class
 type __Directive {
-  name: String!
+  args: [__InputValue!]!
   
   description: String
   
   locations: [__DirectiveLocation!]!
   
-  args: [__InputValue!]!
+  name: String!
 }
 
 """
@@ -189,13 +182,13 @@ of values. It's a string representation, not a numeric representation,
 of a value kept as all caps (ie. ONE_VALUE).
 """
 type __EnumValue {
-  name: String!
+  deprecationReason: String
   
   description: String
   
   isDeprecated: Boolean!
   
-  deprecationReason: String
+  name: String!
 }
 
 """
@@ -205,17 +198,17 @@ a value of a specific type.
 """
 # Assigned to Rails::GraphQL::Field class
 type __Field {
-  name: String!
+  args: [__InputValue!]!
+  
+  deprecationReason: String
   
   description: String
   
-  args: [__InputValue!]!
-  
-  type: __Type!
-  
   isDeprecated: Boolean!
   
-  deprecationReason: String
+  name: String!
+  
+  type: __Type!
 }
 
 """
@@ -226,13 +219,13 @@ a single value.
 """
 # Assigned to Rails::GraphQL::Field::InputField class
 type __InputValue {
-  name: String!
+  defaultValue: String
   
   description: String
   
-  type: __Type!
+  name: String!
   
-  defaultValue: String
+  type: __Type!
 }
 
 """
@@ -244,15 +237,15 @@ determines the place in the type system where those operations begin.
 """
 # Assigned to Rails::GraphQL::Schema class
 type __Schema {
-  types: [__Type!]!
-  
-  queryType: __Type!
+  directives: [__Directive!]!
   
   mutationType: __Type
   
+  queryType: __Type!
+  
   subscriptionType: __Type
   
-  directives: [__Directive!]!
+  types: [__Type!]!
 }
 
 """
@@ -278,29 +271,29 @@ the schema to define exactly what data is expected.
 """
 # Assigned to Rails::GraphQL::Type class
 type __Type {
-  kind: __TypeKind!
-  
-  name: String
-  
   description: String
-  
-  "OBJECT and INTERFACE only"
-  fields(includeDeprecated: Boolean = false): [__Field!]
-  
-  "OBJECT only"
-  interfaces: [__Type!]
-  
-  "INTERFACE and UNION only"
-  possibleTypes: [__Type!]
   
   "ENUM only"
   enumValues(includeDeprecated: Boolean = false): [__EnumValue!]
   
+  "OBJECT and INTERFACE only"
+  fields(includeDeprecated: Boolean = false): [__Field!]
+  
   "INPUT_OBJECT only"
   inputFields: [__InputValue!]
   
+  "OBJECT only"
+  interfaces: [__Type!]
+  
+  kind: __TypeKind!
+  
+  name: String
+  
   "NON_NULL and LIST only"
   ofType: __Type
+  
+  "INTERFACE and UNION only"
+  possibleTypes: [__Type!]
 }
 
 """
@@ -333,3 +326,14 @@ directive @skip(
   if: Boolean!
   
 ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"""
+A built-in directive used within the type system definition language to provide
+a scalar specification URL for specifying the behavior of custom scalar types.
+"""
+directive @specifiedBy(
+
+  "Point to a human-readable specification of the data format."
+  url: String!
+  
+) on SCALAR

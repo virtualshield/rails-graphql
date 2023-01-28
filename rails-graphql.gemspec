@@ -15,7 +15,7 @@ Gem::Specification.new do |s|
   s.homepage    = 'https://github.com/virtualshield/rails-graphql'
   s.license     = 'MIT'
   s.summary     = 'A GraphQL server for Rails applications'
-  s.description = 'A GraphQL server implementation for Rails applications that focus on performance and simpler integration with Rails DSL'
+  s.description = 'A Fresh new GraphQL server for Rails applications, with a focus on natural and Ruby-like DSL'
   s.metadata    = {
     'homepage_uri'    => 'https://www.rails-graphql.dev/',
     "source_code_uri" => 'https://github.com/virtualshield/rails-graphql',

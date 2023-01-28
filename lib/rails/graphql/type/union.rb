@@ -41,12 +41,12 @@ module Rails
               GraphQL.type_map.fetch(item, namespaces: namespaces)
             end
 
-            checker = others.lazy.map { |item| item.try(:base_type) }.uniq.force
+            checker = others.map { |item| item.try(:base_type) }.uniq
             raise ArgumentError, (+<<~MSG).squish unless checker.size === 1
               All the union members must be of the same base class.
             MSG
 
-            check_types = members? ? [members.first.base_type] : VALID_MEMBER_TYPES
+            check_types = members? ? [of_kind] : VALID_MEMBER_TYPES
             raise ArgumentError, (+<<~MSG).squish unless (check_types & checker).size === 1
               A union cannot contain members of different base classes.
             MSG

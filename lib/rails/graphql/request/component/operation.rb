@@ -73,6 +73,12 @@ module Rails
           schema.fields_for(type)
         end
 
+        # Allow accessing the fake type form the schema. It's used for
+        # inline spreads without a specified type
+        def type_klass
+          schema.public_send("#{type}_type")
+        end
+
         # The typename is always based on the fake name used for the set of
         # schema fields
         def typename

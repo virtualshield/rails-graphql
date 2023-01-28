@@ -13,6 +13,8 @@ module Rails
           minutes, seconds, and milliseconds.
         MSG
 
+        use :specified_by, url: 'https://www.rfc-editor.org/rfc/rfc3339'
+
         # A +base_object+ helps to identify what methods are actually available
         # to work as resolvers
         class_attribute :precision, instance_accessor: false, default: 6

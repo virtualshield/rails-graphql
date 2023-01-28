@@ -59,7 +59,7 @@ module Rails
         reference = model.new
         model.columns_hash.each_value do |column|
           change_field(column.name, default: reference[column.name]) \
-            if column.default.present? && field?(column.name)
+            if column.default.present? && has_field?(column.name)
         end
       end
 
