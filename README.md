@@ -148,5 +148,5 @@ Finally, change the code and submit a pull request.
 
 ## License
 
-Copyright © 2020- VirtualShield. See [The MIT License](MIT-LICENSE) for further
+Copyright © 2020-2023 VirtualShield LLC. See [The MIT License](MIT-LICENSE) for further
 details.
