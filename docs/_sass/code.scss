@@ -198,6 +198,51 @@ figure.highlight {
   }
 }
 
+// Copy button
+div.highlighter-rouge,
+figure.highlight {
+  position: relative;
+
+  > button {
+    width: $sp-3;
+    opacity: 0;
+    position: absolute;
+    top: $sp-1;
+    right: $sp-1;
+    border: $sp-1 solid transparent;
+    background-color: $body-background-color;
+    color: $body-text-color;
+    box-sizing: content-box;
+    transition: opacity $transition-duration;
+    border-radius: 0.25rem;
+
+    svg {
+      fill: $body-text-color;
+    }
+
+    &:active {
+      text-decoration: none;
+      outline: none;
+    }
+
+    &:focus,
+    &:active {
+      cursor: grabbing !important;
+    }
+
+    &:focus,
+    &:active,
+    &:hover {
+      opacity: 1 !important;
+    }
+  }
+
+  &:hover > button {
+    cursor: grab;
+    opacity: 0.5;
+  }
+}
+
 // Text highlighting colors
 body.light {
   @import "./code/vs";

@@ -38,7 +38,7 @@ interface 'Person' do
 end
 ```
 
-Read more about the [Field Lists](/guides/field-lists).
+Read more about [field lists](/guides/field-lists).
 
 {% include type-description.md type="interface" name="Person" %}
 
@@ -92,7 +92,7 @@ implements GraphQL::Person
 # Then any additional fields
 ```
 
-Proxy fields is an advanced feature. Read more about the [Proxy Fields](/guides/advanced/fields#proxies).
+**Proxy fields is an advanced feature.** Read more about [proxy fields](/guides/advanced/fields#proxies).
 
 ### Not Importing Fields
 

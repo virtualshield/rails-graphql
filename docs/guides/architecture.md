@@ -14,8 +14,8 @@ you through how to use that in your application.
 > **Important**
 > This gem uses a lot of
 > <a href="https://ruby-doc.org/stdlib-3.0.0/libdoc/delegate/rdoc/SimpleDelegator.html" target="_blank" rel="external nofollow">SimpleDelegator</a>
-> and custom delegators as well. If you are not familiar with such a pattern, it's recommended
-> that you read about it first before digging deeper here.
+> and custom delegators. If you are not familiar with such a pattern, it's recommended
+> that you read about it first.
 
 ## Basic concepts
 
@@ -152,7 +152,7 @@ schemas so that they are isolated and yet allowed to share types.
 In short, schemas can only have one single namespace, whereas other types can have multiple
 namespaces. The default namespace is `:base`.
 
-**This is an advanced feature.** Read more about the [Namespaces](/guides/advanced/namespaces).
+**This is an advanced feature.** Read more about [namespaces](/guides/advanced/namespaces).
 
 ### Shortcuts
 
@@ -276,7 +276,8 @@ the only produce a value. Others are more complex because they can hold a list o
 `Object` and `Interface`.
 
 Read more about it in the
-<a href="http://spec.graphql.org/October2021/#sec-Types" target="_blank" rel="external nofollow">GraphQL Spec</a>.
+<a href="http://spec.graphql.org/October2021/#sec-Types" target="_blank" rel="external nofollow">GraphQL Spec</a>
+and [here](/guides#type-system).
 
 ### Schema
 
@@ -287,7 +288,8 @@ A good way to think about schemas is as if they were their own Rails application
 The fields in it are its routing system, and the types are everything it can respond to.
 
 Read more about it in the
-<a href="http://spec.graphql.org/October2021/#sec-Schema" target="_blank" rel="external nofollow">GraphQL Spec</a>.
+<a href="http://spec.graphql.org/October2021/#sec-Schema" target="_blank" rel="external nofollow">GraphQL Spec</a>
+and [here](/guides/schemas).
 
 ### Field
 
@@ -301,7 +303,8 @@ In that Rails application analogy, you can think of fields as individual routes 
 inside of a schema and individual pieces of output in the responses.
 
 Read more about it in the
-<a href="http://spec.graphql.org/October2021/#sec-Language.Fields" target="_blank" rel="external nofollow">GraphQL Spec</a>.
+<a href="http://spec.graphql.org/October2021/#sec-Language.Fields" target="_blank" rel="external nofollow">GraphQL Spec</a>
+and [here](/guides/fields).
 
 ### Argument
 
@@ -315,7 +318,8 @@ A list of arguments within a particular field **cannot be duplicated** as well.
 Following that Rails analogy, think of arguments as the parameters that you send on each request.
 
 Read more about it in the
-<a href="http://spec.graphql.org/October2021/#sec-Language.Arguments" target="_blank" rel="external nofollow">GraphQL Spec</a>.
+<a href="http://spec.graphql.org/October2021/#sec-Language.Arguments" target="_blank" rel="external nofollow">GraphQL Spec</a>
+and [here](/guides/arguments).
 
 ### Directive
 
@@ -329,7 +333,8 @@ However, there is no rule for using the same directive multiple times.
 In that Rails analogy, think of directives settings and configurations on your setup or headers in your requests.
 
 Read more about it in the
-<a href="http://spec.graphql.org/October2021/#sec-Language.Directives" target="_blank" rel="external nofollow">GraphQL Spec</a>.
+<a href="http://spec.graphql.org/October2021/#sec-Language.Directives" target="_blank" rel="external nofollow">GraphQL Spec</a>
+and [here](/guides/directives).
 
 {: .highlight }
 > This section now is exclusive for this gem

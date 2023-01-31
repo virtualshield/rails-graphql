@@ -61,7 +61,7 @@ Think of it as GraphQL's own app folder.
 Those directories won't be created automatically. Use this as a reference.
 The ones listed here have special meanings.
 
-Read more about the [Directory Structure](/guides/architecture#directory-structure).
+Read more about the [directory structure](/guides/architecture#directory-structure).
 
 ## Setup your Schema
 

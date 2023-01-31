@@ -39,7 +39,7 @@ object 'User' do
 end
 ```
 
-Read more about the [Field Lists](/guides/field-lists).
+Read more about [field lists](/guides/field-lists).
 
 {% include type-description.md type="object" name="User" %}
 
@@ -53,7 +53,7 @@ fields or comply with what is configured in the interface.
 implements 'Person'
 ```
 
-Read more about the [Interfaces](/guides/interfaces).
+Read more about [interfaces](/guides/interfaces).
 
 {% include type-creators.md type="object" %}
 

@@ -104,7 +104,7 @@ module Rails
               source: self,
             )
 
-            desc = description if desc.nil? && !description.nil?
+            desc = description if desc.nil?
 
             values << value
             value_description[value] = desc unless desc.nil?

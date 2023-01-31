@@ -112,7 +112,7 @@ class GraphQL::UserInput < GraphQL::Input
 end
 ```
 
-Read more about the [Inputs](/guides/inputs).
+Read more about [inputs](/guides/inputs).
 
 {: .no_toc }
 ### Additional Options
@@ -215,7 +215,7 @@ id_argument(:pid, null: true, desc: 'ID')
 argument(:pid, :id, null: true, desc: 'ID')
 ```
 
-Read more about the [Arguments](/guides/arguments).
+Read more about [arguments](/guides/arguments).
 
 ### Resolving Fields
 
@@ -227,7 +227,7 @@ When not defined, the request assumes it is the same as the field's name.
 {: .note }
 > [Standalone-defined fields](/guides/alternatives#standalone-definition) fallback to `:resolve`
 
-Read more about the [Requests](/guides/requests).
+Read more about [requests](/guides/requests).
 
 ### Mutation Fields
 
@@ -244,7 +244,7 @@ mutation_fields do
 end
 ```
 
-Read more about the [Mutations](/guides/mutations).
+Read more about [mutations](/guides/mutations).
 
 ### Subscription Fields
 
@@ -260,14 +260,14 @@ subscription_fields do
 end
 ```
 
-Read more about the [Subscriptions](/guides/subscriptions).
+Read more about [subscriptions](/guides/subscriptions).
 
 ### Authorized Fields
 
 All output fields support an authorization step. This step will attempt to check if the
 request and its context provide enough scope to resolve the field.
 
-Read more about the [Authorization](/guides/advanced/authorization).
+Read more about [authorization](/guides/advanced/authorization).
 
 ### Events
 
@@ -281,7 +281,7 @@ field(:name, :string) do
 end
 ```
 
-Read more about the [Events](/guides/events).
+Read more about [events](/guides/events).
 
 ## Directives
 
@@ -312,7 +312,7 @@ end
 field(:name, :string, deprecated: 'Just because')
 ```
 
-Read more about the [Directives](/guides/directives).
+Read more about [directives](/guides/directives).
 
 ## Chaining Definition
 
@@ -330,7 +330,7 @@ field(:name, :string)
 
 However, the recommendation is to use just in the simple situations.
 
-Read more about the [Recommendations](/guides/recommendations).
+Read more about [recommendations](/guides/recommendations).
 
 ## I18n Support
 
@@ -368,7 +368,7 @@ type _Query {
 This feature is coordinated by [`config.enable_i18n_descriptions`](/handbook/settings#enable_i18n_descriptions)
 and [`config.i18n_scopes`](/handbook/settings#i18n_scopes).
 
-Read more about the [I18n](/guides/i18n).
+Read more about [I18n](/guides/i18n).
 
 ## Changing Fields
 
@@ -408,7 +408,7 @@ You are allowed to change the `null`, `nullable`, `disabled`, `enabled`, `descri
 `default`, and `method_name` values, as well as increment the `arguments` and `directives`
 within a block.
 
-Proxy fields is an advanced feature. Read more about the [Proxy Fields](/guides/advanced/fields#proxies).
+Proxy fields is an advanced feature. Read more about [proxy fields](/guides/advanced/fields#proxies).
 
 ## Additional Notes
 

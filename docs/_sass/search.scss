@@ -8,7 +8,7 @@
   flex-grow: 1;
   height: $sp-10;
   padding: $sp-2;
-  transition: padding linear #{$transition-duration / 2};
+  transition: padding linear $half-transition-duration;
 
   @include mq(md) {
     position: relative !important;
@@ -26,7 +26,7 @@
   overflow: hidden;
   border-radius: $border-radius;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 3px 10px rgba(0, 0, 0, 0.08);
-  transition: height linear #{$transition-duration / 2};
+  transition: height linear $half-transition-duration;
 
   @include mq(md) {
     position: absolute;
@@ -61,7 +61,7 @@
     padding-left: #{$gutter-spacing + $sp-5};
     font-size: 14px;
     background-color: $body-background-color;
-    transition: padding-left linear #{$transition-duration / 2};
+    transition: padding-left linear $half-transition-duration;
   }
 
   &:focus {
@@ -81,7 +81,7 @@
 
   @include mq(md) {
     padding-left: $gutter-spacing;
-    transition: padding-left linear #{$transition-duration / 2};
+    transition: padding-left linear $half-transition-duration;
   }
 
   .search-icon {
@@ -93,27 +93,24 @@
 }
 
 .search-results {
+  z-index: 100;
   position: absolute;
-  left: 0;
+  left: 50%;
+  top: 100%;
+  margin-top: 1.5rem;
   display: none;
-  width: 100%;
-  max-height: calc(100% - #{$sp-10});
+  max-height: 60vh;
   overflow-y: auto;
+  transform: translateX(-50%);
+  width: calc(#{$nav-width + $content-width} - 7rem);
   background-color: $search-background-color;
-  border-bottom-right-radius: $border-radius;
-  border-bottom-left-radius: $border-radius;
+  border-radius: $border-radius;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 3px 10px rgba(0, 0, 0, 0.08);
-
-  @include mq(md) {
-    top: 100%;
-    width: $search-results-width;
-    max-height: calc(100vh - 200%) !important;
-  }
 }
 
 .search-results-list {
   padding-left: 0;
-  margin-bottom: $sp-1;
+  margin-bottom: 0;
   list-style: none;
   @include fs-4;
 

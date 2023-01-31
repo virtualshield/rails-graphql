@@ -321,4 +321,4 @@ Checks if the current schema has introspection enabled.
 
 Enable introspection for the current schema.
 
-Read more about the [Introspection](/guides/introspection).
+Read more about [introspection](/guides/introspection).

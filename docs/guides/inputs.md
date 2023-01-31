@@ -39,7 +39,7 @@ input 'UserInput' do
 end
 ```
 
-Read more about the [Field Lists](/guides/field-lists).
+Read more about [field lists](/guides/field-lists).
 
 {% include type-description.md type="input" name="UserInput" file="user_input" %}
 
@@ -145,4 +145,4 @@ def create_user(user:)
 end
 ```
 
-Read more about the [Type Assignment](/guides/type-assignment).
+Read more about [type assignment](/guides/type-assignment).
