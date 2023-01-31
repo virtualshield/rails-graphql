@@ -1,7 +1,7 @@
 ---
 ---
 
-{% include_relative vendor/lunr.min.js %}
+{% include_relative lunr.min.js %}
 {% comment %}
 {% include_relative vendor/mermaid.min.js %}
 {% endcomment %}
