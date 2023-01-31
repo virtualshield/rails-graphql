@@ -183,17 +183,22 @@ module Rails
         @nullable = false
       end
 
-      # Checks if the argument can be null
+      # Checks if the field can be null
       def null?
         !!@null
       end
 
-      # Checks if the argument can be an array
+      # Checks if the field cannot br null
+      def required?
+        !@null
+      end
+
+      # Checks if the field can be an array
       def array?
         !!@array
       end
 
-      # Checks if the argument can have null elements in the array
+      # Checks if the field can have null elements in the array
       def nullable?
         !!@nullable
       end

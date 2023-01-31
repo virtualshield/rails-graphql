@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Scalars - Guides
-description: One of the most important leaf types of GraphQL
+description: The most important type in GraphQL
 ---
 
 # Scalars
@@ -10,7 +10,7 @@ description: One of the most important leaf types of GraphQL
 scalar String
 ```
 
-Scalars are one of the essential types of GraphQL.
+Scalars are the most important type in GraphQL.
 While other types exist to organize the information in a way that makes sense,
 scalars deliver the data.
 

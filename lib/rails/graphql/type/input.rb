@@ -105,7 +105,7 @@ module Rails
             end
         end
 
-        attr_reader :args
+        attr_reader :args, :assignment_error
         attr_writer :resource
 
         delegate :fields, to: :class
@@ -124,7 +124,10 @@ module Rails
         # received arguments. It also accepts extra arguments for inheritance
         # purposes
         def resource(*args, **xargs, &block)
-          @resource ||= (klass = safe_assigned_class).nil? ? nil : begin
+          return @resource if defined?(@resource)
+          return if (klass = safe_assigned_class).nil?
+
+          @resource = begin
             xargs = xargs.reverse_merge(params)
             klass.new(*args, **xargs, &block)
           end
@@ -135,13 +138,13 @@ module Rails
           parametrize(self)
         end
 
-        # Corretly turn all the arguments into their +as_json+ version and
+        # Correctly turn all the arguments into their +as_json+ version and
         # return a hash of them
         def args_as_json
           self.class.as_json(@args.to_h)
         end
 
-        # Corretly turn all the arguments into their +to_json+ version and
+        # Correctly turn all the arguments into their +to_json+ version and
         # return a hash of them
         def args_to_json
           self.class.to_json(@args.to_h)
@@ -160,6 +163,15 @@ module Rails
           raise InvalidValueError, (+<<~MSG).squish
             Invalid value provided to #{gql_name} field: #{errors.to_sentence}.
           MSG
+        end
+
+        # Override this method to save any errors that could happen with loading
+        # the assigned class
+        def safe_assigned_class
+          assigned_class
+        rescue ::ArgumentError, ::NameError => error
+          @assignment_error = error
+          nil
         end
 
         %i[to_global_id to_gid to_gid_param].each do |method_name|

@@ -50,7 +50,8 @@ module Rails
         array: false,
         nullable: true,
         default: nil,
-        desc: nil
+        desc: nil,
+        description: nil
       )
         @owner = owner
         @name = name.to_s.underscore.to_sym
@@ -70,7 +71,7 @@ module Rails
 
         @default = default
         @default = deserialize(@default) if @default.is_a?(::GQLParser::Token)
-        self.description = desc
+        self.description = desc || description
       end
 
       def initialize_copy(*)

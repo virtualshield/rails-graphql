@@ -7,7 +7,7 @@ module Rails
     module Helpers
       # Helper module responsible for name stuff
       module WithName
-        NAME_EXP = /GraphQL::(?:Type::\w+::|Directive::)?([:\w]+?)([A-Z][a-z]+)?\z/.freeze
+        NAME_EXP = /GraphQL::(?:Type::\w+::|Directive::)?([:\w]+)\z/.freeze
 
         # Here we define a couple of attributes used by registration
         def self.extended(other)
@@ -20,7 +20,8 @@ module Rails
         # Return the name of the object as a GraphQL name
         def gql_name
           @gql_name ||= begin
-            name.match(NAME_EXP).try(:[], 1)&.tr(':', '')
+            result = name.match(NAME_EXP).try(:[], 1)
+            result.tr(':', '').chomp(base_type.name.demodulize) unless result.nil?
           end unless anonymous?
         end
 

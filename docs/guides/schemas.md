@@ -58,10 +58,10 @@ end
 
 The fields of a schema are divided into 3 groups: `query`, `mutation`, and `subscription`.
 This gem does not require you to set up a type for each one of this collection of fields.
-Schemas use a shared concept, `WithSchemaFields`, which has a collection of methods and one
-instance variable per each group.
+Schemas use a shared concept, which has a collection of methods and one instance variable
+per each group.
 
-Inside of your schema, you can easily added fields by just calling their supporting methods:
+Inside of your schema, you can easily add fields by just calling their supporting methods:
 
 ```ruby
 # app/graphql/app_schema.rb
@@ -85,8 +85,8 @@ end
 However, this gem provides several other ways for you to declare your fields. You should
 use this only for the simplest things.
 
-Read more about [Fields](/guides/fields), [Alternatives](/guides/alternatives),
-and [Field Lists](/guides/field-lists).
+Read more about [fields](/guides/fields), [alternatives](/guides/alternatives),
+and [field lists](/guides/field-lists).
 
 ## Dependencies
 
@@ -178,7 +178,7 @@ end
 [Sources](/guides/sources) do not require importing because they have their
 own mechanism for publishing their fields.
 
-Read more about [Importing Fields](/guides/field-lists#importing) and [Alternatives](/guides/alternatives).
+Read more about [alternatives](/guides/alternatives) and [importing fields](/guides/field-lists#importing).
 
 ## Subscriptions
 
@@ -203,7 +203,7 @@ module GraphQL
 end
 ```
 
-Read more about [Subscriptions Providers](/guides/subscriptions/providers).
+Read more about [subscriptions providers](/guides/subscriptions/providers).
 
 ## Cache
 
@@ -252,7 +252,7 @@ end
 By default, all the exceptions will be turned into proper errors in the response,
 plus you will receive a nice backtrace display in your logs.
 
-Read more about [Request Logs](/guides/requests#logs).
+Read more about [request logs](/guides/requests#logs).
 
 ## Inline Types
 
@@ -285,7 +285,7 @@ end
 This is recommended only for really small schemas or for testing purposes. It can also be
 used to demonstrate issues with the gem.
 
-Read more about [Recommendations](/guides/recommendations).
+Read more about [recommendations](/guides/recommendations).
 
 ## Type Map Interaction
 

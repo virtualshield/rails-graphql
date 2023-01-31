@@ -83,7 +83,7 @@ field(:name, :string)
 add_field(:query, :name, :string)
 ```
 
-Read more about [Fields](/guides/fields).
+Read more about [fields](/guides/fields).
 
 ### Safe
 
@@ -327,7 +327,7 @@ field_names_for(:query)           # => ['fieldOne']
 field_names_for(:query, false)    # => ['fieldOne', 'disabledFieldTwo']
 ```
 
-Read more about [Names](/guides/naming).
+Read more about [names](/guides/names).
 
 ### Enabled Fields
 
@@ -434,7 +434,7 @@ mutation_type_name         # _Mutation
 subscription_type_name     # _Subscription
 ```
 
-### Type Type Object
+### Type Object
 
 `{type}_type`
 
@@ -455,7 +455,6 @@ OpenStruct.new(
   kind_enum: 'OBJECT',
   fields: @query_fields,
   gql_name: '_Query',
-  interfaces: nil,
   description: nil,
   interfaces?: false,
   internal?: false,

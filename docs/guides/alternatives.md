@@ -44,7 +44,7 @@ field's value, and there is no need to add more code than this.
 {: .important }
 > This approach is not recommended for mutations in any case.
 
-Read more about [Fields](/guides/fields) and [Recommendations](/guides/recommendations).
+Read more about [fields](/guides/fields) and [recommendations](/guides/recommendations).
 
 ## Set Definition
 
@@ -79,7 +79,7 @@ class GraphQL::Queries::MigrationsSet < GraphQL::QuerySet
 end
 ```
 
-Read more about [Local Dependencies](/guides/schemas#local-dependencies).
+Read more about [local dependencies](/guides/schemas#local-dependencies).
 
 ## Standalone Definition
 
@@ -179,4 +179,4 @@ input UserInput {
 {: .new }
 > Sources are one the most powerful features of this gem.
 
-Read more about [Sources](/guides/sources).
+Read more about [sources](/guides/sources).

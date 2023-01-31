@@ -20,13 +20,14 @@ module Rails
           additional information to the executor.
         DESC
 
-        field :name,        :string,               null: false, method_name: :gql_name
-        field :description, :string
-        field :locations,   '__DirectiveLocation', full: true
-        field :args,        '__InputValue',        full: true
+        field :name,          :string,               null: false, method_name: :gql_name
+        field :description,   :string
+        field :locations,     '__DirectiveLocation', full: true
+        field :args,          '__InputValue',        full: true
+        field :is_repeatable, :boolean,              null: false, method_name: :repeatable?
 
         def args
-          all_arguments.values
+          all_arguments.each_value
         end
       end
     end

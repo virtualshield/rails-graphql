@@ -40,9 +40,14 @@ module Rails
           # Plain objects can check if a given value is a valid member
           def valid_member?(value)
             return true if valid_assignment?(value)
-            checker = value.is_a?(::Hash) ? :key? : :respond_to?
-            value = value.with_indifferent_access if value.is_a?(::Hash)
-            fields.values.all? { |field| value.public_send(checker, field.method_name) }
+
+            check_hash = value.is_a?(::Hash)
+            checker = check_hash ? :key? : :respond_to?
+
+            fields.values.all? do |field|
+              value.public_send(checker, field.method_name) ||
+                (check_hash && (field.null? || value.key?(field.gql_name)))
+            end
           end
 
           # Check if the other type is equivalent, by checking if the other is

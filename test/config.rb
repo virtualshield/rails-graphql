@@ -17,10 +17,11 @@ require 'minitest/autorun'
 require 'minitest/reporters'
 require 'active_record'
 require 'rails-graphql'
-require 'debug'
+require 'pry-byebug'
 
 $config = Rails::GraphQL.config
 $config.logger = ActiveSupport::TaggedLogging.new(Logger.new('/dev/null'))
+$config.enable_introspection = true
 Rails::GraphQL::Request::Backtrace.skip_base_class = NilClass
 
 # ActiveRecord::Base.logger = Logger.new(STDOUT)

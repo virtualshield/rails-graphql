@@ -20,6 +20,8 @@ module Rails
 
         # Resolve a given value when it is an array
         def write_array(value, idx = -1, &block)
+          return write_leaf(value) if value.nil?
+
           write_array!(value) do |item|
             stacked(idx += 1) do
               block.call(item, idx)
@@ -30,16 +32,17 @@ module Rails
               block.call(nil, idx)
               response.next
 
-              format_array_execption(error, idx)
+              format_array_exception(error, idx)
               request.exception_to_error(error, self)
             end
           rescue StandardError => error
-            format_array_execption(error, idx)
+            format_array_exception(error, idx)
             raise
           end
         end
 
         # Helper to start writing as array
+        # TODO: Add the support for `iterator`
         def write_array!(value, &block)
           raise InvalidValueError, (+<<~MSG).squish unless value.respond_to?(:each)
             The #{gql_name} field is excepting an array
@@ -55,7 +58,7 @@ module Rails
         end
 
         # Add the item index to the exception message
-        def format_array_execption(error, idx)
+        def format_array_exception(error, idx)
           real_error = (+<<~MSG).squish
             The #{ActiveSupport::Inflector.ordinalize(idx + 1)} value of the #{gql_name} field
           MSG
@@ -70,13 +73,13 @@ module Rails
 
           # Write a value based on a Union type
           def write_union(value)
-            object = type_klass.all_members&.reverse_each&.find { |t| t.valid_member?(value) }
+            object = type_klass.type_for(value, request)
             object.nil? ? raise_invalid_member! : resolve_fields(object)
           end
 
           # Write a value based on a Interface type
           def write_interface(value)
-            object = type_klass.all_types&.reverse_each&.find { |t| t.valid_member?(value) }
+            object = type_klass.type_for(value, request)
             object.nil? ? raise_invalid_member! : resolve_fields(object)
           end
 

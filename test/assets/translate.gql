@@ -141,14 +141,18 @@ type _Query {
   
   __type(name: String!): __Type
   
+  "A"
   sampleA: String
   
+  "B"
   sampleB: String
   
+  "C"
   sampleC: String
   
   sampleD: String
   
+  "E"
   sampleE: String
   
   sampleF: String
@@ -170,6 +174,8 @@ type __Directive {
   args: [__InputValue!]!
   
   description: String
+  
+  isRepeatable: Boolean!
   
   locations: [__DirectiveLocation!]!
   
@@ -212,10 +218,9 @@ type __Field {
 }
 
 """
-Alongside with scalars and enums, input value objects allow the user
-to provide values to arguments on fields and directives. Different
-from those, input values accepts a list of keyed values, instead of
-a single value.
+Arguments provided to Fields or Directives and the input fields of an
+InputObject are represented as Input Values which describe their type
+and optionally a default value.
 """
 # Assigned to Rails::GraphQL::Field::InputField class
 type __InputValue {
@@ -294,6 +299,8 @@ type __Type {
   
   "INTERFACE and UNION only"
   possibleTypes: [__Type!]
+  
+  specifiedByURL: String
 }
 
 """

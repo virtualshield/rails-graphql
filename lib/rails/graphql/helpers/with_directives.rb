@@ -77,6 +77,8 @@ module Rails
 
         alias has_directive? using?
 
+        # TODO: Maybe implement a method to find a specific directive
+
         # Override the +all_listeners+ method since callbacks can eventually be
         # attached to objects that have directives, which then they need to
         # be combined

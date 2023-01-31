@@ -17,10 +17,9 @@ module Rails
         rename! '__InputValue'
 
         desc <<~DESC
-          Alongside with scalars and enums, input value objects allow the user
-          to provide values to arguments on fields and directives. Different
-          from those, input values accepts a list of keyed values, instead of
-          a single value.
+          Arguments provided to Fields or Directives and the input fields of an
+          InputObject are represented as Input Values which describe their type
+          and optionally a default value.
         DESC
 
         field :name,          :string,  null: false, method_name: :gql_name

@@ -150,6 +150,7 @@ module Rails
         end
 
         # Build the cache object
+        # TODO: Add the arguments into the GID, but the problem is variables
         def cache_dump
           super.merge(field: (field && all_to_gid(field)))
         end

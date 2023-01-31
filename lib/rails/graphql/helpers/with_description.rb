@@ -12,17 +12,19 @@ module Rails
 
         # Define and format description
         def description=(value)
-          @description = value.to_s.presence&.strip_heredoc&.chomp
+          if !value.nil?
+            @description = value.to_s.presence&.strip_heredoc&.chomp
+          elsif defined?(@description)
+            @description = nil
+          end
         end
 
-        # Return the description of the argument
+        # Return a description, by defined value or I18n
         def description(namespace = nil, kind = nil)
           return @description if description?
           return unless GraphQL.config.enable_i18n_descriptions
 
-          # If it has been defined, but as nil, then it will always be nil
-          return if defined?(@description)
-          @description = i18n_description(namespace, kind)
+          i18n_description(namespace, kind)
         end
 
         # Checks if a description was provided
@@ -34,7 +36,8 @@ module Rails
 
           # Return a description from I18n
           def i18n_description(namespace = nil, kind = nil)
-            return if (parent = try(:owner)).try(:spec_object?)
+            return if (parent = try(:owner)).try(:spec_object?) &&
+              parent.kind != :schema
 
             values = {
               kind: kind || try(:kind),
@@ -49,8 +52,7 @@ module Rails
               next if key.include?('..')
 
               result = catch(:exception) { ::I18n.translate(key, throw: true) }
-              return result unless result.is_a?(Hash) ||
-                result.is_a?(I18n::MissingTranslation)
+              return result if result.is_a?(String)
             end
           end
 

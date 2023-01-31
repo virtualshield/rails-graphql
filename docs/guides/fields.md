@@ -75,14 +75,14 @@ Marks if the field accepts or can deliver an array of values.
 > As of now, fields only support one-dimensional arrays.
 
 {: .no_toc }
-#### `full:` `Boolean` = `false`
-
-A shortcut to `null: false, array: true`.
-
-{: .no_toc }
 #### `nullable:` `Boolean` = `true`
 
 Marks if the array may contain null values.
+
+{: .no_toc }
+#### `full:` `Boolean` = `false`
+
+A shortcut to `null: false, array: true, nullable: false`.
 
 {: .no_toc }
 #### `enabled:` `Boolean` = `nil`
@@ -307,6 +307,9 @@ field(:name, :string) do
   use GraphQL::DeprecatedDirective(reason: 'Just because')
   use GraphQL::DeprecatedDirective.new(reason: 'Just because')
 end
+
+# Shortcut for deprecated directive
+field(:name, :string, deprecated: 'Just because')
 ```
 
 Read more about the [Directives](/guides/directives).
@@ -360,7 +363,7 @@ type _Query {
 {: .warning }
 > **Affects Performance**
 > This is a heavy process, so it is recommended to enable only when delivering
-> the documentation of your API.
+> the documentation of your API or in development mode.
 
 This feature is coordinated by [`config.enable_i18n_descriptions`](/handbook/settings#enable_i18n_descriptions)
 and [`config.i18n_scopes`](/handbook/settings#i18n_scopes).

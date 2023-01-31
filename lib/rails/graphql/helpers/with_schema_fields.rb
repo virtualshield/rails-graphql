@@ -307,7 +307,6 @@ module Rails
                 kind_enum: 'OBJECT',
                 fields: @#{type}_fields,
                 gql_name: #{type}_type_name,
-                interfaces: nil,
                 description: nil,
                 interfaces?: false,
                 internal?: false,

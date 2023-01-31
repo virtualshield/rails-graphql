@@ -55,7 +55,7 @@ class Translate_test < GraphQL::IntegrationTestCase
     result = SCHEMA.to_gql
     expected = gql_file('translate').split('').sort.join.squish
 
-    File.write('test/assets/translate.gql', result)
+    # File.write('test/assets/translate.gql', result)
     assert_equal(expected, result.split('').sort.join.squish)
   end
 end

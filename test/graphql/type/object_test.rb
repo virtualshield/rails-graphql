@@ -5,13 +5,16 @@ class GraphQL_Type_ObjectTest < GraphQL::TestCase
 
   def test_valid_member_ask
     fields = {
-      name: double(method_name: :name),
-      age:  double(method_name: :age),
+      name: double(method_name: :name, null?: true, gql_name: 'n'),
+      age:  double(method_name: :age, null?: false, gql_name: 'a'),
     }
 
     DESCRIBED_CLASS.stub(:fields, fields) do
       value = { name: '' }
       refute(DESCRIBED_CLASS.valid_member?(value))
+
+      value = { age: 0 }
+      assert(DESCRIBED_CLASS.valid_member?(value))
 
       value = { name: '', age: 0 }
       assert(DESCRIBED_CLASS.valid_member?(value))
@@ -20,6 +23,9 @@ class GraphQL_Type_ObjectTest < GraphQL::TestCase
       assert(DESCRIBED_CLASS.valid_member?(value))
 
       value = { 'name' => '', 'age' => 0 }
+      refute(DESCRIBED_CLASS.valid_member?(value))
+
+      value = { 'n' => '', 'a' => 0 }
       assert(DESCRIBED_CLASS.valid_member?(value))
 
       value = double(name: '',  age: 0)

@@ -42,22 +42,43 @@ The last one is preferable because, for now, the only thing you can do with
 unions besides appending the types is using [directives](/guides/directives). Plus, it
 follows the rule of not referencing types by their actual classes.
 
-Read more about [Recommendations](/guides/recommendations).
+Read more about [recommendations](/guides/recommendations).
 
-### For gem Creators
+{% include type-description.md type="union" name="Person" %}
 
-Once you have created your unions in your gem, remember to add them into
-[`config.known_dependencies`](/handbook/settings#known_dependencies).
+### Type Resolution
+
+Unions have a special `type_for(value, request)` class-level method, which is
+responsible for finding an [object](/guides/objects) for the given `value`.
+
+The default behavior is to go over the list of members in reverse and find the
+first one that is a `valid_member?` of `value`.
+
+If for some reason, that is not compatible with your application, you can override this method.
+For example, this relies on ActiveRecord
+<a href="https://edgeapi.rubyonrails.org/classes/ActiveRecord/ModelSchema.html#method-c-inheritance_column" target="_blank" rel="external nofollow">single table inheritance column</a>.
 
 ```ruby
-Rails::GraphQL.config.known_dependencies[:union].update(
-  my_gem_union: "#{__dir__}/unions/my_gem_union",
-)
+# app/graphql/unions/person.rb
+def self.type_for(value, request)
+  request.find_type(value.type)
+end
 ```
+
+{: .important }
+> **Important**
+> It's recommended to use `request.find_type` with either the symbol or string [name](/guides/names) because
+> the resolution is cached during the request and complies with [namespaces](/guides/advanced/namespaces).
+
+{: .note }
+> Such translation is possible because object names match type names when using [sources](/guides/sources).
+> An even more accurate version would be<br/>`value.type.tr(':', '')`.
+
+{% include type-creators.md type="union" %}
 
 ## Using Unions
 
-Once they are defined, you can add as the type of [output fields](/guides/fields#output-fields).
+Once they are defined, you can set them as the type of [output fields](/guides/fields#output-fields).
 Then, in your execution document, you can use [spreads](/guides/spreads) to properly
 capture unique information of the respective types.
 
@@ -70,20 +91,22 @@ field(:recipient, 'Person')
 ```
 
 ```graphql
-recipient {
-  # Gets the name of the type
-  __typename
-  ... on User {
-    # Email is a common attribute, but unions don't hold fields
-    email
-    # Slug is a field only available on User
-    slug
-  }
-  ... on Admin {
-    # Email is a common attribute, but unions don't hold fields
-    email
-    # Role is a field only available on Admin
-    role
+{
+  recipient {
+    # Gets the name of the type
+    __typename
+    ... on User {
+      # Email is a common attribute, but unions don't hold fields
+      email
+      # Slug is a field only available on User
+      slug
+    }
+    ... on Admin {
+      # Email is a common attribute, but unions don't hold fields
+      email
+      # Role is a field only available on Admin
+      role
+    }
   }
 }
 ```

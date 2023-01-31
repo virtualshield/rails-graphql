@@ -93,7 +93,7 @@ Now you can try it out on your Rails console.
 
 This is the minimum required to have a very basic setup.
 
-Read more about [Schemas](/guides/schemas).
+Read more about [schemas](/guides/schemas).
 
 ## Using a Controller
 
@@ -131,4 +131,4 @@ $ curl -d '{"query":"{ welcome }"}' \
 # {"data":{"welcome":"Hello World!"}}
 ```
 
-Read more about [Customizing the Controller](/guides/customizing/controller).
+Read more about [customizing the Controller](/guides/customizing/controller).

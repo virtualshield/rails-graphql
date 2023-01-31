@@ -20,6 +20,11 @@ module Rails
         inherited_collection :members, instance_reader: false
 
         class << self
+          # Figure out which one of the members is compatible with the provided +value+
+          def type_for(value, *)
+            all_members&.reverse_each&.find { |t| t.valid_member?(value) }
+          end
+
           # Return the base type of the objects on this union
           def of_kind
             members.first.base_type

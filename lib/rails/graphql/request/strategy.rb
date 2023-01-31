@@ -294,10 +294,12 @@ module Rails
             return result << @data_pool[field] if @data_pool.key?(field)
             return if field.entry_point?
 
-            current, key = context.current_value, field.method_name
-            return result << current.public_send(key) if current.respond_to?(key)
-
-            result << current[key] if current.respond_to?(:key?) && current.key?(key)
+            key = field.method_name
+            if (current = context.current_value).is_a?(::Hash)
+              result << (current.key?(key) ? current[key] : current[field.gql_name])
+            elsif current.respond_to?(key)
+              result << current.public_send(key)
+            end
           end
       end
     end

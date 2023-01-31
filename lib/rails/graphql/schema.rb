@@ -57,7 +57,7 @@ module Rails
         # :singleton-method:
         # Since there are only one schema per namespace, the name is constant
         def gql_name
-          'schema'
+          '__Schema'
         end
 
         alias graphql_name gql_name
@@ -305,7 +305,6 @@ module Rails
 
           # Mark the given class to be pending of registration
           def inherited(subclass)
-            subclass.spec_object = false
             subclass.abstract = false
             super if defined? super
 

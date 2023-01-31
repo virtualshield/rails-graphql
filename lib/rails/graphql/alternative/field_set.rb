@@ -15,6 +15,10 @@ module Rails
         self.field_type = Field::OutputField
         self.valid_field_types = Type::Object.valid_field_types
 
+        def self.i18n_scope
+          :query
+        end
+
         def self.inspect
           +"#<#{self.class.name} @fields=#{fields.inspect}>"
         end
@@ -25,12 +29,15 @@ module Rails
       # Same as a +FieldSet+ but for mutation fields
       MutationSet = Class.new(FieldSet)
       MutationSet.field_type = Field::MutationField
+      MutationSet.redefine_singleton_method(:i18n_scope) { :mutation }
+
 
       # = GraphQL Alternative Subscription Set
       #
       # Same as a +FieldSet+ but for subscription fields
       SubscriptionSet = Class.new(FieldSet)
       SubscriptionSet.field_type = Field::SubscriptionField
+      SubscriptionSet.redefine_singleton_method(:i18n_scope) { :subscription }
     end
   end
 end

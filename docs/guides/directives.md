@@ -43,11 +43,11 @@ Whenever an object requires using this directive, the `:attach` event will be tr
 you will be able to access several things from the event and manipulate the object it
 was attached to.
 
-Read more about [Events](/guides/events).
+Read more about [events](/guides/events).
 
 ### Description
 
-Allows documenting the directive. This value can be retrieved using [introspection](/guides/introspection)
+Allows documenting directives. This value can be retrieved using [introspection](/guides/introspection)
 or during a [to_gql](/guides/customizing/controller#describe) output. Within the class, `desc`
 works as a syntax sugar for `self.description = ''`. It also supports descriptions from I18n.
 
@@ -58,6 +58,16 @@ module GraphQL
     desc 'This is awesome!'
   end
 end
+```
+
+### Repeatability
+
+By default, directives must be unique when applied to anything. However, you can change that
+behavior by marking that your directive can be repeated in a given location.
+
+```ruby
+# app/graphql/directives/awesome_directive.rb
+self.repeatable = true
 ```
 
 ### Arguments
@@ -75,7 +85,8 @@ on(:attach) do |source, name:|
 end
 ```
 
-Read more about [Request](/guides/request#events).
+Read more about [arguments](/guides/arguments), [events](/guides/events),
+and [request](/guides/request#events).
 
 ### Restrictions
 
@@ -168,7 +179,7 @@ use GraphQL::AwesomeDirective(name: 'User')
 As a recommendation, it is always better **not** to reference the classes directly, so
 the first approach is preferable.
 
-Read more about [Recommendations](/guides/recommendations).
+Read more about [recommendations](/guides/recommendations).
 
 ### Executions
 
@@ -187,7 +198,7 @@ query($public: Boolean!) {
 ## Available Directives
 
 {: .important }
-> Several other directives will be added in this and next versions.
+> Several other directives are already planned to be added to this gem.
 
 Here is a list of all available directives in this gem:
 
@@ -196,10 +207,13 @@ Here is a list of all available directives in this gem:
 #### `@deprecated`
 
 Indicate deprecated portions of a GraphQL service's schema, such as deprecated
-fields on a type or deprecated enum values.
+fields or deprecated enum values.
 
 `placed_on:`
 : `:field_definition`, `:enum_value`
+
+`repeatable`
+: `false`
 
 Arguments
 : <span></span>
@@ -218,12 +232,31 @@ use :deprecated, reason: 'Too old'
 > [Fields](/guides/fields) and [enum values](/guides/enums#values) provide an additional
 > setting called `:deprecated` that works as a shortcut to add a deprecated directive to them.
 
+This directive works as a simple warning. When used, everything queried that returns
+deprecated elements get an error message, as in:
+
+```json
+{
+  "data": {
+    "username": "john.doe"
+  },
+  "errors": [
+    {
+      "message": "The username field is deprecated, reason: Too old."
+    }
+  ]
+}
+```
+
 #### `@include`
 
 Allows for conditional inclusion during execution as described by the if argument.
 
 `placed_on:`
 : `:field`, `:fragment_spread`, `:inline_fragment`
+
+`repeatable`
+: `false`
 
 Arguments
 : <span></span>
@@ -240,12 +273,27 @@ query($private: Boolean!) {
 }
 ```
 
+When `if` is `true`:
+
+```json
+{ "data": { "user": { "id": "1", "name": "John Doe" } } }
+```
+
+When `if` is `false`:
+
+```json
+{ "data": { "user": { "name": "John Doe" } } }
+```
+
 #### `@skip`
 
 Allows for conditional exclusion during execution as described by the if argument.
 
 `placed_on:`
 : `:field`, `:fragment_spread`, `:inline_fragment`
+
+`repeatable`
+: `false`
 
 Arguments
 : <span></span>
@@ -262,6 +310,18 @@ query($public: Boolean!) {
 }
 ```
 
+When `if` is `true`:
+
+```json
+{ "data": { "user": { "name": "John Doe" } } }
+```
+
+When `if` is `false`:
+
+```json
+{ "data": { "user": { "id": "1", "name": "John Doe" } } }
+```
+
 #### `@specifiedBy`
 
 A built-in directive used within the type system definition language to provide
@@ -269,6 +329,9 @@ a scalar specification URL for specifying the behavior of custom scalar types.
 
 `placed_on:`
 : `:scalar`
+
+`repeatable`
+: `false`
 
 Arguments
 : <span></span>
@@ -279,3 +342,6 @@ Arguments
 ```ruby
 use :specified_by, url: 'https://www.rfc-editor.org/rfc/rfc3339'
 ```
+
+This directive has no effect whatsoever, and its only purpose is to be displayed in
+the [introspection](/guides/introspection) or during a [to_gql](/guides/customizing/controller#describe) output.

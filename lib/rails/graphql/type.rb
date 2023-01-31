@@ -81,7 +81,7 @@ module Rails
           false
         end
 
-        # A little helper to instanteate the type if necessary
+        # A little helper to instantiate the type if necessary
         def decorate(value)
           value
         end
@@ -107,7 +107,8 @@ module Rails
           def setup!(**options)
             return unless superclass.eql?(GraphQL::Type)
 
-            redefine_singleton_method(:kind) { options[:kind] } if options.key?(:kind)
+            kind_value = options.key?(:kind) ? options[:kind] : name.demodulize.underscore.to_sym
+            redefine_singleton_method(:kind) { kind_value }
             self.directive_location = kind
 
             redefine_singleton_method(:leaf_type?)   { true } if options[:leaf]

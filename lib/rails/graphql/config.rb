@@ -64,7 +64,7 @@ module Rails
       # Introspection is enabled by default. It is recommended to only use
       # introspection during development and tests, never in production.
       # This can also be set per schema level.
-      config.enable_introspection = true
+      config.enable_introspection = false
 
       # Define the names of the schema/operations types. The single "_" is a
       # suggestion. In an application that has a Subscription object, it will

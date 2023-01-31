@@ -4,8 +4,8 @@ class GraphQL_SchemaTest < GraphQL::TestCase
   DESCRIBED_CLASS = unmapped_class(Rails::GraphQL::Schema)
 
   def test_gql_name
-    assert_equal('schema', DESCRIBED_CLASS.gql_name)
-    assert_equal('schema', DESCRIBED_CLASS.graphql_name)
+    assert_equal('__Schema', DESCRIBED_CLASS.gql_name)
+    assert_equal('__Schema', DESCRIBED_CLASS.graphql_name)
   end
 
   def test_kind

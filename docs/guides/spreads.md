@@ -1,15 +1,17 @@
 ---
 layout: default
-title: Fragments - Guides
-description: Sharing common parts of your document
+title: Spreads - Guides
+description: Requesting a specific set of fields from fragments or based on conditions
 ---
 
 # Spreads
 
 ```graphql
-...Profile             # Fragment spread
-... on Profile { }     # Inline typed spread
-... { }                # Inline type-less spread
+{
+  ...Profile             # Fragment spread
+  ... on Profile { }     # Inline typed spread
+  ... { }                # Inline type-less spread
+}
 ```
 
 Spreads allow you to request a specific set of fields in your document. Such a list of fields
@@ -37,7 +39,7 @@ query {
 fragment Profile on User { picture name }
 ```
 
-Read more about [Fragments](/guides/fragments).
+Read more about [fragments](/guides/fragments).
 
 ### Inline
 

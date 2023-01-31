@@ -70,7 +70,10 @@ module Rails
       alias channel origin
 
       delegate :action_name, to: :controller, allow_nil: true
+      delegate :find_type!, to: :strategy, allow_nil: true
       delegate :all_listeners, :all_events, to: :schema
+
+      alias find_type find_type!
 
       class << self
         # Shortcut for initialize, set context, and execute

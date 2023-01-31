@@ -144,7 +144,7 @@ Introspection is enabled by default. It is recommended to only use
 introspection during development and tests, **never in production**{: .fw-900}.
 This can also be set per Schema.
 
-**Default:** `true`
+**Default:** `false`
 
 ----------------------------------------------------------------
 

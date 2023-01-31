@@ -12,15 +12,19 @@ module Rails
             kind: :list,
             kind_enum: 'LIST',
             name: 'List',
+            gql_name: nil,
             object?: true,
             description: nil,
+            of_type: nil,
           },
           non_null: {
             kind: :non_null,
             kind_enum: 'NON_NULL',
             name: 'Non-Null',
+            gql_name: nil,
             object?: true,
             description: nil,
+            of_type: nil,
           },
         }.freeze
 
@@ -32,7 +36,7 @@ module Rails
         end
 
         def self.fake_type_object(type, subtype)
-          OpenStruct.new(**FAKE_TYPES[type].merge(of_type: subtype))
+          FAKE_TYPES[type].merge(of_type: subtype)
         end
 
         rename! '__Type'
@@ -59,13 +63,15 @@ module Rails
           the schema to define exactly what data is expected.
         DESC
 
-        field :kind,           '__TypeKind',   null: false,
+        field :kind,             '__TypeKind',   null: false,
           method_name: :kind_enum
 
-        field :name,           :string,
+        field :name,             :string,
           method_name: :gql_name
 
-        field :description,    :string
+        field :description,      :string
+
+        field :specified_by_url, :string
 
         field :fields,         '__Field',      array: true, nullable: false do
           desc 'OBJECT and INTERFACE only'
@@ -89,8 +95,16 @@ module Rails
         field :of_type,        '__Type',
           desc: 'NON_NULL and LIST only'
 
+        def specified_by_url
+          return if fake_type? || !current.scalar?
+
+          current.all_directives&.find do |dir|
+            dir.is_a?(Directive::SpecifiedByDirective)
+          end&.args&.url
+        end
+
         def fields(include_deprecated:)
-          return EMPTY_ARRAY unless current.object? || current.interface?
+          return if fake_type? || !(current.object? || current.interface?)
 
           list =
             if current.respond_to?(:enabled_fields)
@@ -109,7 +123,7 @@ module Rails
         end
 
         def enum_values(include_deprecated:)
-          return EMPTY_ARRAY unless current.enum?
+          return if fake_type? || !current.enum?
 
           descriptions = all_value_description
           deprecated = all_deprecated_values
@@ -119,26 +133,39 @@ module Rails
             unless include_deprecated || deprecated.nil?
 
           list.map do |value|
-            OpenStruct.new(
+            {
               name: value,
               description: descriptions[value],
               is_deprecated: (deprecated.nil? ? false : deprecated.key?(value)),
               deprecation_reason: deprecated.try(:[], value),
-            )
+            }
           end
         end
 
         def interfaces
-          (current.object? && current.all_interfaces) || EMPTY_ARRAY
+          return if fake_type? || !current.object?
+          current.all_interfaces || EMPTY_ARRAY
         end
 
         def possible_types
-          (current.interface? && current.all_types) ||
-            (current.union? && current.all_members) || EMPTY_ARRAY
+          return if fake_type?
+
+          if current.interface?
+            current.all_types || EMPTY_ARRAY
+          elsif current.union?
+            current.all_members || EMPTY_ARRAY
+          end
         end
 
         def input_fields
-          (current.input? && current.enabled_fields) || EMPTY_ARRAY
+          return if fake_type? || !current.input?
+          current.enabled_fields || EMPTY_ARRAY
+        end
+
+        private
+
+        def fake_type?
+          Hash === current
         end
       end
     end

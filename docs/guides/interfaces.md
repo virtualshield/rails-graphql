@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Interface - Guides
+title: Interfaces - Guides
 description: GraphQL's abstract type for objects inheritance
 ---
 
@@ -26,7 +26,7 @@ You can define interfaces on a file or using the shortcut on the schema.
 module GraphQL
   class Person < GraphQL::Interface
     # Any object that implements this interface must have an equivalent field
-    field :email, :string
+    field :email
   end
 end
 
@@ -34,34 +34,51 @@ end
 
 # app/graphql/app_schema.rb
 interface 'Person' do
-  field :email, :string
+  field :email
 end
 ```
 
-As a recommendation, use the second approach if your application has a few interfaces
-(up to 5, with just a few fields and never event handlers nor resolvers). Otherwise, prefer using
-the individual file approach.
+Read more about the [Field Lists](/guides/field-lists).
 
-Read more about [Recommendations](/guides/recommendations).
+{% include type-description.md type="interface" name="Person" %}
 
-### For gem Creators
+### Type Resolution
 
-Once you have created your interfaces in your gem, remember to add them into
-[`config.known_dependencies`](/handbook/settings#known_dependencies).
+Interfaces have a special `type_for(value, request)` class-level method, which is
+responsible for finding an [object](/guides/objects) for the given `value`.
+
+The default behavior is to go over the list of types in reverse and find the
+first one that is a `valid_member?` of `value`.
+
+If for some reason, that is not compatible with your application, you can override this method.
+For example, this relies on ActiveRecord
+<a href="https://edgeapi.rubyonrails.org/classes/ActiveRecord/ModelSchema.html#method-c-inheritance_column" target="_blank" rel="external nofollow">single table inheritance column</a>.
 
 ```ruby
-Rails::GraphQL.config.known_dependencies[:interface].update(
-  my_gem_interface: "#{__dir__}/interfaces/my_gem_interface",
-)
+# app/graphql/interfaces/person.rb
+def self.type_for(value, request)
+  request.find_type(value.type)
+end
 ```
 
-## Using Interfaces
+{: .important }
+> **Important**
+> It's recommended to use `request.find_type` with either the symbol or string [name](/guides/names) because
+> the resolution is cached during the request and complies with [namespaces](/guides/advanced/namespaces).
 
-There are two ways to use your interfaces:
+{: .note }
+> Such translation is possible because object names match type names when using [sources](/guides/sources).
+> An even more accurate version would be<br/>`value.type.tr(':', '')`.
+
+{% include type-creators.md type="interface" %}
+
+## Implementing Interfaces
+
+There are two ways to implement your interfaces:
 
 ### Importing Fields
 
-By default, when an object says it implements an interface, all of the fields
+By default, when an [object](/guides/objects) says it implements an interface, all of the fields
 of the interface that the object still doesn’t have will be automatically
 imported as proxies. When such fields are being resolved, the interface will be
 instantiated and used to resolve the values, which makes them perfect for sharing
@@ -104,7 +121,7 @@ it will validate the implementation. All fields will be checked by their
 same name that is not equivalent to the one in the interface will raise a
 [`ArgumentError`](/handbook/exceptions#ArgumentError) exception.
 
-## In a Request
+## Using Interfaces
 
 You can use the interface types as the return type of your fields. However, the
 underlying data will always have to match one of the objects implemented by that interface.
@@ -116,18 +133,20 @@ field(:recipient, 'Person')
 ```
 
 ```graphql
-recipient {
-  # Gets the name of the type
-  __typename
-  # Email is a common attribute
-  email
-  ... on User {
-    # Slug is a field only available on User
-    slug
-  }
-  ... on Admin {
-    # Role is a field only available on Admin
-    role
+{
+  recipient {
+    # Gets the name of the type
+    __typename
+    # Email is a common attribute
+    email
+    ... on User {
+      # Slug is a field only available on User
+      slug
+    }
+    ... on Admin {
+      # Role is a field only available on Admin
+      role
+    }
   }
 }
 ```

@@ -75,6 +75,7 @@ module Rails
           # ==== Options
           #
           # * <tt>:desc</tt> - The description of the enum value (defaults to nil).
+          # * <tt>:description</tt> - Alias to the above.
           # * <tt>:directives</tt> - The list of directives associated with the value
           #   (defaults to nil).
           # * <tt>:deprecated</tt> - A shortcut that auto-attach a @deprecated
@@ -82,9 +83,9 @@ module Rails
           #   but provide a string so it can be used as the reason of the deprecation.
           #   See {DeprecatedDirective}[rdoc-ref:Rails::GraphQL::Directive::DeprecatedDirective]
           #   (defaults to false).
-          def add(value, desc: nil, directives: nil, deprecated: false)
+          def add(value, desc: nil, description: nil, directives: nil, deprecated: false)
             value = value&.to_s
-            raise ArgumentError, (+<<~MSG).squish unless value.is_a?(String) && value.present?
+            raise ArgumentError, (+<<~MSG).squish unless value.is_a?(String) && !value.empty?
               The "#{value}" is invalid.
             MSG
 
@@ -102,6 +103,8 @@ module Rails
               location: :enum_value,
               source: self,
             )
+
+            desc = description if desc.nil? && !description.nil?
 
             values << value
             value_description[value] = desc unless desc.nil?
@@ -130,10 +133,12 @@ module Rails
 
           def inspect
             return super if self.eql?(Type::Enum)
+
+            values = all_values.to_a
             (+<<~INFO).squish << '>'
               #<GraphQL::Enum #{gql_name}
-              (#{all_values.size})
-              {#{all_values.to_a.join(' | ')}}
+              (#{values.size})
+              {#{values.to_a.join(' | ')}}
               #{inspect_directives}
             INFO
           end
@@ -142,6 +147,8 @@ module Rails
         attr_reader :value
 
         delegate :to_s, :inspect, to: :@value
+
+        # TODO: Maybe add delegate missing
 
         def initialize(value)
           @value = value
@@ -165,13 +172,15 @@ module Rails
         # Gets all the description of the current value
         def description
           return unless @value
-          @description ||= all_value_description.try(:[], @value)
+          return @description if defined?(@description)
+          @description = all_value_description.try(:[], @value)
         end
 
         # Gets all the directives associated with the current value
         def directives
           return unless @value
-          @directives ||= all_value_directives.try(:[], @value)
+          return @directives if defined?(@directives)
+          @directives = all_value_directives.try(:[], @value)
         end
 
         # Checks if the current value is marked as deprecated
@@ -181,10 +190,9 @@ module Rails
 
         # Return the deprecated reason
         def deprecated_reason
-          return unless deprecated?
-          directives.find do |dir|
+          directives&.find do |dir|
             dir.is_a?(Directive::DeprecatedDirective)
-          end.args.reason
+          end&.args&.reason
         end
       end
     end

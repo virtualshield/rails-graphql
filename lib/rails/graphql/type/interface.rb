@@ -26,6 +26,11 @@ module Rails
         inherited_collection :types, instance_reader: false
 
         class << self
+          # Figure out which one of the types is compatible with the provided +value+
+          def type_for(value, *)
+            all_types&.reverse_each&.find { |t| t.valid_member?(value) }
+          end
+
           # Check if the other type is equivalent, by checking if the other is
           # an object and the object implements this interface
           def =~(other)

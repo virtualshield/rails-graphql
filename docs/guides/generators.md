@@ -37,7 +37,7 @@ module GraphQL
 end
 ```
 
-Read more about [Schemas](/guides/schemas).
+Read more about [schemas](/guides/schemas).
 
 ## graphql:controller
 
@@ -62,4 +62,4 @@ class SampleController < ApplicationController
 end
 ```
 
-Read more about [Customizing the Controller](/guides/customizing/controller).
+Read more about [customizing the Controller](/guides/customizing/controller).

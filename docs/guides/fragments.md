@@ -45,11 +45,11 @@ query {
 }
 ```
 
-Read more about [Spreads](/guides/spreads).
+Read more about [spreads](/guides/spreads).
 
 ## Components and Fragments
 
-As a recommendation, the components in your front-end application should know
+As a recommendation, the components in your front end application should know
 what fields they need to be rendered correctly. You can use that to turn that information
 into fragments. Then, when the pages of your application perform GraphQL requests, you can
 simplify the queries.

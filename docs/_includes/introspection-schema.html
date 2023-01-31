@@ -1,0 +1,117 @@
+<details>
+  <summary>Introspection Schema</summary>
+  <div class="language-graphql highlighter-rouge">
+{% highlight graphql %}
+schema {
+  query: _Query
+}
+
+scalar Boolean
+
+scalar Float
+
+scalar ID
+
+scalar Int
+
+scalar String
+
+enum __DirectiveLocation {
+  QUERY
+  MUTATION
+  SUBSCRIPTION
+  FIELD
+  FRAGMENT_DEFINITION
+  FRAGMENT_SPREAD
+  INLINE_FRAGMENT
+  SCHEMA
+  SCALAR
+  OBJECT
+  FIELD_DEFINITION
+  ARGUMENT_DEFINITION
+  INTERFACE
+  UNION
+  ENUM
+  ENUM_VALUE
+  INPUT_OBJECT
+  INPUT_FIELD_DEFINITION
+}
+
+enum __TypeKind {
+  SCALAR
+  OBJECT
+  INTERFACE
+  UNION
+  ENUM
+  INPUT_OBJECT
+  LIST
+  NON_NULL
+}
+
+type _Query {
+  __schema: __Schema!
+  __type(name: String!): __Type
+}
+
+type __Directive {
+  args: [__InputValue!]!
+  description: String
+  isRepeatable: Boolean!
+  locations: [__DirectiveLocation!]!
+  name: String!
+}
+
+type __EnumValue {
+  deprecationReason: String
+  description: String
+  isDeprecated: Boolean!
+  name: String!
+}
+
+type __Field {
+  args: [__InputValue!]!
+  deprecationReason: String
+  description: String
+  isDeprecated: Boolean!
+  name: String!
+  type: __Type!
+}
+
+type __InputValue {
+  defaultValue: String
+  description: String
+  name: String!
+  type: __Type!
+}
+
+type __Schema {
+  directives: [__Directive!]!
+  mutationType: __Type
+  queryType: __Type!
+  subscriptionType: __Type
+  types: [__Type!]!
+}
+
+type __Type {
+  description: String
+  enumValues(includeDeprecated: Boolean = false): [__EnumValue!]
+  fields(includeDeprecated: Boolean = false): [__Field!]
+  inputFields: [__InputValue!]
+  interfaces: [__Type!]
+  kind: __TypeKind!
+  name: String
+  ofType: __Type
+  possibleTypes: [__Type!]
+  specifiedByURL: String
+}
+
+directive @deprecated(reason: String) on FIELD_DEFINITION | ENUM_VALUE
+
+directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @specifiedBy(url: String!) on SCALAR
+{% endhighlight %}
+  </div>
+</details>

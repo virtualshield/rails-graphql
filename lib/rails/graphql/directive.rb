@@ -44,6 +44,13 @@ module Rails
           :directive
         end
 
+        # Ensure to return the directive class
+        def base_type
+          GraphQL::Directive
+        end
+
+        alias gid_base_class base_type
+
         # Return the name of the object as a GraphQL name, ensure to use the
         # first letter as lower case when being auto generated
         def gql_name
@@ -71,11 +78,6 @@ module Rails
           @locations = list.to_set
         end
 
-        # Ensure to return the directive class
-        def gid_base_class
-          GraphQL::Directive
-        end
-
         # A helper method that allows directives to be initialized while
         # correctly parsing the arguments
         def build(**xargs)
@@ -97,10 +99,11 @@ module Rails
         def inspect
           return super if eql?(GraphQL::Directive)
 
+          repeatable = ' [repeatable]' if repeatable?
           args = all_arguments&.each_value&.map(&:inspect)
           args = args.force if args.respond_to?(:force)
           args = args.presence && "(#{args.join(', ')})"
-          +"#<GraphQL::Directive @#{gql_name}#{args}>"
+          +"#<GraphQL::Directive @#{gql_name}#{repeatable}#{args}>"
         end
 
         private
@@ -143,6 +146,9 @@ module Rails
           end
       end
 
+      # Marks if the directive may be used repeatedly at a single location
+      class_attribute :repeatable, instance_accessor: false, default: false
+
       self.abstract = true
 
       autoload :DeprecatedDirective
@@ -152,7 +158,7 @@ module Rails
 
       autoload :CachedDirective
 
-      delegate :locations, :gql_name, :gid_base_class, to: :class
+      delegate :locations, :gql_name, :gid_base_class, :repeatable?, to: :class
 
       event_filter(:for) do |options, event|
         sanitize_objects(options).any?(&event.source.method(:of_type?))
@@ -239,12 +245,14 @@ module Rails
         end&.compact
 
         args = args.presence && +"(#{args.join(', ')})"
+        repeatable = ' [repeatable]' if repeatable?
         unbound = ' # unbound' unless defined?(@owner)
-        +"@#{gql_name}#{args}#{unbound}"
+        +"@#{gql_name}#{repeatable}#{args}#{unbound}"
       end
 
       %i[to_global_id to_gid to_gid_param].each do |method_name|
         define_method(method_name) do
+          # TODO: The option is kind of broken, because they should always be a Hash
           self.class.public_send(method_name, args_as_json&.compact || '')
         end
       end

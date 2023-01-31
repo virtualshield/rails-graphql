@@ -14,6 +14,7 @@ require 'rails/graphql/uri'
 ActiveSupport::Inflector.inflections(:en) do |inflect|
   inflect.acronym 'GraphiQL'
   inflect.acronym 'GraphQL'
+  inflect.acronym 'URL'
 end
 
 module Rails
@@ -165,7 +166,7 @@ module Rails
       # so the check can be performed using a +inherited_collection+.
       #
       # If a +source+ is provided, then an +:attach+ event will be triggered
-      # for each directive on the givem source element.
+      # for each directive on the given source element.
       def directives_to_set(list, others = nil, event = nil, **xargs)
         return if list.blank?
 
@@ -180,13 +181,14 @@ module Rails
             The "#{item.class}" is not a valid directive.
           MSG
 
-          raise DuplicatedError, (+<<~MSG).squish if others&.any?(item) || result.any?(item)
-            A @#{item.gql_name} directive have already been provided.
+          check_location = location.present? && !item.locations.include?(location)
+          raise ArgumentError, (+<<~MSG).squish if check_location
+            You cannot use @#{item.gql_name} directive due to location restriction.
           MSG
 
-          invalid_location = location.present? && !item.locations.include?(location)
-          raise ArgumentError, (+<<~MSG).squish if invalid_location
-            You cannot use @#{item.gql_name} directive due to location restriction.
+          check_uniqueness = !item.repeatable? && (others&.any?(item) || result.any?(item))
+          raise DuplicatedError, (+<<~MSG).squish if check_uniqueness
+            A @#{item.gql_name} directive have already been provided.
           MSG
 
           unless event.nil?

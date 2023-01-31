@@ -10,6 +10,13 @@ Here you will find basic information about how this gem was designed,
 its essential pieces, and how they connect with each other. It will also guide
 you through how to use that in your application.
 
+{: .important }
+> **Important**
+> This gem uses a lot of
+> <a href="https://ruby-doc.org/stdlib-3.0.0/libdoc/delegate/rdoc/SimpleDelegator.html" target="_blank" rel="external nofollow">SimpleDelegator</a>
+> and custom delegators as well. If you are not familiar with such a pattern, it's recommended
+> that you read about it first before digging deeper here.
+
 ## Basic concepts
 
 A common way to use this gem is: set up a schema, set up a controller,
@@ -134,7 +141,7 @@ field(:other_sample, GraphQL::SampleInterface)
 > As a rule of thumb: class name in Pascal Case, symbol always in snake case, string in
 > either Pascal Case for types or camel case for fields.
 
-Read more about [Naming](/guides/naming) and [Recommendations](/guides/recommendations).
+Read more about [names](/guides/names) and [recommendations](/guides/recommendations).
 
 ### Namespaces
 
@@ -187,7 +194,7 @@ module GraphQL
 end
 ```
 
-Read more about [Events](/guides/events).
+Read more about [events](/guides/events).
 
 ### Request
 
@@ -202,11 +209,11 @@ you can navigate through a request if you coordinate the execution independently
     => {"data"=>{"welcome"=>"Hello World!"}}
 :003 > # The self coordinated approach
 :004 > request = GraphQL::AppSchema.request
-    => #<Rails::GraphQL::Request:0x0000000005b3c5e0
-         @extensions={},
-         @namespace=:base,
-         @prepared_data={},
-         @schema=GraphQL::AppSchema>
+    => #<Rails::GraphQL::Request:0x00
+       #  @extensions={},
+       #  @namespace=:base,
+       #  @prepared_data={},
+       #  @schema=GraphQL::AppSchema>
 :005 > request.execute('{ welcome }')
     => {"data"=>{"welcome"=>"Hello World!"}}
 ```
@@ -225,7 +232,7 @@ You may also find some other ways to start and execute a request:
 :008 > # However, GraphQL::AppSchema must be loaded first
 ```
 
-Read more about [Requests](/guides/requests).
+Read more about [requests](/guides/requests).
 
 ### Logs
 
@@ -254,7 +261,7 @@ Another place you can see log information is in the summary of a request.
 | Completed 200 OK in 2ms ... | GraphQL: 0.4ms | ...
 ```
 
-Read more about [Request Logs](/guides/requests#logs).
+Read more about [request logs](/guides/requests#logs).
 
 ## Components
 
@@ -346,7 +353,7 @@ because there are too many possibilities, and it has to serve it all.
 A great thing to keep in mind is that requests are divided into a 3-steps process: `organize`,
 `prepare`, and `resolve`.
 
-Read more about [Requests](/guides/request).
+Read more about [requests](/guides/request).
 
 ### Event
 
@@ -356,7 +363,7 @@ to adapt the gem to your needs.
 
 This event-driven architecture is primarily present in fields and directives.
 
-Read more about [Events](/guides/events).
+Read more about [events](/guides/events).
 
 ### Callback
 
@@ -364,4 +371,4 @@ The callback is the counterpart of the event. Methods and Procs are turned into 
 that they can coordinate with the event if they will actually be executed and what kind of
 information it will provide straightaway to the associated process.
 
-Read more about [Callbacks](/guides/events#callbacks).
+Read more about [callbacks](/guides/events#callbacks).
