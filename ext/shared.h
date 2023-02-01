@@ -1,5 +1,4 @@
 #include "ruby.h"
-#include "gql_parser.h"
 
 #if !defined RB_INT_PARSE_DEFAULT
 #define RB_INT_PARSE_DEFAULT 0x07
@@ -141,6 +140,10 @@ struct gql_scanner
   char current;
   enum gql_lexeme lexeme;
 };
+
+extern VALUE GQLParser;
+extern VALUE QLGParserToken;
+extern VALUE gql_eParserError;
 
 extern const char *GQL_VALUE_KEYWORDS[3];
 extern const char *GQL_EXECUTION_KEYWORDS[5];
