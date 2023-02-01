@@ -1,5 +1,4 @@
 #include "ruby.h"
-
 #include "shared.h"
 
 const char *GQL_VALUE_KEYWORDS[] = {

@@ -2,6 +2,7 @@
 #include <math.h>
 
 #include "ruby.h"
+#include "gql_parser.h"
 #include "shared.h"
 
 #define GQL_SAFE_PUSH_AND_NEXT(source, scanner, action) ({ \
