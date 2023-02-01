@@ -145,9 +145,9 @@ VALUE GQLParser;
 VALUE QLGParserToken;
 VALUE gql_eParserError;
 
-const char *GQL_VALUE_KEYWORDS[3];
-const char *GQL_EXECUTION_KEYWORDS[5];
-const char *GQL_DEFINITION_KEYWORDS[12];
+extern const char *GQL_VALUE_KEYWORDS[3];
+extern const char *GQL_EXECUTION_KEYWORDS[5];
+extern const char *GQL_DEFINITION_KEYWORDS[12];
 
 void gql_debug_print(const char *message);
 struct gql_scanner gql_new_scanner(VALUE source);

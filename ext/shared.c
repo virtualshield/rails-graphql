@@ -2,10 +2,6 @@
 
 #include "shared.h"
 
-VALUE GQLParser = Qnil;
-VALUE QLGParserToken = Qnil;
-VALUE gql_eParserError = Qnil;
-
 const char *GQL_VALUE_KEYWORDS[] = {
   "true",
   "false",
