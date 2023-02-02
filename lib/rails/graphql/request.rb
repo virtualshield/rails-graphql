@@ -108,8 +108,6 @@ module Rails
       def initialize(schema = nil, namespace: :base)
         @namespace = schema&.namespace || namespace
         @schema = GraphQL::Schema.find!(@namespace)
-        @prepared_data = {}
-        @extensions = {}
 
         ensure_schema!
       end
@@ -129,6 +127,11 @@ module Rails
         @context = build_ostruct(data).freeze
       end
 
+      # Allow adding extra information to the response, in a extensions key
+      def extensions
+        @extensions ||= {}
+      end
+
       # Execute a given document with the given arguments
       def execute(document, **xargs)
         output = xargs.delete(:as) || schema.config.default_response_format
@@ -137,10 +140,10 @@ module Rails
 
         document, cache = nil, document if xargs.delete(:compiled)
         prepared_data = xargs.delete(:data_for)
-
         reset!(**xargs)
-        prepared_data&.each { |key, value| prepare_data_for(key, value) }
+
         @response = initialize_response(output, formatter)
+        import_prepared_data(prepared_data)
         execute!(document, cache)
 
         response.public_send(formatter)
@@ -185,27 +188,38 @@ module Rails
         raise error
       end
 
+      # Import prepared data that is formatted as a hash
+      def import_prepared_data(prepared_data)
+        prepared_data&.each do |key, value|
+          prepare_data_for(key, value)
+        end
+      end
+
       # Add a new prepared data from +value+ to the given +field+
       def prepare_data_for(field, value, **options)
         field = PreparedData.lookup(self, field)
 
-        if @prepared_data.key?(field)
-          @prepared_data[field].push(value)
+        if prepared_data.key?(field)
+          prepared_data[field].push(value)
         else
-          @prepared_data[field] = PreparedData.new(field, value, **options)
+          prepared_data[field] = PreparedData.new(field, value, **options)
         end
       end
 
       # Recover the next prepared data for the given field
       def prepared_data_for(field)
+        return unless defined?(@prepared_data)
+
         field = field.field if field.is_a?(Component::Field)
-        @prepared_data[field]
+        prepared_data[field]
       end
 
       # Check if the given field has prepared data
       def prepared_data_for?(field)
+        return false unless defined?(@prepared_data)
+
         field = field.field if field.is_a?(Component::Field)
-        defined?(@prepared_data) && @prepared_data.key?(field)
+        prepared_data.key?(field)
       end
 
       # Build a easy-to-access object representing the current information of
@@ -254,8 +268,7 @@ module Rails
         xargs[:path] ||= stack_to_path
         errors.add(message, **xargs)
 
-        # Return nil for easier usage
-        nil
+        nil # Return nil for easier usage
       end
 
       # Add the given +object+ into the execution +stack+ and execute the given
@@ -274,25 +287,25 @@ module Rails
         end.compact.reverse
       end
 
-      # Add extensions to the request, which ensures a bunch of extended
-      # behaviors for all the objects created through the request
+      # Add class extensions to the request, which ensures a bunch of
+      # extended behaviors for all the objects created through the request
       def extend(*modules)
-        import_extensions(*modules)
-        request_ext = extensions[self.class]
+        import_class_extensions(*modules)
+        request_ext = class_extensions[self.class]
         super(request_ext) if request_ext && !is_a?(request_ext)
       end
 
-      # This initiates a new object which is aware of extensions
+      # This initiates a new object which is aware of class extensions
       def build(klass, *args, &block)
-        ext_module = extensions[klass]
+        ext_module = class_extensions[klass]
         obj = klass.new(*args, &block)
         obj.extend(ext_module) if ext_module
         obj
       end
 
-      # This allocates a new object which is aware of extensions
+      # This allocates a new object which is aware of class extensions
       def build_from_cache(klass)
-        ext_module = extensions[klass]
+        ext_module = class_extensions[klass]
         obj = klass.allocate
         obj.extend(ext_module) if ext_module
         obj
@@ -363,9 +376,19 @@ module Rails
         @strategy.resolve!
       end
 
-      private
+      protected
 
-        attr_reader :extensions
+        # Stores all the class extensions
+        def class_extensions
+          @class_extensions ||= {}
+        end
+
+        # Stores all the prepared data, but only when it is needed
+        def prepared_data
+          @prepared_data ||= {}
+        end
+
+      private
 
         # Reset principal variables and set the given +args+
         def reset!(args: nil, variables: {}, operation_name: nil, origin: nil)
@@ -385,8 +408,6 @@ module Rails
           @stack      = [schema]
           @cache      = {}
           @log_extra  = {}
-          @fragments  = {}
-          @operations = {}
           @subscriptions = {}
           @used_variables = Set.new
 
@@ -404,14 +425,18 @@ module Rails
         ensure
           report_unused_variables
           write_cache_request(cache) if cache.present? && !valid_cache?
+          @response.try(:append_errors, errors)
+
+          if defined?(@extensions)
+            @response.try(:append_extensions, @extensions)
+            @extensions.clear
+          end
 
           @cache.clear
           @strategy&.clear
           @fragments&.clear
           @operations.clear
-          @prepared_data.clear
-
-          @response.try(:append_errors, errors)
+          @prepared_data&.clear
         end
 
         # Prepare the definitions, find the strategy and resolve
@@ -419,7 +444,6 @@ module Rails
           return if @document.nil?
 
           collect_definitions!
-
           @strategy ||= find_strategy!
           @strategy.trigger_event(:request)
           @strategy.public_send(with)
@@ -443,9 +467,9 @@ module Rails
           build(klass, self)
         end
 
-        # Find all necessary extensions inside the given +modules+ and prepare
-        # the extension base module
-        def import_extensions(*modules)
+        # Find all necessary class extensions inside the given +modules+
+        # and prepare the extension base module
+        def import_class_extensions(*modules)
           modules.each do |mod|
             mod.constants.each do |const_name|
               const_name = const_name.to_s
@@ -459,10 +483,10 @@ module Rails
                 end
               end
 
-              # Create the shared module and include the extension
+              # Create the shared module and include the class extension
               next unless klass&.is_a?(Class)
-              extensions[klass] ||= Module.new
-              extensions[klass].include(const)
+              class_extensions[klass] ||= Module.new
+              class_extensions[klass].include(const)
             end
           end
         end

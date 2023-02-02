@@ -8,7 +8,7 @@ module Rails
     # source object, creating:
     # 1. 1 Object
     # 2. 1 Input
-    # 3. 2 Query fields (ingular and plural)
+    # 3. 2 Query fields (singular and plural)
     # 4. 3 Mutation fields (create, update, destroy)
     class Source::ActiveRecordSource < Source::Base
       include Source::ScopedArguments
@@ -34,7 +34,7 @@ module Rails
       end
 
       self.abstract = true
-      self.hook_names = hook_names.to_a.insert(1, :enums).to_set
+      self.hook_names = hook_names.to_a.insert(1, :enums).to_set.freeze
 
       delegate :primary_key, :singular, :plural, :model, :id_columns, to: :class
 

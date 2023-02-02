@@ -18,10 +18,7 @@ module Rails
       include Helpers::Instantiable
 
       ATTACH_FIELDS_STEP = -> do
-        if fields?
-          attach_fields!(type, fields)
-          attach_scoped_arguments_to(fields.values)
-        end
+        attach_fields!(type, fields) if fields?
       end
 
       autoload :Base
@@ -61,7 +58,7 @@ module Rails
       # set the order of the execution of the hooks while validating the hooks
       # callbacks using the +on+ method
       class_attribute :hook_names, instance_accessor: false,
-        default: %i[start object input query mutation subscription].to_set
+        default: %i[start object input query mutation subscription].to_set.freeze
 
       # The list of hooks defined in order to describe a source
       inherited_collection :hooks, instance_reader: false, type: :hash_array
@@ -113,6 +110,22 @@ module Rails
           base_sources.reverse_each.find { |source| object <= source.assigned_class }
         end
 
+        # Add a new description hook. You can use +throw :skip+ and skip
+        # parent hooks. If the class is already built, then execute the hook.
+        # Use the +unshift: true+ to add the hook at the beginning of the
+        # list, which will then be the last to run
+        def step(hook_name, unshift: false, &block)
+          raise ArgumentError, (+<<~MSG).squish unless hook_names.include?(hook_name.to_sym)
+            The #{hook_name.inspect} is not a valid hook method.
+          MSG
+
+          if built?(hook_name)
+            hook_scope_for(hook_name).instance_exec(&block)
+          else
+            hooks[hook_name.to_sym].public_send(unshift ? :unshift : :push, block)
+          end
+        end
+
         # Attach all defined schema fields into the schemas using the namespaces
         # configured for the source
         def attach_fields!(type = :all, from = self)
@@ -149,22 +162,6 @@ module Rails
             segmented_skip_fields[source] += fields.flatten.compact.map(&:to_sym).to_set
           end
 
-          # Add a new description hook. You can use +throw :skip+ and skip
-          # parent hooks. If the class is already built, then execute the hook.
-          # Use the +unshift: true+ to add the hook at the beginning of the
-          # list, which will then be the last to run
-          def step(hook_name, unshift: false, &block)
-            raise ArgumentError, (+<<~MSG).squish unless hook_names.include?(hook_name.to_sym)
-              The #{hook_name.inspect} is not a valid hook method.
-            MSG
-
-            if built?(hook_name)
-              hook_scope_for(hook_name).instance_exec(&block)
-            else
-              hooks[hook_name.to_sym].public_send(unshift ? :unshift : :push, block)
-            end
-          end
-
           # Creates a hook that throws a done action, preventing any parent hooks
           def skip(*names)
             names.each do |hook_name|
@@ -183,17 +180,21 @@ module Rails
           # It's an alternative to +self.hook_names -= %i[*names]+ which
           # disables a specific hook
           def disable(*names)
-            self.hook_names -= names.flatten.map do |hook_name|
+            list = names.flatten.map do |hook_name|
               hook_name.to_s.singularize.to_sym
             end
+
+            self.hook_names = (hook_names - list).freeze
           end
 
           # It's an alternative to +self.hook_names += %i[*names]+ which
           # enables additional hooks
           def enable(*names)
-            self.hook_names += names.flatten.map do |hook_name|
+            list = names.flatten.map do |hook_name|
               hook_name.to_s.singularize.to_sym
             end
+
+            self.hook_names = (hook_names + list).freeze
           end
 
           # Return the module where the GraphQL types should be created at
@@ -236,8 +237,7 @@ module Rails
             super if defined? super
           end
 
-          # Find all classes that inherits from source that are abstract,
-          # meaning that they are a base sources
+          # Constantize all the base sources that were defined in the settings
           def base_sources
             @@base_sources ||= GraphQL.config.sources.map(&:constantize).to_set
           end

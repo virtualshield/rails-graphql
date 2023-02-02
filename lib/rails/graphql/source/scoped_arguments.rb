@@ -6,8 +6,15 @@ module Rails
     # meaning that when an argument is present, it triggers the underlying block
     # on the fields where the argument was attached to
     module Source::ScopedArguments
+      ATTACH_ARGUMENTS_STEP = -> do
+        attach_scoped_arguments_to(fields.values) if fields?
+      end
+
       def self.included(other)
         other.extend(ClassMethods)
+        other.step(:query, &ATTACH_ARGUMENTS_STEP)
+        other.step(:mutation, &ATTACH_ARGUMENTS_STEP)
+        other.step(:subscription, &ATTACH_ARGUMENTS_STEP)
       end
 
       # Extended argument class to be the instance of the scoped

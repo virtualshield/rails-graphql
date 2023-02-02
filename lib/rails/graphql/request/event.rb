@@ -10,7 +10,7 @@ module Rails
       class Event < GraphQL::Event
         OBJECT_BASED_READERS = %i[fragment spread].freeze
 
-        delegate :errors, :context, to: :request
+        delegate :errors, :context, :extensions, to: :request
         delegate :instance_for, to: :strategy
         delegate :memo, :schema, to: :source
         delegate :subscription_field, to: :schema

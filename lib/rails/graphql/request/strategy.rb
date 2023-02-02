@@ -131,7 +131,7 @@ module Rails
 
           if field.try(:dynamic_resolver?)
             prepared = prepared_data_for(field)
-            args << Event.trigger(:resolve, field, self, prepared: prepared, &field.resolver)
+            args << Event.trigger(:resolve, field, self, prepared_data: prepared, &field.resolver)
           elsif field.prepared_data?
             args << prepared_data_for(field)
           else

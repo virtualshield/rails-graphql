@@ -123,8 +123,9 @@ module Rails
       initializer 'graphql.reloader', before: :load_config_initializers do |app|
         next unless (path = app.root.join('app', 'graphql')).exist?
 
-        children = config.graphql.paths.join(',')
-        autoloader = app.autoloaders.main
+        children = config.graphql.paths.to_a.join(',')
+        autoloader = app.respond_to?(:autoloaders) ? app.autoloaders : Rails.autoloaders
+        autoloader = autoloader.main
 
         ActiveSupport::Dependencies.autoload_paths.delete(path.to_s)
         autoloader.collapse(path.glob("**/{#{children}}").select(&:directory?))

@@ -45,11 +45,17 @@ module Rails
           @data = {}
         end
 
-        # Append to the responsa data all the errors that happened during the
+        # Append to the response all the errors that happened during the
         # request process
         def append_errors(errors)
           return if errors.empty?
           @data['errors'] = errors.as_json
+        end
+
+        # Append to the response anything added to the extensions
+        def append_extensions(extensions)
+          return if extensions.empty?
+          @data['extensions'] = extensions.as_json
         end
 
         # Return the generated object

@@ -42,6 +42,12 @@ module Rails
           add('errors', errors.to_json)
         end
 
+        # Append to the response anything added to the extensions
+        def append_extensions(extensions)
+          return if extensions.empty?
+          add('extensions', extensions.to_json)
+        end
+
         # Add the given +value+ to the given +key+. Ensure to encode the value
         # before calling this function.
         def add(key, value)

@@ -33,6 +33,7 @@ module Rails
           end
 
           alias arg argument
+          alias kind type
 
           private
 
