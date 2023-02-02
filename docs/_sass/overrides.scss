@@ -41,4 +41,8 @@ a:not([class]) {
   h4 {
     font-size: $font-size-4 !important;
   }
+
+  h3 > code {
+    vertical-align: text-bottom;
+  }
 }

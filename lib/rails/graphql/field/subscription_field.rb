@@ -23,6 +23,12 @@ module Rails
         end
       end
 
+      # Intercept the initializer to maybe set the +scope+
+      def initialize(*args, scope: nil, **xargs, &block)
+        @scope = Array.wrap(scope).freeze unless scope.nil?
+        super(*args, **xargs, &block)
+      end
+
       # Change the schema type of the field
       def schema_type
         :subscription
@@ -37,62 +43,59 @@ module Rails
       # Set the parts of the scope of the subscription
       def scope(*parts)
         (defined?(@scope) ? (@scope += parts) : (@scope = parts)).freeze
+        self
       end
 
       # Get the full scope of the field
       def full_scope
-        return EMPTY_ARRAY unless defined?(@scope)
-      end
-
-      # Checks if the scope is correctly defined
-      def validate!(*)
-        super if defined? super
-        return unless defined?(@scope)
-
-        invalid = @scope.reject { |item| item.is_a?(Symbol) || item.is_a?(Proc) }
-        raise ArgumentError, (+<<~MSG).squish if invalid.any?
-          The "#{type_klass.gql_name}" has invalid values set for its scope: #{invalid.inspect}.
-        MSG
+        defined?(@scope) ? @scope : EMPTY_ARRAY
       end
 
       # A shortcut for trigger when everything is related to the provided object
-      # TODO: Maybe add support for object as an array of things
-      # TODO: Add support for +data_for+. The only problem right now is that
-      # providers run asynchronously, so passing data is a bit more complicated
-      # and maybe dangerous (size speaking)
-      def trigger_for(object, **xargs)
-        match_valid_object!(object)
+      def trigger_for(object, and_prepare: true, **xargs)
         xargs[:args] ||= extract_args_from(object)
+
+        if and_prepare
+          xargs[:data_for] ||= {}
+          xargs[:data_for][+"subscription.#{gql_name}"] = object
+        end
+
         trigger(**xargs)
       end
 
       # A shortcut for unsubscribe when everything is related to the provided
       # object
-      # TODO: Maybe add support for object as an array of things
       def unsubscribe_from(object, **xargs)
-        match_valid_object!(object)
         xargs[:args] ||= extract_args_from(object)
         unsubscribe(**xargs)
       end
 
       # Trigger an update to the subscription
-      def trigger(args: nil, scope: nil)
+      def trigger(**xargs)
         provider = owner.subscription_provider
-        provider.search_and_update(field: self, args: args, scope: scope)
+        provider.search_and_update(field: self, **xargs)
       end
 
       # Force matching subscriptions to be removed
-      def unsubscribe(args: nil, scope: nil)
+      def unsubscribe(**xargs)
         provider = owner.subscription_provider
-        provider.search_and_remove(field: self, args: args, scope: scope)
+        provider.search_and_remove(field: self, **xargs)
       end
 
       protected
 
         # Match any argument with properties from the given +object+ so it
         # produces all the possibilities of an update
-        def extract_args_from(object)
+        def extract_args_from(object, iterate = true)
           return unless arguments?
+
+          # If can iterate and the provided object is an enumerable, then
+          # call itself with each item
+          if iterate && object.is_a?(Enumerable)
+            return object.each_with_object([]) do |item, result|
+              result.concat(extract_args_from(item, false))
+            end
+          end
 
           # Prepare all the possibilities
           keys = []
@@ -116,21 +119,6 @@ module Rails
           possibilities.reduce(:product).flatten.each_slice(keys.size).map do |items|
             keys.zip(items).to_h
           end
-        end
-
-        # Check if the provided +object+ is a match for the type that this field
-        # is associated with
-        def match_valid_object!(object)
-          raise ::ArgumentError, (+<<~MSG).squish unless type_klass&.object?
-            Cannot trigger with an object when the field is not associated to
-            an object-like result.
-          MSG
-
-          assignable = !object.is_a?(Module) && type_klass.valid_member?(object)
-          raise ::ArgumentError, (+<<~MSG).squish unless assignable
-            The provided object "#{object.inspect}" is not a valid member of
-            #{type_klass.inspect} for the :#{name} field.
-          MSG
         end
 
         def proxied

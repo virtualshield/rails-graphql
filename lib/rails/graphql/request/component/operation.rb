@@ -115,7 +115,7 @@ module Rails
           return super unless defined?(@used_fragments)
 
           super ^ used_fragments.reduce(0) do |value, fragment|
-            request.fragments[fragment].hash
+            value ^ request.fragments[fragment].hash
           end
         end
 

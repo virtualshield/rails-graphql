@@ -138,13 +138,13 @@ When creating a directive that will affect the execution of your GraphQL documen
 more fo these options:
 
 `:query`
-: Applies to [Queries](/guides/queries#request)
+: Applies to [Queries](/guides/queries)
 
 `:mutation`
-: Applies to [Mutations](/guides/mutations#request)
+: Applies to [Mutations](/guides/mutations)
 
 `:subscription`
-: Applies to [Subscriptions](/guides/subscriptions#request)
+: Applies to [Subscriptions](/guides/subscriptions)
 
 `:field`
 : Applies to any [Request Field](/guides/request#fields)

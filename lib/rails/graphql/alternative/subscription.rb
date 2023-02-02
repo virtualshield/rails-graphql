@@ -10,7 +10,8 @@ module Rails
       self.abstract = true
 
       class << self
-        delegate :scope, :trigger, to: :@field, allow_nil: true
+        delegate :scope, :trigger_for, :trigger, :unsubscribe_from, :unsubscribe,
+          to: :@field, allow_nil: true
       end
     end
   end

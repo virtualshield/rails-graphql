@@ -59,8 +59,8 @@ module Rails
         end
 
         # See {Argument}[rdoc-ref:Rails::GraphQL::Argument] class.
-        def argument(name, base_type, **xargs)
-          object = GraphQL::Argument.new(name, base_type, **xargs, owner: self)
+        def argument(name, type = nil, **xargs)
+          object = GraphQL::Argument.new(name, type, **xargs, owner: self)
 
           raise DuplicatedError, (+<<~MSG).squish if has_argument?(object.name)
             The #{name.inspect} argument is already defined and can't be redefined.

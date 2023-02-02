@@ -232,7 +232,7 @@ You may also find some other ways to start and execute a request:
 :008 > # However, GraphQL::AppSchema must be loaded first
 ```
 
-Read more about [requests](/guides/requests).
+Read more about [requests](/guides/request).
 
 ### Logs
 
@@ -261,7 +261,7 @@ Another place you can see log information is in the summary of a request.
 | Completed 200 OK in 2ms ... | GraphQL: 0.4ms | ...
 ```
 
-Read more about [request logs](/guides/requests#logs).
+Read more about [request logs](/guides/request#logs).
 
 ## Components
 

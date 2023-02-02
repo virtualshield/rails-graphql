@@ -49,6 +49,11 @@ module Rails
               raise ::ArgumentError, +"SID #{subscription.sid} is already taken."
             end
 
+            # Rewrite the scope, to save memory
+            scope = possible_scopes(subscription.scope)&.first
+            subscription.instance_variable_set(:@scope, scope)
+
+            # Save to the list and to the index
             list[subscription.sid] = subscription
             index_set = subscription_to_index(subscription).reduce(index, &:[])
             index_set << subscription.sid
@@ -56,13 +61,13 @@ module Rails
           end
 
           def fetch(*sids)
-            if sids.none?
-              nil
-            elsif sids.one?
-              list[sids.first]
-            else
-              sids.map(&list.method(:[]))
+            return if sids.none?
+
+            items = sids.map do |item|
+              instance?(item) ? item : list[item]
             end
+
+            items.one? ? items.first : items
           end
 
           def remove(item)
@@ -80,6 +85,10 @@ module Rails
             s_level.delete(path[2]) if a_level.empty?
             f_level.delete(path[1]) if s_level.empty?
             index.delete(path[0]) if f_level.empty?
+          end
+
+          def update!(item)
+            (instance?(item) ? item : fetch(item)).update!
           end
 
           def has?(item)
@@ -115,9 +124,9 @@ module Rails
             # Turn the request subscription into into the path of the index
             def subscription_to_index(subscription)
               [
-                hash_for(subscription.field),
-                possible_scopes(subscription.scope)&.first,
-                hash_for(subscription.args),
+                subscription.field.hash,
+                subscription.scope,
+                subscription.args.hash,
               ]
             end
         end

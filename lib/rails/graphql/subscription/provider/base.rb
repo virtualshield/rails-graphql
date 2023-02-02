@@ -94,7 +94,7 @@ module Rails
           # Update one single subscription, for broadcasting, use +update_all+
           # or +search_and_update+. You can provide the +data+ that will be sent
           # to upstream, skipping it from being collected from a request
-          async_exec def update(item, data = nil)
+          async_exec def update(item, data = nil, **xargs)
             raise NotImplementedError, +"#{self.class.name} does not implement update"
           end
 
@@ -104,15 +104,15 @@ module Rails
           end
 
           # A simple shortcut for calling update on each individual sid
-          async_exec def update_all(*sids)
+          async_exec def update_all(*sids, **xargs)
             return if sids.blank?
 
             enum = GraphQL.enumerate(store.fetch(*sids))
             enum.group_by(&:operation_id).each_value do |subscriptions|
-              data = execute(subscriptions.first, broadcasting: true) \
+              data = execute(subscriptions.first, **xargs, broadcasting: true) \
                 unless subscriptions.one? || first.broadcastable?
 
-              subscriptions.each { |item| update(item, data) }
+              subscriptions.each { |item| update(item, data, **xargs) }
             end
           end
 
@@ -123,7 +123,8 @@ module Rails
 
           # A shortcut for finding the subscriptions and then updating them
           async_exec def search_and_update(**options)
-            update_all(*find_each(**options))
+            xargs = options.slice(:data_for)
+            update_all(*find_each(**options), **xargs)
           end
 
           # Get the payload that should be used when unsubscribing

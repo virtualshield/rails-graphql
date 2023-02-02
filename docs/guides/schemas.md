@@ -182,7 +182,7 @@ Read more about [alternatives](/guides/alternatives) and [importing fields](/gui
 
 ## Subscriptions
 
-Subscriptions will work with [ActionCable](/guides/subscriptions/providers/action-cable-provider) provider and [Memory](/guides/subscriptions/providers/memory-store) store by default. The methods provided in the schema
+Subscriptions will work with [ActionCable](/guides/subscriptions/action-cable-provider) provider and [Memory](/guides/subscriptions/memory-store) store by default. The methods provided in the schema
 mostly work as a bridge between the requests and the provider configured.
 
 What matters the most for the schema is the provider, and you can set up one using the config of the schema.
@@ -252,7 +252,7 @@ end
 By default, all the exceptions will be turned into proper errors in the response,
 plus you will receive a nice backtrace display in your logs.
 
-Read more about [request logs](/guides/requests#logs).
+Read more about [request logs](/guides/request#logs).
 
 ## Inline Types
 

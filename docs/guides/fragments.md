@@ -13,7 +13,7 @@ fragment Profile on User {
 }
 ```
 
-Fragments are used in your [requests](/guides/requests) to reduce the number of times you need to repeat
+Fragments are used in your [requests](/guides/request) to reduce the number of times you need to repeat
 a portion of the [selection set](/guides/request#selection-set), as well as a great
 way to isolate the needs of your components.
 

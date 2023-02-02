@@ -227,7 +227,7 @@ When not defined, the request assumes it is the same as the field's name.
 {: .note }
 > [Standalone-defined fields](/guides/alternatives#standalone-definition) fallback to `:resolve`
 
-Read more about [requests](/guides/requests).
+Read more about [requests](/guides/request).
 
 ### Mutation Fields
 
@@ -244,7 +244,7 @@ mutation_fields do
 end
 ```
 
-Read more about [mutations](/guides/mutations).
+Read more about [mutations](/guides/mutations) and [performing fields](/guides/request#performing).
 
 ### Subscription Fields
 
@@ -260,7 +260,7 @@ subscription_fields do
 end
 ```
 
-Read more about [subscriptions](/guides/subscriptions).
+Read more about [subscriptions](/guides/subscriptions) and [fields subscription](/guides/request#subscribing).
 
 ### Authorized Fields
 

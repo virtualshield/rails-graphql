@@ -46,7 +46,7 @@ Read more about [fragments](/guides/fragments).
 #### With a Type
 
 Inline typed spreads will only add their selection set when the underlying data type
-matches the type that is its own type. That means that only when [`__typename`](/guides/requests#typename)
+matches the type that is its own type. That means that only when [`__typename`](/guides/queries#typename)
 and the referenced type in the spread are equal will it add its selection set to the response.
 
 This is commonly used when dealing with [Interfaces](/guides/interfaces) and [Unions](/guides/unions)

@@ -467,7 +467,7 @@ module Rails
 
               valid = superclass.is_a?(Module) && superclass < base_class
               raise DefinitionError, (+<<~MSG).squish unless valid
-                The given "#{superclass}" superclass does not inherites from
+                The given "#{superclass}" superclass does not inherit from
                 #{base_class.name} class.
               MSG
 

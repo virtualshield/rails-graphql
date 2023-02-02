@@ -65,6 +65,11 @@ module Rails
             raise NotImplementedError, +"#{self.class.name} does not implement remove"
           end
 
+          # Marks that a subscription has received an update
+          def update!(item)
+            raise NotImplementedError, +"#{self.class.name} does not implement update!"
+          end
+
           # Check if a given sid or instance is stored
           def has?(item)
             raise NotImplementedError, +"#{self.class.name} does not implement has?"
@@ -123,20 +128,11 @@ module Rails
             def hash_for(value, klass = nil)
               if !klass.nil?
                 klass.hash ^ value.hash
-              elsif extract_class_from?(value)
-                value.class.hash ^ value.id.hash
               elsif value.is_a?(Numeric)
                 value
               else
                 value.hash
               end
-            end
-
-            # Check if ActiveRecord::Base is available and then if the object
-            # provided is an instance of it, so that the serialize can work
-            # correctly
-            def extract_class_from?(value)
-              defined?(ActiveRecord) && value.is_a?(ActiveRecord::Base)
             end
         end
       end

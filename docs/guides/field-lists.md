@@ -123,7 +123,7 @@ proxy_field(GraphQL::User[:name], alias: :user_name)
 add_proxy_field(:query, GraphQL::User[:name])
 ```
 
-**Proxy fields is an advanced feature.** Read more about the [proxy fields](/guides/advanced/fields#proxies).
+**Proxy fields is an advanced feature.** Read more about [proxy fields](/guides/advanced/fields#proxies).
 
 ### Importing
 
@@ -244,7 +244,7 @@ enable_fields(:field1, :field2)
 enable_fields(:query, :field1, :field2)
 ```
 
-Read more about the [changing fields](/guides/fields#changing-fields).
+Read more about [changing fields](/guides/fields#changing-fields).
 
 ## Searching Fields
 

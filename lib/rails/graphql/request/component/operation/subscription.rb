@@ -92,7 +92,7 @@ module Rails
             def resolve_then(after_block = nil, &block)
               subscribe_block = -> do
                 save_subscription
-                trigger_event(:subscribed)
+                trigger_event(:subscribed, subscription: subscription)
                 after_block.call if after_block.present?
               end
 

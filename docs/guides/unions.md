@@ -84,7 +84,7 @@ capture unique information of the respective types.
 
 {: .important }
 > Since unions do not contain a [list of fields](/guides/field-lists), you can never request
-> fields directly from them besides [`__typename`](/guides/requests#typename).
+> fields directly from them besides [`__typename`](/guides/queries#typename).
 
 ```ruby
 field(:recipient, 'Person')

@@ -14,8 +14,8 @@ description: The customized support of Global ID for GraphQL elements
 This gem implements its own version of Rails
 <a href="https://github.com/rails/globalid" target="_blank" rel="external nofollow">Global ID</a>.
 The purpose is to identify GraphQL components within your application uniquely. This feature
-is widely by [request caching](/guides/advanced/requests#caching) and
-[request compiling](/guides/advanced/requests#compiling).
+is widely by [request caching](/guides/advanced/request#caching) and
+[request compiling](/guides/advanced/request#compiling).
 
 ## How it Looks Like
 

@@ -10,6 +10,7 @@ module Rails
         #
         # The subscription provider associated with Rails Action Cable, that
         # delivers subscription notifications through an Action Cable Channel
+        # TODO: Try to serialize and deserialize the origin
         class ActionCable < Base
           INTERNAL_CHANNEL = 'rails-graphql:events'
 
@@ -46,20 +47,20 @@ module Rails
           end
 
           def async_remove(item)
-            return unless instance?(item) || !(item = store.fetch(item)).nil?
+            return if (item = store.fetch(item)).nil?
             cable.server.broadcast(stream_name(item), unsubscribed_payload)
             store.remove(item)
 
             log(:removed, item)
           end
 
-          def async_update(item, data = nil)
-            return unless instance?(item) || !(item = store.fetch(item)).nil?
+          def async_update(item, data = nil, **xargs)
+            return if (item = store.fetch(item)).nil?
             removing = false
 
             log(:updated, item) do
-              data = execute(item) if data.nil?
-              item.updated!
+              data = execute(item, **xargs) if data.nil?
+              store.update!(item)
 
               unless (removing = unsubscribing?(data))
                 data = { 'result' => data, 'more' => true }
@@ -71,7 +72,7 @@ module Rails
           end
 
           def stream_name(item)
-            "#{prefix}:#{instance?(item) ? item.sid : item}"
+            "#{prefix}:#{item.sid}"
           end
 
           protected
@@ -80,8 +81,8 @@ module Rails
               item.origin.stream_from(stream_name(item))
             end
 
-            def execute(subscription, **xargs)
-              super(subscription, origin: subscription.origin, **xargs, as: :hash)
+            def execute(item, **xargs)
+              super(item, origin: item.origin, **xargs, as: :hash)
             end
 
             def async_exec(method_name, *args, **xargs)
