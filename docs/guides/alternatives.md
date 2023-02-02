@@ -81,6 +81,13 @@ end
 
 Read more about [local dependencies](/guides/schemas#local-dependencies).
 
+{: .no_toc }
+#### Available Classes
+
+* `GraphQL::QuerySet`
+* `GraphQL::MutationSet`
+* `GraphQL::SubscriptionSet`
+
 ## Standalone Definition
 
 This is one level even higher. When the complexity of a field is so significant that it requires
@@ -113,9 +120,16 @@ end
 You will also need to import these kinds of classes into your schema.
 
 {: .note }
-> **Quick Note**
+> **Note**
 > For mutations, besides the `resolve` method, you also have the `perform` method
 > as entry point. Read more about it [here](/guides/mutations).
+
+{: .no_toc }
+#### Available Classes
+
+* `GraphQL::Query`
+* `GraphQL::Mutation`
+* `GraphQL::Subscription`
 
 ## Source Definition
 

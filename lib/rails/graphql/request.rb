@@ -435,7 +435,7 @@ module Rails
           @cache.clear
           @strategy&.clear
           @fragments&.clear
-          @operations.clear
+          @operations&.clear
           @prepared_data&.clear
         end
 
@@ -504,7 +504,7 @@ module Rails
         # Build the payload to be sent to the log
         def log_payload(data)
           name = @operation_name.presence
-          name ||= operations.keys.first if operations.size.eql?(1)
+          name ||= operations.keys.first if operations&.size&.eql?(1)
           map_variables = args.to_h.transform_keys do |key|
             @arg_names[key.to_s]
           end

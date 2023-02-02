@@ -8,7 +8,6 @@ module GraphQL
     Channel:            '::Rails::GraphQL::Channel',
     Controller:         '::Rails::GraphQL::Controller',
     Directive:          '::Rails::GraphQL::Directive',
-    Field:              '::Rails::GraphQL::Field',
     GlobalID:           '::Rails::GraphQL::GlobalID',
     Request:            '::Rails::GraphQL::Request',
     Schema:             '::Rails::GraphQL::Schema',
@@ -29,9 +28,6 @@ module GraphQL
     Object:             '::Rails::GraphQL::Type::Object',
     Scalar:             '::Rails::GraphQL::Type::Scalar',
     Union:              '::Rails::GraphQL::Type::Union',
-
-    ProxyField:         '::Rails::GraphQL::Field::ProxyField',
-    AssociationField:   '::Rails::GraphQL::Field::AssociationField',
 
     BaseSource:         '::Rails::GraphQL::Source::BaseSource',
     ActiveRecordSource: '::Rails::GraphQL::Source::ActiveRecordSource',

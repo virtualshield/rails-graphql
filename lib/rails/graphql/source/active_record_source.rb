@@ -189,7 +189,7 @@ module Rails
       # Once the records are pre-loaded due to +preload_association+, use the
       # parent value and the preloader result to get the records
       def parent_owned_records(collection_result = false)
-        data = event.data[:prepared]
+        data = event.data[:prepared_data]
         return collection_result ? [] : nil unless data
 
         result = data.records_by_owner[current_value] || []

@@ -49,7 +49,7 @@ module Rails
           end
 
           # Create a new field for the class
-          def define_field(field_name = nil, type = :any, **xargs, &blcok)
+          def define_field(field_name = nil, type = :any, **xargs, &block)
             field_name ||= anonymous? ? '_anonymous' : begin
               type_module = type_field_class.to_s.classify.pluralize
               user_name = name.split(+"#{type_module}::")[1]
@@ -58,12 +58,12 @@ module Rails
             end
 
             # Save the generated field ensuring the owner
-            @field = field_class.new(field_name, type, **xargs, owner: self, &blcok)
+            @field = field_class.new(field_name, type, **xargs, owner: self, &block)
           end
 
           # Import the field from a given source
-          def import_field(other_field, **xargs, &blcok)
-            @field = other_field.to_proxy(**xargs, owner: self, &blcok)
+          def import_field(other_field, **xargs, &block)
+            @field = other_field.to_proxy(**xargs, owner: self, &block)
           end
 
           # Change the return type of the field
