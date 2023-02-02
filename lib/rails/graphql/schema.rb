@@ -461,7 +461,7 @@ module Rails
 
               # This likely happened because the classes are being reloaded, so
               # call inherited again as if the class has just been created
-              superclass.inherited(klass)
+              superclass.send(:inherited, klass)
             else
               base_class ||= superclass.ancestors.find { |k| k.superclass === Class }
 
