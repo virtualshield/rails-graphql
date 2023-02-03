@@ -8,15 +8,20 @@ module GraphQL
       include Rails::GraphQL::BaseGenerator
 
       desc 'Add a new controller that operates with GraphQL'
-      argument :name, type: :string, optional: true
+
+      class_option :name, type: :string, optional: true,
+        default: "GraphQLController",
+        desc: 'The name for the controller'
 
       def create_controller_file
         template 'controller.erb', "app/controllers/#{controller_name.underscore}.rb"
       end
 
-      def controller_name
-        @controller_name ||= (options[:name].presence&.classify || 'GraphQL') + 'Controller'
-      end
+      private
+
+        def controller_name
+          @controller_name ||= options.fetch(:name, 'GraphQLController').classify
+        end
     end
   end
 end

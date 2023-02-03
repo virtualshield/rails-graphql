@@ -12,6 +12,9 @@ module Rails
         def initialize(request)
           @request = request
 
+          @current_keys = Set.new
+          @stack_keys = []
+
           @current_value = StringIO.new
           @stack_value = []
 
@@ -32,6 +35,7 @@ module Rails
           pop_size = array && !plain ? 2 : 1
           @current_value = @stack_value.pop(pop_size).first
           @current_array = @stack_array.pop(pop_size).first
+          @current_keys = @stack_keys.pop
           raise
         end
 
@@ -52,12 +56,18 @@ module Rails
         # before calling this function.
         def add(key, value)
           (@current_value << ',') if @current_value.pos > 0
+          @current_keys << key
 
           if @current_array
             @current_value << value
           else
             @current_value << '"' << +key.to_s << '"' << ':' << +value.to_s
           end
+        end
+
+        # Check if the given +key+ has been added already
+        def key?(key)
+          @current_keys.include?(key)
         end
 
         # Same as +add+ but this always encode the +value+ beforehand.
@@ -75,7 +85,9 @@ module Rails
           return unless @stack_array.last === :complex
           (@stack_value.last << ',') if @stack_value.last.pos > 0
           @stack_value.last << to_s
+
           @current_value = StringIO.new
+          @current_keys = Set.new
         end
 
         # Get the current result
@@ -96,6 +108,7 @@ module Rails
           def start_stack(as_array = false, plain_array = false)
             @stack_value << @current_value
             @stack_array << @current_array
+            @stack_keys << @current_keys
 
             if as_array && !plain_array
               @stack_value << StringIO.new
@@ -105,6 +118,7 @@ module Rails
 
             @current_value = StringIO.new
             @current_array = as_array
+            @current_keys = Set.new
           end
 
           # Finalize a stack and set the result on the given +key+.
@@ -117,6 +131,7 @@ module Rails
             result = to_s
             @current_value = @stack_value.pop
             @current_array = @stack_array.pop
+            @current_keys = @stack_keys.pop
             add(key, result)
           end
       end

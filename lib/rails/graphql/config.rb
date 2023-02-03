@@ -109,7 +109,7 @@ module Rails
 
       # Enable the ability to define the description of any object, field, or
       # argument using I18n. It is recommended for multi-language documentation.
-      config.enable_i18n_descriptions = true
+      config.enable_i18n_descriptions = false
 
       # The list of scopes that will be used to locate the descriptions.
       config.i18n_scopes = [

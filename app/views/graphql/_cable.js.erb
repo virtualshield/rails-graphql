@@ -1,0 +1,55 @@
+var queue = [];
+var current = null;
+var identifier = JSON.stringify({ channel: '<%= graphiql_channel %>' });
+var socket = new WebSocket("ws://" + window.location.hostname + "/<%= graphiql_url %>");
+
+socket.onopen = function(event) {
+  const msg = { command: 'subscribe', identifier: identifier };
+  socket.send(JSON.stringify(msg));
+};
+
+socket.onmessage = function(event) {
+  const msg = JSON.parse(event.data);
+  if (msg.type === "ping") {
+    return;
+  }
+
+  if (msg.type === "confirm_subscription") {
+    execute_next();
+    return;
+  }
+
+  if (msg.message && current) {
+    current.resolve(msg.message.result);
+    current = null;
+    execute_next();
+  } else {
+    console.dir(msg);
+  }
+};
+
+function execute_next() {
+  if (socket.readyState != '1' || queue.length === 0 || current) {
+    return;
+  }
+
+  current = queue.shift();
+  socket.send(JSON.stringify({
+    command: 'message',
+    identifier: identifier,
+    data: JSON.stringify({ action: 'execute', ...current.data }),
+  }));
+}
+
+function graphQLFetcher(graphQLParams) {
+  var resolve;
+  var promise = new Promise((success) => {
+    resolve = success;
+  });
+
+  var item = { data: graphQLParams, promise, resolve };
+
+  queue.push(item);
+  execute_next();
+  return promise;
+};

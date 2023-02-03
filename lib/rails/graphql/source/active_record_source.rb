@@ -24,6 +24,10 @@ module Rails
       # associations associated to the object
       class_attribute :with_associations, instance_accessor: false, default: true
 
+      # Set what type of errors should be exported to the extensions of the
+      # request when trying to save records. False will disable it
+      class_attribute :errors_to_extensions, instance_accessor: false, default: false
+
       # The name of the class (or the class itself) to be used as superclass for
       # the generate GraphQL interface type of this source
       class_attribute :interface_class, instance_accessor: false
@@ -167,7 +171,7 @@ module Rails
         inject_scopes(scope, :relation).find_by(find_by)
       end
 
-      # Get the chain result and preload the records with thre resulting scope
+      # Get the chain result and preload the records with the resulting scope
       def preload_association(association, scope = nil)
         event.stop(preload(association, scope || event.last_result), layer: :object)
       end
@@ -199,16 +203,35 @@ module Rails
       # The perform step for the +create+ based mutation
       def create_record
         input_argument.resource.tap(&:save!)
+      rescue ::ActiveRecord::RecordInvalid => error
+        errors_to_extensions(error.record.errors)
+        raise
       end
 
       # The perform step for the +update+ based mutation
       def update_record
         current_value.tap { |record| record.update!(**input_argument.params) }
+      rescue ::ActiveRecord::RecordInvalid => error
+        errors_to_extensions(error.record.errors)
+        raise
       end
 
       # The perform step for the +delete+ based mutation
       def destroy_record
         !!current_value.destroy!
+      rescue ::ActiveRecord::RecordInvalid => error
+        errors_to_extensions(error.record.errors)
+        raise
+      end
+
+      # Expose the errors to the extensions of the response
+      def errors_to_extensions(errors, path = nil, messages = nil)
+        return unless self.class.errors_to_extensions
+        messages = self.class.errors_to_extensions == :messages if messages.nil?
+
+        path ||= [operation.name, field.gql_name].compact
+        hash = path.reduce(request.extensions) { |h, k| h[k] ||= {} }
+        hash.replace(messages ? errors.as_json : errors.details)
       end
 
       protected

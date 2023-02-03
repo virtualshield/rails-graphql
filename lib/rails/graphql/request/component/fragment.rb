@@ -23,6 +23,16 @@ module Rails
           check_duplicated_fragment!
         end
 
+        # Check if all the sub fields are broadcastable
+        def broadcastable?
+          selection.each_value.all?(&:broadcastable?)
+        end
+
+        # Check if the fragment has been prepared already
+        def prepared?
+          defined?(@prepared) && @prepared
+        end
+
         # Return a lazy loaded variable proc
         def variables
           Request::Arguments.lazy
@@ -57,11 +67,6 @@ module Rails
           resolve!
         ensure
           @current_object = nil
-        end
-
-        # Check if all the sub fields are broadcastable
-        def broadcastable?
-          selection.each_value.all?(&:broadcastable?)
         end
 
         # Build the cache object
@@ -105,8 +110,8 @@ module Rails
           def resolve
             return if unresolvable?
 
-            object = @current_object || type_klass
-            resolve_then if type_klass =~ object
+            object = @current_object
+            resolve_then if object.nil? || type_klass =~ object
           end
 
           # This will just trigger the selection resolver

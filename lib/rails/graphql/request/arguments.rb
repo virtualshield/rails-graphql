@@ -36,6 +36,7 @@ module Rails
         end
 
         delegate :key?, to: :@table
+        alias to_hash to_h
 
         class << self
           # Easy access to the easy loader method

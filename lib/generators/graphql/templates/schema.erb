@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 module GraphQL
-  <% module_namespacing do -%>
+  <%- module_namespacing do -%>
   class <%= schema_name %> < GraphQL::Schema
   end
-  <% end -%>
+  <%- end -%>
 end

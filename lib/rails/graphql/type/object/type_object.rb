@@ -135,7 +135,7 @@ module Rails
           list.map do |value|
             {
               name: value,
-              description: descriptions[value],
+              description: descriptions.try(:[], value),
               is_deprecated: (deprecated.nil? ? false : deprecated.key?(value)),
               deprecation_reason: deprecated.try(:[], value),
             }

@@ -309,6 +309,7 @@ module Rails
                 fields: @#{type}_fields,
                 gql_name: #{type}_type_name,
                 description: nil,
+                output_type?: true,
                 interfaces?: false,
                 internal?: false,
               ).freeze

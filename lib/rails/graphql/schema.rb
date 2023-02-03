@@ -300,7 +300,6 @@ module Rails
         end
 
         protected
-
           attr_writer :subscription_provider
 
           # Mark the given class to be pending of registration
@@ -312,6 +311,11 @@ module Rails
             subclass.config.define_singleton_method(:cache_prefix) do
               self[:cache_prefix] ||= "#{GraphQL.config.cache_prefix}#{subclass.namespace}/"
             end
+          end
+
+          # Syntax sugar for beginners
+          def field(*args, **xargs, &block)
+            add_field(:query, *args, **xargs, &block)
           end
 
           # Indicate to type map that the current schema depends on all the

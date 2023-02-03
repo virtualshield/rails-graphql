@@ -8,15 +8,20 @@ module GraphQL
       include Rails::GraphQL::BaseGenerator
 
       desc 'Add a new GraphQL schema'
-      argument :name, type: :string, optional: true
+
+      class_option :schema, type: :string, optional: true,
+        default: "#{APP_MODULE_NAME}Schema",
+        desc: 'A name for the schema'
 
       def create_schema_file
         template 'schema.erb', "#{options[:directory]}/#{schema_name.underscore}.rb"
       end
 
-      def schema_name
-        @schema_name ||= "#{options[:name].presence || app_module_name}Schema"
-      end
+      private
+
+        def schema_name
+          @schema_name ||= options.fetch(:schema, "#{APP_MODULE_NAME}Schema")
+        end
     end
   end
 end

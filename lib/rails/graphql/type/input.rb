@@ -144,11 +144,15 @@ module Rails
           self.class.as_json(@args.to_h)
         end
 
+        alias as_json args_as_json
+
         # Correctly turn all the arguments into their +to_json+ version and
         # return a hash of them
         def args_to_json
           self.class.to_json(@args.to_h)
         end
+
+        alias to_json args_to_json
 
         # Checks if all the values provided to the input instance are valid
         def validate!(*)

@@ -92,6 +92,7 @@ module Rails
         # Execute the prepare step for the given +field+ and execute the given
         # block using context stack
         def prepare(field, &block)
+          check_fragment_multiple_prepare!(field)
           value = safe_store_data(field) do
             prepared = request.prepared_data_for(field)
             if prepared.is_a?(PreparedData)
@@ -300,6 +301,13 @@ module Rails
             elsif current.respond_to?(key)
               result << current.public_send(key)
             end
+          end
+
+          # If the data pool already have data for the given +field+ and there
+          # is a fragment in the stack, we throw back to the fragment
+          def check_fragment_multiple_prepare!(field)
+            return unless @data_pool.key?(field)
+            throw(:fragment_prepared) if request.stack.any?(Component::Fragment)
           end
       end
     end

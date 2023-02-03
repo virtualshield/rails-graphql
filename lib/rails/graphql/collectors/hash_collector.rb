@@ -31,6 +31,11 @@ module Rails
           @data.is_a?(::Array) ? @data << value : @data[key.to_s] = value
         end
 
+        # Check if a given +key+ has already been added to the current data
+        def key?(key)
+          !@data.is_a?(::Array) && @data.key?(key)
+        end
+
         alias safe_add add
 
         # Serialize is a helper to call the correct method on types before add

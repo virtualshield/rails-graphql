@@ -117,6 +117,12 @@ module Rails
           value != false
         end
 
+        # Override this to also check if the key would be added to the response
+        # again
+        def skipped?
+          super || response.key?(gql_name)
+        end
+
         # A little extension of the +is_a?+ method that allows checking it using
         # the underlying +field+
         def of_type?(klass)

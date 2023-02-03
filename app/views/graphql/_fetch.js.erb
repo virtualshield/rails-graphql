@@ -1,0 +1,20 @@
+function graphQLFetcher(graphQLParams) {
+  // This example expects a GraphQL server at the path /graphql.
+  // Change this to point wherever you host your GraphQL server.
+  return fetch('<%= graphiql_url %>', {
+    method: 'post',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(graphQLParams),
+  }).then(function (response) {
+    return response.text();
+  }).then(function (responseBody) {
+    try {
+      return JSON.parse(responseBody);
+    } catch (error) {
+      return responseBody;
+    }
+  });
+}

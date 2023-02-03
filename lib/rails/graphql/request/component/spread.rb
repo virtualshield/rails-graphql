@@ -111,14 +111,23 @@ module Rails
           # Spread has a special behavior when using a fragment
           def prepare
             return super if inline?
-            raise(+'Prepare with fragment not implemented yet')
+            catch(:fragment_prepared) do
+              return fragment.prepare!
+            end
+
+            invalidate!
+            raise ExecutionError, (+<<~MSG).squish
+              Fields inside the "#{name}" fragment tried to be prepared more than once.
+              This feature is not supported yet.
+            MSG
           end
 
           # Resolve the spread operation
           def resolve
             return if unresolvable?
 
-            object = (defined?(@current_object) && @current_object) || parent.type_klass
+            object = (defined?(@current_object) && @current_object)
+            object ||= parent.type_klass unless parent.is_a?(Component::Operation)
             return run_on_fragment(:resolve_with!, object) unless inline?
 
             super if type_klass =~ object

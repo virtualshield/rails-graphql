@@ -25,7 +25,7 @@ Gem::Specification.new do |s|
 
   s.require_paths = ['lib']
 
-  s.files        = Dir['MIT-LICENSE', 'README.rdoc', 'lib/**/*', 'ext/**/*', 'Rakefile']
+  s.files        = Dir['MIT-LICENSE', 'README.rdoc', 'app/**/*', 'lib/**/*', 'ext/**/*', 'Rakefile']
   s.test_files   = Dir['test/**/*']
   s.extensions   = ['ext/extconf.rb']
   s.rdoc_options = ['--title', 'GraphQL server for Rails']

@@ -13,7 +13,7 @@ module Rails
         mattr_accessor :skip_base_class, instance_accessor: false,
           default: Rails::GraphQL::StandardError
 
-        extend self
+        module_function
 
         # Check if the given +error+ should be skipped
         # TODO: Maybe check +cause+ to proper evaluate the skip
@@ -39,7 +39,7 @@ module Rails
             stack = [component] + request.stack
             counter = stack.count { |item| !item.is_a?(Numeric) }
             objects = request.strategy.context
-            oidx = -1
+            oid = -1
 
             last_object = suffix = nil
             while (item = stack.shift)
@@ -51,10 +51,12 @@ module Rails
               add = send("row_for_#{item.kind}", data, item, suffix)
 
               if item.kind == :field
-                oidx += 1
-                data[5] ||= oidx == 0 ? '↓' : print_object(objects&.at(oidx - 1))
-                data[3] ||= print_object(objects&.at(oidx))
+                oid += 1
+                data[5] ||= oid == 0 ? '↓' : print_object(objects&.at(oid - 1))
+                data[3] ||= print_object(objects&.at(oid))
               end
+
+              data[4] = clean_arguments(data[4], request) if data[4]
 
               suffix = nil
               counter -= 1
@@ -67,7 +69,7 @@ module Rails
           # Print the backtrace steps of the error
           def print_backtrace(error, request)
             steps = error.backtrace
-            steps = cleaner.clean(steps) unless cleaner.nil?
+            # steps = cleaner.clean(steps) unless cleaner.nil?
 
             klass = +"(\e[4m#{error.class}\e[24m)"
             stage = +" [#{request.strategy.stage}]" if skip_base_class != StandardError
@@ -122,26 +124,33 @@ module Rails
             object.respond_to?(:to_gql_backtrace) ? object.to_gql_backtrace : object.inspect
           end
 
+          # Make sure to properly parse arguments and filter them
+          def clean_arguments(arguments, request)
+            request.cache(:backtrace_arguments_filter) do
+              ActiveSupport::ParameterFilter.new(GraphQL.config.filter_parameters)
+            end.filter(arguments.as_json)
+          end
+
           # Visitors
           def row_for_field(data, item, suffix)
             field = item.field
             name = +"#{field.owner.gql_name}.#{field.gql_name}#{suffix}" unless field.nil?
 
             data.push(name || +"*.#{item.name}")
-            data.push(nil, (item.arguments ? item.arguments.to_json : 'nil'), nil)
+            data.push(nil, item.arguments, nil)
           end
 
           def row_for_fragment(data, item, *)
             type = item.instance_variable_get(:@node)[1]
             object = item.current_object || item.type_klass
-            data.push(+"fragment #{item.name}", type, '')
+            data.push(+"fragment #{item.name}", type, nil)
             data.push(print_object(object))
           end
 
           def row_for_operation(data, item, *)
             data.push(+"#{item.type} #{item.name}".squish)
             data.push('nil')
-            data.push(item.arguments.to_json)
+            data.push(item.variables)
             data.push(item.typename)
           end
 
@@ -150,7 +159,7 @@ module Rails
 
             type = item.instance_variable_get(:@node)[1]
             object = item.current_object || item.type_klass
-            data.push('...', type, '')
+            data.push('...', type, nil)
             data.push(print_object(object))
           end
 
