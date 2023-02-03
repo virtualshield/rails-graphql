@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'concurrent/map'
-require 'active_support/core_ext/class/subclasses'
 
 module Rails
   module GraphQL
@@ -17,9 +16,9 @@ module Rails
     # The cache stores in the following structure:
     # Namespace -> BaseClass -> ItemKey -> Item
     class TypeMap
-      FILTER_REGISTER_TRACE = /((inherited|initialize)'$|schema\.rb:\d+)/.freeze
+      extend ActiveSupport::Autoload
 
-      NsList = Class.new(Set)
+      FILTER_REGISTER_TRACE = /((inherited|initialize)'$|schema\.rb:\d+)/.freeze
 
       # Store all the base classes that are managed by the Type Map
       mattr_accessor :base_classes, instance_writer: false,
@@ -144,13 +143,22 @@ module Rails
       # Unregister all the provided objects by simply assigning nil to their
       # final value on the index
       def unregister(*objects)
+        sub_mod = Type::Creator::NESTED_MODULE
         objects.each do |object|
           namespaces = sanitize_namespaces(namespaces: object.namespaces, exclusive: true)
           namespaces << :base if namespaces.empty?
           base_class = find_base_class(object)
 
-          @objects -= 1
-          @index[namespaces.first][base_class][object.to_sym] = nil
+          if object.kind != :source
+            @index[namespaces.first][base_class][object.to_sym] = nil
+            @objects -= 1
+          end
+
+          return unless object.const_defined?(sub_mod, false)
+
+          nested_mod = object.const_get(sub_mod)
+          unregister(*nested_mod.constants.map(&nested_mod.method(:const_get)))
+          object.send(:remove_const, sub_mod)
         end
       end
 

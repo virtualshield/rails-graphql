@@ -74,7 +74,7 @@ module Rails
 
           @enums = enums.each_with_object({}) do |(attribute, setting), hash|
             class_name = base_name + attribute.to_s.classify
-            hash[attribute.to_s] = create_enum(class_name, setting, once: true)
+            hash[attribute.to_s] = create_enum(class_name, setting)
           rescue DuplicatedError
             next
           end.freeze

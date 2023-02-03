@@ -32,8 +32,8 @@ module Rails
 
           # Unregister all objects that this source was providing
           def unregister!
-            GraphQL.type_map.unregister(*created_types) if defined?(@created_types)
             @object = @input = nil
+            super
           end
 
           # Return the GraphQL object type associated with the source. It will
@@ -59,52 +59,24 @@ module Rails
               enumerator = values.each_pair if values.respond_to?(:each_pair)
               enumerator ||= values.each.with_index
 
-              xargs = xargs.reverse_merge(once: true)
-              create_type(:enum, as: enum_name.classify, **xargs) do
-                indexed! if enumerator.first.last.is_a?(Numeric)
-                enumerator.sort_by(&:last).map(&:first).each(&method(:add))
-                instance_exec(&block) if block.present?
-              end
+              xargs[:values] = enumerator.sort_by(&:last).map(&:first)
+              xargs[:indexed] = enumerator.first.last.is_a?(Numeric)
+
+              create_type(:enum, enum_name.classify, **xargs, &block)
             end
 
             # Helper method to create a class based on the given +type+ and
             # allows several other settings to be executed on it
-            def create_type(type = nil, **xargs, &block)
-              name = "#{gql_module.name}::#{xargs.delete(:as) || base_name}"
-              superclass = xargs.delete(:superclass)
-              with_owner = xargs.delete(:with_owner)
+            def create_type(type = nil, name = base_name, **xargs, &block)
+              xargs[:owner] ||= self
+              xargs[:namespaces] = namespaces
+              xargs[:assigned_to] = safe_assigned_class
+              superclass = xargs.delete(:superclass) || type
 
-              if superclass.nil?
-                superclass = type.to_s.classify
-              elsif superclass.is_a?(String)
-                superclass = superclass.constantize
-              end
-
-              source = self
-              gql_name = xargs.delete(:gql_name)
-              Schema.send(:create_type, name, superclass, **xargs) do
-                include Helpers::WithOwner if with_owner
-                set_namespaces(*source.namespaces)
-
-                instance_variable_set(:@gql_name, gql_name) unless gql_name.nil?
-
-                self.owner = source if respond_to?(:owner=)
-                self.assigned_to = source.safe_assigned_class \
-                  if source.assigned? && is_a?(Helpers::WithAssignment)
-
-                instance_exec(&block) if block.present?
-              end.tap { |klass| created_types << klass }
-            end
-
-          private
-
-            # Keep track of all the types created byt this source
-            def created_types
-              @created_types ||= []
+              GraphQL::Type.create!(self, name, superclass, **xargs, &block)
             end
 
         end
-
       end
     end
   end

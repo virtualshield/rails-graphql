@@ -384,36 +384,14 @@ module Rails
             RUBY
           end
 
-          # Helper method to create unions the fastest way possible
-          def union(name, **xargs, &block)
-            types = xargs.delete(:of_types)
-            klass = create_type(name, :Union, **xargs, &block)
-            return klass if types.nil?
-
-            types = types.map { |item| item.is_a?(Class) ? item : find!(item) }
-            klass.append(*types)
-            klass
-          end
-
           # Helper method to create a single source
           def source(object, superclass = nil, build: true, **xargs, &block)
             superclass ||= GraphQL::Source.find_for!(object)
 
             xargs[:suffix] = 'Source'
-            create_and_build = build
-            schema_namespace = namespace
+            xargs[:build] = build
 
-            create_klass(object, superclass, GraphQL::Source, **xargs) do
-              set_namespace schema_namespace
-
-              xargs.each do |key, value|
-                _, segment = key.to_s.split('skip_on_')
-                skip_on segment, value if segment.present?
-              end
-
-              instance_exec(&block) if block.present?
-              build_all if create_and_build
-            end
+            create_type(object, superclass, **xargs)
           end
 
           # Helper method to create multiple sources with the same type
@@ -426,63 +404,8 @@ module Rails
 
           # A simpler way to create a new type object without having to create
           # a class in a different file
-          def create_type(name, superclass, **xargs, &block)
-            superclass = GraphQL::Type.const_get(superclass) unless superclass.is_a?(Module)
-            xargs[:suffix] ||= superclass.base_type.name.demodulize
-
-            create_klass(name, superclass, GraphQL::Type, **xargs, &block)
-          end
-
-        private
-
-          # Helper to create objects that are actually classes of a given
-          # +superclass+ ensuring that it inherits from +base_class+.
-          #
-          # The +suffix+ option can ensures that the name of the created
-          # class ends with a specific suffix.
-          def create_klass(name_or_object, superclass, base_class = nil, **xargs, &block)
-            name = name_or_object.is_a?(Module) ? name_or_object.name : name_or_object.to_s
-
-            base_module = name.classify.deconstantize
-            base_module.prepend('GraphQL::') unless base_module =~ /^GraphQL(::|$)/
-            base_module = base_module.delete_suffix('::').constantize
-
-            klass_name = name.classify.demodulize
-            klass_name += xargs[:suffix] if xargs.key?(:suffix) &&
-              !klass_name.end_with?(xargs[:suffix])
-
-            if base_module.const_defined?(klass_name)
-              klass = base_module.const_get(klass_name)
-
-              raise DuplicatedError, (+<<~MSG).squish unless !xargs[:once] && klass < superclass
-                A constant named "#{klass_name}" already exists for the
-                "#{base_module.name}" module.
-              MSG
-
-              # This likely happened because the classes are being reloaded, so
-              # call inherited again as if the class has just been created
-              superclass.send(:inherited, klass)
-            else
-              base_class ||= superclass.ancestors.find { |k| k.superclass === Class }
-
-              valid = superclass.is_a?(Module) && superclass < base_class
-              raise DefinitionError, (+<<~MSG).squish unless valid
-                The given "#{superclass}" superclass does not inherit from
-                #{base_class.name} class.
-              MSG
-
-              klass = base_module.const_set(klass_name, Class.new(superclass))
-            end
-
-            klass.abstract = xargs[:abstract] if xargs.key?(:abstract)
-            klass.assigned_to = name_or_object if name_or_object.is_a?(Module) &&
-              klass.is_a?(Helpers::WithAssignment)
-
-            ns = xargs.delete(:namespace) || xargs.delete(:namespaces) || namespace
-            klass.set_namespace(ns)
-            klass.use(*xargs.delete(:directives)) if xargs.key?(:directives)
-            klass.module_exec(&block) if block.present?
-            klass
+          def create_type(*args, **xargs, &block)
+            GraphQL::Type.create!(self, *args, **xargs, &block)
           end
       end
     end

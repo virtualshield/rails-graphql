@@ -197,11 +197,6 @@ module Rails
             self.hook_names = (hook_names + list).freeze
           end
 
-          # Return the module where the GraphQL types should be created at
-          def gql_module
-            name.start_with?('GraphQL::') ? module_parent : ::GraphQL
-          end
-
           # Add one or more fields to the list of fields that needs to be
           # ignored in all places. It converts strings to underscore
           def skip_fields!(*list)

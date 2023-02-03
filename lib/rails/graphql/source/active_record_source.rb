@@ -29,7 +29,7 @@ module Rails
       class_attribute :interface_class, instance_accessor: false
 
       %i[object interface input].each do |type|
-        settings = { abstract: true, with_owner: true }
+        settings = { abstract: true, owner: true }
         send("#{type}_class=", create_type(type, **settings))
       end
 

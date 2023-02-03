@@ -13,6 +13,8 @@ module Rails
       extend Helpers::WithGlobalID
       extend Helpers::Registerable
 
+      autoload :Creator
+
       # A direct representation of the spec types
       KINDS = %w[Scalar Object Interface Union Enum Input].freeze
       KINDS.each { |kind| autoload kind.to_sym }
@@ -98,6 +100,11 @@ module Rails
           +"#<GraphQL::#{base_type.name.demodulize} #{gql_name}>"
         end
 
+        # Dynamically create a new type using the Creator
+        def create!(from, name, superclass = nil, **xargs, &configure)
+          Creator.create!(from, name, superclass || self, **xargs, &configure)
+        end
+
         # Defines a series of question methods based on the kind
         KINDS.each { |kind| define_method(:"#{kind.downcase}?") { false } }
 
@@ -107,7 +114,7 @@ module Rails
           def setup!(**options)
             return unless superclass.eql?(GraphQL::Type)
 
-            kind_value = options.key?(:kind) ? options[:kind] : name.demodulize.underscore.to_sym
+            kind_value = options[:kind] || name.demodulize.underscore.to_sym
             redefine_singleton_method(:kind) { kind_value }
             self.directive_location = kind
 
