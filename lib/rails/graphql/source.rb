@@ -17,10 +17,6 @@ module Rails
 
       include Helpers::Instantiable
 
-      ATTACH_FIELDS_STEP = -> do
-        attach_fields!(type, fields) if fields?
-      end
-
       autoload :Base
       autoload :Builder
 
@@ -36,7 +32,6 @@ module Rails
           self_object.safe_field(name, *args, **xargs, &block)
         end
 
-        # skip_field?(item.name, on: holder.kind)
         def respond_to_missing?(method_name, include_private = false)
           self_object.respond_to?(method_name, include_private) ||
             receiver.respond_to?(method_name, include_private)
@@ -238,10 +233,6 @@ module Rails
           end
 
       end
-
-      step(:query, &ATTACH_FIELDS_STEP)
-      step(:mutation, &ATTACH_FIELDS_STEP)
-      step(:subscription, &ATTACH_FIELDS_STEP)
     end
   end
 end

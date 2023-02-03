@@ -34,10 +34,10 @@ module Rails
           type = method_name.to_s[6..-1]
           type = type.singularize unless hook_names.include?(type.to_sym)
           type = type.to_sym
+          return if built?(type)
 
           import_skips_for(type, xargs)
-
-          build!(type, *args, **xargs, &block) unless built?(type)
+          build!(type, *args, **xargs, &block)
         end
 
         protected
@@ -45,13 +45,6 @@ module Rails
           # Store the list of built steps
           def built
             @built ||= Set.new
-          end
-
-          # Make sure to mark the hook name as built
-          def run_hooks(hook_name, *)
-            super
-          ensure
-            built << hook_name
           end
 
         private
@@ -100,29 +93,23 @@ module Rails
           # Build all the objects associated with this source
           def build!(type)
             ensure_build!(type)
+            built << type
 
+            schema_type = Helpers::WithSchemaFields::TYPE_FIELD_CLASS.key?(type)
             catch(:skip) { run_hooks(:start) } unless built?(:start)
-            catch(:skip) { run_hooks(type, hook_scope_for(type)) }
+            catch(:skip) { run_hooks(type, hook_scope_for(type, schema_type)) }
 
-            built << type.to_sym
+            attach_fields!(type, fields_for(type)) if schema_type && fields_for?(type)
           end
 
           # Get the correct +self_object+ for the hook instance
-          def hook_scope_for(type)
+          def hook_scope_for(type, schema_type)
             type = type.to_sym
-            object =
-              if Helpers::WithSchemaFields::TYPE_FIELD_CLASS.key?(type)
-                Helpers::WithSchemaFields::ScopedConfig.new(self, type)
-              else
-                Helpers::AttributeDelegator.new(self, type)
-              end
-
-            Source::ScopedConfig.new(self, object, type)
+            klass = schema_type ? 'WithSchemaFields::ScopedConfig' : 'AttributeDelegator'
+            Source::ScopedConfig.new(self, Helpers.const_get(klass).new(self, type), type)
           end
 
       end
     end
   end
 end
-
-

@@ -6,15 +6,8 @@ module Rails
     # meaning that when an argument is present, it triggers the underlying block
     # on the fields where the argument was attached to
     module Source::ScopedArguments
-      ATTACH_ARGUMENTS_STEP = -> do
-        attach_scoped_arguments_to(fields.values) if fields?
-      end
-
       def self.included(other)
         other.extend(ClassMethods)
-        other.step(:query, &ATTACH_ARGUMENTS_STEP)
-        other.step(:mutation, &ATTACH_ARGUMENTS_STEP)
-        other.step(:subscription, &ATTACH_ARGUMENTS_STEP)
       end
 
       # Extended argument class to be the instance of the scoped
@@ -23,7 +16,7 @@ module Rails
           super(*args, **xargs)
 
           @block = block
-          @fields = GraphQL.enumerate(on)
+          @fields = on
         end
 
         # Apply the argument block to the given object, using or not the value
@@ -43,7 +36,7 @@ module Rails
         def attach_to?(field)
           return true if @fields.nil?
 
-          @fields.any? do |item|
+          GraphQL.enumerate(@fields).any? do |item|
             (item.is_a?(Symbol) && field.name.eql?(item)) || field.gql_name.eql?(item)
           end
         end
@@ -53,6 +46,12 @@ module Rails
         # Return the list of scoped params defined
         def scoped_arguments
           defined?(@scoped_arguments) ? @scoped_arguments : {}
+        end
+
+        # Hook into the attach fields process to attach the scoped arguments
+        def attach_fields!(type, fields)
+          attach_scoped_arguments_to(fields.values)
+          super
         end
 
         protected
