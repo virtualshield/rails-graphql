@@ -1,0 +1,7 @@
+# frozen_string_literal: true
+
+<% module_namespacing do -%>
+class <%= channel_name %> < ApplicationCable::Channel
+  include GraphQL::Channel
+end
+<% end -%>

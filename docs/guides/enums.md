@@ -36,6 +36,9 @@ enum 'Role' do
   add 'ADMIN'
   add 'SUPPORT'
 end
+
+# OR even
+enum 'Role', values: %i[admin support]
 ```
 
 Enums follow the same pattern as scalars. Therefore, the same rules applied to

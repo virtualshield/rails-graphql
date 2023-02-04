@@ -395,7 +395,7 @@ module Rails
             xargs[:suffix] = 'Source'
             xargs[:build] = build
 
-            create_type(object, superclass, **xargs)
+            create_type(object, superclass, **xargs, &block)
           end
 
           # Helper method to create multiple sources with the same type

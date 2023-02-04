@@ -15,7 +15,7 @@ module Rails
         def initialize(*args, block:, on: nil, **xargs)
           super(*args, **xargs)
 
-          @block = block
+          @block = (block == true) ? name : block
           @fields = on
         end
 
@@ -58,7 +58,7 @@ module Rails
 
           # Add a new scoped param to the list
           def scoped_argument(param, type = :string, proc_method = nil, **settings, &block)
-            block = proc_method if proc_method.present? && block.nil?
+            block ||= proc_method if proc_method.present?
             argument = Argument.new(param, type, **settings, owner: self, block: block)
             (@scoped_arguments ||= {})[argument.name] = argument
           end

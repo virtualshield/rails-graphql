@@ -13,7 +13,7 @@ module Rails
         mattr_accessor :skip_base_class, instance_accessor: false,
           default: Rails::GraphQL::StandardError
 
-        module_function
+        extend self
 
         # Check if the given +error+ should be skipped
         # TODO: Maybe check +cause+ to proper evaluate the skip
@@ -126,6 +126,8 @@ module Rails
 
           # Make sure to properly parse arguments and filter them
           def clean_arguments(arguments, request)
+            return '{}' if arguments.blank?
+
             request.cache(:backtrace_arguments_filter) do
               ActiveSupport::ParameterFilter.new(GraphQL.config.filter_parameters)
             end.filter(arguments.as_json)
@@ -134,7 +136,16 @@ module Rails
           # Visitors
           def row_for_field(data, item, suffix)
             field = item.field
-            name = +"#{field.owner.gql_name}.#{field.gql_name}#{suffix}" unless field.nil?
+            parent =
+              if !field
+                '*'
+              elsif field.owner.is_a?(Helpers::WithSchemaFields)
+                item.request.schema.type_name_for(field.schema_type)
+              else
+                field.owner.gql_name
+              end
+
+            name = +"#{parent}.#{field.gql_name}#{suffix}" unless field.nil?
 
             data.push(name || +"*.#{item.name}")
             data.push(nil, item.arguments, nil)

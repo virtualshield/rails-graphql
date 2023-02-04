@@ -113,7 +113,8 @@ module Rails
         object_name = object.gql_name
         object_key = object.to_sym
         alias_proc = -> do
-          fetch(object_key, base_class: base_class, namespaces: object_base, exclusive: true)
+          value = dig(object_base, base_class, object_key)
+          value.is_a?(Proc) ? value.call : value
         end
 
         # TODO Warn when the base key is being assigned to a different object
@@ -209,6 +210,7 @@ module Rails
       # Find the given key or name inside the base class either on the given
       # namespace or in the base +:base+ namespace
       def fetch(key_or_name, prevent_register: nil, **xargs)
+        prevent_register = true if @pending.blank?
         if prevent_register != true
           items = prevent_register == true ? nil : ::Array.wrap(prevent_register)
           skip_register << items.to_set
@@ -227,7 +229,7 @@ module Rails
           end
         end
       ensure
-        skip_register.pop
+        skip_register.pop if prevent_register != true
       end
 
       # Checks if a given key or name is already defined under the same base

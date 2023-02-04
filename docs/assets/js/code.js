@@ -1,6 +1,6 @@
 (function(win, site) {
   site.onReady(function() {
-    var codeBlocks = document.querySelectorAll('div.highlighter-rouge, figure.highlight');
+    var codeBlocks = document.querySelectorAll('div.highlighter-rouge, *:not(div.highlighter-rouge) > figure.highlight');
 
     var svgCopied =  '<svg viewBox="0 0 24 24" class="copy-icon"><use xlink:href="#svg-copied"></use></svg>';
     var svgCopy =  '<svg viewBox="0 0 24 24" class="copy-icon"><use xlink:href="#svg-copy"></use></svg>';

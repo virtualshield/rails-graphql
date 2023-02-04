@@ -79,21 +79,19 @@ class GraphQL_TypeMapTest < GraphQL::TestCase
 
   def test_fetch
     stub_dig do
-      assert_registered(9) do
-        assert_nil(subject.fetch(:number))
-        assert_nil(subject.fetch(:number, base_class: :Other))
+      assert_nil(subject.fetch(:number))
+      assert_nil(subject.fetch(:number, base_class: :Other))
 
-        assert_equal(1, subject.fetch(:string))
-        assert_equal(1, subject.fetch(:string, prevent_register: true))
-        assert_equal(1, subject.fetch(:number, fallback: :string))
+      assert_equal(1, subject.fetch(:string))
+      assert_equal(1, subject.fetch(:string, prevent_register: true))
+      assert_equal(1, subject.fetch(:number, fallback: :string))
 
-        assert_equal(2, subject.fetch(:string, namespaces: :other))
-        assert_equal(3, subject.fetch(:number, namespaces: Set[:other]))
+      assert_equal(2, subject.fetch(:string, namespaces: :other))
+      assert_equal(3, subject.fetch(:number, namespaces: Set[:other]))
 
-        assert_equal(4, subject.fetch(:boolean))
-        assert_equal(4, subject.fetch(:boolean, namespaces: :other))
-        assert_nil(subject.fetch(:boolean, namespaces: :other, exclusive: true))
-      end
+      assert_equal(4, subject.fetch(:boolean))
+      assert_equal(4, subject.fetch(:boolean, namespaces: :other))
+      assert_nil(subject.fetch(:boolean, namespaces: :other, exclusive: true))
     end
   end
 
@@ -145,9 +143,8 @@ class GraphQL_TypeMapTest < GraphQL::TestCase
           assert_equal([:base, object1, :string],  added[0][0..-2])
           assert_equal([:base, object1, 'string'], added[1][0..-2])
 
-          subject.stub(:fetch, passallthrough) do
-            xargs = { base_class: object1, namespaces: :base, exclusive: true }
-            assert_equal([:string, xargs], added[1][-1].call)
+          subject.stub(:dig, passallthrough) do
+            assert_equal([:base, object1, :string], added[1][-1].call)
             assert_equal(object1, added[0][-1])
           end
 

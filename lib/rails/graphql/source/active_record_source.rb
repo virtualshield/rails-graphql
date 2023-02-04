@@ -28,6 +28,10 @@ module Rails
       # request when trying to save records. False will disable it
       class_attribute :errors_to_extensions, instance_accessor: false, default: false
 
+      # Marks if the source should be threated as an interface, meaning that
+      # no object will be created, instead an interface will
+      class_attribute :act_as_interface, instance_accessor: false, default: false
+
       # The name of the class (or the class itself) to be used as superclass for
       # the generate GraphQL interface type of this source
       class_attribute :interface_class, instance_accessor: false
@@ -38,7 +42,7 @@ module Rails
       end
 
       self.abstract = true
-      self.hook_names = hook_names.to_a.insert(1, :enums).to_set.freeze
+      self.hook_names = hook_names.to_a.insert(1, :enums, :interface).to_set.freeze
 
       delegate :primary_key, :singular, :plural, :model, :id_columns, to: :class
 
@@ -52,12 +56,17 @@ module Rails
         build_reflection_fields(self)
       end
 
+      step(:interface) do
+        build_attribute_fields(self)
+        build_reflection_fields(self)
+      end
+
       step(:input) do
         extra = GraphQL.enumerate(primary_key).entries.product([{ null: true }]).to_h
         build_attribute_fields(self, **extra)
         build_reflection_inputs(self)
 
-        safe_field(model.inheritance_column, :string, null: false) if object.interface?
+        safe_field(model.inheritance_column, :string, null: false) if interface?
         safe_field(:_delete, :boolean, default: false)
 
         reference = model.new
@@ -68,28 +77,30 @@ module Rails
       end
 
       step(:query) do
-        build_object
+        interface? ? build_interface : build_object
+        type = interface? ? interface : object
 
-        safe_field(plural, object, full: true) do
+        safe_field(plural, type, full: true) do
           before_resolve(:load_records)
         end
 
-        safe_field(singular, object, null: false) do
+        safe_field(singular, type, null: false) do
           build_primary_key_arguments(self)
           before_resolve(:load_record)
         end
       end
 
       step(:mutation) do
-        build_object
+        interface? ? build_interface : build_object
+        type = interface? ? interface : object
         build_input
 
-        safe_field("create_#{singular}", object, null: false) do
+        safe_field("create_#{singular}", type, null: false) do
           argument(singular, input, null: false)
           perform(:create_record)
         end
 
-        safe_field("update_#{singular}", object, null: false) do
+        safe_field("update_#{singular}", type, null: false) do
           build_primary_key_arguments(self)
           argument(singular, input, null: false)
           before_resolve(:load_record)
@@ -128,6 +139,22 @@ module Rails
           super if model&.table_exists?
         end
 
+        # Allows setting up an interface instead of an object. Mostly because
+        # some models are better dealt as interfaces than actual objects
+        def interface
+          @interface ||= create_type(superclass: interface_class, gql_name: object_name)
+        end
+
+        # Checks if the source is building an interface instead of an object
+        def interface?
+          defined?(@interface) || act_as_interface? || sti_interface?
+        end
+
+        # Provides access to the default plural query field, for associations interconnection
+        def collection_field
+          find_field(:query, plural)
+        end
+
         # Hook into the unregister to clean enums
         def unregister!
           super
@@ -155,49 +182,27 @@ module Rails
 
         private
 
+          # Hook into the build process to selective avoid :interface or :object
+          def build!(type)
+            return if type == :object && interface?
+            return if type == :interface && !interface?
+            super
+          end
+
           def presence_validator
             ::ActiveRecord::Validations::PresenceValidator
           end
       end
 
-      # Prepare to load multiple records from the underlying table
+      # Prepare to load multiple records from the underlying model
       def load_records(scope = model.default_scoped)
         inject_scopes(scope, :relation)
       end
 
-      # Prepare to load a single record from the underlying table
+      # Prepare to load a single record from the underlying model
       def load_record(scope = model.default_scoped, find_by: nil)
         find_by ||= { primary_key => event.argument(primary_key) }
         inject_scopes(scope, :relation).find_by(find_by)
-      end
-
-      # Get the chain result and preload the records with the resulting scope
-      def preload_association(association, scope = nil)
-        event.stop(preload(association, scope || event.last_result), layer: :object)
-      end
-
-      # Collect a scope for filters applied to a given association
-      def build_association_scope(association)
-        scope = model._reflect_on_association(association).klass.default_scoped
-
-        # Apply proxied injected scopes
-        proxied = event.field.try(:proxied_owner)
-        scope = event.on_instance(proxied) do |instance|
-          instance.inject_scopes(scope, :relation)
-        end if proxied.present? && proxied <= Source::ActiveRecordSource
-
-        # Apply self defined injected scopes
-        inject_scopes(scope, :relation)
-      end
-
-      # Once the records are pre-loaded due to +preload_association+, use the
-      # parent value and the preloader result to get the records
-      def parent_owned_records(collection_result = false)
-        data = event.data[:prepared_data]
-        return collection_result ? [] : nil unless data
-
-        result = data.records_by_owner[current_value] || []
-        collection_result ? result : result.first
       end
 
       # The perform step for the +create+ based mutation
@@ -224,14 +229,44 @@ module Rails
         raise
       end
 
+      # Get the chain result and preload the records with the resulting scope
+      def preload_association(association, scope = nil)
+        event.stop(preload(association, scope || event.last_result), layer: :object)
+      end
+
+      # Collect a scope for filters applied to a given association
+      def build_association_scope(association)
+        scope = model._reflect_on_association(association).klass.default_scoped
+
+        # Apply proxied injected scopes
+        # TODO: Arguments comes with their proxy, so we might not need this
+        # proxied = event.field.try(:proxied_owner)
+        # scope = event.on_instance(proxied) do |instance|
+        #   instance.inject_scopes(scope, :relation)
+        # end if proxied.present? && proxied <= Source::ActiveRecordSource
+
+        # Apply self defined injected scopes
+        inject_scopes(scope, :relation)
+      end
+
+      # Once the records are pre-loaded due to +preload_association+, use the
+      # parent value and the preloader result to get the records
+      def parent_owned_records(collection_result = false)
+        data = event.data[:prepared_data]
+        return collection_result ? [] : nil unless data
+
+        result = data.records_by_owner[current_value] || []
+        collection_result ? result : result.first
+      end
+
       # Expose the errors to the extensions of the response
-      def errors_to_extensions(errors, path = nil, messages = nil)
-        return unless self.class.errors_to_extensions
-        messages = self.class.errors_to_extensions == :messages if messages.nil?
+      def errors_to_extensions(errors, path = nil, format = nil)
+        format ||= self.class.errors_to_extensions
+        return unless format
 
         path ||= [operation.name, field.gql_name].compact
-        hash = path.reduce(request.extensions) { |h, k| h[k] ||= {} }
-        hash.replace(messages ? errors.as_json : errors.details)
+        hash = GraphQL.enumerate(path).reduce(request.extensions) { |h, k| h[k] ||= {} }
+        hash.replace(format == :messages ? errors.as_json : errors.details)
       end
 
       protected

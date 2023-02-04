@@ -10,13 +10,6 @@ Here you will find basic information about how this gem was designed,
 its essential pieces, and how they connect with each other. It will also guide
 you through how to use that in your application.
 
-{: .important }
-> **Important**
-> This gem uses a lot of
-> <a href="https://ruby-doc.org/stdlib-3.0.0/libdoc/delegate/rdoc/SimpleDelegator.html" target="_blank" rel="external nofollow">SimpleDelegator</a>
-> and custom delegators. If you are not familiar with such a pattern, it's recommended
-> that you read about it first.
-
 ## Basic concepts
 
 A common way to use this gem is: set up a schema, set up a controller,
@@ -71,8 +64,8 @@ class GraphQL::PersonInput < GraphQL::Input
 # Normally Rails would expect something like Inputs::PersonInputGraphQL
 
 # app/graphql/queries/users.rb
-class GraphQL::Queries::User < GraphQL::Query
-# Normally Rails would expect something like Queries::UserGraphQL
+class GraphQL::Queries::Users < GraphQL::Query
+# Normally Rails would expect something like Queries::UsersGraphQL
 ```
 
 With this example, you can notice 2 behaviors: one where the folder name is not required to
@@ -139,7 +132,7 @@ field(:other_sample, GraphQL::SampleInterface)
 
 {: .highlight }
 > As a rule of thumb: class name in Pascal Case, symbol always in snake case, string in
-> either Pascal Case for types or camel case for fields.
+> either Pascal Case for types or camel Case for fields.
 
 Read more about [names](/guides/names) and [recommendations](/guides/recommendations).
 

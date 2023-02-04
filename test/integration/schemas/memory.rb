@@ -102,7 +102,6 @@ class StartWarsMemSchema < GraphQL::Schema
 
   rescue_from('StandardError') do |exception|
     raise unless exception.source.is_a?(Rails::GraphQL::Request::Component::Field)
-    exception.request.exception_to_error(exception, exception.source)
   end
 
   enum 'Episode' do

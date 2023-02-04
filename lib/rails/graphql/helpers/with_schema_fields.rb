@@ -310,6 +310,7 @@ module Rails
                 gql_name: #{type}_type_name,
                 description: nil,
                 output_type?: true,
+                operational?: true,
                 interfaces?: false,
                 internal?: false,
               ).freeze

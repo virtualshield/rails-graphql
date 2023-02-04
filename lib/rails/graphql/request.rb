@@ -248,7 +248,7 @@ module Rails
 
       # A little helper to report an error on a given node
       def report_node_error(message, node, **xargs)
-        xargs[:locations] ||= location_of(node) unless xargs.key?(:line)
+        xargs[:locations] ||= location_of(node)
         report_error(message, **xargs)
       end
 

@@ -117,8 +117,8 @@ module Rails
         end
 
         # Get the GraphQL variables for a request
-        def gql_variables(data)
-          variables = data['variables']
+        def gql_variables(data, variables = nil)
+          variables ||= data['variables']
 
           case variables
           when ::ActionController::Parameters then variables.permit!.to_h

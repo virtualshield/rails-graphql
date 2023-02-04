@@ -9,7 +9,7 @@ module GraphQL
 
       desc 'Add a new GraphQL schema'
 
-      class_option :schema, type: :string, optional: true,
+      argument :schema, type: :string, optional: true,
         default: "#{APP_MODULE_NAME}Schema",
         desc: 'A name for the schema'
 

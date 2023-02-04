@@ -16,22 +16,22 @@ scalar Bigint
 The Binary scalar type represents a Base64 string.
 Normally used to share files and uploads.
 """
-scalar Binary
+scalar Binary @specifiedBy(url: "https://www.rfc-editor.org/rfc/rfc3548")
 
 "The Boolean scalar type represents true or false."
 scalar Boolean
 
 "The Date scalar type represents a ISO 8601 string value."
-scalar Date
+scalar Date @specifiedBy(url: "https://www.rfc-editor.org/rfc/rfc3339")
 
 "The DateTime scalar type represents a ISO 8601 string value."
-scalar DateTime
+scalar DateTime @specifiedBy(url: "https://www.rfc-editor.org/rfc/rfc3339")
 
 """
 The Decimal scalar type represents signed fractional values with extra precision.
 The values are exchange as string.
 """
-scalar Decimal
+scalar Decimal @specifiedBy(url: "https://en.wikipedia.org/wiki/IEEE_754-2008_revision")
 
 "The Float scalar type represents signed double-precision fractional values."
 scalar Float
@@ -47,9 +47,9 @@ scalar Int
 
 """
 The JSON scalar type represents an unstructured JSON data
-with all its available kyes and values.
+with all its available keys and values.
 """
-scalar JSON
+scalar JSON @specifiedBy(url: "https://www.rfc-editor.org/rfc/rfc8259")
 
 """
 The String scalar type represents textual data, represented as UTF-8 character
@@ -59,9 +59,9 @@ scalar String
 
 """
 The Time scalar type that represents a distance in time using hours,
-minutes, seconds, and miliseconds.
+minutes, seconds, and milliseconds.
 """
-scalar Time
+scalar Time @specifiedBy(url: "https://www.rfc-editor.org/rfc/rfc3339")
 
 "The valid locations that a directive may be placed."
 enum __DirectiveLocation {
@@ -154,24 +154,24 @@ enum __TypeKind {
 input LiteBaseInput {
   id: ID
   
+  _delete: Boolean = false
+  
   factionId: ID
   
   name: String!
   
   planet: String
-  
-  _delete: Boolean = false
 }
 
 # Assigned to LiteFaction class
 input LiteFactionInput {
   id: ID
   
-  name: String
-  
   _delete: Boolean = false
   
   basesAttributes: [LiteBaseInput!]
+  
+  name: String
   
   shipsAttributes: [LiteShipInput!]
 }
@@ -180,33 +180,33 @@ input LiteFactionInput {
 input LiteShipInput {
   id: ID
   
+  _delete: Boolean = false
+  
   factionId: ID
   
   name: String
-  
-  _delete: Boolean = false
 }
 
 # Assigned to LiteBase class
 type LiteBase {
   id: ID!
   
+  faction: LiteFaction
+  
   factionId: ID
   
   name: String!
   
   planet: String
-  
-  faction: LiteFaction
 }
 
 # Assigned to LiteFaction class
 type LiteFaction {
   id: ID!
   
-  name: String
-  
   bases: [LiteBase!]!
+  
+  name: String
   
   ships: [LiteShip!]!
 }
@@ -215,31 +215,31 @@ type LiteFaction {
 type LiteShip {
   id: ID!
   
+  faction: LiteFaction
+  
   factionId: ID
   
   name: String
-  
-  faction: LiteFaction
 }
 
 type _Mutation {
-  createLiteFaction(liteFaction: LiteFactionInput!): LiteFaction!
-  
-  updateLiteFaction(id: ID!, liteFaction: LiteFactionInput!): LiteFaction!
-  
-  deleteLiteFaction(id: ID!): Boolean!
-  
   createLiteBase(liteBase: LiteBaseInput!): LiteBase!
   
-  updateLiteBase(id: ID!, liteBase: LiteBaseInput!): LiteBase!
-  
-  deleteLiteBase(id: ID!): Boolean!
+  createLiteFaction(liteFaction: LiteFactionInput!): LiteFaction!
   
   createLiteShip(liteShip: LiteShipInput!): LiteShip!
   
-  updateLiteShip(id: ID!, liteShip: LiteShipInput!): LiteShip!
+  deleteLiteBase(id: ID!): Boolean!
+  
+  deleteLiteFaction(id: ID!): Boolean!
   
   deleteLiteShip(id: ID!): Boolean!
+  
+  updateLiteBase(id: ID!, liteBase: LiteBaseInput!): LiteBase!
+  
+  updateLiteFaction(id: ID!, liteFaction: LiteFactionInput!): LiteFaction!
+  
+  updateLiteShip(id: ID!, liteShip: LiteShipInput!): LiteShip!
 }
 
 type _Query {
@@ -247,17 +247,17 @@ type _Query {
   
   __type(name: String!): __Type
   
-  liteFactions(order: String): [LiteFaction!]!
-  
-  liteFaction(id: ID!): LiteFaction!
+  liteBase(id: ID!): LiteBase!
   
   liteBases(order: String = "desc"): [LiteBase!]!
   
-  liteBase(id: ID!): LiteBase!
+  liteFaction(id: ID!): LiteFaction!
   
-  liteShips: [LiteShip!]!
+  liteFactions(order: String): [LiteFaction!]!
   
   liteShip(id: ID!): LiteShip!
+  
+  liteShips: [LiteShip!]!
 }
 
 """
@@ -271,13 +271,15 @@ additional information to the executor.
 """
 # Assigned to Rails::GraphQL::Directive class
 type __Directive {
-  name: String!
+  args: [__InputValue!]!
   
   description: String
   
+  isRepeatable: Boolean!
+  
   locations: [__DirectiveLocation!]!
   
-  args: [__InputValue!]!
+  name: String!
 }
 
 """
@@ -286,13 +288,13 @@ of values. It's a string representation, not a numeric representation,
 of a value kept as all caps (ie. ONE_VALUE).
 """
 type __EnumValue {
-  name: String!
+  deprecationReason: String
   
   description: String
   
   isDeprecated: Boolean!
   
-  deprecationReason: String
+  name: String!
 }
 
 """
@@ -302,34 +304,33 @@ a value of a specific type.
 """
 # Assigned to Rails::GraphQL::Field class
 type __Field {
-  name: String!
-  
-  description: String
-  
   args: [__InputValue!]!
   
-  type: __Type!
+  deprecationReason: String
+  
+  description: String
   
   isDeprecated: Boolean!
   
-  deprecationReason: String
+  name: String!
+  
+  type: __Type!
 }
 
 """
-Alongside with scalars and enums, input value objects allow the user
-to provide values to arguments on fields and directives. Different
-from those, input values accepts a list of keyed values, instead of
-a single value.
+Arguments provided to Fields or Directives and the input fields of an
+InputObject are represented as Input Values which describe their type
+and optionally a default value.
 """
 # Assigned to Rails::GraphQL::Field::InputField class
 type __InputValue {
-  name: String!
+  defaultValue: String
   
   description: String
   
-  type: __Type!
+  name: String!
   
-  defaultValue: String
+  type: __Type!
 }
 
 """
@@ -341,15 +342,15 @@ determines the place in the type system where those operations begin.
 """
 # Assigned to Rails::GraphQL::Schema class
 type __Schema {
-  types: [__Type!]!
-  
-  queryType: __Type!
+  directives: [__Directive!]!
   
   mutationType: __Type
   
+  queryType: __Type!
+  
   subscriptionType: __Type
   
-  directives: [__Directive!]!
+  types: [__Type!]!
 }
 
 """
@@ -375,29 +376,31 @@ the schema to define exactly what data is expected.
 """
 # Assigned to Rails::GraphQL::Type class
 type __Type {
-  kind: __TypeKind!
-  
-  name: String
-  
   description: String
-  
-  "OBJECT and INTERFACE only"
-  fields(includeDeprecated: Boolean = false): [__Field!]
-  
-  "OBJECT only"
-  interfaces: [__Type!]
-  
-  "INTERFACE and UNION only"
-  possibleTypes: [__Type!]
   
   "ENUM only"
   enumValues(includeDeprecated: Boolean = false): [__EnumValue!]
   
+  "OBJECT and INTERFACE only"
+  fields(includeDeprecated: Boolean = false): [__Field!]
+  
   "INPUT_OBJECT only"
   inputFields: [__InputValue!]
   
+  "OBJECT only"
+  interfaces: [__Type!]
+  
+  kind: __TypeKind!
+  
+  name: String
+  
   "NON_NULL and LIST only"
   ofType: __Type
+  
+  "INTERFACE and UNION only"
+  possibleTypes: [__Type!]
+  
+  specifiedByURL: String
 }
 
 """
@@ -430,3 +433,14 @@ directive @skip(
   if: Boolean!
   
 ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"""
+A built-in directive used within the type system definition language to provide
+a scalar specification URL for specifying the behavior of custom scalar types.
+"""
+directive @specifiedBy(
+
+  "Point to a human-readable specification of the data format."
+  url: String!
+  
+) on SCALAR

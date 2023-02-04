@@ -4,11 +4,6 @@ module Rails
   module GraphQL
     # All the helper methods for building the source
     module Source::ActiveRecordSource::Builders
-      # Override the object class to identify interfaces due to STI
-      def object_class
-        sti_interface? ? interface_class : super
-      end
-
       # List of all columns that should be threated as IDs
       # TODO: Add a exclusive cache for the build process
       def id_columns
@@ -62,9 +57,7 @@ module Rails
         # Check if the given model is consider an interface due to single table
         # inheritance and the given model is the base class
         def sti_interface?
-          @sti_interface ||= begin
-            model.has_attribute?(model.inheritance_column) && model.base_class == model
-          end
+          model.has_attribute?(model.inheritance_column) && model.base_class == model
         end
 
         # Build all enums associated to the class, collecting them from the
@@ -103,16 +96,18 @@ module Rails
               skip_field?(item.name, on: holder.kind)
 
             type_map_after_register(item.klass) do |type|
-              next unless (type.object? && type.try(:assigned_to) != item.klass) ||
-                type.interface?
+              next unless type.try(:assigned_to) != item.klass ||
+                type.input_type? || type.leaf_type?
 
               options = reflection_to_options(item)
 
-              if type <= Source::Base
-                source_name = item.collection? ? type.plural : type.singular
-                proxy_options = options.merge(alias: reflection.name, of_type: :proxy)
+              if item.collection?
+                owner = type.try(:owner)
+                source = owner.is_a?(Helpers::WithSchemaFields) &&
+                  (owner.try(:collection_field) || owner.query_fields.try(:[], item.name))
 
-                if (source = type.query_fields[source_name]).present?
+                if source.present?
+                  proxy_options = options.merge(alias: item.name, of_type: :proxy)
                   field = holder.safe_field(source, **proxy_options)
                 end
               end
@@ -130,16 +125,20 @@ module Rails
         def build_reflection_inputs(holder)
           return unless with_associations?
 
+          suffix = GraphQL.config.auto_suffix_input_objects
           model.nested_attributes_options.each_key do |reflection_name|
-            next if (reflection = model._reflect_on_association(reflection_name)).nil?
+            reflection = model._reflect_on_association(reflection_name)
+            next if reflection.nil? || reflection.polymorphic?
 
             expected_name = reflection.klass.name.tr(':', '')
-            expected_name += 'Input' unless expected_name.end_with?('Input')
+            expected_name += suffix unless expected_name.end_with?(suffix)
 
-            type_map_after_register(expected_name) do |input|
+            type_map_after_register(expected_name) do |type|
+              next unless type.input?
+
               options = reflection_to_options(reflection).merge(null: true)
               field_name = "#{reflection.name}_attributes"
-              holder.safe_field(field_name, input, **options)
+              holder.safe_field(field_name, type, **options)
             end
           end
         end

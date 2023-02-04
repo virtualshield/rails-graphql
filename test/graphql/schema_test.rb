@@ -120,29 +120,6 @@ class GraphQL_SchemaTest < GraphQL::TestCase
     end
   end
 
-  def test_create_type
-    DESCRIBED_CLASS.stub(:create_klass, passallthrough) do
-      other = double(Module.new, base_type: double(name: 'A::Sample'))
-      result = [:some, other, type_const, { suffix: 'Sample' }]
-      assert_equal(result, DESCRIBED_CLASS.send(:create_type, :some, other))
-
-      result = [:some, type_const::Scalar, type_const, { suffix: 'Scalar' }]
-      assert_equal(result, DESCRIBED_CLASS.send(:create_type, :some, :Scalar))
-    end
-  end
-
-  def test_source
-    DESCRIBED_CLASS.stub(:create_klass, passallthrough) do
-      result = [:some, 1, source_const, { suffix: 'Source' }]
-      assert_equal(result, DESCRIBED_CLASS.send(:source, :some, 1))
-
-      source_const.stub(:find_for!, 2) do
-        result = [:some, 2, source_const, { suffix: 'Source' }]
-        assert_equal(result, DESCRIBED_CLASS.send(:source, :some))
-      end
-    end
-  end
-
   def test_sources
     result, passthrough = collect_all_through
     xargs = { build: true }
@@ -158,12 +135,6 @@ class GraphQL_SchemaTest < GraphQL::TestCase
         assert_equal([[:c, 2, xargs], [:d, 2, xargs], [:e, 2, xargs]], result)
       end
     end
-  end
-
-  def test_create_klass
-    skip 'Needs branching testing'
-    new_klass = DESCRIBED_CLASS.send :create_klass, 'Test', unmapped_class(type_const::Enum)
-    assert(new_klass < type_const::Enum)
   end
 
   protected

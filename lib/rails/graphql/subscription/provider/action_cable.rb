@@ -18,7 +18,7 @@ module Rails
 
           def initialize(*args, **options)
             @cable = options.fetch(:cable, ::ActionCable)
-            @prefix = options.fetch(:prefix, 'graphql')
+            @prefix = options.fetch(:prefix, 'rails-graphql')
 
             @event_callback = ->(message) do
               method_name, args, xargs = Marshal.load(message)

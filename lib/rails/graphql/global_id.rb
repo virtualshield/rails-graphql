@@ -72,7 +72,11 @@ module Rails
       end
 
       def base_class
-        ::GraphQL.const_get(class_name, false)
+        if %w[Schema Directive Type].include?(class_name)
+          GraphQL.const_get(class_name, false)
+        else
+          GraphQL.type_map.fetch(class_name, namespace: namespace)
+        end
       end
 
       def ==(other)

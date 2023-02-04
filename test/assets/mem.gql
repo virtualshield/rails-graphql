@@ -128,14 +128,14 @@ interface Character {
   "The id of the character"
   id: ID!
   
-  "The name of the character"
-  name: String
+  "Which movies they appear in"
+  appearsIn: [Episode]
   
   "The friends of the character, or an empty list if they have none"
   friends: [Character]
   
-  "Which movies they appear in"
-  appearsIn: [Episode]
+  "The name of the character"
+  name: String
   
   "All secrets about their past"
   secretBackstory: String
@@ -147,20 +147,20 @@ type Droid implements Character {
   "The id of the droid"
   id: ID!
   
-  "The name of the droid"
-  name: String
+  "Which movies they appear in"
+  appearsIn: [Episode]
   
   "The friends of the droid, or an empty list if they have none"
   friends: [Character]
   
-  "Which movies they appear in"
-  appearsIn: [Episode]
-  
-  "Construction date and the name of the designer"
-  secretBackstory: String
+  "The name of the droid"
+  name: String
   
   "The primary function of the droid"
   primaryFunction: String
+  
+  "Construction date and the name of the designer"
+  secretBackstory: String
 }
 
 "A humanoid creature in the Star Wars universe"
@@ -169,23 +169,23 @@ type Human implements Character {
   "The id of the human"
   id: ID!
   
-  "The name of the human"
-  name: String
+  "Which movies they appear in"
+  appearsIn: [Episode]
   
   "The friends of the human, or an empty list if they have none"
   friends: [Character]
   
-  "Which movies they appear in"
-  appearsIn: [Episode]
-  
-  "Where are they from and how they came to be who they are"
-  secretBackstory: String
+  "A greeting phrase from this person to someone"
+  greeting(name: String!): String
   
   "The home planet of the human, or null if unknown"
   homePlanet: String
   
-  "A greeting phrase from this person to someone"
-  greeting(name: String!): String
+  "The name of the human"
+  name: String
+  
+  "Where are they from and how they came to be who they are"
+  secretBackstory: String
 }
 
 type _Mutation {
@@ -204,6 +204,14 @@ type _Query {
   
   __type(name: String!): __Type
   
+  "Find a droid character"
+  droid(
+  
+    "ID of the droid"
+    id: ID!
+    
+  ): Droid
+  
   "Find the hero of the whole saga"
   hero(
   
@@ -219,14 +227,6 @@ type _Query {
     id: ID!
     
   ): Human
-  
-  "Find a droid character"
-  droid(
-  
-    "ID of the droid"
-    id: ID!
-    
-  ): Droid
 }
 
 """
@@ -240,13 +240,15 @@ additional information to the executor.
 """
 # Assigned to Rails::GraphQL::Directive class
 type __Directive {
-  name: String!
+  args: [__InputValue!]!
   
   description: String
   
+  isRepeatable: Boolean!
+  
   locations: [__DirectiveLocation!]!
   
-  args: [__InputValue!]!
+  name: String!
 }
 
 """
@@ -255,13 +257,13 @@ of values. It's a string representation, not a numeric representation,
 of a value kept as all caps (ie. ONE_VALUE).
 """
 type __EnumValue {
-  name: String!
+  deprecationReason: String
   
   description: String
   
   isDeprecated: Boolean!
   
-  deprecationReason: String
+  name: String!
 }
 
 """
@@ -271,34 +273,33 @@ a value of a specific type.
 """
 # Assigned to Rails::GraphQL::Field class
 type __Field {
-  name: String!
-  
-  description: String
-  
   args: [__InputValue!]!
   
-  type: __Type!
+  deprecationReason: String
+  
+  description: String
   
   isDeprecated: Boolean!
   
-  deprecationReason: String
+  name: String!
+  
+  type: __Type!
 }
 
 """
-Alongside with scalars and enums, input value objects allow the user
-to provide values to arguments on fields and directives. Different
-from those, input values accepts a list of keyed values, instead of
-a single value.
+Arguments provided to Fields or Directives and the input fields of an
+InputObject are represented as Input Values which describe their type
+and optionally a default value.
 """
 # Assigned to Rails::GraphQL::Field::InputField class
 type __InputValue {
-  name: String!
+  defaultValue: String
   
   description: String
   
-  type: __Type!
+  name: String!
   
-  defaultValue: String
+  type: __Type!
 }
 
 """
@@ -310,15 +311,15 @@ determines the place in the type system where those operations begin.
 """
 # Assigned to Rails::GraphQL::Schema class
 type __Schema {
-  types: [__Type!]!
-  
-  queryType: __Type!
+  directives: [__Directive!]!
   
   mutationType: __Type
   
+  queryType: __Type!
+  
   subscriptionType: __Type
   
-  directives: [__Directive!]!
+  types: [__Type!]!
 }
 
 """
@@ -344,29 +345,31 @@ the schema to define exactly what data is expected.
 """
 # Assigned to Rails::GraphQL::Type class
 type __Type {
-  kind: __TypeKind!
-  
-  name: String
-  
   description: String
-  
-  "OBJECT and INTERFACE only"
-  fields(includeDeprecated: Boolean = false): [__Field!]
-  
-  "OBJECT only"
-  interfaces: [__Type!]
-  
-  "INTERFACE and UNION only"
-  possibleTypes: [__Type!]
   
   "ENUM only"
   enumValues(includeDeprecated: Boolean = false): [__EnumValue!]
   
+  "OBJECT and INTERFACE only"
+  fields(includeDeprecated: Boolean = false): [__Field!]
+  
   "INPUT_OBJECT only"
   inputFields: [__InputValue!]
   
+  "OBJECT only"
+  interfaces: [__Type!]
+  
+  kind: __TypeKind!
+  
+  name: String
+  
   "NON_NULL and LIST only"
   ofType: __Type
+  
+  "INTERFACE and UNION only"
+  possibleTypes: [__Type!]
+  
+  specifiedByURL: String
 }
 
 """
@@ -399,3 +402,14 @@ directive @skip(
   if: Boolean!
   
 ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"""
+A built-in directive used within the type system definition language to provide
+a scalar specification URL for specifying the behavior of custom scalar types.
+"""
+directive @specifiedBy(
+
+  "Point to a human-readable specification of the data format."
+  url: String!
+  
+) on SCALAR

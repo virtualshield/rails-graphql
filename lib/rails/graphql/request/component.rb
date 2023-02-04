@@ -111,6 +111,8 @@ module Rails
           # Run a given block and ensure to capture exceptions to set them as
           # errors
           def report_exception(error)
+            return if request.rescue_with_handler(error, source: self) == false
+
             Backtrace.print(error, self, request)
 
             stack_path = request.stack_to_path

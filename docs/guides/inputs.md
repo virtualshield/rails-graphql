@@ -145,4 +145,4 @@ def create_user(user:)
 end
 ```
 
-Read more about [type assignment](/guides/type-assignment).
+Read more about [type assignment](/guides/type-assignment) and [sources](/guides/sources).

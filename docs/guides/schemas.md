@@ -229,7 +229,8 @@ you won't need to override these methods.
 ## Error Handling
 
 Schemas implement
-<a href="https://edgeapi.rubyonrails.org/classes/ActiveSupport/Rescuable/ClassMethods.html" target="_blank" rel="external nofollow">ActiveSupport::Rescuable</a>. Therefore, for exception handling, it will behave as a controller.
+<a href="https://edgeapi.rubyonrails.org/classes/ActiveSupport/Rescuable/ClassMethods.html" target="_blank" rel="external nofollow">ActiveSupport::Rescuable</a>.
+Therefore, for exception handling, it will behave as a controller.
 
 ```ruby
 # app/graphql/app_schema.rb
@@ -285,7 +286,7 @@ end
 This is recommended only for really small schemas or for testing purposes. It can also be
 used to demonstrate issues with the gem.
 
-Read more about [recommendations](/guides/recommendations).
+Read more about [inline types](/guides/advanced/types#inline-creation) and [recommendations](/guides/recommendations).
 
 ## Type Map Interaction
 

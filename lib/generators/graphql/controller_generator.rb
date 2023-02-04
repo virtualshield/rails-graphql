@@ -9,7 +9,7 @@ module GraphQL
 
       desc 'Add a new controller that operates with GraphQL'
 
-      class_option :name, type: :string, optional: true,
+      argument :name, type: :string, optional: true,
         default: "GraphQLController",
         desc: 'The name for the controller'
 

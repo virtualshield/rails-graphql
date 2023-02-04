@@ -188,6 +188,20 @@ field.trigger(args: [{ id: 1 }], data_for: {
 
 Read more about [prepared data](/guides/advanced/request#prepared-data).
 
+### The Scope
+
+The `scope` parameter has similar behavior to the arguments above. It combines
+multiple values to produce all the matching possibilities. One interesting thing about the
+scope is that it supports pseud-instances:
+
+```ruby
+field.trigger(scope: current_user)
+# Is similar to
+field.trigger(scope: { User => 1 })
+```
+
+Read more about it [here](/guides/subscriptions/memory-store#fingerprint).
+
 ## Unsubscribing
 
 You can force subscriptions from being removed by calling `unsubscribe` or `unsubscribe_from`,

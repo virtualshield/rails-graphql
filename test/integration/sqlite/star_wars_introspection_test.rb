@@ -11,7 +11,7 @@ class Integration_SQLite_StarWarsIntrospectionTest < GraphQL::IntegrationTestCas
     assert(SCHEMA.has_field?(:query, :__type))
   end
 
-  # Test this spec with all avaliable scalars
+  # Test this spec with all available scalars
   def remove_keys_form_type_map
   end
 

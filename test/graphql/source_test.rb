@@ -144,16 +144,6 @@ class GraphQL_SourceTest < GraphQL::TestCase
     end
   end
 
-  def test_gql_module
-    assert_equal(::GraphQL, described_class.send(:gql_module))
-
-    ::GraphQL.stub_const(:Other, Module.new) do
-      sample = unmapped_class(source_const)
-      ::GraphQL::Other.const_set(:Source, sample)
-      assert_equal(::GraphQL::Other, sample.send(:gql_module))
-    end
-  end
-
   def test_build_bang
     skip
   end

@@ -42,16 +42,17 @@ module URI
       def create(object, scope = nil, params = nil)
         namespace = Rails::GraphQL.enumerate(object.namespaces).first || :base
         klass = object.gid_base_class
+        klass = klass.class unless klass.is_a?(Module)
 
         xargs = { namespace: namespace, scope: scope, params: params }
         xargs[:name] = object.gql_name unless klass == Rails::GraphQL::Schema
         xargs[:class_name] =
           case
           when klass <= Rails::GraphQL::Schema then 'Schema'
+          when klass <= Rails::GraphQL::Source then 'Schema'
+          when klass <= Rails::GraphQL::Directive then 'Directive'
           when klass.superclass == Rails::GraphQL::Type then 'Type'
-          else
-            klass_name = klass.is_a?(Module) ? klass.name : klass.class.name
-            klass_name.split('GraphQL::').last
+          else klass.gql_name
           end
 
         build(xargs)
@@ -80,7 +81,7 @@ module URI
 
     # Make sure to convert dashes into underscore
     def namespace
-      host.tr('-', '_')
+      host.tr('-', '_').to_sym
     end
 
     # Check if the object should be instantiated

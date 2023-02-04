@@ -45,7 +45,7 @@ module Rails
 
         # Write the typename information
         def write_value(value)
-          response.serialize(Type::Scalar::StringScalar, gql_name, value)
+          response.serialize(Type::Scalar::StringScalar, gql_name, value.itself)
         end
 
         # Typename is always broadcastable

@@ -16,22 +16,22 @@ scalar Bigint
 The Binary scalar type represents a Base64 string.
 Normally used to share files and uploads.
 """
-scalar Binary
+scalar Binary @specifiedBy(url: "https://www.rfc-editor.org/rfc/rfc3548")
 
 "The Boolean scalar type represents true or false."
 scalar Boolean
 
 "The Date scalar type represents a ISO 8601 string value."
-scalar Date
+scalar Date @specifiedBy(url: "https://www.rfc-editor.org/rfc/rfc3339")
 
 "The DateTime scalar type represents a ISO 8601 string value."
-scalar DateTime
+scalar DateTime @specifiedBy(url: "https://www.rfc-editor.org/rfc/rfc3339")
 
 """
 The Decimal scalar type represents signed fractional values with extra precision.
 The values are exchange as string.
 """
-scalar Decimal
+scalar Decimal @specifiedBy(url: "https://en.wikipedia.org/wiki/IEEE_754-2008_revision")
 
 "The Float scalar type represents signed double-precision fractional values."
 scalar Float
@@ -47,9 +47,9 @@ scalar Int
 
 """
 The JSON scalar type represents an unstructured JSON data
-with all its available kyes and values.
+with all its available keys and values.
 """
-scalar JSON
+scalar JSON @specifiedBy(url: "https://www.rfc-editor.org/rfc/rfc8259")
 
 """
 The String scalar type represents textual data, represented as UTF-8 character
@@ -59,9 +59,9 @@ scalar String
 
 """
 The Time scalar type that represents a distance in time using hours,
-minutes, seconds, and miliseconds.
+minutes, seconds, and milliseconds.
 """
-scalar Time
+scalar Time @specifiedBy(url: "https://www.rfc-editor.org/rfc/rfc3339")
 
 "The valid locations that a directive may be placed."
 enum __DirectiveLocation {
@@ -154,56 +154,56 @@ enum __TypeKind {
 input JediInput {
   id: ID
   
+  _delete: Boolean = false
+  
   jediTypeId: ID
   
   name: String
-  
-  _delete: Boolean = false
 }
 
 # Assigned to JediType class
 input JediTypeInput {
   id: ID
   
-  name: String
-  
   _delete: Boolean = false
   
   jediAttributes: [JediInput!]
+  
+  name: String
 }
 
 # Assigned to Jedi class
 type Jedi {
   id: ID!
   
+  jediType: JediType
+  
   jediTypeId: ID
   
   name: String
-  
-  jediType: JediType
 }
 
 # Assigned to JediType class
 type JediType {
   id: ID!
   
-  name: String
-  
   jedi: [Jedi!]!
+  
+  name: String
 }
 
 type _Mutation {
+  createJedi(jedi: JediInput!): Jedi!
+  
   createJediType(jediType: JediTypeInput!): JediType!
   
-  updateJediType(id: ID!, jediType: JediTypeInput!): JediType!
+  deleteJedi(id: ID!): Boolean!
   
   deleteJediType(id: ID!): Boolean!
   
-  createJedi(jedi: JediInput!): Jedi!
-  
   updateJedi(id: ID!, jedi: JediInput!): Jedi!
   
-  deleteJedi(id: ID!): Boolean!
+  updateJediType(id: ID!, jediType: JediTypeInput!): JediType!
 }
 
 type _Query {
@@ -211,13 +211,13 @@ type _Query {
   
   __type(name: String!): __Type
   
-  jediTypes(order: String): [JediType!]!
+  jedi(id: ID!): Jedi!
   
   jediType(id: ID!): JediType!
   
-  jedis: [Jedi!]!
+  jediTypes(order: String): [JediType!]!
   
-  jedi(id: ID!): Jedi!
+  jedis: [Jedi!]!
 }
 
 """
@@ -231,13 +231,15 @@ additional information to the executor.
 """
 # Assigned to Rails::GraphQL::Directive class
 type __Directive {
-  name: String!
+  args: [__InputValue!]!
   
   description: String
   
+  isRepeatable: Boolean!
+  
   locations: [__DirectiveLocation!]!
   
-  args: [__InputValue!]!
+  name: String!
 }
 
 """
@@ -246,13 +248,13 @@ of values. It's a string representation, not a numeric representation,
 of a value kept as all caps (ie. ONE_VALUE).
 """
 type __EnumValue {
-  name: String!
+  deprecationReason: String
   
   description: String
   
   isDeprecated: Boolean!
   
-  deprecationReason: String
+  name: String!
 }
 
 """
@@ -262,34 +264,33 @@ a value of a specific type.
 """
 # Assigned to Rails::GraphQL::Field class
 type __Field {
-  name: String!
-  
-  description: String
-  
   args: [__InputValue!]!
   
-  type: __Type!
+  deprecationReason: String
+  
+  description: String
   
   isDeprecated: Boolean!
   
-  deprecationReason: String
+  name: String!
+  
+  type: __Type!
 }
 
 """
-Alongside with scalars and enums, input value objects allow the user
-to provide values to arguments on fields and directives. Different
-from those, input values accepts a list of keyed values, instead of
-a single value.
+Arguments provided to Fields or Directives and the input fields of an
+InputObject are represented as Input Values which describe their type
+and optionally a default value.
 """
 # Assigned to Rails::GraphQL::Field::InputField class
 type __InputValue {
-  name: String!
+  defaultValue: String
   
   description: String
   
-  type: __Type!
+  name: String!
   
-  defaultValue: String
+  type: __Type!
 }
 
 """
@@ -301,15 +302,15 @@ determines the place in the type system where those operations begin.
 """
 # Assigned to Rails::GraphQL::Schema class
 type __Schema {
-  types: [__Type!]!
-  
-  queryType: __Type!
+  directives: [__Directive!]!
   
   mutationType: __Type
   
+  queryType: __Type!
+  
   subscriptionType: __Type
   
-  directives: [__Directive!]!
+  types: [__Type!]!
 }
 
 """
@@ -335,29 +336,31 @@ the schema to define exactly what data is expected.
 """
 # Assigned to Rails::GraphQL::Type class
 type __Type {
-  kind: __TypeKind!
-  
-  name: String
-  
   description: String
-  
-  "OBJECT and INTERFACE only"
-  fields(includeDeprecated: Boolean = false): [__Field!]
-  
-  "OBJECT only"
-  interfaces: [__Type!]
-  
-  "INTERFACE and UNION only"
-  possibleTypes: [__Type!]
   
   "ENUM only"
   enumValues(includeDeprecated: Boolean = false): [__EnumValue!]
   
+  "OBJECT and INTERFACE only"
+  fields(includeDeprecated: Boolean = false): [__Field!]
+  
   "INPUT_OBJECT only"
   inputFields: [__InputValue!]
   
+  "OBJECT only"
+  interfaces: [__Type!]
+  
+  kind: __TypeKind!
+  
+  name: String
+  
   "NON_NULL and LIST only"
   ofType: __Type
+  
+  "INTERFACE and UNION only"
+  possibleTypes: [__Type!]
+  
+  specifiedByURL: String
 }
 
 """
@@ -390,3 +393,14 @@ directive @skip(
   if: Boolean!
   
 ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"""
+A built-in directive used within the type system definition language to provide
+a scalar specification URL for specifying the behavior of custom scalar types.
+"""
+directive @specifiedBy(
+
+  "Point to a human-readable specification of the data format."
+  url: String!
+  
+) on SCALAR

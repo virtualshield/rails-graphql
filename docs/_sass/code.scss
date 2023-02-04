@@ -151,6 +151,10 @@ figure.highlight {
   }
 }
 
+div.highlighter-rouge > figure.highlight {
+  background: none !important;
+}
+
 // ```[LANG]...```, kramdown line_numbers = true,
 // {% highlight LANG linenos %}...{% endhighlight %}:
 .highlight .table-wrapper {
