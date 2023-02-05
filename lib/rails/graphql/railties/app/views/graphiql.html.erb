@@ -80,7 +80,7 @@
         history.replaceState(null, null, newSearch);
       }
 
-      <%= render partial: graphiql_mode.to_s, format: :js %>
+      <%= render partial: "/#{settings[:mode]}", formats: :js, locals: settings %>
 
       // Render <GraphiQL /> into the body.
       ReactDOM.render(

@@ -34,7 +34,7 @@ class Integration_Memory_StarWarsValidationTest < GraphQL::IntegrationTestCase
 
   def test_nonexistent_fields
     errors = [{
-      message: 'Unable to find a field named "favoriteSpaceship" on StartWarsMemSchema::NestedTypes::CharacterInterface.',
+      message: 'Unable to find a field named "favoriteSpaceship" on Character.',
       locations: [{ line: 1, column: 35 }, { line: 1, column: 52 }],
       path: %w[HeroSpaceshipQuery hero favoriteSpaceship],
       extensions: { stage: 'organize', exception: 'Rails::GraphQL::MissingFieldError' },
@@ -73,7 +73,7 @@ class Integration_Memory_StarWarsValidationTest < GraphQL::IntegrationTestCase
 
   def test_specific_fields_on_interfaces
     errors = [{
-      message: 'Unable to find a field named "primaryFunction" on StartWarsMemSchema::NestedTypes::CharacterInterface.',
+      message: 'Unable to find a field named "primaryFunction" on Character.',
       locations: [{ line: 1, column: 40 }, { line: 1, column: 55 }],
       path: %w[HeroSpaceshipQuery hero primaryFunction],
       extensions: { stage: 'organize', exception: 'Rails::GraphQL::MissingFieldError' },

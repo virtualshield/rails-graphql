@@ -23,6 +23,11 @@ module Rails
         end
       end
 
+      # Just add the callbacks setup to the field
+      def self.included(other)
+        other.send(:expose_events!, :subscribed)
+      end
+
       # Intercept the initializer to maybe set the +scope+
       def initialize(*args, scope: nil, **xargs, &block)
         @scope = Array.wrap(scope).freeze unless scope.nil?
@@ -32,12 +37,6 @@ module Rails
       # Change the schema type of the field
       def schema_type
         :subscription
-      end
-
-      # A kind of alias to the subscribe event available
-      def subscribed(*args, **xargs, &block)
-        on(:subscribed, *args, **xargs, &block)
-        self
       end
 
       # Set the parts of the scope of the subscription

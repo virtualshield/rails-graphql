@@ -126,11 +126,12 @@ module Rails
 
           # Make sure to properly parse arguments and filter them
           def clean_arguments(arguments, request)
-            return '{}' if arguments.blank?
+            value = arguments.as_json
+            return '{}' if value.blank?
 
             request.cache(:backtrace_arguments_filter) do
               ActiveSupport::ParameterFilter.new(GraphQL.config.filter_parameters)
-            end.filter(arguments.as_json)
+            end.filter(value)
           end
 
           # Visitors

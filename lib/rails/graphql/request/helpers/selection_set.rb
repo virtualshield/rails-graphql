@@ -72,19 +72,21 @@ module Rails
           # Recursive operation that perform the organization step for the
           # selection
           def organize_fields
-            selection.each_value(&:organize!) if selection.present?
+            return unless run_selection?
+            selection.each_value(&:organize!)
           end
 
           # Find all the fields that have a prepare step and execute them
           def prepare_fields
-            selection.each_value(&:prepare!) if selection.present?
+            return unless run_selection?
+            selection.each_value(&:prepare!)
           end
 
           # Trigger the process of resolving the value of all the fields. Since
           # complex object may or may not be inside an array, this helps to
           # decide if a new stack should be started or not
           def resolve_fields(object = nil)
-            return unless selection.present?
+            return unless run_selection?
 
             items = selection.each_value
             items = items.each_with_object(object) unless object.nil?
@@ -95,6 +97,10 @@ module Rails
           end
 
         private
+
+          def run_selection?
+            selection.present? && !unresolvable?
+          end
 
           def add_component(node)
             item_name = node[1] || node[0]

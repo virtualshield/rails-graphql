@@ -47,6 +47,41 @@ query {
 
 Read more about [spreads](/guides/spreads).
 
+{: .warning }
+> **Warning**
+> As of now, you cannot use a fragment that would be prepared more than one time by multiple
+> spreads. In such cases, put the preparable fields inside the operation.
+
+This one is fine:
+
+```graphql
+{ users { ...UserData } }
+#            ↳ Just one prepare OK
+fragment UserData on User { id email addresses { id line1 } }
+```
+
+But:
+
+```graphql
+{ users { ...UserData } user(id: 1) { ...UserData } }
+#            ↳ First prepare OK          ↳ Second prepare ERROR
+fragment UserData on User { id email addresses { id line1 } }
+#                                    ↳ This causes the problem
+```
+
+You can solve with:
+
+```graphql
+{
+  users { ...UserData addresses { ...AddressData } }
+  user(id: 1) { ...UserData addresses { ...AddressData } }
+}
+fragment UserData on User { id email }
+fragment AddressData on Address { id line1 }
+```
+
+Read more about [requests](/guides/request#preparing).
+
 ## Components and Fragments
 
 As a recommendation, the components in your front end application should know

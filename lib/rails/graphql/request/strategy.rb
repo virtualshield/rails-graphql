@@ -280,6 +280,9 @@ module Rails
             @context = request.build(Request::Context)
 
             # TODO: Create an orchestrator to allow cross query loading
+            # TODO: We don't need to traverse over the fields, we can
+            # get the ones with such event and use parent to figure out
+            # the stack
             yield if force || listening_to?(:prepare)
           end
 
@@ -291,6 +294,7 @@ module Rails
 
           # Fetch the data for a given field and set as the first element
           # of the returned list
+          # TODO: Maybe implement root value to be returned by entry points
           def data_for(result, field)
             return result << @data_pool[field] if @data_pool.key?(field)
             return if field.entry_point?

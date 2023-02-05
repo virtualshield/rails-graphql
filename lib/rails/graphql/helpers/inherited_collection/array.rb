@@ -4,6 +4,7 @@ module Rails
       # A inherited collection of arrays that can be unique when it is a set
       class InheritedCollection::Array < InheritedCollection::Base
         alias size count
+        alias to_ary eager
 
         # Provide similar functionality of any? but returns the object instead
         def find(value = nil, &block)

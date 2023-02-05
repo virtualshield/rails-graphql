@@ -35,7 +35,7 @@ module Rails
           end
         end
 
-        delegate :key?, to: :@table
+        delegate :key?, :[], to: :@table
         alias to_hash to_h
 
         class << self

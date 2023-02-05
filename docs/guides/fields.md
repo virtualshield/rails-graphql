@@ -192,7 +192,7 @@ field :name, :string,
 field :name, :string,
   arguments: [argument(:first, :bool), argument(:last, :bool)]
 
-# In this scope, you can also shorten the line by using `arg` instead
+# In this binding, you can also shorten the line by using `arg` instead
 field :name, :string, arguments: arg(:first, :bool) + arg(:last, :bool)
 
 # For a more extensive list of arguments,
@@ -202,7 +202,7 @@ field(:name, :string) do
   argument :last, :bool, default: true
   argument :mid, :bool
 
-  # This scope does not support the `arg` alias
+  # This binding does not support the `arg` alias
 end
 
 # You can also use a syntax sugar

@@ -40,7 +40,8 @@ of predefined sizes where the needed information will always be in a given spot.
 
 On top of that, Arrays and many other objects that may appear as a result will
 be wrapped by a
-<a href="https://ruby-doc.org/stdlib-3.0.0/libdoc/delegate/rdoc/SimpleDelegator.html" target="_blank" rel="external nofollow">SimpleDelegator</a> named `GQLParser::Token`, so that their value and usage are kept regularly and enhanced with information
+<a href="https://ruby-doc.org/stdlib-3.0.0/libdoc/delegate/rdoc/SimpleDelegator.html" target="_blank" rel="external nofollow">`SimpleDelegator`</a>
+named `GQLParser::Token`, so that their value and usage are kept regularly and enhanced with information
 about their meaning and place in the document.
 
 ## GQLParser::Token

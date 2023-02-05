@@ -15,7 +15,7 @@ module Rails
 
         delegate :decorate, to: :type_klass
         delegate :operation, :variables, :request, to: :parent
-        delegate :method_name, :resolver, :performer, :type_klass,:leaf_type?,
+        delegate :method_name, :resolver, :performer, :type_klass, :leaf_type?,
           :dynamic_resolver?, :mutation?, to: :field
 
         attr_reader :name, :alias_name, :parent, :field, :arguments, :current_object
@@ -97,10 +97,11 @@ module Rails
           (try(:current_object) || try(:type_klass))&.gql_name
         end
 
-        # Check if the field is an entry point, meaning that its parent is the
-        # operation and it is associated to a schema field
+        # Check if the field is an entry point, meaning that it is attached to
+        # an owner that has Schema Fields
         def entry_point?
-          parent.kind === :operation
+          return @entry_point if defined?(@entry_point)
+          @entry_point = field.entry_point?
         end
 
         # Fields are assignable because they are actually the selection, so they
@@ -179,10 +180,10 @@ module Rails
               check_assignment!
 
               parse_directives(@node[3])
-              check_authorization!
-
               parse_arguments(@node[2])
               parse_selection(@node[4])
+
+              check_authorization!
             end
           end
 
@@ -228,8 +229,7 @@ module Rails
           # Check if the field was assigned correctly to an output field
           def check_assignment!
             raise MissingFieldError, (+<<~MSG).squish if field.nil?
-              Unable to find a field named "#{gql_name}" on
-              #{entry_point? ? operation.kind : parent.type_klass.name}.
+              Unable to find a field named "#{gql_name}" on #{parent.typename}.
             MSG
 
             raise FieldError, (+<<~MSG).squish unless field.output_type?

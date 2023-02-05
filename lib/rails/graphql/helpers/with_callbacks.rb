@@ -9,7 +9,7 @@ module Rails
       # methods, when provided a symbol
       module WithCallbacks
         DEFAULT_EVENT_TYPES = %i[query mutation subscription request attach
-          authorize organized prepared finalize].freeze
+          authorize organized prepared finalize prepare subscribed].freeze
 
         def self.extended(other)
           other.extend(WithCallbacks::Setup)

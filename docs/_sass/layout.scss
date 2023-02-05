@@ -12,9 +12,11 @@ body {
   grid-template-rows: min-content 1fr min-content;
 
   > header {
+    z-index: 2;
     position: relative;
     color: $grey-dk-300;
     background-color: $white;
+    box-shadow: 0 2px 5px rgba(black, .2);
 
     > .content {
       display: grid;

@@ -43,13 +43,13 @@ subscription plus an internal asynchronous callback.
 Here is everything that you can configure for this provider:
 
 `cable`
-: `::ActionCable` the Action Cable class
+: `::ActionCable` - The Action Cable class
 
 `prefix`
-: `rails-graphql` the streams prefix
+: `rails-graphql` - The streams prefix
 
 `store`
-: [`Rails::GraphQL::Subscription::Store::Memory.new`](/guides/subscriptions/memory-store) the store of the subscriptions
+: [`Rails::GraphQL::Subscription::Store::Memory.new`](/guides/subscriptions/memory-store) - The store of the subscriptions
 
 `logger`
-: `Rails::GraphQL.logger` the logger
+: `Rails::GraphQL.logger` - The logger

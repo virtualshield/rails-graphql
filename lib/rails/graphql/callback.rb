@@ -4,7 +4,7 @@ module Rails
   module GraphQL
     # = Rails GraphQL Callback
     #
-    # An extra powerfull proc that can handle way more situations than the
+    # An extra powerful proc that can handle way more situations than the
     # original block caller
     class Callback
       EXCLUSIVE_ARGUMENT = :exclusive_callback
@@ -51,7 +51,7 @@ module Rails
       # This does the whole checking and preparation in order to really execute
       # the callback method
       def call(event, *args, _callback_context: nil, **xargs)
-        return unless event.name === event_name && can_run?(event)
+        return unless event.event_name === event_name && can_run?(event)
 
         block.is_a?(Symbol) \
           ? call_symbol(event, *args, **xargs) \
@@ -66,10 +66,9 @@ module Rails
 
       # Get a described source location for the callback
       def source_location
-        block.is_a?(Proc) ? block.source_location : [
-          +"(symbolized-callback/#{target.inspect})",
-          block,
-        ]
+        block.is_a?(Proc) ? block.source_location : begin
+          [+"(symbolized-callback/#{target.inspect})", block]
+        end
       end
 
       # This basically allows the class to be passed as +&block+
@@ -110,6 +109,7 @@ module Rails
         # Call the callback block as a proc
         def call_proc(event, context = nil, *args, **xargs)
           args, xargs = collect_parameters(event, [args, xargs])
+          args << event unless inject_arguments? || (block.arity - 1) == args.size
           (context || event).instance_exec(*args, **xargs, &block)
         end
 

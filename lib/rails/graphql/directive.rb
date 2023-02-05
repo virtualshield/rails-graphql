@@ -160,6 +160,7 @@ module Rails
 
       delegate :locations, :gql_name, :gid_base_class, :repeatable?, to: :class
 
+      # TODO: This filters are a bit confusing now, but `for` is working for @deprecated
       event_filter(:for) do |options, event|
         sanitize_objects(options).any?(&event.source.method(:of_type?))
       end
@@ -172,7 +173,7 @@ module Rails
         event.key?(:phase) && GraphQL.enumerate(options).include?(event[:phase])
       end
 
-      attr_reader :args
+      attr_reader :args, :event
 
       def initialize(args = nil, **xargs)
         @args = args || OpenStruct.new(xargs.transform_keys { |key| key.to_s.underscore })
@@ -240,9 +241,9 @@ module Rails
       alias_method :&, :+
 
       def inspect
-        args = all_arguments&.map do |name, arg|
+        args = all_arguments&.filter_map do |name, arg|
           +"#{arg.gql_name}: #{@args[name].inspect}" unless @args[name].nil?
-        end&.compact
+        end
 
         args = args.presence && +"(#{args.join(', ')})"
         repeatable = ' [repeatable]' if repeatable?

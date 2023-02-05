@@ -108,7 +108,6 @@
         resultsList.classList.add('search-results-list');
         searchResults.appendChild(resultsList);
 
-        console.dir(results);
         addResults(resultsList, results, 0, 10, 100, currentSearchIndex);
       }
 
@@ -293,6 +292,7 @@
           span.innerHTML = text.substring(index, position[0]);
           parent.appendChild(span);
           index = position[0] + position[1];
+
           var highlight = document.createElement('span');
           highlight.classList.add('search-result-highlight');
           highlight.innerHTML = text.substring(position[0], index);
@@ -328,6 +328,7 @@
       update();
     });
 
+    var scrollSettings = { behavior: "smooth", block: "nearest" };
     site.addEvent(searchInput, 'keydown', function(e) {
       switch (e.keyCode) {
         case 38: // arrow up
@@ -338,6 +339,7 @@
             if (active.parentElement.previousSibling) {
               var previous = active.parentElement.previousSibling.querySelector('.search-result');
               previous.classList.add('active');
+              previous.scrollIntoView(scrollSettings);
             }
           }
           return;
@@ -349,6 +351,7 @@
               var next = active.parentElement.nextSibling.querySelector('.search-result');
               active.classList.remove('active');
               next.classList.add('active');
+              next.scrollIntoView(scrollSettings);
             }
           } else {
             var next = document.querySelector('.search-result');

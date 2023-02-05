@@ -76,7 +76,8 @@ module Rails
         # Allow accessing the fake type form the schema. It's used for
         # inline spreads without a specified type
         def type_klass
-          schema.public_send("#{type}_type")
+          return @type_klass if defined?(@type_klass)
+          @type_klass = schema.public_send("#{type}_type")
         end
 
         # The typename is always based on the fake name used for the set of
@@ -135,8 +136,8 @@ module Rails
 
           # Trigger an specific event with the +type+ of the operation
           def organize
+            trigger_event(type)
             organize_then do
-              trigger_event(type)
               yield if block_given?
               organize_fields
               report_unused_variables
@@ -153,8 +154,8 @@ module Rails
           end
 
           # Resolve all the fields
-          def resolve
-            resolve_then { resolve_fields }
+          def resolve_then(&block)
+            super(block) { resolve_fields }
           end
 
           # Don't stack over response when the operation doesn't have a name

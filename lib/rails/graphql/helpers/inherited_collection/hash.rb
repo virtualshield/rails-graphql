@@ -5,6 +5,7 @@ module Rails
       # or sets
       class InheritedCollection::Hash < InheritedCollection::Base
         delegate :transform_values, :transform_keys, to: :to_hash
+        delegate :filter_map, :map, to: :eager
 
         # Simply go over each definition and check for the given key
         def key?(value)
@@ -44,7 +45,7 @@ module Rails
           keys.lazy.map(&method(:[]))
         end
 
-        # Basically allow this lazy operator to be merged with other hashes
+        # Basically returns the plain result value
         def to_hash
           each.to_h
         end

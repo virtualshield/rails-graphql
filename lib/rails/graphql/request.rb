@@ -148,6 +148,7 @@ module Rails
 
         response.public_send(formatter)
       rescue StaticResponse
+        # TODO: Maybe change this to a throw/catch instead
         response.public_send(formatter)
       end
 
@@ -184,6 +185,7 @@ module Rails
       # This is used by cache and static responses to jump from executing to
       # delivery a response right away
       def force_response(response, error = StaticResponse)
+        return unless defined?(@response)
         @response = response
         raise error
       end
@@ -445,7 +447,7 @@ module Rails
 
           collect_definitions!
           @strategy ||= find_strategy!
-          @strategy.trigger_event(:request)
+          @strategy.trigger_event(:request) if with == :resolve!
           @strategy.public_send(with)
         end
 

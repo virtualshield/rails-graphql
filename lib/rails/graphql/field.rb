@@ -289,8 +289,8 @@ module Rails
 
       def inspect
         (+<<~INFO).squish << '>'
-          #<#{self.class.name}
-          #{inspect_owner}
+          #<GraphQL::#{self.class.name.split('::').last}
+          #{inspect_owner&.split(+'GraphQL::')&.last&.sub(+'::NestedTypes', '')}
           #{inspect_source}
           #{inspect_enabled}
           #{gql_name}#{inspect_arguments}#{inspect_type}

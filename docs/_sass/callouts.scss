@@ -1,7 +1,10 @@
 // Callouts
 blockquote {
   padding: 0.5rem;
+  position: relative;
+  isolation: isolate;
   padding-left: 1rem;
+  border-radius: 0 $border-radius $border-radius 0;
 
   &.new,
   &.note,
@@ -18,9 +21,22 @@ blockquote {
     }
   }
 
+  &::before {
+    inset: 0;
+    content: '';
+    z-index: -1;
+    opacity: .25;
+    display: block;
+    position: absolute;
+    border-radius: inherit;
+  }
+
   &.new {
-    background-color: $green-000;
     border-left-color: $green-300;
+
+    &::before {
+      background-color: $green-000;
+    }
 
     > p:first-child > b:first-child,
     > p:first-child > strong:first-child {
@@ -29,8 +45,11 @@ blockquote {
   }
 
   &.note {
-    background-color: $blue-000;
     border-left-color: $blue-300;
+
+    &::before {
+      background-color: $blue-000;
+    }
 
     > p:first-child > b:first-child,
     > p:first-child > strong:first-child {
@@ -39,8 +58,11 @@ blockquote {
   }
 
   &.warning {
-    background-color: $red-000;
     border-left-color: $red-300;
+
+    &::before {
+      background-color: $red-000;
+    }
 
     > p:first-child > b:first-child,
     > p:first-child > strong:first-child {
@@ -49,8 +71,11 @@ blockquote {
   }
 
   &.important {
-    background-color: $yellow-000;
     border-left-color: $yellow-300;
+
+    &::before {
+      background-color: $yellow-000;
+    }
 
     > p:first-child > b:first-child,
     > p:first-child > strong:first-child {
@@ -59,8 +84,11 @@ blockquote {
   }
 
   &.highlight {
-    background-color: $purple-000;
     border-left-color: $purple-300;
+
+    &::before {
+      background-color: $purple-000;
+    }
 
     > p:first-child > b:first-child,
     > p:first-child > strong:first-child {

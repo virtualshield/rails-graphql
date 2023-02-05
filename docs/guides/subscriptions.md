@@ -82,10 +82,10 @@ You will have full access to the request and operation installing the subscripti
 ```ruby
 # app/graphql/app_schema.rb
 field(:user, 'User', scope: :current_user)
-field(:user, 'User').scope(System.version, :current_user)
-field(:user, 'User') do
-  scope ->(subscription) { subscription.operation.name }
-end
+field(:user, 'User') { scope :current_user }
+field(:user, 'User').scope(System.version, ->(subscription) {
+  subscription.request.context.current_user
+})
 ```
 
 #### `subscribed`

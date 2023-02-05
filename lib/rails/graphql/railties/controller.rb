@@ -22,6 +22,9 @@ module Rails
         # Each controller is assigned to a GraphQL schema on which the requests
         # will be performed from. It can be a string or the class
         class_attribute :gql_schema, instance_accessor: false
+
+        # Add the internal views directory
+        prepend_view_path("#{__dir__}/app/views")
       end
 
       # POST /execute
@@ -34,39 +37,35 @@ module Rails
         render plain: gql_schema_header + gql_describe_schema + gql_schema_footer
       end
 
+      # GET /graphiql
+      def graphiql
+        render '/graphiql', layout: false, locals: { settings: graphiql_settings }
+      end
+
       protected
+
+        # Identifies if the request should be threated as a compiled request
+        def gql_compiled_request?(*)
+          false
+        end
 
         # Render a response as a GraphQL request
         def gql_request_response(*args, **xargs)
           render json: gql_request(*args, **xargs)
         end
 
-        # Shows a text representation of the schema
-        def gql_describe_schema(schema = gql_schema)
-          schema.to_gql(
-            with_descriptions: !params.key?(:without_descriptions),
-            with_spec: !params.key?(:without_spec),
-          )
-        end
-
         # Execute a GraphQL request
-        def gql_request(query, **xargs)
+        def gql_request(document, **xargs)
           request_xargs = REQUEST_XARGS.each_with_object({}) do |setting, result|
             result[setting] ||= (xargs[setting] || send(:"gql_#{setting}"))
           end
 
           request_xargs[:hash] ||= gql_query_cache_key
           request_xargs[:origin] ||= self
+          request_xargs[:compiled] ||= gql_compiled_request?(document)
 
           request_xargs = request_xargs.except(*%i[query_cache_key query_cache_version])
-          ::Rails::GraphQL::Request.execute(query, **request_xargs)
-        end
-
-        # Print a header of the current schema for the description process
-        # TODO: Maybe add a way to detect from which file the schema is being loaded
-        def gql_schema_header
-          ns = +" [#{gql_schema.namespace}]" if gql_schema.namespace != :base
-          +"#{DESCRIBE_HEADER}# Schema #{gql_schema.name}#{ns}\n"
+          ::Rails::GraphQL::Request.execute(document, **request_xargs)
         end
 
         # The schema on which the requests will be performed from
@@ -87,9 +86,11 @@ module Rails
         end
 
         # Get the GraphQL query to execute
-        def gql_query
+        def gql_document
           params[:query]
         end
+
+        alias gql_query gql_document
 
         # Get the cache key of the query for persisted queries
         def gql_query_cache_key(key = nil, version = nil)
@@ -117,6 +118,30 @@ module Rails
           end
         end
 
+        # Return the settings for the GraphiQL view
+        def graphiql_settings(mode = nil)
+          if mode == :cable
+            { mode: :cable, url: '/cable', channel: 'GraphQL::BaseChannel' }
+          else
+            { mode: :fetch, url: '/graphql' }
+          end
+        end
+
+        # Shows a text representation of the schema
+        def gql_describe_schema(schema = gql_schema)
+          schema.to_gql(
+            with_descriptions: !params.key?(:without_descriptions),
+            with_spec: !params.key?(:without_spec),
+          )
+        end
+
+        # Print a header of the current schema for the description process
+        # TODO: Maybe add a way to detect from which file the schema is being loaded
+        def gql_schema_header
+          ns = +" [#{gql_schema.namespace}]" if gql_schema.namespace != :base
+          +"#{DESCRIBE_HEADER}# Schema #{gql_schema.name}#{ns}\n"
+        end
+
         # Show the footer of the describe page
         def gql_schema_footer
           $/ + $/ + '# Version: ' + gql_version + $/ +
@@ -133,12 +158,8 @@ module Rails
 
         # Find the default application schema
         def gql_application_default_schema
-          app_class = Rails.application.class
-          source_name = app_class.respond_to?(:module_parent_name) \
-            ? :module_parent_name \
-            : :parent_name
-
-          klass = "::GraphQL::#{app_class.public_send(source_name)}Schema".constantize
+          app_class = Rails.application.class.name.chomp('::Application')
+          klass = "::GraphQL::#{app_class}Schema".safe_constantize
           self.class.gql_schema = klass
         end
     end

@@ -16,11 +16,6 @@ module Rails
         end
       end
 
-      # Just add the callbacks setup to the field
-      def self.included(other)
-        other.event_types(:authorize, append: true)
-      end
-
       # Add either settings for authorization or a block to be executed. It
       # returns +self+ for chain purposes
       def authorize(*args, **xargs, &block)

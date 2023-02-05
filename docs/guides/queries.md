@@ -19,7 +19,7 @@ by [requests](/guides/request).
 Queries can be composed of 5 different elements:
 
 `[type]`
-: `query`, but optional for single-query documents
+: `query` - Optional for single-query documents
 
 `[name]`
 : An optional name

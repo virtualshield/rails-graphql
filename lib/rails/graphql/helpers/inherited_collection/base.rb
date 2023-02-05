@@ -7,6 +7,8 @@ module Rails
       class InheritedCollection::Base
         include Enumerable
 
+        delegate :eager, to: :each
+
         # Just a little helper to initialize the iterator form a given +source+
         def self.handle(source, ivar, type)
           klass = (type == :array || type == :set) ? :Array : :Hash

@@ -79,12 +79,6 @@ module Rails
           }
         end
 
-        # The list of ids of subscription and to which field they are
-        # associated with
-        def gql_subscriptions
-          @gql_subscriptions ||= {}
-        end
-
         # The instance of a GraphQL request. It can't simply perform using
         # +execute+, because it is important to check if any subscription was
         # generated
@@ -126,6 +120,12 @@ module Rails
           when Hash   then variables
           else {}
           end
+        end
+
+        # The list of ids of subscription and to which field they are
+        # associated with
+        def gql_subscriptions
+          @gql_subscriptions ||= {}
         end
 
         # Remove all subscriptions

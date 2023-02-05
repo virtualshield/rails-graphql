@@ -177,8 +177,8 @@ build_query except: %i[one_user all_users]
 ## Hooks
 
 The hooks are the place where you will create the necessary elements as a result of
-the translation of your classes. Each hook has its own `self`-scope (on top of the
-regular scope of the class itself) and represents an area being described to GraphQL
+the translation of your classes. Each hook has its own `self`-binding (on top of the
+regular binding of the class itself) and represents an area being described to GraphQL
 about your classes.
 
 ### Managing Hooks
@@ -232,7 +232,7 @@ Here is the list of built-in hooks and their respective `self`-scopes.
 
 #### `start`
 
-This hook will always be triggered before any other hook runs. The scope is the
+This hook will always be triggered before any other hook runs. The binding is the
 source itself. Use this hook to require dependencies and other things from a top-level,
 things that are not related to GraphQL components directly.
 
@@ -244,7 +244,7 @@ step(:start) { Awesome::Base.establish_connection }
 #### `object`
 
 This hook will set up an [object](/guides/objects) that represents the underlying class.
-You should map all readable attributes of your class into fields in this step. The scope is
+You should map all readable attributes of your class into fields in this step. The binding is
 the `object` class being defined.
 
 ```ruby
@@ -259,7 +259,7 @@ end
 #### `input`
 
 This hook will set up an [input](/guides/inputs) that represents the underlying class.
-You should map all writeable attributes of your class into fields in this step. The scope is
+You should map all writeable attributes of your class into fields in this step. The binding is
 the `input` class being defined.
 
 ```ruby
@@ -274,7 +274,7 @@ end
 #### `query`
 
 This hook will create one or more fields exposed to schema query operations. Usually, here
-you will add a read-all and read-one fields. The scope is the same as the block in `query_fields`
+you will add a read-all and read-one fields. The binding is the same as the block in `query_fields`
 from [field lists](/guides/field-lists).
 
 ```ruby
@@ -294,7 +294,7 @@ of the same namespace.
 #### `mutation`
 
 This hook is quite similar to the above. Usually, here you will add create, update, and
-delete fields. The scope is the same as the block in `mutation_fields`
+delete fields. The binding is the same as the block in `mutation_fields`
 from [field lists](/guides/field-lists).
 
 ```ruby
@@ -310,7 +310,7 @@ Fields will also be automatically added by default.
 
 #### `subscription`
 
-This hook is quite similar to the above. The scope is the same as the block in `subscription_fields`
+This hook is quite similar to the above. The binding is the same as the block in `subscription_fields`
 from [field lists](/guides/field-lists).
 
 ```ruby

@@ -333,8 +333,8 @@ Read more about [names](/guides/names).
 
 `enabled_fields` /<br /> `enabled_fields_from(type)`
 
-Returns an iterable list of all the enabled fields. It uses a
-<a href="https://ruby-doc.org/core-3.0.0/Enumerator/Lazy.html" target="_blank" rel="external nofollow">Enumerator::Lazy</a>
+Returns an iterable list of all the enabled fields. It uses an
+<a href="https://ruby-doc.org/core-3.0.0/Enumerator/Lazy.html" target="_blank" rel="external nofollow">`Enumerator::Lazy`</a>
 for performance purposes.
 
 ```ruby
@@ -439,7 +439,7 @@ subscription_type_name     # _Subscription
 `{type}_type`
 
 It returns an
-<a href="https://ruby-doc.org/stdlib-3.0.0/libdoc/ostruct/rdoc/OpenStruct.html" target="_blank" rel="external nofollow">OpenStruct</a>
+<a href="https://ruby-doc.org/stdlib-3.0.0/libdoc/ostruct/rdoc/OpenStruct.html" target="_blank" rel="external nofollow">`OpenStruct`</a>
 that acts like a fake [Object](/guides/objects) for that type. The fake type is only returned
 if there are fields added to that list.
 

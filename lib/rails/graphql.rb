@@ -198,7 +198,7 @@ module Rails
               item.validate!
             rescue => error
               raise StandardError, (+<<~MSG).squish
-                Unable to #{event.name} the @#{item.gql_name} directive: #{error.message}
+                Unable to #{event.event_name} the @#{item.gql_name} directive: #{error.message}
               MSG
             end
           end

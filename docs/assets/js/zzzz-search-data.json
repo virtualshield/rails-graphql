@@ -31,7 +31,13 @@ permalink: /assets/js/search-data.json
         {%- assign titleAndContent = part | split: '</h1>' -%}
         {%- assign title = titleAndContent[0] | replace_first: '>', '<h1>' | split: '<h1>' -%}
         {%- assign title = title[1] | strip_html -%}
-        {%- assign content = titleAndContent[1] -%}
+        {%- assign _content = titleAndContent[1] | split: '<pre class="highlight">' -%}
+        {%- assign content = _content | first -%}
+        {%- assign _content = _content | slice: 1 -%}
+        {%- for node in _content -%}
+          {%- assign _stripped = node | split: '</pre>' -%}
+          {%- assign content = content | append: _stripped[1] -%}
+        {%- endfor -%}
         {%- assign url = page.url -%}
         {%- if title == page.title and parts[0] == '' -%}
           {%- assign title_found = true -%}

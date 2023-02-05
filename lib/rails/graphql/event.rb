@@ -7,7 +7,7 @@ module Rails
     # This class is responsible for triggering events. It also contains the
     # +data+ that can be used on the event handlers.
     class Event
-      attr_reader :source, :data, :name, :object, :last_result
+      attr_reader :source, :data, :event_name, :object, :last_result
 
       alias event itself
 
@@ -34,7 +34,7 @@ module Rails
         @collect = data.delete(:collect?)
         @reverse = data.delete(:reverse?)
 
-        @name = name
+        @event_name = name
         @data = data
         @source = source
         @layers = []
@@ -44,7 +44,7 @@ module Rails
       # other is a directive, then check if the source is using that directive
       def same_source?(other)
         if other.is_a?(Directive) || (other.is_a?(Module) && other < Directive)
-          source.using?(other)
+          event_name == :attach || source.using?(other)
         else
           source == other
         end
@@ -81,6 +81,8 @@ module Rails
         end
       end
 
+      alias on_instance set_on
+
       # From the list of all given objects, run the +trigger_object+
       def trigger_all(*objects)
         catchable(:stack) do
@@ -102,7 +104,7 @@ module Rails
         old_items, old_object, old_result, @object = @items, @object, @last_result, object
 
         catchable(:object) do
-          events ||= object.all_events.try(:[], name)
+          events ||= object.all_events.try(:[], event_name)
           stop if events.blank?
 
           @items = @reverse ? events.reverse_each : events.each
@@ -135,8 +137,6 @@ module Rails
       rescue StopIteration
         # Do not do anything when missing next/super
       end
-
-      alias call_super call_next
 
       protected
 

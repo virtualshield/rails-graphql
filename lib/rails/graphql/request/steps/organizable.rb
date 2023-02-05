@@ -70,8 +70,8 @@ module Rails
             stacked do
               block.call
               strategy.add_listeners_from(self)
-              trigger_event(:organized)
               after_block.call if after_block.present?
+              trigger_event(:organized)
             end
           end
 

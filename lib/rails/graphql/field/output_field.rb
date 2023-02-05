@@ -163,6 +163,10 @@ module Rails
         defined?(@broadcastable) && @broadcastable
       end
 
+      def entry_point?
+        owner.is_a?(Helpers::WithSchemaFields)
+      end
+
       protected
 
         # Check if the given +value+ is a valid array as output
@@ -177,7 +181,7 @@ module Rails
 
         # Properly display the owner section when the field is owned by a Schema
         def inspect_owner
-          owner.is_a?(Helpers::WithSchemaFields) ? +"#{owner.name}[:#{schema_type}]" : super
+          entry_point? ? +"#{owner.name}[:#{schema_type}]" : super
         end
 
         def proxied

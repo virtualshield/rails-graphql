@@ -36,8 +36,8 @@ module Rails
 
             stacked do
               block.call if block.present?
-              trigger_event(:prepared)
               after_block.call if after_block.present?
+              trigger_event(:prepared)
             end
           end
       end

@@ -69,14 +69,14 @@ Read more about [inline sources](/guides/sources/#4-inform-the-settings).
 Here are all the settings that you can add to your sources:
 
 `with_associations`
-: `true` Marks if fields related to associations should be added.
+: `true` - Marks if fields related to associations should be added.
 
 `errors_to_extensions`
-: `false` Marks if errors should be exported to the `extensions` of the response.
+: `false` - Marks if errors should be exported to the `extensions` of the response.
 <br/>Possible values: `false`, `:details`, `:messages`
 
 `act_as_interface`
-: `false` Marks if the source should build an interface instead of an object.
+: `false` - Marks if the source should build an interface instead of an object.
 
 ## Behaviors
 
@@ -325,7 +325,8 @@ Read more about [events](/guides/events#capturing-values) to see how you can bui
 ### `preload_association(association, scope = nil)`
 
 This is the second step to loading an association, which will use Active Record internal
-components to properly load the records and make them available for the next step.
+components to properly load the records and make them available for the next step. If the
+`scope` is not provided, it will use the value from the above method.
 
 {: title="parent_owned_records" id="parent_owned_records" }
 ### `parent_owned_records(collection_result = false)`

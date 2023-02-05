@@ -110,8 +110,9 @@ module Rails
           def resolve
             return if unresolvable?
 
+            type = type_klass
             object = @current_object
-            resolve_then if object.nil? || type_klass =~ object
+            resolve_then if (object.nil? && type&.operational?) || type =~ object
           end
 
           # This will just trigger the selection resolver

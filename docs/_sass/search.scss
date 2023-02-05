@@ -104,14 +104,28 @@
   transform: translateX(-50%);
   width: calc(#{$nav-width + $content-width} - 7rem);
   background-color: $search-background-color;
-  border-radius: $border-radius;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 3px 10px rgba(0, 0, 0, 0.08);
+  border-radius: calc(var(--border-radius) * 2);
+  box-shadow: 0 2px 5px rgba(black, 0.4);
+
+  &::-webkit-scrollbar,
+  &::-webkit-scrollbar-thumb {
+    border-radius: calc(var(--border-radius) * 2);
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    box-sizing: border-box;
+    background-color: $feedback-color;
+    border: 3px solid $search-background-color;
+  }
 }
 
 .search-results-list {
   padding-left: 0;
   margin-bottom: 0;
   list-style: none;
+  border-right: 1px solid $border-color;
   @include fs-4;
 
   @include mq(md) {
@@ -120,8 +134,13 @@
 }
 
 .search-results-list-item {
-  padding: 0;
   margin: 0;
+  padding: 0;
+  margin-bottom: $sp-2;
+
+  &:last-of-type {
+    margin-bottom: 0;
+  }
 }
 
 .search-result {
@@ -130,6 +149,8 @@
   padding-right: $sp-3;
   padding-bottom: $sp-1;
   padding-left: $sp-3;
+  transition: background $half-transition-duration;
+  background-color: $search-background-color;
 
   &:hover,
   &.active {
@@ -156,7 +177,7 @@
   word-wrap: break-word;
 
   &.search-result-doc-parent {
-    opacity: 0.5;
+    color: rgba(#D31027, .5);
     @include fs-3;
 
     @include mq(md) {
@@ -167,8 +188,8 @@
   .search-result-icon {
     width: $sp-4;
     height: $sp-4;
-    margin-right: $sp-2;
     color: $link-color;
+    margin-right: $sp-2;
     flex-shrink: 0;
   }
 
@@ -194,8 +215,7 @@
 
 .search-result-previews {
   display: block;
-  padding-top: $sp-2;
-  padding-bottom: $sp-2;
+  margin-bottom: $sp-2;
   padding-left: $sp-4;
   margin-left: $sp-2;
   color: $search-result-preview-color;

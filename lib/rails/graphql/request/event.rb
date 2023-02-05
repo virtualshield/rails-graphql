@@ -13,7 +13,7 @@ module Rails
         delegate :errors, :context, :extensions, to: :request
         delegate :instance_for, to: :strategy
         delegate :memo, :schema, to: :source
-        delegate :subscription_field, to: :schema
+        delegate :subscription_provider, to: :schema
 
         attr_reader :strategy, :request, :index
 
@@ -33,6 +33,9 @@ module Rails
 
           super(name, source, **data)
         end
+
+        # TODO: Implement a faster way to check if if the event is from the
+        # same source by separating exclusive events beforehand
 
         # If the source is a field, than also compare to the actual field
         def same_source?(other)

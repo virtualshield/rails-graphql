@@ -1,8 +1,9 @@
 var queue = [];
 var current = null;
-var identifier = JSON.stringify({ channel: '<%= graphiql_channel %>' });
-var socket = new WebSocket("ws://" + window.location.hostname + "/<%= graphiql_url %>");
+var identifier = JSON.stringify({ channel: '<%= channel %>' });
+var socket = new WebSocket("ws://" + window.location.hostname + "/<%= url %>");
 
+// TOOD: This is a temporary implementation
 socket.onopen = function(event) {
   const msg = { command: 'subscribe', identifier: identifier };
   socket.send(JSON.stringify(msg));

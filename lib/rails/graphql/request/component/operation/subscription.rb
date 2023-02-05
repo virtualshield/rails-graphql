@@ -89,14 +89,12 @@ module Rails
 
             # Rewrite this method so that the subscription can be generated in
             # the right place
-            def resolve_then(after_block = nil, &block)
-              subscribe_block = -> do
+            def resolve_then(&block)
+              super do
                 save_subscription
                 trigger_event(:subscribed, subscription: subscription)
-                after_block.call if after_block.present?
+                block.call if block.present?
               end
-
-              super(subscribe_block, &block)
             end
 
             # Save the subscription using the schema subscription provider

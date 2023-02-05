@@ -2,8 +2,8 @@
 
 # This exposed module allows some shortcuts while working outside of the gem
 module GraphQL
-  autoload :BaseController, "#{__dir__}/../../../app/controllers/graphql/base_controller.rb"
-  autoload :BaseChannel,    "#{__dir__}/../../../app/channels/graphql/base_channel.rb"
+  autoload :BaseController, "#{__dir__}/railties/app/base_controller.rb"
+  autoload :BaseChannel,    "#{__dir__}/railties/app/base_channel.rb"
 
   # List of constant shortcuts, as string to not trigger autoload
   CONST_SHORTCUTS = {

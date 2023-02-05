@@ -127,10 +127,10 @@ module Rails
             return if unresolvable?
 
             object = (defined?(@current_object) && @current_object)
-            object ||= parent.type_klass unless parent.is_a?(Component::Operation)
+            object ||= parent.type_klass unless parent.kind == :operation
             return run_on_fragment(:resolve_with!, object) unless inline?
 
-            super if type_klass =~ object
+            super if (object.nil? && type_klass&.operational?) || type_klass =~ object
           end
 
           # This will just trigger the selection resolver

@@ -18,7 +18,7 @@ module Rails
 
       # Just add the callbacks setup to the field
       def self.included(other)
-        other.event_types(:prepare, :finalize, append: true, expose: true)
+        other.send(:expose_events!, :organized, :finalize, :prepared, :prepare)
         other.alias_method(:before_resolve, :prepare)
         other.alias_method(:after_resolve, :finalize)
       end

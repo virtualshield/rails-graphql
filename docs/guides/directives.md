@@ -147,7 +147,7 @@ more fo these options:
 : Applies to [Subscriptions](/guides/subscriptions)
 
 `:field`
-: Applies to any [Request Field](/guides/request#fields)
+: Applies to any [Output Field](/guides/fields#output-fields)
 
 `:fragment_definition`
 : Applies to [Fragments](/guides/fragments)

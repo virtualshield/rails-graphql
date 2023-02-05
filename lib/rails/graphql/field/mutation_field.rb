@@ -58,16 +58,15 @@ module Rails
       # Get the performer that can be already defined or used through the
       # +method_name+ if that is callable
       def performer
-        @performer ||= callable?(perform_method_name) \
-          ? Callback.new(self, :perform, perform_method_name) \
-          : false
+        return @performer if defined?(@performer)
+
+        @performer = callable?(perform_method_name)
+        @performer = Callback.new(self, :perform, perform_method_name) if @performer
       end
 
       # Ensures that the performer is defined
       def validate!(*)
         super if defined? super
-
-        binding.pry unless performer.present?
 
         raise ValidationError, (+<<~MSG).squish unless performer.present?
           The "#{gql_name}" mutation field must have a perform action through a given

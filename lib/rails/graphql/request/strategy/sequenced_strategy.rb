@@ -16,9 +16,9 @@ module Rails
         def resolve!
           response.with_stack('data') do
             for_each_operation do |op|
-              collect_listeners  { op.organize! }
-              collect_data(true) { op.prepare! }
-              collect_response   { op.resolve! }
+              collect_listeners          { op.organize! }
+              collect_data(op.mutation?) { op.prepare! }
+              collect_response           { op.resolve! }
             end
           end
         end

@@ -10,7 +10,7 @@ Several features of this gem can be changed to better adapt to your needs.
 You can change any of the items listed here as follows:
 
 ```ruby
-# config/application.rb
+# config/initializer/graphql.rb
 Rails::GraphQL.configure do |gql|
   gql.version = 'ABCDEFG'
 end
