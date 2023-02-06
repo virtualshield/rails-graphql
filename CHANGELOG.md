@@ -1,6 +1,19 @@
 ### Unreleased
 
-### 1.0.0.rc1 - 2023-02-05
+### 1.0.0.rc1 - 2023-02-06
+
+* Added the `@specifiedBy` directive
+* Added request extensions
+* Base controller and base channel
+* An easy to use [GraphiQL](https://github.com/graphql/graphiql) view
+* A brand new inline type creator
+* Organized several method names to follow one single patter
+* Several fixes to events and callbacks
+* Fixes for source hooks
+* Fixes for scoped arguments
+* Docs now available on the [website](https://www.rails-graphql.dev/)
+
+### 1.0.0.beta - 2023-01-23
 
 * Brand new parser, way faster than the previous one and 12x faster than the original gem
 * Subscriptions are now available using ActionCable
