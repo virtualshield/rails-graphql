@@ -7,7 +7,7 @@ description: An index of all you can find in this gem
 
 # Guides
 
-> [Getting Started](/getting-started.md)
+> [Getting Started](/getting-started)
 
 <section id="guides">
   <section>

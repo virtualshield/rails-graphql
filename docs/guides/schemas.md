@@ -205,7 +205,7 @@ module GraphQL
 end
 ```
 
-Read more about [subscriptions providers](/guides/subscriptions/providers).
+Read more about [subscriptions providers](/guides/subscriptions#provider).
 
 ## Cache
 

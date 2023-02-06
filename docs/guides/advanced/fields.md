@@ -11,7 +11,7 @@ It would be best if you started from there before reading this content.
 
 ## Equivalency
 
-All fields and [types](/guides/advanced/equivalency) have an equivalency operator `=~`.
+All fields and [types](/guides/advanced/types#equivalency) have an equivalency operator `=~`.
 This operator helps to identify if the left side can be used as the right side. The equivalency takes
 into consideration several different factors, and some specific types of fields have their own
 extension of this operator. Here are some rules:

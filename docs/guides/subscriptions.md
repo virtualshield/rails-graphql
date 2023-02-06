@@ -13,7 +13,7 @@ subscription { user { id status } }
 Subscription is one of the three operations that you can run on GraphQL. Subscriptions' purpose
 is to fetch an initial installment of data and keep the result up-to-date with your API.
 Subscriptions are handled by [requests](/guides/request) for the first fetch
-and a [provider](/guides/subscriptions/providers) for subsequent updates.
+and a [provider](/guides/subscriptions#provider) for subsequent updates.
 
 ## Definition
 

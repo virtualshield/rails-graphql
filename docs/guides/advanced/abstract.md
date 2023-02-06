@@ -33,4 +33,4 @@ self.abstract = true
 
 You use of this to add shared methods, set configurations like
 [namespaces](/guides/advanced/namespaces), and create intermediate steps
-for [sources](/guides/sources/#hooks).
+for [sources](/guides/sources#hooks).

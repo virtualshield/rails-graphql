@@ -7,6 +7,7 @@ require 'active_support'
 
 require 'active_support/core_ext/module/attribute_accessors_per_thread'
 require 'active_support/core_ext/string/strip'
+require 'active_support/core_ext/enumerable'
 
 require 'rails/graphql/version'
 require 'rails/graphql/uri'
@@ -40,7 +41,7 @@ module Rails
   # * <tt>Directives:</tt> A directive definition belongs to the introspection
   #   and is handled in the Singleton extent. They are handled as instance
   #   whenever a definition or an execution uses them.
-  # * <tt>Fields:</tt> Many other types and helper containers holds a serie of
+  # * <tt>Fields:</tt> Many other types and helper containers holds a series of
   #   fields, which means that fields with the same name will probably behave
   #   differently.
   module GraphQL

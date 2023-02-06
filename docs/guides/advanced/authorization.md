@@ -82,7 +82,7 @@ attach :authorize, reading: true, to: %i[users user]
 ### Creator
 
 You can use the `create` method to initialize an instance and attach it to fields
-provided in the `for` named argument, which works with any [field list](/guides/field-list).
+provided in the `for` named argument, which works with any [field list](/guides/field-lists).
 
 ```ruby
 GraphQL::Authorization.create(reading: true, for: [

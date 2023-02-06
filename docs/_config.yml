@@ -28,6 +28,7 @@ plugins:
   - jekyll-seo-tag
   - jekyll-mermaid
   - jekyll-toc
+  - jekyll-sitemap
 
 # Remove line numbers from syntax highlighter
 kramdown:

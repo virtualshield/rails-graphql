@@ -13,8 +13,8 @@ type UserInput {
 }
 ```
 
-Inputs allow you to organize fields to receive data. Besides [scalars](/guide/scalars) and
-[enums](/guide/enums), inputs are the other type accepted by arguments. You should use
+Inputs allow you to organize fields to receive data. Besides [scalars](/guides/scalars) and
+[enums](/guides/enums), inputs are the other type accepted by arguments. You should use
 them when you have several attributes to receive from your front end.
 
 ## Creating an Input

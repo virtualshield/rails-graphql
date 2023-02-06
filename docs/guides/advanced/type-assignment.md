@@ -6,8 +6,8 @@ description: Assign other classes to types to gain extra powers
 
 # Type Assignment
 
-Types like [inputs](/guide/inputs), [interfaces](/guide/interfaces), [objects](/guide/objects),
-and [sources](/guide/sources) can be assigned to other classes. This assignment means that
+Types like [inputs](/guides/inputs), [interfaces](/guides/interfaces), [objects](/guides/objects),
+and [sources](/guides/sources) can be assigned to other classes. This assignment means that
 the GraphQL component is directly associated with that other class, and they will cooperate
 in providing a smooth interaction.
 
@@ -31,7 +31,7 @@ Read more about [recommendations](/guides/recommendations).
 Whenever the GraphQL component needs to check if it is interacting with a value, it will
 first check if the value is from the `assigned_class`.
 
-Some classes, like [sources](/guide/sources), also guarantee that the assigned class
+Some classes, like [sources](/guides/sources), also guarantee that the assigned class
 is based on another class to ensure its features are compatible.
 
 ## Type Map

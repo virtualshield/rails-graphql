@@ -33,7 +33,7 @@ to fulfill your application's needs. Just remember to add them to the
 
 Prepared data allows you to inject data into any field before a request is
 kicked off. With prepared data, you can stub results for [testing](/guides/testing)
-and deliver fast [subscriptions](/guides/subscriptions/#trigger_for).
+and deliver fast [subscriptions](/guides/subscriptions#trigger_for).
 
 To prepare data for a field, you need the field instance or a reference to it,
 the prepared value, and a conditional indicator for repetition.

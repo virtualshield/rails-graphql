@@ -62,7 +62,7 @@ type _Query {
 }
 ```
 
-Read more about [inline sources](/guides/sources/#4-inform-the-settings).
+Read more about [inline sources](/guides/sources#4-inform-the-settings).
 
 ## Settings
 
@@ -145,7 +145,7 @@ You can skip this process by simply calling `disable :enums`.
 
 ### Associations
 
-This source takes advantage of the [Type Map hooks](/guides/type-map/#register-hook) to lazy
+This source takes advantage of the [Type Map hooks](/guides/type-map#register-hook) to lazy
 add fields into both the [object](/guides/objects)/[interface](/guides/interfaces) and the
 [input](/guides/inputs) that is related to associations. Here is an example:
 

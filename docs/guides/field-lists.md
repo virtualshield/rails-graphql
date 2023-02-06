@@ -6,7 +6,7 @@ description: All you can do when dealing with a list of fields
 
 # Field Lists
 
-Field lists are found in classes that contain a single list of fields ([Interfaces](/guides/interface),
+Field lists are found in classes that contain a single list of fields ([Interfaces](/guides/interfaces),
 [Inputs](/guides/inputs), [Objects](/guides/objects), and [Sets](/guides/alternatives#set-definition))
 or multi-schema-based fields ([Schemas](/guides/schemas) and [Sources](/guides/sources)).
 

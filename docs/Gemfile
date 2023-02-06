@@ -19,6 +19,7 @@ group :jekyll_plugins do
   # uncomment the line below. To upgrade, run `bundle update github-pages`.
   # gem 'github-pages', '~> 227'
   gem 'jekyll-seo-tag', '~> 2.8'
+  gem 'jekyll-sitemap', '~> 1.4'
   gem 'jekyll-mermaid', '~> 1.0'
   gem 'jekyll-toc', '~> 0.18.0'
 end

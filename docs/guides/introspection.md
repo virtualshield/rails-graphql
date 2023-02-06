@@ -45,7 +45,7 @@ To deliver such result, several elements are added to your schema.
 
 ### Fields
 
-These fields are added to the `query_fields` of your [schema](/guides/schema).
+These fields are added to the `query_fields` of your [schema](/guides/schemas).
 
 {: title="__schema" }
 #### `__schema: __Schema!`
@@ -64,7 +64,7 @@ These objects (and respective fields) are added to your schema.
 
 #### `__Directive`
 
-Displays the information about a [directive](/guides/directive).
+Displays the information about a [directive](/guides/directives).
 
 `name`
 : `String!` - Its GraphQL name

@@ -49,7 +49,7 @@ Here is when you can add a [context](#context) or [prepare data](#prepared-data)
 #### Context
 
 Context is a way for you to provide external information to the internal processing
-of the requests. The context is also important for [subscriptions](/guides/subscriptions/#scope) because it
+of the requests. The context is also important for [subscriptions](/guides/subscriptions#scope) because it
 provides the values to their scope. Once set, the context is turned into an
 <a href="https://ruby-doc.org/stdlib-3.0.0/libdoc/ostruct/rdoc/OpenStruct.html" target="_blank" rel="external nofollow">`OpenStruct`</a>,
 facilitating reading.
@@ -68,7 +68,7 @@ request.context.current_user
 #### Prepared Data
 
 Preparing data allows you to override what underlying data will be used to resolve the field. This is useful
-for [testing](/guides/testing) and [triggering subscriptions](/guides/subscriptions/#trigger_for).
+for [testing](/guides/testing) and [triggering subscriptions](/guides/subscriptions#trigger_for).
 
 ```ruby
 request.prepare_data_for('query.users', User.all)
@@ -139,7 +139,7 @@ to a [Controller](/guides/customizing/controller) or [Channel](/guides/customizi
 {: title="4. Parse and Run" }
 ### 1. 4. Parse and Run
 
-This step is where the document will be parsed by the [`GQLParser#parse_execution`](`/guides/parser`),
+This step is where the document will be parsed by the [`GQLParser#parse_execution`](/guides/parser),
 or fetched from the cache, and the proper runner will be called.
 
 {: .note }
@@ -223,7 +223,7 @@ being listened to within the document.
 This step is the one-and-only opportunity for fields to collect data before they
 are actually resolved. This stage is the best middle ground where we know everything
 about what has been requested, and it can gather resources to fulfill the response.
-This is also the phase where [mutations](/guide/mutations) perform their actions.
+This is also the phase where [mutations](/guides/mutations) perform their actions.
 
 Exceptions that may happen in this phase will be added to the `errors`
 and properly tagged with `extensions: { stage: "prepare" }`.
