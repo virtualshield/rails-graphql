@@ -84,6 +84,7 @@ Read more about [local dependencies](/guides/schemas#local-dependencies).
 {: .no_toc }
 #### Available Classes
 
+* `GraphQL::FieldSet`
 * `GraphQL::QuerySet`
 * `GraphQL::MutationSet`
 * `GraphQL::SubscriptionSet`
@@ -127,6 +128,7 @@ You will also need to import these kinds of classes into your schema.
 {: .no_toc }
 #### Available Classes
 
+* `GraphQL::Field`
 * `GraphQL::Query`
 * `GraphQL::Mutation`
 * `GraphQL::Subscription`
@@ -138,13 +140,18 @@ Think of it as the abstraction level of the definition process. Instead of defin
 query field, plus mutations, plus object type, plus input type, sources can translate
 other classes into several GraphQL things.
 
-This is the highest level because instead of writing each individual element, you would
-write a translator. Once you have the translator, then all the objects that fall into
+[Sources](/guides/sources) are considered the highest level because instead of writing each individual element,
+you would write a translator. Once you have the translator, then all the objects that fall into
 the same patterns can all be threaded the same way.
 
 One great example is [ActiveRecord](/guides/sources/active-record), which already has
 its source implemented in this gem. All your models can be easily turned into all
 their counterparts in GraphQL.
+
+{: .note }
+> **Note**
+> Different from the previous examples, [sources](/guides/sources) do not require
+> importing because they have their own mechanism for publishing their fields.
 
 ```ruby
 # app/graphql/sources/user_source.rb

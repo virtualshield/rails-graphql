@@ -67,7 +67,7 @@ request.context.current_user
 
 #### Prepared Data
 
-Preparing data allows you to override what data the field will be using. This is useful
+Preparing data allows you to override what underlying data will be used to resolve the field. This is useful
 for [testing](/guides/testing) and [triggering subscriptions](/guides/subscriptions/#trigger_for).
 
 ```ruby
@@ -101,7 +101,8 @@ Arguments:
 : `true` - Marks if the return value should be compressed using
 <a href="https://ruby-doc.org/stdlib-3.0.0/libdoc/zlib/rdoc/Zlib.html#method-c-deflate" target="_blank" rel="external nofollow">`Zlib#deflate`</a>.
 
-{: .important }
+{: .highlight }
+> **Important**
 > This is an experimental feature. More will be added to it soon.
 
 {: title="execute" }
@@ -179,7 +180,7 @@ A `Strategy` class is actually the one responsible for running the following ste
 The request will look for the highest-ranked strategy from
 [`request_strategies`](/handbook/settings#request_strategies) that `can_resolve?` itself.
 
-Read more about [strategies](/guides/advanced/request#strategioes).
+Read more about [strategies](/guides/advanced/request#strategies).
 
 {: id="organizing" }
 ## 2. Organizing
@@ -345,7 +346,7 @@ operation.memo[:counter] += 1
 ### Event
 
 The `Request::Event` instance is the object that is assigned to all classes after
-they have been instantiated for resolving method-based [callbacks](/guides/events#callbacks).
+they have been instantiated for resolving method-based [callbacks](/guides/events#method-based).
 
 Here is a quick reference of all the request-specific things you can get from the events:
 
@@ -379,7 +380,7 @@ end
 
 Read more about [events](/guides/events#quick-reference).
 
-### Events
+### Event Types
 
 Here is a list of all events that can happen during a request and when they will
 be triggered:
@@ -406,7 +407,7 @@ be triggered:
 : When a component has been successfully organized.
 
 `prepare` / `before_resolve`
-: When a field is preparing data.<br/>**Runs in reverse order**{: .fw-900 }.
+: When a field is preparing data.<br/>**Runs in reverse order**{: .text-yellow-200 }.
 
 `perform`
 : When a mutation is performing its actions.

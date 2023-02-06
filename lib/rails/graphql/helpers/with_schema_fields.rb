@@ -121,6 +121,7 @@ module Rails
         # Add a new field to the list but use a proxy instead of a hard copy of
         # a given +field+
         def add_proxy_field(type, field, *args, **xargs, &block)
+          field = field.field if field.is_a?(Module) && field <= Alternative::Query
           raise ArgumentError, (+<<~MSG).squish if field.schema_type != type
             A #{field.schema_type} field cannot be added as a #{type} field.
           MSG

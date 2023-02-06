@@ -16,7 +16,7 @@ for [fields](/guides/fields), [arguments](/guides/arguments), and [directives](/
 and `PascalCase` for [enums](/guides/enums), [inputs](/guides/inputs), [interfaces](/guides/interfaces),
 [objects](/guides/objects), [scalars](/guides/scalars), [unions](/guides/unions), and [schemas](/guides/schemas)
 and refer to the GraphQL name of things
-(excepts for [type assignment](/guides/type-assignment)).
+(excepts for [type assignment](/guides/advanced/type-assignment)).
 
 ## What to use Where
 

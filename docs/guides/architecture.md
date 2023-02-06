@@ -270,7 +270,7 @@ the only produce a value. Others are more complex because they can hold a list o
 
 Read more about it in the
 <a href="http://spec.graphql.org/October2021/#sec-Types" target="_blank" rel="external nofollow">GraphQL Spec</a>
-and [here](/guides#type-system).
+and [here](/guides).
 
 ### Schema
 

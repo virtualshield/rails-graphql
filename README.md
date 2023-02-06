@@ -1,13 +1,15 @@
-# Rails GraphQL
+<a href="https://www.rails-graphql.dev/?utm_source=github">
+  <img src="./docs/assets/images/github.png" alt="Rails GraphQL - GraphQL meets RoR with the most Ruby-like DSL" />
+</a>
 
 ![Build Status](https://github.com/virtualshield/rails-graphql/workflows/Tests/badge.svg)
-<!-- [![Code Climate](https://codeclimate.com/github/virtualshield/rails-graphql/badges/gpa.svg)](https://codeclimate.com/github/virtualshield/rails-graphql) -->
 ![Gem Version](https://badge.fury.io/rb/rails-graphql.svg)
+<!-- [![Code Climate](https://codeclimate.com/github/virtualshield/rails-graphql/badges/gpa.svg)](https://codeclimate.com/github/virtualshield/rails-graphql) -->
 <!--([![Test Coverage](https://codeclimate.com/github/virtualshield/rails-graphql/badges/coverage.svg)](https://codeclimate.com/github/virtualshield/rails-graphql/coverage))-->
 <!--([![Dependency Status](https://gemnasium.com/badges/github.com/virtualshield/rails-graphql.svg)](https://gemnasium.com/github.com/virtualshield/rails-graphql))-->
 
-* [Wiki](https://github.com/virtualshield/rails-graphql/wiki)
-* [Bugs](https://github.com/virtualshield/rails-graphql/issues)
+[Wiki](https://www.rails-graphql.dev/?utm_source=github) |
+[Bugs](https://github.com/virtualshield/rails-graphql/issues)
 
 # Description
 
@@ -21,118 +23,88 @@ This gem has its **own parser**, written from scratch, using the
 Plus, all the features provided were carefully developed so that everyone will feel
 comfortable and able to apply in all application sizes and patterns.
 
-# Installation
-To install rails-graphql you need to add the following to your Gemfile:
-```ruby
-gem 'rails-graphql', '~> 0.1'
+# 3 Simple Steps
+
+## Install
+
+```bash
+# Add the gem to your Gemfile
+$ bundle add rails-graphql
+# Then run the Rails generator
+$ rails g graphql:install
 ```
 
-Also, run:
-
-```
-$ bundle
-```
-
-Or, for non-Gemfile related usage, simply:
-
-```
-gem install rails-graphql
-```
-
-# Usage
-This gem is intended to be used alongside Rails. It has shortcuts on working
-with ActiveRecord as well as providing the C implementation of the GraphQL
-parser.
-
-Another great emphasis on reusability and directive was put in place, allowing
-robust systems to be built using it without too much boilerplate code. At the
-same time, providing all needed levels of customization.
-
-## Folder structure
-All the files should live under `app/graphql`, which supports any files
-structure (this will probably change in the future). The recommended structure
-would have folders like `enums`, `inputs`, `interfaces`, `objects`, `scalars`,
-and `unions`, leaving the schema on the base folder.
-
-## Execution sample
-If your schema is short, you can define all your elements straightforward from
-the schema definition:
+## Define
 
 ```ruby
-class ApplicationSchema < GraphQL::Schema
-  object 'Hello' do
-    field :name, :string, null: false
-  end
-
-  query_fields do
-    field :welcome, :hello, null: false do
-      resolve { OpenStruct.new(name: 'World') }
-    end
-  end
+# app/graphql/app_schema.rb
+class GraphQL::AppSchema < GraphQL::Schema
+  field(:welcome).resolve { 'Hello World!' }
 end
 ```
 
-Then executing the following will produce the expected behavior:
-```ruby
-GraphQL.execute('{ welcome { name } }')
-# {"data":{"welcome":{"name":"World"}}}
+## Run
+
+```bash
+$ curl -d '{"query":"{ welcome }"}' \
+       -H "Content-Type: application/json" \
+       -X POST http://localhost:3000/graphql
+# {"data":{"welcome":"Hello World!"}}
 ```
 
-## Type mapping
-This gem uses the same [TypeMap](lib/rails/graphql/type_map.rb) concept used on
-ActiveRecord, meaning that when referencing to any name or type is possible
-through ruby symbol notation (`:string`), GraphQL real name of the object
-(`'String'`), or the actual class or object (`GraphQL::Scalar::StringScalar`).
+# Features
 
-In the previous example, the object create `Hello` can then be used in
-arguments, fields, or any place that receives a type as the folling options:
-`:hello`, `'Hello'`, `GraphQL::HelloObject`.
+[GraphQL Parser](https://www.rails-graphql.dev/guides/parser?utm_source=github)
+: Supporting the <a href="https://spec.graphql.org/October2021/" target="_blank" rel="external nofollow">October 2021</a> spec
 
-Several additional types are provided by default from the gem, so it can comply
-with database most commonly used types. Those are: `Bigint`, `Binary` for files
-(that are Base64 encoded), `Date`, `DateTime`, `Decimal`, and `Time`.
+[Schemas](https://www.rails-graphql.dev/guides/schemas?utm_source=github)
+: One or multiple under the same application or across multiple engines
 
-## ActiveRecord sources
-To facilitate the mapping of information from ActiveRecord Models into a GraphQL
-Scheme, a specific type named source was added that will read all the
-meta-information from a model (attributes, validations, and associations) and
-build several items gaining instant access to all CRUD operations.
+[Queries](https://www.rails-graphql.dev/guides/queries?utm_source=github)
+: 3 different ways to defined your queries, besides sources
 
-The easiest way to initialize a source is defining them straight on the scheme:
-```ruby
-class ApplicationSchema < GraphQL::Schema
-  #...
-  source User # assuming that we have a User model
-  sources Company, Project # faster way to define multiple sources
-  source Team do
-    #... can be further improved
-  end
-end
-```
+[Mutations](https://www.rails-graphql.dev/guides/mutations?utm_source=github)
+: 3 different ways to defined your mutations, besides sources
 
-Another way to define them is to have a file/class per source, which allows
-further changes to the objects created by the sourcing process:
-```ruby
-# app/graphql/sources/user_source.rb
-module GraphQL
-  class UserSource < ActiveRecordSource # Or just class UserSource < ARSource
-    #... same extensions as from the block method
-  end
-end
-```
+[Subscriptions](https://www.rails-graphql.dev/guides/subscriptions?utm_source=github)
+: 3 different ways to defined your subscriptions, besides sources
 
-## Exposing GraphQL
-This gem includes a controller concern that allows any controller to answer to
-GraphQL requests. Once a controler includes the
-[`GraphQL::Controller`](lib/rails/graphql/railties/controller.rb) concern,
-several things are provided, like the ability to customize the context by
-overriding the `gql_context` method.
+[Directives](https://www.rails-graphql.dev/guides/directives?utm_source=github)
+: 4 directives provided: `@deprecated`, `@skip`, `@include`, and `@specifiedBy`
+: Event-driven interface to facilitate new directives
 
-On top of providing the `execute` action, which will execute the
-`params[:query]` using the `params[:variables]`, there is another action called
-`describe`, which will print a GraphQL description of the scheme being served.
-`?without_descriptions` will disable the descriptions, and `?without_spec` will
-disable spec default elements.
+[Scalars](https://www.rails-graphql.dev/guides/scalars?utm_source=github)
+: All the spec scalars plus: `any`, `bigint`, `binary`, `date`, `date_time`, `decimal`, `json`, and `time`
+
+[Sources](https://www.rails-graphql.dev/guides/sources?utm_source=github)
+: A bridge between classes and GraphQL types and fields
+: Fully implemented for [ActiveRecord](https://www.rails-graphql.dev/guides/sources/active-record?utm_source=github) for `PostgreSQL`, `MySQL`, and `SQLite` databases.
+
+[Generators](https://www.rails-graphql.dev/guides/generators?utm_source=github)
+: Rails generators for you to get start quickly
+
+[Shortcuts](https://www.rails-graphql.dev/guides/architecture#shortcuts?utm_source=github)
+: Several shortcuts through `::GraphQL` module to access classes within the gem
+
+[Type Map](https://www.rails-graphql.dev/guides/type-map?utm_source=github)
+: A centralized place where all the types are stored and can be resolved
+
+[Global ID](https://www.rails-graphql.dev/guides/global-id?utm_source=github)
+: All objects defined supports `.to_global_id`, or simply `.to_gid`
+
+[Subscriptions Provider](https://www.rails-graphql.dev/guides/subscriptions/providers?utm_source=github)
+: Current supporting only [ActionCable](https://www.rails-graphql.dev/guides/subscriptions/action-cable-provider?utm_source=github) provider and [Memory](https://www.rails-graphql.dev/guides/subscriptions/memory-store?utm_source=github) store
+
+[Introspection](https://www.rails-graphql.dev/guides/introspection?utm_source=github)
+: All necessary types for introspection with proper descriptions
+: Plain text display of the schemas
+
+[Testing](https://www.rails-graphql.dev/guides/testing?utm_source=github)
+: Support to validate GraphQL documents and stub values before requests
+
+[Error Handling](https://www.rails-graphql.dev/guides/error-handling?utm_source=github)
+: Full support to `rescue_from` within schemas
+: A gracefully backtrace display
 
 # How to contribute
 

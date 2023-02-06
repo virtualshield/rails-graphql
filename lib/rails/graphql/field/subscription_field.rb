@@ -11,15 +11,9 @@ module Rails
       redefine_singleton_method(:subscription?) { true }
       event_types(:subscribed, append: true)
 
-      attr_reader :prepare_context
-
       module Proxied # :nodoc: all
         def full_scope
           field.full_scope + super
-        end
-
-        def prepare_context
-          super || field.prepare_context
         end
       end
 

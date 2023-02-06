@@ -118,7 +118,7 @@ performs [`destroy_record`](#destroy_record), and resolves to either `true` or `
 
 ### Assignment
 
-Sources take a huge advantage of [type assignment](/guides/type-assignment). That said, the
+Sources take a huge advantage of [type assignment](/guides/advanced/type-assignment). That said, the
 source will assume that its name is a reference to a model and make an automatic
 assignment to that. You can override that and manually set the assignment:
 
@@ -224,7 +224,7 @@ type User {
 }
 ```
 
-{: .important }
+{: .highlight }
 > **Important**
 > This is an experimental feature and may change in the future.
 
@@ -289,14 +289,16 @@ Here is a list of methods that you can use and rely on to facilitate the usage
 with your models:
 
 {: title="load_records" id="load_records" }
-### `load_records(scope = model.default_scoped)`
+### `load_records(scope = nil)`
 
 Responsible for loading several records from the model during the `prepare` stage.
+The `scope` will be either the event's [`last_result`](/guides/events#calling-next) or `default_scoped`.
 
 {: title="load_record" id="load_record" }
-### `load_record(scope = model.default_scoped, find_by: nil)`
+### `load_record(scope = nil, find_by: nil)`
 
 Responsible for loading one record from the model during the `prepare` stage.
+The `scope` will be either the event's [`last_result`](/guides/events#calling-next) or `default_scoped`.
 If `find_by` is not provided, it assumes `{ primary_key => argument(primary_key) }`.
 
 {: title="create_record" id="create_record" }

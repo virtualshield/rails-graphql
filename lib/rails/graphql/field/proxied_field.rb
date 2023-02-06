@@ -25,10 +25,9 @@ module Rails
     # * <tt>:alias</tt> - Same as the +:as+ key (defaults to nil).
     module Field::ProxiedField
       delegate_missing_to :field
-      delegate :leaf_type?, :array?, :internal?, :valid_input?, :valid_output?,
-        :to_json, :as_json, :deserialize, :valid?, :proxied_owner, to: :field
+      delegate :leaf_type?, :array?, :internal?, :proxied_owner, to: :field
 
-      Field.proxyable_methods %w[name gql_name method_name resolver description
+      Field.proxyable_methods %w[name gql_name method_name description
         null? nullable? enabled?], klass: self
 
       def initialize(field, owner:, **xargs, &block)

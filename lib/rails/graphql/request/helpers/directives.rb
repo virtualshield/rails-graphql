@@ -29,6 +29,7 @@ module Rails
         alias all_events directive_events
 
         # Check if the current component is using a directive
+        # TODO: This does not work with the instance
         def using?(item)
           return false unless directives?
 

@@ -24,6 +24,11 @@ module Rails
         end
       end
 
+      # = GraphQL Alternative Query Set
+      #
+      # Exact the same as a +FieldSet+
+      QuerySet = FieldSet
+
       # = GraphQL Alternative Mutation Set
       #
       # Same as a +FieldSet+ but for mutation fields

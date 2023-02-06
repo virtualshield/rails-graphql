@@ -27,7 +27,7 @@ module Rails
 
       # Check if types are compatible
       def =~(other)
-        other.is_a?(Field::TypedField) && other.type_klass =~ type_klass && super
+        super && other.is_a?(Field::TypedField) && other.type_klass =~ type_klass
       end
 
       # Sometimes the owner does not designate this, but it is safe to assume it
@@ -49,6 +49,8 @@ module Rails
           namespaces: namespaces,
         )
       end
+
+      alias type_class type_klass
 
       # Add the listeners from the associated type
       def all_listeners
@@ -73,6 +75,27 @@ module Rails
       # Make sure to check the associated type
       def events?
         super || type_klass.events?
+      end
+
+      # Transforms the given value to its representation in a JSON string
+      def to_json(value)
+        return 'null' if value.nil?
+        return type_klass.to_json(value) unless array?
+        value.map { |part| type_klass.to_json(part) }
+      end
+
+      # Turn the given value into a JSON string representation
+      def as_json(value)
+        return if value.nil?
+        return type_klass.as_json(value) unless array?
+        value.map { |part| type_klass.as_json(part) }
+      end
+
+      # Turn a user input of this given type into an ruby object
+      def deserialize(value)
+        return if value.nil?
+        return type_klass.deserialize(value) unless array?
+        value.map { |val| type_klass.deserialize(val) unless val.nil? }
       end
 
       # Checks if the type of the field is valid

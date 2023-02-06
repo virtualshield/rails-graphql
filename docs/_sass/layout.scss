@@ -304,4 +304,43 @@ body {
       }
     }
   }
+
+  section#guides {
+    gap: 2rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+
+    > section {
+      padding: 0.5rem 1rem;
+      border-radius: calc(var(--border-radius) * 2);
+      background-color: var(--toc-background);
+      box-shadow: 0 5px 10px rgba(black, .2);
+
+      > h4 {
+        text-align: center;
+        border-bottom: 2px solid rgba(black, .1);
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
+      }
+
+      > nav {
+        gap: 0.35rem;
+        display: flex;
+        padding: 0.5rem 0;
+        flex-direction: column;
+
+        > a {
+          padding: 0.15rem 1rem;
+          display: inline-block;
+          background-color: rgba(white, 0);
+          border-radius: var(--border-radius);
+          transition: background $half-transition-duration;
+
+          &:hover {
+            background-color: rgba(white, .05);
+          }
+        }
+      }
+    }
+  }
 }

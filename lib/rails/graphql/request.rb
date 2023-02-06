@@ -367,6 +367,7 @@ module Rails
         resolve_from_cache = (version == schema.version)
 
         # Run the document from scratch if TypeMap has changed
+        # TODO: We need to save the new organized document
         return run_document unless resolve_from_cache
         @valid_cache = true unless defined?(@valid_cache)
 

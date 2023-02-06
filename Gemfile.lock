@@ -1,8 +1,8 @@
 PATH
   remote: .
   specs:
-    rails-graphql (1.0.0.beta)
-      rails (>= 5.0)
+    rails-graphql (1.0.0.rc1)
+      rails (>= 6.0)
 
 GEM
   remote: https://rubygems.org/

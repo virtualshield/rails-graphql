@@ -345,6 +345,27 @@ enabled_fields.each { |field| puts field.gql_name }
 enabled_fields_from(:query).each { |field| puts field.gql_name }
 ```
 
+### Attaching Directives
+
+{: .warning }
+> **Unavailable**
+> This feature is yet to be published.
+
+`attach(directive, to: , **arguments)` /<br /> `attach(directive, to: , fields: , **arguments)`
+
+Allows attaching a directive, by instance or name plus arguments, to one or more fields.
+
+```ruby
+# Single form
+attach(GraphQL::DeprecatedDirective(), to: %i[users user])
+
+# Multi form
+attach(GraphQL::DeprecatedDirective(), to: :query, fields: %i[users user])
+
+# Using name and arguments
+attach(:deprecated, reason: 'Just because.', to: %i[users user])
+```
+
 ## Multi form Only
 
 The multi-schema-based list provides a series of methods per type as syntax sugar to interact

@@ -195,12 +195,14 @@ module Rails
       end
 
       # Prepare to load multiple records from the underlying model
-      def load_records(scope = model.default_scoped)
+      def load_records(scope = nil)
+        scope ||= event.last_result || model.default_scoped
         inject_scopes(scope, :relation)
       end
 
       # Prepare to load a single record from the underlying model
-      def load_record(scope = model.default_scoped, find_by: nil)
+      def load_record(scope = nil, find_by: nil)
+        scope ||= event.last_result || model.default_scoped
         find_by ||= { primary_key => event.argument(primary_key) }
         inject_scopes(scope, :relation).find_by(find_by)
       end

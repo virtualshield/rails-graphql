@@ -29,7 +29,7 @@ There are 4 important steps that you should follow to have a good experience wit
 
 Since sources are designed to map features of other classes, you must set the base class to
 which the source will translate. This ensures that the underlying class is right when resolving the
-[type assignment](/guides/type-assignment). You should also set the base class of your source as `abstract`.
+[type assignment](/guides/advanced/type-assignment). You should also set the base class of your source as `abstract`.
 
 ```ruby
 # app/graphql/sources/awesome_source.rb

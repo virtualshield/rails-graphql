@@ -28,10 +28,47 @@ Same as above, but returning the string value instead.
 
 ## Indicators
 
+* The `abstract?` checks if the type is marked as [abstract](/guides/advanced/abstract).
+* The `hidden?` checks if the type is marked as [hidden](#hidden).
 * The `input_type?` checks if the type can be used as an input;
 * The `output_type?` checks if the type can be used as an output;
 * The `leaf_type?` checks if the type is a leaf ([enum](/guides/enums) or [scalar](/guides/scalars));
 * The `operational?` checks if it is a fake type like `_Query`.
+
+## Hidden
+
+{: .warning }
+> **Unavailable**
+> This feature is yet to be published.
+
+The hidden setting allow you to use types and [directives](/guides/directives) that will never
+be exposed to a [request](/guides/request). It enables you to use the GraphQL structure
+to meta-configure itself, like with [authorization](/guides/advanced/authorization).
+
+```ruby
+# app/graphql/enums/roles.rb
+self.hidden = true
+```
+
+Beware even if a type is marked as hidden, it will still be published to the [Type Map](/guides/type-map),
+which may cause unexpected overrides. To avoid that, use an isolated [namespace](/guides/advanced/namespaces).
+
+## Metadata
+
+{: .warning }
+> **Unavailable**
+> This feature is yet to be published.
+
+Metadata is a simple `Hash` added to types that may contain any additional information
+you want to associate with them. See the example below for how to write and read values.
+
+```ruby
+# Writing
+metadata :counter, 1
+
+# Reading
+GraphQL::User.metadata[:counter]
+```
 
 ## Equivalency
 
@@ -45,8 +82,7 @@ if it implements that interface;
 * An [object](/guides/objects) is equivalent to a [union](/guides/unions),
 if it is a member of that union;
 * The `float` scalar is equivalent to the `time` scalar because the latter inherits from the
-former;
-* A not `null`-able field is equivalent to a `null`-able field of the same type.
+former.
 
 ## Inline Creation
 

@@ -97,7 +97,8 @@ module Rails
         end
 
         # Call the callback block as a symbol
-        # TODO: Maybe black calling non-public events
+        # TODO: Maybe block calling non-public events
+        # TODO: This is the only reason why directives needs an owner
         def call_symbol(event, *args, **xargs)
           event.on_instance(owner) do |instance|
             block = instance.method(@block)

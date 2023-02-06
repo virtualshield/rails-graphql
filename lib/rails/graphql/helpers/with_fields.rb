@@ -63,6 +63,7 @@ module Rails
         # Add a new field to the list but use a proxy instead of a hard copy of
         # a given +field+
         def proxy_field(field, *args, **xargs, &block)
+          field = field.field if field.is_a?(Module) && field <= Alternative::Query
           raise ArgumentError, (+<<~MSG).squish unless field.is_a?(field_type)
             The #{field.class.name} is not a valid field.
           MSG

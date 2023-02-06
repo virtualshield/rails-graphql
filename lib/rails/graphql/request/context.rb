@@ -43,7 +43,7 @@ module Rails
           at(1)
         end
 
-        # Get the current value, which basically means basically the first item
+        # Get the current value, which basically means the first item
         # on the current stack
         def current_value
           at(0)

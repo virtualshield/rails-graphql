@@ -89,5 +89,10 @@ module Rails
           end
       end
     end
+
+    # = GraphQL Alternative Field
+    #
+    # Just an alias, since query fields are the same as output fields
+    Alternative.const_set(:Field, Alternative::Query)
   end
 end

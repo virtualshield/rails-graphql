@@ -66,6 +66,7 @@ module Rails
         end
 
         # Check whether a given directive is being used
+        # TODO: This does not work with the instance
         def using?(item)
           directive = (item.is_a?(Symbol) || item.is_a?(String)) ? fetch!(item) : item
           raise ArgumentError, (+<<~MSG).squish unless directive < GraphQL::Directive
@@ -77,7 +78,7 @@ module Rails
 
         alias has_directive? using?
 
-        # TODO: Maybe implement a method to find a specific directive
+        # TODO: Maybe implement a method to fetch a specific directive
 
         # Override the +all_listeners+ method since callbacks can eventually be
         # attached to objects that have directives, which then they need to

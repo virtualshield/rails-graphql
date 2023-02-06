@@ -37,7 +37,7 @@ this event to manipulate the component where the directive is being attached to.
 
 ### Execution
 
-On the other hand, the execution has a large list of [available events](/guides/request#events).
+On the other hand, the execution has a large list of [available events](/guides/request#event-types).
 Any field, directive, or type (through directives) can listen to any of those events
 and perform proper manipulation of the request and response. For example:
 
@@ -266,6 +266,29 @@ and `call` them, as long as you provide an event.
 Callbacks are the ones responsible for doing the [injection of arguments](#arguments) and
 coordinating the instantiation of classes, which is when the `@event` variable
 is injected.
+
+There are two types of callbacks:
+
+### Proc-based
+
+When the event listener is created with a block. This is the simplest type of
+callback, and the binding will be the `event` triggered, except for [directives](#directive-events).
+
+```ruby
+on(:finalize) { }
+```
+
+### Method-based
+
+When the event listener is created with a first symbol argument referencing a method
+to be called. This will force the existence of an instance of the underlying class,
+not changing the traditional binding. However, an `@event` variable will be attached
+to the instance, and most GraphQL components have a `delegate_missing_to :@event`,
+so you can be considered under the `event` binding as well.
+
+```ruby
+on(:finalize, :do_something)
+```
 
 ## Quick Reference
 

@@ -36,7 +36,7 @@ scope :enabled, ->(value) { where(active: value) }
 
 ## Considerations
 
-{: .important }
+{: .highlight }
 > **Important**
 > This is an experimental feature and may change in the future.
 

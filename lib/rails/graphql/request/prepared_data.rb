@@ -17,6 +17,7 @@ module Rails
         REPEAT_OPTIONS = {
           true => true,
           false => 1,
+          once: 1,
           cycle: true,
           always: true,
         }.freeze
@@ -55,7 +56,8 @@ module Rails
           @field = field
           @value = value
           @array = value.is_a?(Array) && !field.array?
-          @repeat =
+          @repeat = true if !@array && !value.is_a?(Array)
+          @repeat ||=
             case repeat
             when Numeric then repeat
             when Enumerator then repeat.size

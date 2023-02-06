@@ -45,4 +45,12 @@ a:not([class]) {
   h3 > code {
     vertical-align: text-bottom;
   }
+
+  details.snippet > summary {
+    margin-bottom: 1.5rem;
+  }
+
+  summary > h2 {
+    margin: 0 !important;
+  }
 }

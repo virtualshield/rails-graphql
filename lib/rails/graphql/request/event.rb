@@ -43,6 +43,7 @@ module Rails
         end
 
         # Provide a way to access the current field value
+        # TODO: Maybe change this to +current+ to get the value by reference
         def current_value
           resolver&.current_value
         end

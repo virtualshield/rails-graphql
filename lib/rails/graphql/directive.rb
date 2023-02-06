@@ -207,10 +207,11 @@ module Rails
 
       # When fetching all the events, embed the actual instance as the context
       # of the callback
+      # TODO: Maybe add a soft cached, based on the total number of events
       def all_events
         return unless self.class.events?
 
-        @all_events ||= self.class.all_events.transform_values do |events|
+        self.class.all_events.transform_values do |events|
           events.map { |item| Callback.set_context(item, self) }
         end
       end

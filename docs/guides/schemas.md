@@ -144,6 +144,8 @@ module GraphQL
     load_directory
     # Same as
     load_directory '.', recursive: true
+    # OR
+    load_current_directory
   end
 end
 ```

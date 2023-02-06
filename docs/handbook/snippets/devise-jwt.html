@@ -1,0 +1,107 @@
+<details class="snippet">
+  <summary>
+    <h2 id="devise-jwt">Devise + JWT</h2>
+    <span>An authenticate mutation using Devise and JWT tokens.</span>
+  </summary>
+  <div class="language-ruby highlighter-rouge">
+{% highlight ruby %}
+# frozen_string_literal: true
+
+module GraphQL::Mutations
+  class Authenticate < GraphQL::Mutation
+    desc <<~DESC
+      Authenticate a User using email and password.
+
+      This mutation will return a token string or null. You can check the
+      errors and look for the `auth` extension to know the reason:
+      `{ ..., "extensions": { auth: "not_found" } }`.
+
+      Make sure to provide the headers `JWT-AUDIENCE`.
+      Other possible values of `auth`:
+       - `not_found` => Wrong e-mail or password
+       - `disabled` => User locked or disabled
+       - `unconfirmed` => User hasn't confirmed their e-mail
+       - `missing_audience` => No JWT_AUDIENCE provided
+    DESC
+
+    argument :email,    :string, null: false
+    argument :password, :string, null: false
+
+    returns :string
+
+    delegate :payload_for_user, to: 'Warden::JWTAuth::PayloadUserHelper'
+
+    attr_reader :error_type
+
+    def perform
+      return generate_token if authenticated?
+
+      request.report_error('Unable to authenticate', auth: @error_type)
+    end
+
+    # Check if everything is right to authenticate
+    def authenticated?
+      return false if authentication_blocked?
+
+      resource.update_tracked_fields(fake_request)
+      resource.save
+    end
+
+    # Return the user available for authentication
+    def resource
+      return @resource if defined?(@resource)
+      @resource = User.find_by(email: arg(:email)&.downcase)
+    end
+
+    private
+
+      # Check and set a possible reason for authentication being blocked
+      def authentication_blocked?
+        return @error_type = :not_found unless valid_resource?
+        return if authenticable?
+
+        @error_type = resource.confirmed? ? :disabled : :unconfirmed
+      end
+
+      # Check if the the resource is valid by its email and password
+      def valid_resource?
+        resource.present? &&
+          resource.send(:valid_password?, arg(:password))
+      end
+
+      # Check if the resource is allowed to authenticate
+      def authenticable?
+        resource.valid_for_authentication? &&
+          resource.active_for_authentication?
+      end
+
+      # A fake request object so that the trackable information can be updated
+      def fake_request
+        OpenStruct.new(remote_ip: context.remote_ip)
+      end
+
+      # Generate a proper JWT Token
+      def generate_token
+        aud = context.jwt_audience
+        payload = payload_for_user(resource, :user).merge('aud' => aud)
+        token = Warden::JWTAuth::TokenEncoder.new.call(payload)
+        resource.on_jwt_dispatch(token, payload)
+        token
+      rescue ActiveRecord::RecordInvalid => error
+        if aud.blank?
+          args = { auth: :missing_audience }
+          message = 'Please provide the JWT-AUDIENCE header'
+        elsif !Rails.env.production?
+          message = "Something went wrong: #{error.message}"
+        else
+          message = 'Something went wrong while trying to save the token'
+        end
+
+        request.report_error(message, *args)
+      end
+  end
+end
+{% endhighlight %}
+  </div>
+</details>
+

@@ -29,10 +29,12 @@ module Rails
       include Field::TypedField
 
       module Proxied # :nodoc: all
+        Field.proxyable_methods %w[broadcastable?], klass: self
+
         def all_arguments
           inherited = field.all_arguments
           return inherited unless defined?(@arguments)
-          inherited.blank? ? super : inherited + super
+          inherited.blank? ? super : inherited.merge(super)
         end
 
         def has_argument?(name)
@@ -43,12 +45,17 @@ module Rails
           super || field.arguments?
         end
 
+        # TODO: Break events into directive/type/local
+        # because type events should only be added
+        # from the proxy
         def all_events
           if (inherited = super).nil?
             field.all_events
           elsif (proxied = field.all_events).nil?
             inherited
           else
+            # The order is reversed because events from
+            # the proxy must come first
             Helpers.merge_hash_array(proxied, inherited)
           end
         end

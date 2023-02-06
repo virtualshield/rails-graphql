@@ -17,11 +17,13 @@ module GraphQL
     Source:             '::Rails::GraphQL::Source',
     Type:               '::Rails::GraphQL::Type',
 
+    Field:              '::Rails::GraphQL::Alternative::Field',
     Query:              '::Rails::GraphQL::Alternative::Query',
     Mutation:           '::Rails::GraphQL::Alternative::Mutation',
     Subscription:       '::Rails::GraphQL::Alternative::Subscription',
 
-    QuerySet:           '::Rails::GraphQL::Alternative::FieldSet',
+    FieldSet:           '::Rails::GraphQL::Alternative::FieldSet',
+    QuerySet:           '::Rails::GraphQL::Alternative::QuerySet',
     MutationSet:        '::Rails::GraphQL::Alternative::MutationSet',
     SubscriptionSet:    '::Rails::GraphQL::Alternative::SubscriptionSet',
 

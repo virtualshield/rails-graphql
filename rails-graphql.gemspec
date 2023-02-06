@@ -8,19 +8,19 @@ require 'date'
 # Describe your gem and declare its dependencies:
 Gem::Specification.new do |s|
   s.name        = 'rails-graphql'
-  s.version     = Rails::GraphQL::VERSION::STRING
+  s.version     = Rails::GraphQL.version
   s.date        = Date.today.to_s
   s.authors     = ['Carlos Silva']
   s.email       = ['me@carlosfsilva.com']
   s.homepage    = 'https://github.com/virtualshield/rails-graphql'
   s.license     = 'MIT'
-  s.summary     = 'A GraphQL server for Rails applications'
+  s.summary     = 'GraphQL meets RoR with the most Ruby-like DSL'
   s.description = 'A Fresh new GraphQL server for Rails applications, with a focus on natural and Ruby-like DSL'
   s.metadata    = {
     'homepage_uri'    => 'https://www.rails-graphql.dev/',
     "source_code_uri" => 'https://github.com/virtualshield/rails-graphql',
     'bug_tracker_uri' => 'https://github.com/virtualshield/rails-graphql/issues',
-    # 'changelog_uri'   => 'https://github.com/virtualshield/rails-graphql/blob/master/CHANGELOG.md',
+    'changelog_uri'   => 'https://github.com/virtualshield/rails-graphql/blob/master/CHANGELOG.md',
   }
 
   s.require_paths = ['lib']
@@ -31,7 +31,7 @@ Gem::Specification.new do |s|
   s.rdoc_options = ['--title', 'GraphQL server for Rails']
 
   s.required_ruby_version = '>= 2.6.3'
-  s.add_dependency 'rails', '>= 5.0'
+  s.add_dependency 'rails', '>= 6.0'
 
   s.add_development_dependency 'benchmark-ips', '~> 2.8.2'
   s.add_development_dependency 'minitest', '~> 5.14.0'

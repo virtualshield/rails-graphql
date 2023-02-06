@@ -20,6 +20,7 @@ description: >-
   with a focus on natural and Ruby-like DSL.
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://www.rails-graphql.dev"
+image: "/assets/images/logo.png"
 
 # Build settings
 markdown: kramdown
@@ -133,5 +134,5 @@ back_to_top: true
 back_to_top_text: "Back to top"
 
 # Footer last edited timestamp
-last_edit_timestamp: false # show or hide edit time - page must have `last_modified_date` defined in the frontmatter
+last_edit_timestamp: false # show or hide edit time - page must have `last_modified_date` defined in the formatter
 # last_edit_time_format: "%b %e %Y at %I:%M %p"

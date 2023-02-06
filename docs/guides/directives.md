@@ -86,7 +86,7 @@ end
 ```
 
 Read more about [arguments](/guides/arguments), [events](/guides/events),
-and [request](/guides/request#events).
+and [request](/guides/request#event-types).
 
 ### Restrictions
 
@@ -157,6 +157,24 @@ more fo these options:
 
 `:inline_fragment`
 : Applies to [Inline Spreads](/guides/spreads#inline)
+
+### Hidden
+
+{: .warning }
+> **Unavailable**
+> This feature is yet to be published.
+
+The hidden setting allow you to use directives and [types](/guides/advanced/types) that will never
+be exposed to a [request](/guides/request). It enables you to use the GraphQL structure
+to meta-configure itself, like with [authorization](/guides/advanced/authorization).
+
+```ruby
+# app/graphql/directives/authorize.rb
+self.hidden = true
+```
+
+Beware even if a directive is marked as hidden, it will still be published to the [Type Map](/guides/type-map),
+which may cause unexpected overrides. To avoid that, use an isolated [namespace](/guides/advanced/namespaces).
 
 ## Using Directives
 

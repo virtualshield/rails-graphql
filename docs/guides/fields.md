@@ -264,6 +264,10 @@ Read more about [subscriptions](/guides/subscriptions) and [fields subscription]
 
 ### Authorized Fields
 
+{: .warning }
+> **Unavailable**
+> This feature is yet to be published.
+
 All output fields support an authorization step. This step will attempt to check if the
 request and its context provide enough scope to resolve the field.
 

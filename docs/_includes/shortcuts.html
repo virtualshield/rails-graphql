@@ -1,4 +1,4 @@
-<details>
+<details {% if include.open %}open{% endif %}>
   <summary>List of all Shortcuts</summary>
   <div class="language-ruby highlighter-rouge">
 {% highlight ruby %}
@@ -13,11 +13,13 @@ GraphQL::Schema             # Rails::GraphQL::Schema
 GraphQL::Source             # Rails::GraphQL::Source
 GraphQL::Type               # Rails::GraphQL::Type
 
+GraphQL::Field:             # Rails::GraphQL::Alternative::Field
 GraphQL::Query              # Rails::GraphQL::Alternative::Query
 GraphQL::Mutation           # Rails::GraphQL::Alternative::Mutation
 GraphQL::Subscription       # Rails::GraphQL::Alternative::Subscription
 
-GraphQL::QuerySet           # Rails::GraphQL::Alternative::FieldSet
+GraphQL::FieldSet           # Rails::GraphQL::Alternative::FieldSet
+GraphQL::QuerySet           # Rails::GraphQL::Alternative::QuerySet
 GraphQL::MutationSet        # Rails::GraphQL::Alternative::MutationSet
 GraphQL::SubscriptionSet    # Rails::GraphQL::Alternative::SubscriptionSet
 

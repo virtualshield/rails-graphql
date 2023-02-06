@@ -190,7 +190,7 @@ module Rails
 
       # Checks if the field cannot br null
       def required?
-        !@null
+        !null?
       end
 
       # Checks if the field can be an array
@@ -234,24 +234,18 @@ module Rails
       end
 
       # Transforms the given value to its representation in a JSON string
-      def to_json(value)
-        return 'null' if value.nil?
-        return type_klass.to_json(value) unless array?
-        value.map { |part| type_klass.to_json(part) }
+      def to_json(*)
+        raise NotImplementedError, +"#{self.class.name} does not implement to_json"
       end
 
       # Turn the given value into a JSON string representation
-      def as_json(value)
-        return if value.nil?
-        return type_klass.as_json(value) unless array?
-        value.map { |part| type_klass.as_json(part) }
+      def as_json(*)
+        raise NotImplementedError, +"#{self.class.name} does not implement as_json"
       end
 
       # Turn a user input of this given type into an ruby object
-      def deserialize(value)
-        return if value.nil?
-        return type_klass.deserialize(value) unless array?
-        value.map { |val| type_klass.deserialize(val) unless val.nil? }
+      def deserialize(*)
+        raise NotImplementedError, +"#{self.class.name} does not implement deserialize"
       end
 
       # Check if the given value is valid using +valid_input?+ or

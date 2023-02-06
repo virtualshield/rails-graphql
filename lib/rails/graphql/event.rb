@@ -42,6 +42,7 @@ module Rails
 
       # Check if the provided +other+ is equal to the source of the event. If
       # other is a directive, then check if the source is using that directive
+      # TODO: Other cannot be an instance
       def same_source?(other)
         if other.is_a?(Directive) || (other.is_a?(Module) && other < Directive)
           event_name == :attach || source.using?(other)

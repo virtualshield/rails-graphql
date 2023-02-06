@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Type Assignment - Guides
+title: Type Assignment - Advanced - Guides
 description: Assign other classes to types to gain extra powers
 ---
 
