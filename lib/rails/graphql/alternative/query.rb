@@ -15,9 +15,9 @@ module Rails
       self.abstract = true
 
       class << self
-        delegate :gql_name, :to_sym, :desc, :argument, :ref_argument, :id_argument,
-          :use, :internal?, :disabled?, :enabled?, :disable!, :enable!, :rename!,
-          :authorize, :on, :description=, :description, to: :field
+        delegate :gql_name, :to_sym, :desc, :arguments, :argument, :ref_argument, :id_argument,
+          :use, :internal?, :disabled?, :enabled?, :disable!, :enable!, :rename!, :authorize,
+          :on, :description=, :description, to: :field
 
         # Returns the type of the field class
         def type_field_class

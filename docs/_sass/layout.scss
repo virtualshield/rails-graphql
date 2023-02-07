@@ -188,8 +188,8 @@ body {
     padding: 2.5rem;
     padding-bottom: 1rem;
     color: var(--high-contrast);
-    grid-template-rows: 65% 1fr;
-    grid-template-columns: 65% 1fr;
+    grid-template-rows: .65fr .35fr;
+    grid-template-columns: .65fr .35fr;
 
     p {
       margin: 0;
@@ -260,8 +260,8 @@ body {
       margin-bottom: 1rem;
       position: relative;
       background-color: $white;
-      grid-template-rows: 55% 1fr;
-      grid-template-columns: 60% 1fr;
+      grid-template-rows: .55fr .45fr;
+      grid-template-columns: .6fr .4fr;
       grid-template-areas: "title code" "text code";
 
       h2 {
@@ -282,7 +282,7 @@ body {
     }
 
     div.odd {
-      grid-template-columns: 1fr 60%;
+      grid-template-columns: .4fr .6fr;
       grid-template-areas: "code title" "code text";
 
       h2, p {

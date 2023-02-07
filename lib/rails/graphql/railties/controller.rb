@@ -33,8 +33,12 @@ module Rails
       end
 
       # GET /describe
-      def describe
-        render plain: gql_schema_header + gql_describe_schema + gql_schema_footer
+      def describe(schema = gql_schema)
+        render plain: [
+          gql_schema_header(schema),
+          gql_describe_schema(schema),
+          gql_schema_footer,
+        ].join
       end
 
       # GET /graphiql
@@ -128,7 +132,7 @@ module Rails
         end
 
         # Shows a text representation of the schema
-        def gql_describe_schema(schema = gql_schema)
+        def gql_describe_schema(schema)
           schema.to_gql(
             with_descriptions: !params.key?(:without_descriptions),
             with_spec: !params.key?(:without_spec),
@@ -137,9 +141,9 @@ module Rails
 
         # Print a header of the current schema for the description process
         # TODO: Maybe add a way to detect from which file the schema is being loaded
-        def gql_schema_header
-          ns = +" [#{gql_schema.namespace}]" if gql_schema.namespace != :base
-          +"#{DESCRIBE_HEADER}# Schema #{gql_schema.name}#{ns}\n"
+        def gql_schema_header(schema)
+          ns = +" [#{schema.namespace}]" if schema.namespace != :base
+          +"#{DESCRIBE_HEADER}# Schema #{schema.name}#{ns}\n"
         end
 
         # Show the footer of the describe page

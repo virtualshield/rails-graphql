@@ -10,6 +10,10 @@ module Rails
       autoload :Mutation
       autoload :Subscription
 
+      autoload_at "#{__dir__}/alternative/query" do
+        autoload :Field
+      end
+
       autoload_at "#{__dir__}/alternative/field_set" do
         autoload :FieldSet
         autoload :MutationSet

@@ -97,6 +97,8 @@ module Rails
           ns = @module_namespaces[mod]
           break ns unless ns.nil?
         end
+      rescue ::NameError
+        # If any module parent can't be found, there is no much we can do
       end
 
       # Register a given object, which must be a class where the namespaces and

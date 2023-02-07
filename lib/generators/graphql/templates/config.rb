@@ -40,7 +40,7 @@ Rails::GraphQL.configure do |config|
   # Introspection is enabled by default. It is recommended to only use
   # introspection during development and tests, never in production.
   # This can also be set per schema level.
-  config.enable_introspection = true
+  config.enable_introspection = !Rails.env.production?
 
   # Define the names of the schema/operations types. The single "_" is a
   # suggestion. In an application that has a Subscription object, it will
@@ -93,5 +93,5 @@ Rails::GraphQL.configure do |config|
   # behaves closer to YAML. The received value is ensured to be wrapped in
   # "{}". If that produces unexpected results, you can assign a proc and then
   # parse the value in any other way.
-  # config.literal_input_parser = JSON.method(:parse)
+  # config.literal_input_parser = Psych.method(:safe_load)
 end
