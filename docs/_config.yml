@@ -85,6 +85,10 @@ defaults:
       path: ""
     values:
       toc: true
+  - scope:
+      path: "handbook/snippets/**/*.html"
+    values:
+      sitemap: false
 
 # Enable or disable the site search
 # Supports true (default) or false

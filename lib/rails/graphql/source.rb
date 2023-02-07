@@ -85,7 +85,13 @@ module Rails
 
         # Get the main name of the source
         def base_name
-          name.demodulize[0..-7]
+          @base_name ||= begin
+            nested = "::#{Type::Creator::NESTED_MODULE}::"
+
+            value = name.delete_prefix('GraphQL::')
+            value = name.split(nested).last if name.include?(nested)
+            value.chomp('Source')
+          end
         end
 
         # :singleton-method:

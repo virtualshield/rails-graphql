@@ -58,8 +58,8 @@ description: An index of all you can find in this gem
     </nav>
     <h4>Customizing</h4>
     <nav>
-      <a href="/guides/customizing/channel">Channel</a>
       <a href="/guides/customizing/controller">Controller</a>
+      <a href="/guides/customizing/channel">Channel</a>
     </nav>
   </section>
 

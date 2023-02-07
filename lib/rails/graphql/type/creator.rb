@@ -155,7 +155,7 @@ module Rails
           # Let's clean up the name
           def sanitize_name(name_or_object)
             name = name_or_object.is_a?(Module) ? name_or_object.name : name_or_object.to_s
-            name = name.classify.gsub(/::/, '_')
+            name = name.classify.delete_prefix('GraphQL::').gsub(/::/, '_')
             name.end_with?(name_suffix) ? name : name + name_suffix
           end
 

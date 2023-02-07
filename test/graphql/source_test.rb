@@ -25,7 +25,7 @@ class GraphQL_SourceTest < GraphQL::TestCase
 
   def test_base_name
     described_class.stub(:abstract?, false) do
-      assert_equal('DESCRIBED', described_class.base_name)
+      assert_equal('DESCRIBED_CLASS', described_class.base_name)
     end
   end
 

@@ -125,7 +125,7 @@ module Rails
 
         # Set the assignment to a model with a similar name as the source
         def assigned_to
-          @assigned_to ||= name.delete_prefix('GraphQL::')[0..-7]
+          defined?(@assigned_to) ? @assigned_to : base_name
         end
 
         # Stores columns associated with enums so that the fields can have a
