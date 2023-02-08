@@ -11,7 +11,7 @@
 * Several fixes to events and callbacks
 * Fixes for source hooks
 * Fixes for scoped arguments
-* Docs now available on the [website](https://www.rails-graphql.dev/)
+* Docs now available on the [website](https://rails-graphql.dev/)
 
 ### 1.0.0.beta - 2023-01-23
 
