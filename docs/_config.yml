@@ -19,7 +19,7 @@ description: >-
   A Fresh new GraphQL server for Rails applications,
   with a focus on natural and Ruby-like DSL.
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "https://www.rails-graphql.dev"
+url: "https://rails-graphql.dev"
 image: "/assets/images/logo.png"
 
 # Build settings
