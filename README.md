@@ -1,4 +1,4 @@
-<a href="https://www.rails-graphql.dev/?utm_source=github">
+<a href="https://rails-graphql.dev/?utm_source=github">
   <img src="./docs/assets/images/github.png" alt="Rails GraphQL - GraphQL meets RoR with the most Ruby-like DSL" />
 </a>
 
@@ -8,7 +8,7 @@
 <!--([![Test Coverage](https://codeclimate.com/github/virtualshield/rails-graphql/badges/coverage.svg)](https://codeclimate.com/github/virtualshield/rails-graphql/coverage))-->
 <!--([![Dependency Status](https://gemnasium.com/badges/github.com/virtualshield/rails-graphql.svg)](https://gemnasium.com/github.com/virtualshield/rails-graphql))-->
 
-[Wiki](https://www.rails-graphql.dev/?utm_source=github) |
+[Wiki](https://rails-graphql.dev/?utm_source=github) |
 [Bugs](https://github.com/virtualshield/rails-graphql/issues)
 
 # Description
@@ -54,55 +54,55 @@ $ curl -d '{"query":"{ welcome }"}' \
 
 # Features
 
-[GraphQL Parser](https://www.rails-graphql.dev/guides/parser?utm_source=github)
+[GraphQL Parser](https://rails-graphql.dev/guides/parser?utm_source=github)
 : Supporting the <a href="https://spec.graphql.org/October2021/" target="_blank" rel="external nofollow">October 2021</a> spec
 
-[Schemas](https://www.rails-graphql.dev/guides/schemas?utm_source=github)
+[Schemas](https://rails-graphql.dev/guides/schemas?utm_source=github)
 : One or multiple under the same application or across multiple engines
 
-[Queries](https://www.rails-graphql.dev/guides/queries?utm_source=github)
+[Queries](https://rails-graphql.dev/guides/queries?utm_source=github)
 : 3 different ways to defined your queries, besides sources
 
-[Mutations](https://www.rails-graphql.dev/guides/mutations?utm_source=github)
+[Mutations](https://rails-graphql.dev/guides/mutations?utm_source=github)
 : 3 different ways to defined your mutations, besides sources
 
-[Subscriptions](https://www.rails-graphql.dev/guides/subscriptions?utm_source=github)
+[Subscriptions](https://rails-graphql.dev/guides/subscriptions?utm_source=github)
 : 3 different ways to defined your subscriptions, besides sources
 
-[Directives](https://www.rails-graphql.dev/guides/directives?utm_source=github)
+[Directives](https://rails-graphql.dev/guides/directives?utm_source=github)
 : 4 directives provided: `@deprecated`, `@skip`, `@include`, and `@specifiedBy`
 : Event-driven interface to facilitate new directives
 
-[Scalars](https://www.rails-graphql.dev/guides/scalars?utm_source=github)
+[Scalars](https://rails-graphql.dev/guides/scalars?utm_source=github)
 : All the spec scalars plus: `any`, `bigint`, `binary`, `date`, `date_time`, `decimal`, `json`, and `time`
 
-[Sources](https://www.rails-graphql.dev/guides/sources?utm_source=github)
+[Sources](https://rails-graphql.dev/guides/sources?utm_source=github)
 : A bridge between classes and GraphQL types and fields
-: Fully implemented for [ActiveRecord](https://www.rails-graphql.dev/guides/sources/active-record?utm_source=github) for `PostgreSQL`, `MySQL`, and `SQLite` databases.
+: Fully implemented for [ActiveRecord](https://rails-graphql.dev/guides/sources/active-record?utm_source=github) for `PostgreSQL`, `MySQL`, and `SQLite` databases.
 
-[Generators](https://www.rails-graphql.dev/guides/generators?utm_source=github)
+[Generators](https://rails-graphql.dev/guides/generators?utm_source=github)
 : Rails generators for you to get start quickly
 
-[Shortcuts](https://www.rails-graphql.dev/guides/architecture#shortcuts?utm_source=github)
+[Shortcuts](https://rails-graphql.dev/guides/architecture#shortcuts?utm_source=github)
 : Several shortcuts through `::GraphQL` module to access classes within the gem
 
-[Type Map](https://www.rails-graphql.dev/guides/type-map?utm_source=github)
+[Type Map](https://rails-graphql.dev/guides/type-map?utm_source=github)
 : A centralized place where all the types are stored and can be resolved
 
-[Global ID](https://www.rails-graphql.dev/guides/global-id?utm_source=github)
+[Global ID](https://rails-graphql.dev/guides/global-id?utm_source=github)
 : All objects defined supports `.to_global_id`, or simply `.to_gid`
 
-[Subscriptions Provider](https://www.rails-graphql.dev/guides/subscriptions/providers?utm_source=github)
-: Current supporting only [ActionCable](https://www.rails-graphql.dev/guides/subscriptions/action-cable-provider?utm_source=github) provider and [Memory](https://www.rails-graphql.dev/guides/subscriptions/memory-store?utm_source=github) store
+[Subscriptions Provider](https://rails-graphql.dev/guides/subscriptions/providers?utm_source=github)
+: Current supporting only [ActionCable](https://rails-graphql.dev/guides/subscriptions/action-cable-provider?utm_source=github) provider and [Memory](https://rails-graphql.dev/guides/subscriptions/memory-store?utm_source=github) store
 
-[Introspection](https://www.rails-graphql.dev/guides/introspection?utm_source=github)
+[Introspection](https://rails-graphql.dev/guides/introspection?utm_source=github)
 : All necessary types for introspection with proper descriptions
 : Plain text display of the schemas
 
-[Testing](https://www.rails-graphql.dev/guides/testing?utm_source=github)
+[Testing](https://rails-graphql.dev/guides/testing?utm_source=github)
 : Support to validate GraphQL documents and stub values before requests
 
-[Error Handling](https://www.rails-graphql.dev/guides/error-handling?utm_source=github)
+[Error Handling](https://rails-graphql.dev/guides/error-handling?utm_source=github)
 : Full support to `rescue_from` within schemas
 : A gracefully backtrace display
 
