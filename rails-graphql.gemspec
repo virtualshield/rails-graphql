@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.summary     = 'GraphQL meets RoR with the most Ruby-like DSL'
   s.description = 'A Fresh new GraphQL server for Rails applications, with a focus on natural and Ruby-like DSL'
   s.metadata    = {
-    'homepage_uri'    => 'https://www.rails-graphql.dev/',
+    'homepage_uri'    => 'https://rails-graphql.dev/',
     "source_code_uri" => 'https://github.com/virtualshield/rails-graphql',
     'bug_tracker_uri' => 'https://github.com/virtualshield/rails-graphql/issues',
     'changelog_uri'   => 'https://github.com/virtualshield/rails-graphql/blob/master/CHANGELOG.md',
