@@ -21,13 +21,13 @@ module Rails
           build_all! unless abstract?
         end
 
-        # Allows building anything that is in hooks
+        # Make sure to properly indicate about build methods
         def respond_to_missing?(method_name, *)
           return super unless method_name.to_s.start_with?('build_') &&
             hook_names.include?(method_name.to_s[6..-1].to_sym)
         end
 
-        # Allow fast creation of values
+        # Allows all sorts of building methods to be called
         def method_missing(method_name, *args, **xargs, &block)
           return super unless method_name.to_s.start_with?('build_')
 

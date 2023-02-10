@@ -30,7 +30,7 @@ module Rails
 
       # Marks if the source should be threated as an interface, meaning that
       # no object will be created, instead an interface will
-      class_attribute :act_as_interface, instance_accessor: false, default: false
+      class_attribute :act_as_interface, instance_accessor: false
 
       # The name of the class (or the class itself) to be used as superclass for
       # the generate GraphQL interface type of this source
@@ -147,7 +147,8 @@ module Rails
 
         # Checks if the source is building an interface instead of an object
         def interface?
-          defined?(@interface) || act_as_interface? || sti_interface?
+          defined?(@interface) || act_as_interface == true ||
+            (act_as_interface != false && sti_interface?)
         end
 
         # Provides access to the default plural query field, for associations interconnection
