@@ -29,7 +29,7 @@ module Rails
 
       # The list of nested paths inside of the graphql folder that does not
       # require to be in their own namespace.
-      config.paths = %w[directives fields sources enums inputs interfaces object
+      config.paths = %w[directives fields sources enums inputs interfaces objects
         scalars unions].to_set
 
       # This is very similar to `ActiveRecord` verbose logs, which simply show the
@@ -179,6 +179,17 @@ module Rails
       # "{}". If that produces unexpected results, you can assign a proc and then
       # parse the value in any other way.
       config.literal_input_parser = JSON.method(:parse)
+
+      # A mapping for the internal parameters and where they should be taken
+      # from. You can point to nested values using dot notation.
+      # TODO: Needs implementation
+      config.params_mapping = {
+        query: 'query',
+        variables: 'variables',
+        operation_name: 'operation_name',
+        query_cache_key: 'extensions.persistedQuery.sha256Hash',
+        query_cache_version: 'extensions.persistedQuery.version',
+      }
 
       # TODO: To be implemented
       # allow_query_serialization
