@@ -220,6 +220,7 @@ module Rails
 
           # Run a list of hooks using the +source+ as the instance of the block
           def run_hooks(hook_name, source = self)
+            super
             all_hooks.try(:[], hook_name.to_sym)&.reverse_each do |block|
               source.instance_exec(&block)
             end

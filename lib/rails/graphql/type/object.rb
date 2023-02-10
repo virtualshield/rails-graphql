@@ -77,7 +77,7 @@ module Rails
 
           def inspect
             return super if self.eql?(Type::Object)
-            fields = @fields.values.map(&:inspect)
+            fields = @fields&.values&.map(&:inspect)
             fields = fields.presence && +" {#{fields.join(', ')}}"
 
             directives = inspect_directives

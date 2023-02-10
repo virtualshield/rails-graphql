@@ -47,6 +47,11 @@ module Rails
             @built ||= Set.new
           end
 
+          # Mark as built before running the hooks
+          def run_hooks(type, *)
+            built.add(type)
+          end
+
         private
 
           # Import all options-based settings for skipping field
@@ -93,7 +98,6 @@ module Rails
           # Build all the objects associated with this source
           def build!(type)
             ensure_build!(type)
-            built << type
 
             schema_type = Helpers::WithSchemaFields::TYPE_FIELD_CLASS.key?(type)
             catch(:skip) { run_hooks(:start) } unless built?(:start)
