@@ -19,6 +19,7 @@ module Rails
       extend ActiveSupport::Autoload
 
       FILTER_REGISTER_TRACE = /((inherited|initialize)'$|schema\.rb:\d+)/.freeze
+      NESTED_MODULE = Type::Creator::NESTED_MODULE
 
       # Store all the base classes that are managed by the Type Map
       mattr_accessor :base_classes, instance_writer: false,
@@ -146,7 +147,6 @@ module Rails
       # Unregister all the provided objects by simply assigning nil to their
       # final value on the index
       def unregister(*objects)
-        sub_mod = Type::Creator::NESTED_MODULE
         objects.each do |object|
           namespaces = sanitize_namespaces(namespaces: object.namespaces, exclusive: true)
           namespaces << :base if namespaces.empty?
@@ -157,11 +157,11 @@ module Rails
             @objects -= 1
           end
 
-          return unless object.const_defined?(sub_mod, false)
+          return unless object.const_defined?(NESTED_MODULE, false)
 
-          nested_mod = object.const_get(sub_mod)
-          unregister(*nested_mod.constants.map(&nested_mod.method(:const_get)))
-          object.send(:remove_const, sub_mod)
+          nested_mod = object.const_get(NESTED_MODULE, false)
+          nested_mod.constants.each { |name| nested_mod.const_get(name, false).unregister! }
+          object.send(:remove_const, NESTED_MODULE)
         end
       end
 

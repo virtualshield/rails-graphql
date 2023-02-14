@@ -105,7 +105,7 @@ module Rails
         # Add a new field of the give +type+
         # See {OutputField}[rdoc-ref:Rails::GraphQL::OutputField] class.
         def add_field(type, *args, **xargs, &block)
-          klass = Field.const_get(TYPE_FIELD_CLASS[type])
+          klass = Field.const_get(TYPE_FIELD_CLASS[type], false)
           object = klass.new(*args, **xargs, owner: self, &block)
 
           raise DuplicatedError, (+<<~MSG).squish if has_field?(type, object.name)
@@ -126,7 +126,7 @@ module Rails
             A #{field.schema_type} field cannot be added as a #{type} field.
           MSG
 
-          klass = Field.const_get(TYPE_FIELD_CLASS[type])
+          klass = Field.const_get(TYPE_FIELD_CLASS[type], false)
           raise ArgumentError, (+<<~MSG).squish unless field.is_a?(klass)
             The #{field.class.name} is not a valid field for #{type} fields.
           MSG
@@ -236,7 +236,7 @@ module Rails
         # TODO: Maybe add deepness into the recursive value
         def import_all_into(type, mod, recursive: false, **xargs)
           mod.constants.each do |const_name|
-            object = mod.const_get(const_name)
+            object = mod.const_get(const_name, false)
 
             import_into(type, object, **xargs) if object.is_a?(Class)
             import_all_into(type, object, recursive: recursive, **xargs) if recursive && object.is_a?(Module)

@@ -110,7 +110,8 @@ module Rails
           def hook_scope_for(type, schema_type)
             type = type.to_sym
             klass = schema_type ? 'WithSchemaFields::ScopedConfig' : 'AttributeDelegator'
-            Source::ScopedConfig.new(self, Helpers.const_get(klass).new(self, type), type)
+            klass = Helpers.const_get(klass, false).new(self, type)
+            Source::ScopedConfig.new(self, klass, type)
           end
 
       end

@@ -159,7 +159,7 @@ module Rails
         # Import a module containing several classes to be imported
         def import_all(mod, recursive: false, **xargs)
           mod.constants.each do |const_name|
-            object = mod.const_get(const_name)
+            object = mod.const_get(const_name, false)
 
             import(object, **xargs) if object.is_a?(Class)
             import_all(object, recursive: recursive, **xargs) if recursive && object.is_a?(Module)

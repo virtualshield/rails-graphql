@@ -127,10 +127,10 @@ module Rails
 
             # Create the class under the nested module
             return base.const_set(name, Class.new(superclass)) \
-              unless base.const_defined?(name)
+              unless base.const_defined?(name, false)
 
             # Get the existing class and check for the once setting
-            klass = base.const_get(name)
+            klass = base.const_get(name, false)
             return klass unless !once? && klass < superclass
 
             # Created once or not from the same superclass
@@ -141,7 +141,7 @@ module Rails
 
           # Make sure to properly get the superclass
           def sanitize_superclass(value)
-            value = Type.const_get(value.to_s.classify) unless value.is_a?(Class)
+            value = Type.const_get(value.to_s.classify, false) unless value.is_a?(Class)
 
             valid_class = value.is_a?(Class) && value.respond_to?(:kind)
             valid_class &= SUPPORTED_KINDS.include?(value.kind)
@@ -174,7 +174,7 @@ module Rails
           def base_module
             base = @from.is_a?(Module) ? @from : @from.class
             if base.const_defined?(NESTED_MODULE, false)
-              base.const_get(NESTED_MODULE)
+              base.const_get(NESTED_MODULE, false)
             else
               base.const_set(NESTED_MODULE, Module.new)
             end

@@ -18,7 +18,7 @@ module Rails
 
           # Helper method to initialize an operation given the node
           def build(request, node)
-            request.build(const_get(node.type.to_s.classify), request, node)
+            request.build(const_get(node.type.to_s.classify, false), request, node)
           end
 
           # Rewrite the kind to always return +:operation+

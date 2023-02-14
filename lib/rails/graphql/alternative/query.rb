@@ -85,7 +85,7 @@ module Rails
           def field_class
             return @field.class if defined?(@field)
             list = Helpers::WithSchemaFields::TYPE_FIELD_CLASS
-            GraphQL::Field.const_get(list[type_field_class])
+            GraphQL::Field.const_get(list[type_field_class], false)
           end
       end
     end

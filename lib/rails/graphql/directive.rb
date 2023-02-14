@@ -129,7 +129,7 @@ module Rails
             GraphQL.enumerate(setting).map do |item|
               next item unless item.is_a?(String) || item.is_a?(Symbol)
               GraphQL.type_map.fetch(item, namespaces: namespaces) ||
-                ::GraphQL.const_get(item)
+                ::GraphQL.const_get(item, false)
             end
           end
 

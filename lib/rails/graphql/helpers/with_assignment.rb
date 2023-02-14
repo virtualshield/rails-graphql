@@ -61,12 +61,12 @@ module Rails
           return if abstract?
           return super unless assigned?
 
-          result = super
-          return result unless (klass = safe_assigned_class)
-          return result if GraphQL.type_map.exist?(klass, namespaces: namespaces)
+          super.tap do
+            break unless (klass = safe_assigned_class)
+            break if GraphQL.type_map.exist?(klass, namespaces: namespaces)
 
-          GraphQL.type_map.register_alias(klass, to_sym, namespaces: namespaces)
-          result
+            GraphQL.type_map.register_alias(klass, gql_name, namespaces: namespaces)
+          end
         end
 
         protected

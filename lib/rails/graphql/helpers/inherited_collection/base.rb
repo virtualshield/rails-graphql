@@ -12,7 +12,7 @@ module Rails
         # Just a little helper to initialize the iterator form a given +source+
         def self.handle(source, ivar, type)
           klass = (type == :array || type == :set) ? :Array : :Hash
-          InheritedCollection.const_get(klass).new(source, ivar, type)
+          InheritedCollection.const_get(klass, false).new(source, ivar, type)
         end
 
         def initialize(source, ivar, type)

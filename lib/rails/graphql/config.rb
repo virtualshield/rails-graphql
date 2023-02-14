@@ -30,7 +30,7 @@ module Rails
       # The list of nested paths inside of the graphql folder that does not
       # require to be in their own namespace.
       config.paths = %w[directives fields sources enums inputs interfaces objects
-        scalars unions].to_set
+        scalars unions concerns].to_set
 
       # This is very similar to `ActiveRecord` verbose logs, which simply show the
       # path of the file that started a GraphQL request.

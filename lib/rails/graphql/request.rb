@@ -95,12 +95,12 @@ module Rails
 
         # Allow accessing component-based objects through the request
         def const_defined?(name, *)
-          Component.const_defined?(name) || super
+          Component.const_defined?(name, false) || super
         end
 
         # Allow accessing component-based objects through the request
         def const_missing(name)
-          Component.const_defined?(name) ? Component.const_get(name) : super
+          Component.const_defined?(name, false) ? Component.const_get(name, false) : super
         end
       end
 
@@ -476,13 +476,13 @@ module Rails
           modules.each do |mod|
             mod.constants.each do |const_name|
               const_name = const_name.to_s
-              const = mod.const_get(const_name)
+              const = mod.const_get(const_name, false)
               next unless const.is_a?(Module)
 
               # Find the related request class to extend
               klass = const_name === 'Request' ? self.class : begin
                 const_name.split('_').inject(self.class) do |k, next_const|
-                  k.const_defined?(next_const) ? k.const_get(next_const) : break
+                  k.const_defined?(next_const) ? k.const_get(next_const, false) : break
                 end
               end
 
