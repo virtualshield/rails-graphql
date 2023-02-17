@@ -125,7 +125,8 @@ module Rails
 
         # Set the assignment to a model with a similar name as the source
         def assigned_to
-          defined?(@assigned_to) ? @assigned_to : base_name
+          return @assigned_to if defined?(@assigned_to)
+          @assigned_to = base_name.gsub('_', '::')
         end
 
         # Stores columns associated with enums so that the fields can have a

@@ -62,17 +62,18 @@ module Rails
               xargs[:values] = enumerator.sort_by(&:last).map(&:first)
               xargs[:indexed] = enumerator.first.last.is_a?(Numeric)
 
-              create_type(:enum, enum_name.classify, **xargs, &block)
+              create_type(:enum, enum_name.to_s.classify, **xargs, &block)
             end
 
             # Helper method to create a class based on the given +type+ and
             # allows several other settings to be executed on it
-            def create_type(type = nil, name = base_name, **xargs, &block)
+            def create_type(type = nil, name = nil, **xargs, &block)
               xargs[:owner] ||= self
               xargs[:namespaces] = namespaces
               xargs[:assigned_to] = safe_assigned_class
               superclass = xargs.delete(:superclass) || type
 
+              name ||= base_name.tr('_', '')
               GraphQL::Type.create!(self, name, superclass, **xargs, &block)
             end
 

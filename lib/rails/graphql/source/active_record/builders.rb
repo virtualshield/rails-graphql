@@ -66,7 +66,7 @@ module Rails
           return remove_instance_variable(:@enums) if enums.blank?
 
           @enums = enums.each_with_object({}) do |(attribute, setting), hash|
-            class_name = base_name + attribute.to_s.classify
+            class_name = base_name.tr('_', '') + attribute.to_s.classify
             hash[attribute.to_s] = create_enum(class_name, setting)
           rescue DuplicatedError
             next
