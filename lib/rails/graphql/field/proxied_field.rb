@@ -72,7 +72,7 @@ module Rails
 
       # Override this to include proxied owners
       def all_owners
-        super + proxied_owner.all_owners
+        super + @field.all_owners
       end
 
       # Return the proxied field

@@ -83,7 +83,8 @@ module Rails
         # Find the proper owner of the symbol based callback
         def owner
           @owner ||= target.all_owners.find do |item|
-            item.is_a?(Class) ? item.method_defined?(block) : item.respond_to?(block)
+            item.is_a?(Class) && item.included_modules.include?(Helpers::Instantiable) &&
+              item.method_defined?(block)
           end || target
         end
 

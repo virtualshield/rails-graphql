@@ -176,7 +176,9 @@ module Rails
             if base.const_defined?(NESTED_MODULE, false)
               base.const_get(NESTED_MODULE, false)
             else
-              base.const_set(NESTED_MODULE, Module.new)
+              base.const_set(NESTED_MODULE, Module.new).tap do
+                base.private_constant(NESTED_MODULE)
+              end
             end
           end
 

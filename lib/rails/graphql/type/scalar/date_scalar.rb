@@ -7,7 +7,7 @@ module Rails
       class Scalar::DateScalar < Scalar
         desc 'The Date scalar type represents a ISO 8601 string value.'
 
-        use :specified_by, url: 'https://www.rfc-editor.org/rfc/rfc3339'
+        use :specified_by, url: 'https://en.wikipedia.org/wiki/ISO_8601'
 
         class << self
           def valid_input?(value)

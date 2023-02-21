@@ -75,15 +75,14 @@ module Rails
 
         # Build all necessary attribute fields into the given +holder+
         def build_attribute_fields(holder, **field_options)
-          each_attribute(holder) do |key, type, **options|
-            next if holder.has_field?(key) || skip_field?(key, on: holder.kind)
 
+          each_attribute(holder) do |key, type, **options|
             str_key = key.to_s
             type = (defined?(@enums) && @enums.key?(str_key) && @enums[str_key]) ||
               (id_columns.include?(str_key) && :id) || type
 
             options[:null] = !attr_required?(key) unless options.key?(:null)
-            holder.field(key, type, **options.merge(field_options[key] || {}))
+            holder.safe_field(key, type, **options.merge(field_options[key] || {}))
           end
         end
 

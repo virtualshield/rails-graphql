@@ -84,6 +84,6 @@ class Integration_SQLite_StarWarsGlobalIDTest < GraphQL::IntegrationTestCase
     end
 
     def source
-      StartWarsSqliteSchema::NestedTypes::LiteFactionSource
+      StartWarsSqliteSchema.const_get(:NestedTypes)::LiteFactionSource
     end
 end

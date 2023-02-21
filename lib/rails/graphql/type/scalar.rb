@@ -48,7 +48,7 @@ module Rails
 
           # Transforms the given value to its representation in a JSON string
           def to_json(value)
-            as_json(value)&.inspect
+            as_json(value).inspect
           end
 
           # Transforms the given value to its representation in a Hash object

@@ -22,10 +22,10 @@ scalar Binary @specifiedBy(url: "https://www.rfc-editor.org/rfc/rfc3548")
 scalar Boolean
 
 "The Date scalar type represents a ISO 8601 string value."
-scalar Date @specifiedBy(url: "https://www.rfc-editor.org/rfc/rfc3339")
+scalar Date @specifiedBy(url: "https://en.wikipedia.org/wiki/ISO_8601")
 
 "The DateTime scalar type represents a ISO 8601 string value."
-scalar DateTime @specifiedBy(url: "https://www.rfc-editor.org/rfc/rfc3339")
+scalar DateTime @specifiedBy(url: "https://en.wikipedia.org/wiki/ISO_8601")
 
 """
 The Decimal scalar type represents signed fractional values with extra precision.
@@ -61,7 +61,7 @@ scalar String
 The Time scalar type that represents a distance in time using hours,
 minutes, seconds, and milliseconds.
 """
-scalar Time @specifiedBy(url: "https://www.rfc-editor.org/rfc/rfc3339")
+scalar Time @specifiedBy(url: "https://en.wikipedia.org/wiki/ISO_8601")
 
 "The valid locations that a directive may be placed."
 enum __DirectiveLocation {

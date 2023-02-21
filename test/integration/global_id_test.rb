@@ -35,7 +35,7 @@ class Integration_GlobalIDTest < GraphQL::IntegrationTestCase
   end
 
   def test_create_object_field
-    obj = SCHEMA::NestedTypes::HumanObject[:name]
+    obj = SCHEMA.const_get(:NestedTypes)::HumanObject[:name]
     assert_gid_value('gql://start-wars-mem/Human/name', obj)
   end
 
@@ -85,7 +85,7 @@ class Integration_GlobalIDTest < GraphQL::IntegrationTestCase
 
   def test_parse_object_field
     obj = find_gid('gql://start-wars-mem/Human/name')
-    assert_equal(SCHEMA::NestedTypes::HumanObject[:name], obj)
+    assert_equal(SCHEMA.const_get(:NestedTypes)::HumanObject[:name], obj)
   end
 
   def test_parse_scalar_type

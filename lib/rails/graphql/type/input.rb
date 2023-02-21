@@ -114,7 +114,7 @@ module Rails
         delegate_missing_to :resource
 
         def initialize(args = nil, **xargs)
-          @args = args || OpenStruct.new(xargs.transform_keys { |key| key.to_s.underscore })
+          @args = args || build_ostruct(xargs)
           @args.freeze
 
           validate! if args.nil?
@@ -135,7 +135,7 @@ module Rails
 
         # Just return the arguments as an hash
         def params
-          parametrize(self)
+          parametrize(@args.to_h)
         end
 
         # Correctly turn all the arguments into their +as_json+ version and
@@ -184,12 +184,19 @@ module Rails
           end
         end
 
+        protected
+
+          # A helper to turn a hash into a proper Open Struct instance
+          def build_ostruct(hash)
+            OpenStruct.new(hash.transform_keys { |key| key.to_s.underscore })
+          end
+
         private
 
           # Make sure to turn inputs into params
           def parametrize(input)
             case input
-            when Type::Input then parametrize(input.args.to_h)
+            when Type::Input then input.params
             when Array       then input.map(&method(:parametrize))
             when Hash        then input.transform_values(&method(:parametrize))
             else input

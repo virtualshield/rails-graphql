@@ -97,7 +97,7 @@ class Integration_ResolverPrecedenceTest < GraphQL::IntegrationTestCase
   end
 
   def test_simple_object
-    object = SCHEMA::NestedTypes::Object1Object
+    object = SCHEMA.const_get(:NestedTypes)::Object1Object
     field = object[:field1]
 
     # (1) Block has higher precedence than default value
