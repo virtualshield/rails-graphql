@@ -116,6 +116,7 @@ module Rails
         @null     = full ? false : xargs.fetch(:null, true)
         @array    = full ? true  : xargs.fetch(:array, false)
         @nullable = full ? false : xargs.fetch(:nullable, true)
+        @gql_name = xargs.fetch(:gql_name, @gql_name)
 
         self.description = xargs[:desc] || xargs[:description]
         @enabled = xargs.fetch(:enabled, !xargs.fetch(:disabled, false))
