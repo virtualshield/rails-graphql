@@ -283,6 +283,11 @@ When set to `:messages`, it uses
 }
 ```
 
+{: .highlight }
+> **Note**
+> If you decide to use this with `accepts_nested_attributes_for` for a `has_many` association,
+> it is recommended to enable <a href="https://edgeguides.rubyonrails.org/configuring.html#config-active-record-index-nested-attribute-errors" target="_blank" rel="external nofollow">`config.active_record.index_nested_attribute_errors = true`</a> to get better results.
+
 ## Methods
 
 Here is a list of methods that you can use and rely on to facilitate the usage

@@ -8,7 +8,7 @@ description: The basics about this gem and what you will find
 
 {: .warning }
 > **Important**
-> We are now in the RC1 (v1.0.0.rc1)! It's not recommended to be used in production **YET!**
+> We are now in the RC2 (v1.0.0.rc2)! It's not recommended to be used in production **YET!**
 
 ## Installation
 

@@ -1,5 +1,14 @@
 ### Unreleased
 
+### 1.0.0.rc2 - 2023-02-28
+
+* Fixes for inputs
+* Fixes for callbacks and field ownership
+* Fixes for the inline type creator and sources
+* Fixes to folder structure and constant management
+* Provide a better URL for ISO 8601 specification
+* Make some constants privat
+
 ### 1.0.0.rc1 - 2023-02-06
 
 * Added the `@specifiedBy` directive
