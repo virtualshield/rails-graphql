@@ -2,7 +2,6 @@
   <img src="./docs/assets/images/github.png" alt="Rails GraphQL - GraphQL meets RoR with the most Ruby-like DSL" />
 </a>
 
-![Build Status](https://github.com/virtualshield/rails-graphql/workflows/Tests/badge.svg)
 ![Gem Version](https://badge.fury.io/rb/rails-graphql.svg)
 <!-- [![Code Climate](https://codeclimate.com/github/virtualshield/rails-graphql/badges/gpa.svg)](https://codeclimate.com/github/virtualshield/rails-graphql) -->
 <!--([![Test Coverage](https://codeclimate.com/github/virtualshield/rails-graphql/badges/coverage.svg)](https://codeclimate.com/github/virtualshield/rails-graphql/coverage))-->
