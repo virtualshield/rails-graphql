@@ -103,7 +103,7 @@ The only thing added for this example is the skip of the authenticity token sinc
 we will be using a `POST` method.
 
 ```ruby
-# app/controllers/google_controller.rb
+# app/controllers/graphql_controller.rb
 class GraphQLController < ApplicationController
   include GraphQL::Controller
 
