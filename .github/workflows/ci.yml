@@ -16,14 +16,21 @@ on:
     branches:
       - '*'
 
-env:
-  GQL_MYSQL_DATABASE: test
-  GQL_MYSQL_PASSWORD: test
-
 jobs:
   test:
     name: "Run tests (${{ matrix.ruby }})"
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_DB: starwars
+          MYSQL_USER: root
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_PASSWORD: ''
+        ports:
+          - "3306:3306"
     strategy:
       fail-fast: false
       matrix:
@@ -34,15 +41,6 @@ jobs:
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: false
-      # - uses: harmon758/postgresql-action@v1
-      #   with:
-      #     postgresql version: '14'
-      - uses: mirromutth/mysql-action@v1.1
-        with:
-          mysql version: '8.0'
-          host port: 3307
-          container port: 3307
-          mysql root password: 'test'
       - run: sudo apt-get install libsqlite3-dev -y
         name: Setup Sqlite
       - run: bundle install

@@ -6,10 +6,10 @@ class MySQLRecord < ActiveRecord::Base
   establish_connection(
     name: 'mysql',
     adapter: 'mysql2',
-    host: ENV.fetch('GQL_MYSQL_HOST', 'localhost'),
-    database: ENV.fetch('GQL_MYSQL_DATABASE', 'starwars'),
-    username: ENV.fetch('GQL_MYSQL_USERNAME', 'root'),
-    password: ENV['GQL_MYSQL_PASSWORD'],
+    host: ENV.fetch('MYSQL_HOST', 'localhost'),
+    database: ENV.fetch('MYSQL_DB', 'starwars'),
+    username: ENV.fetch('MYSQL_USER', 'root'),
+    password: ENV['MYSQL_PASSWORD'],
   )
 end
 
