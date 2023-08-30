@@ -2,7 +2,7 @@
 # Rake tasks for development purposes
 
 begin
-  require 'bundler/setup'
+  require 'bundler/setup' unless ENV.key?('CI_COMPILE')
 rescue LoadError
   puts 'You must `gem install bundler` and `bundle install` to run rake tasks'
 end

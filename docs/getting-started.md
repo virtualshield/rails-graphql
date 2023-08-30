@@ -6,10 +6,6 @@ title: Getting Started
 description: The basics about this gem and what you will find
 ---
 
-{: .warning }
-> **Important**
-> We are now in the RC2 (v1.0.0.rc2)! It's not recommended to be used in production **YET!**
-
 ## Installation
 
 {% include installation.md %}

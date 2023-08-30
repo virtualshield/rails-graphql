@@ -23,7 +23,7 @@ env:
 jobs:
   test:
     name: "Run tests (${{ matrix.ruby }})"
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -53,12 +53,14 @@ jobs:
 
   mac_compile:
     name: "Compile for MacOS"
-    runs-on: macos-latest
+    runs-on: macos-13
     steps:
       - uses: actions/checkout@v3
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: head
+          ruby-version: '3.1'
           bundler-cache: false
-      - run: bundle install
-      - run: bundle exec rake compile
+      - run: gem install rake -v 13.0.6
+      - run: gem install rake-compiler -v 1.1.0
+      - run: gem install rake-compiler-dock -v 1.0.1
+      - run: CI_COMPILE=true rake compile
