@@ -29,6 +29,7 @@ jobs:
           MYSQL_USER: root
           MYSQL_ALLOW_EMPTY_PASSWORD: yes
           MYSQL_PASSWORD: ''
+          MYSQL_PORT: '3306'
         ports:
           - "3306:3306"
     strategy:

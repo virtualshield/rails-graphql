@@ -10,6 +10,7 @@ class MySQLRecord < ActiveRecord::Base
     database: ENV.fetch('MYSQL_DB', 'starwars'),
     username: ENV.fetch('MYSQL_USER', 'root'),
     password: ENV['MYSQL_PASSWORD'],
+    port: ENV['MYSQL_PORT'],
   )
 end
 
