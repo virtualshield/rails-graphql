@@ -17,6 +17,13 @@ class GraphQL_Type_EnumTest < GraphQL::TestCase
     refute(DESCRIBED_CLASS.valid_input?(1))
     refute(DESCRIBED_CLASS.valid_input?(nil))
     refute(DESCRIBED_CLASS.valid_input?('abc'))
+
+    str_token = new_token('"A"', :string)
+    refute(DESCRIBED_CLASS.valid_input?(str_token))
+
+    stubbed_config(:allow_string_as_enum_input, true) do
+      assert(DESCRIBED_CLASS.valid_input?(str_token))
+    end
   end
 
   def test_valid_output_ask
@@ -58,6 +65,14 @@ class GraphQL_Type_EnumTest < GraphQL::TestCase
     test_value = DESCRIBED_CLASS.deserialize('A')
     assert_instance_of(DESCRIBED_CLASS, test_value)
     assert_equal('A', test_value.value)
+
+    str_token = new_token('"A"', :string)
+    assert_nil(DESCRIBED_CLASS.deserialize(str_token))
+    stubbed_config(:allow_string_as_enum_input, true) do
+      test_value = DESCRIBED_CLASS.deserialize(str_token)
+      assert_instance_of(DESCRIBED_CLASS, test_value)
+      assert_equal('A', test_value.value)
+    end
   end
 
   def test_decorate

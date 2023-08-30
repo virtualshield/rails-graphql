@@ -1,6 +1,12 @@
 # Core ext methods
 
 class Object < BasicObject
+  def new_token(value, type)
+    GQLParser::Token.new(value).tap do |token|
+      token.instance_variable_set(:@type, type)
+    end
+  end
+
   def stub_ivar(name, value = nil)
     instance_variable_set(name, value)
     yield

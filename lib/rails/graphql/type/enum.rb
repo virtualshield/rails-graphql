@@ -39,7 +39,9 @@ module Rails
           # Check if a given value is a valid non-deserialized input
           def valid_input?(value)
             (valid_token?(value, :enum) && all_values.include?(value.to_s)) ||
-              (value.is_a?(String) && all_values.include?(value))
+              (value.is_a?(String) && all_values.include?(value)) ||
+              (allow_string_input? && valid_token?(value, :string) &&
+                all_values.include?(value.to_s[1..-2]))
           end
 
           # Check if a given value is a valid non-serialized output
@@ -62,7 +64,13 @@ module Rails
 
           # Turn a user input of this given type into an ruby object
           def deserialize(value)
-            new(value.is_a?(::GQLParser::Token) ? value.to_s : value) if valid_input?(value)
+            if valid_token?(value, :enum)
+              new(value.to_s)
+            elsif allow_string_input? && valid_token?(value, :string)
+              new(value[1..-2])
+            elsif valid_input?(value)
+              new(value)
+            end
           end
 
           # Use the instance as decorator
@@ -142,6 +150,12 @@ module Rails
               #{inspect_directives}
             INFO
           end
+
+          private
+
+            def allow_string_input?
+              GraphQL.config.allow_string_as_enum_input
+            end
         end
 
         attr_reader :value

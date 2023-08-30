@@ -43,10 +43,8 @@ jobs:
           host port: 3307
           container port: 3307
           mysql root password: 'test'
-      - uses: actions/setup-sqlite@v1
-        with:
-          sqlite-version: '3.40.0'
-          sqlite-year: '2022'
+      - run: sudo apt-get install libsqlite3-dev -y
+        name: Setup Sqlite
       - run: bundle install
       - run: bundle exec rake compile
       - run: bundle exec rake test

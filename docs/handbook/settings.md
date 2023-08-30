@@ -138,6 +138,16 @@ different suffix, change this value to it.
 
 ----------------------------------------------------------------
 
+#### `allow_string_as_enum_input`
+
+Set if the server should allow strings be used as input for ENUM inputs.
+It means that operations will support quotes for ENUM values embedded in
+the documents.
+
+**Default:** `false`
+
+----------------------------------------------------------------
+
 #### `enable_introspection`
 
 Introspection is enabled by default. It is recommended to only use
