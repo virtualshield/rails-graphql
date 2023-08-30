@@ -1,0 +1,53 @@
+name: ci
+concurrency:
+  group: "${{github.workflow}}-${{github.ref}}"
+  cancel-in-progress: true
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - v*.*.x
+    tags:
+      - v*.*.*
+  pull_request:
+    types: [opened, synchronize]
+    branches:
+      - '*'
+
+env:
+  GQL_MYSQL_DATABASE: test
+  GQL_MYSQL_PASSWORD: test
+
+jobs:
+  test:
+    name: "test (${{ matrix.ruby }} on ${{ matrix.os }})"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-18.04, macos-latest]
+        ruby: [2.7, 3.0, 3.1, 3.2, head]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: false
+      # - uses: harmon758/postgresql-action@v1
+      #   with:
+      #     postgresql version: '14'
+      - uses: mirromutth/mysql-action@v1.1
+        with:
+          mysql version: '8.0'
+          host port: 3307
+          container port: 3307
+          mysql root password: 'test'
+      - uses: actions/setup-sqlite@v1
+        with:
+          sqlite-version: '3.40.0'
+          sqlite-year: '2022'
+      - run: bundle install
+      - run: bundle exec rake compile
+      - run: bundle exec rake test
