@@ -1,7 +1,7 @@
 require 'active_record'
 
 puts '****************************************************'
-puts ENV.inspect
+puts ENV.to_json
 
 class MySQLRecord < ActiveRecord::Base
   self.abstract_class = true
@@ -9,11 +9,11 @@ class MySQLRecord < ActiveRecord::Base
   establish_connection(
     name: 'mysql',
     adapter: 'mysql2',
-    host: ENV.fetch('GQL_MYSQL_HOST', '127.0.0.1'),
+    host: ENV.fetch('GQL_MYSQL_HOST', 'localhost'),
     database: ENV.fetch('GQL_MYSQL_DATABASE', 'starwars'),
     username: ENV.fetch('GQL_MYSQL_USERNAME', 'root'),
     password: ENV['GQL_MYSQL_PASSWORD'],
-    port: ENV.fetch('GQL_MYSQL_PORT', '3306'),
+    port: ENV['GQL_MYSQL_PORT'],
   )
 end
 

@@ -20,14 +20,19 @@ jobs:
   test:
     name: "Run tests (${{ matrix.ruby }})"
     runs-on: ubuntu-latest
+    env:
+      MYSQL_HOST: '127.0.0.1'
+      MYSQL_USER: gql
+      MYSQL_PASSWORD: gqlpassword
     services:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_HOST: '127.0.0.1'
+          MYSQL_HOST: ${{ env.MYSQL_HOST }}
           MYSQL_DB: starwars
-          MYSQL_ALLOW_EMPTY_PASSWORD: yes
-          MYSQL_ROOT_PASSWORD: ''
+          MYSQL_USER: ${{ env.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ env.MYSQL_PASSWORD }}
+          MYSQL_RANDOM_ROOT_PASSWORD: yes
         ports:
           - "3306:3306"
         options: >-
@@ -47,11 +52,15 @@ jobs:
           bundler-cache: false
       - run: sudo apt-get install libsqlite3-dev -y
         name: Setup Sqlite
+      - run: mysql -h 127.0.0.1 --user=root --execute="show databases;"
+        name: List Databases
       - run: bundle install
       - run: bundle exec rake compile
       - run: bundle exec rake test
         env:
-          GQL_MYSQL_HOST: '127.0.0.1'
+          GQL_MYSQL_HOST: ${{ env.MYSQL_HOST }}
+          GQL_MYSQL_USERNAME: ${{ env.MYSQL_USER }}
+          GQL_MYSQL_PASSWORD: ${{ env.MYSQL_PASSWORD }}
           GQL_MYSQL_PORT: ${{ job.services.mysql.ports[3306] }}
 
   mac_compile:
