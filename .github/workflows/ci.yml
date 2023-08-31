@@ -51,7 +51,7 @@ jobs:
       - run: bundle exec rake compile
       - run: bundle exec rake test
         env:
-          GQL_MYSQL_HOST: ${{ job.services.mysql.env.MYSQL_HOST }}
+          GQL_MYSQL_HOST: '127.0.0.1'
           GQL_MYSQL_PORT: ${{ job.services.mysql.ports[3306] }}
 
   mac_compile:
