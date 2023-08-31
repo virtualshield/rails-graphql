@@ -52,8 +52,6 @@ jobs:
           bundler-cache: false
       - run: sudo apt-get install libsqlite3-dev -y
         name: Setup Sqlite
-      - run: mysql -h 127.0.0.1 --user=root --execute="show databases;"
-        name: List Databases
       - run: bundle install
       - run: bundle exec rake compile
       - run: bundle exec rake test
