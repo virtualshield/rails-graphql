@@ -1,0 +1,72 @@
+name: ci
+concurrency:
+  group: "${{github.workflow}}-${{github.ref}}"
+  cancel-in-progress: true
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - v*.*.x
+    tags:
+      - v*.*.*
+  pull_request:
+    types: [opened, synchronize]
+    branches:
+      - '*'
+
+jobs:
+  test:
+    name: "Run tests (${{ matrix.ruby }})"
+    runs-on: ubuntu-latest
+    env:
+      MYSQL_HOST: '127.0.0.1'
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_HOST: ${{ env.MYSQL_HOST }}
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_ROOT_PASSWORD: ''
+        ports:
+          - "3306:3306"
+        options: >-
+          --health-cmd "mysqladmin ping"
+          --health-interval 5s
+          --health-timeout 2s
+          --health-retries 3
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: [2.7, 3.0, 3.1, 3.2]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: false
+      - run: sudo apt-get install libsqlite3-dev -y
+        name: Setup Sqlite
+      - run: mysql -h 127.0.0.1 --port 3306 -u root -e 'CREATE DATABASE IF NOT EXISTS starwars;'
+        name: Create MySQL Database
+      - run: bundle install
+      - run: bundle exec rake compile
+      - run: bundle exec rake test
+        env:
+          GQL_MYSQL_HOST: ${{ env.MYSQL_HOST }}
+          GQL_MYSQL_PORT: ${{ job.services.mysql.ports[3306] }}
+
+  mac_compile:
+    name: "Compile for MacOS"
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+          bundler-cache: false
+      - run: gem install rake -v 13.0.6
+      - run: gem install rake-compiler -v 1.1.0
+      - run: gem install rake-compiler-dock -v 1.0.1
+      - run: CI_COMPILE=true rake compile

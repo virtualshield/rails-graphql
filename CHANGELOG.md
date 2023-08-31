@@ -1,5 +1,10 @@
 ### Unreleased
 
+### 1.0.0
+
+* Allow ENUM inputs to receive string (needs to be enabled through config)
+* Setup project's CI
+
 ### 1.0.0.rc2 - 2023-02-28
 
 * Fixes for inputs
@@ -7,7 +12,7 @@
 * Fixes for the inline type creator and sources
 * Fixes to folder structure and constant management
 * Provide a better URL for ISO 8601 specification
-* Make some constants privat
+* Make some constants private
 
 ### 1.0.0.rc1 - 2023-02-06
 

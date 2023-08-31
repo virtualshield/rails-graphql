@@ -61,6 +61,11 @@ module Rails
       # different suffix, change this value to it.
       config.auto_suffix_input_objects = 'Input'
 
+      # Set if the server should allow strings be used as input for ENUM inputs.
+      # It means that operations will support quotes for ENUM values embedded in
+      # the documents (heredoc won't be accepted).
+      config.allow_string_as_enum_input = false
+
       # Introspection is enabled by default. It is recommended to only use
       # introspection during development and tests, never in production.
       # This can also be set per schema level.
