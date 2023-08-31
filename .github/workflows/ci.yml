@@ -24,14 +24,18 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_HOST: 127.0.0.1
+          MYSQL_HOST: '127.0.0.1'
           MYSQL_DB: starwars
           MYSQL_USER: root
           MYSQL_ALLOW_EMPTY_PASSWORD: yes
           MYSQL_PASSWORD: ''
-          MYSQL_PORT: '3306'
         ports:
           - "3306:3306"
+        options: >-
+          --health-cmd "mysql health ping"
+          --health-interval 5s
+          --health-timeout 2s
+          --health-retries 3
     strategy:
       fail-fast: false
       matrix:
@@ -47,6 +51,9 @@ jobs:
       - run: bundle install
       - run: bundle exec rake compile
       - run: bundle exec rake test
+        env:
+          GQL_MYSQL_HOST: ${{ job.services.mysql.env.MYSQL_HOST }}
+          GQL_MYSQL_PORT: ${{ job.services.mysql.ports[3306] }}
 
   mac_compile:
     name: "Compile for MacOS"
