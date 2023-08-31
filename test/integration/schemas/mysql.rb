@@ -1,8 +1,5 @@
 require 'active_record'
 
-puts '****************************************************'
-puts ENV.to_json
-
 class MySQLRecord < ActiveRecord::Base
   self.abstract_class = true
 
