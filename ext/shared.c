@@ -65,16 +65,17 @@ enum gql_lexeme gql_upgrade_basis(const char *upgrade_from[])
 }
 
 // This checks if the identifier in the scanner should be upgraded to a keyword
-enum gql_lexeme gql_name_to_keyword(struct gql_scanner *scanner, const char *upgrade_from[])
+enum gql_lexeme gql_name_to_keyword(struct gql_scanner *scanner, const char *keywords[], unsigned int size)
 {
   unsigned long pos, len = GQL_SCAN_SIZE(scanner);
-  unsigned int valid = 0, i = 0;
+  unsigned int valid = 0;
   const char *keyword;
 
   // Check until it finds the end of the array
-  while ((keyword = upgrade_from[i]) != 0)
+  for (size_t i = 0; i < size; ++i)
   {
     // Move ot the next item and check the current for different size
+    keyword = keywords[i];
     if(strlen(keyword) == len)
     {
       // We cannot use the normal strcomp because we are comparing a mid part of the string
@@ -85,11 +86,8 @@ enum gql_lexeme gql_name_to_keyword(struct gql_scanner *scanner, const char *upg
       }
 
       // Only return if valid was kept as true
-      if (valid == 1) return gql_upgrade_basis(upgrade_from) + i;
+      if (valid == 1) return gql_upgrade_basis(keywords) + i;
     }
-
-    // Move to the next index
-    i++;
   }
 
   // Return name if was not able to upgrade to a keyword
@@ -438,7 +436,7 @@ VALUE gql_value_to_rb(struct gql_scanner *scanner, int accept_var)
   // If it's a name, then it can be a keyword or a enum value
   if (scanner->lexeme == gql_i_name)
   {
-    scanner->lexeme = gql_name_to_keyword(scanner, GQL_VALUE_KEYWORDS);
+    scanner->lexeme = GQL_SAFE_NAME_TO_KEYWORD(scanner, GQL_VALUE_KEYWORDS);
     if (scanner->lexeme == gql_iv_true)
       return Qtrue;
     else if (scanner->lexeme == gql_iv_false)

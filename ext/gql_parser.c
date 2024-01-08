@@ -83,7 +83,7 @@ VALUE gql_parse_execution(VALUE self, VALUE document)
   {
     // Try to upgrade if the token is a name
     if (scanner.lexeme == gql_i_name)
-      scanner.lexeme = gql_name_to_keyword(&scanner, GQL_EXECUTION_KEYWORDS);
+      scanner.lexeme = GQL_SAFE_NAME_TO_KEYWORD(&scanner, GQL_EXECUTION_KEYWORDS);
 
     // It can contain either operations or fragments, anything else is unknown and an error
     if (QGL_I_OPERATION(scanner.lexeme) || scanner.lexeme == gql_is_op_curly)
@@ -157,14 +157,14 @@ VALUE gql_parse_fragment(struct gql_scanner *scanner)
   gql_next_lexeme_no_comments(scanner);
   if (scanner->lexeme != gql_i_name)
     return gql_nil_and_unknown(scanner);
-  else if (gql_name_to_keyword(scanner, GQL_EXECUTION_KEYWORDS) == gql_ie_on)
+  else if (GQL_SAFE_NAME_TO_KEYWORD(scanner, GQL_EXECUTION_KEYWORDS) == gql_ie_on)
     return gql_nil_and_unknown(scanner);
 
   // Save the name of the fragment
   GQL_ASSIGN_TOKEN_AND_NEXT(pieces[0], scanner);
 
   // If we don't have an "on" next, we have a problem
-  if (gql_name_to_keyword(scanner, GQL_EXECUTION_KEYWORDS) != gql_ie_on)
+  if (GQL_SAFE_NAME_TO_KEYWORD(scanner, GQL_EXECUTION_KEYWORDS) != gql_ie_on)
     return gql_nil_and_unknown(scanner);
 
   // Skip the on and ensure that next is a name
@@ -481,7 +481,7 @@ VALUE gql_parse_spread(struct gql_scanner *scanner)
   if (scanner->lexeme == gql_i_name)
   {
     // Upgrade the name because it will decide if it is an inline spread or not
-    scanner->lexeme = gql_name_to_keyword(scanner, GQL_EXECUTION_KEYWORDS);
+    scanner->lexeme = GQL_SAFE_NAME_TO_KEYWORD(scanner, GQL_EXECUTION_KEYWORDS);
 
     // If we are at "on" then we have an inline spread, otherwise a fragment referenced by name
     if (scanner->lexeme == gql_ie_on)

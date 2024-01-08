@@ -70,6 +70,10 @@
   rb_ary_push(source, value);           \
 })
 
+#define GQL_SAFE_NAME_TO_KEYWORD(scanner, source) ({                        \
+  gql_name_to_keyword(scanner, source, (sizeof(source) / sizeof(char *))); \
+})
+
 enum gql_lexeme
 {
   // Basic identifiers
@@ -153,7 +157,7 @@ void gql_debug_print(const char *message);
 struct gql_scanner gql_new_scanner(VALUE source);
 
 enum gql_lexeme gql_upgrade_basis(const char *upgrade_from[]);
-enum gql_lexeme gql_name_to_keyword(struct gql_scanner *scanner, const char *upgrade_from[]);
+enum gql_lexeme gql_name_to_keyword(struct gql_scanner *scanner, const char *keywords[], unsigned int size);
 
 enum gql_lexeme gql_read_name(struct gql_scanner *scanner);
 enum gql_lexeme gql_read_comment(struct gql_scanner *scanner);
