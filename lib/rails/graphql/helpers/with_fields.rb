@@ -137,19 +137,19 @@ module Rails
         def import(source)
           # Import an alternative declaration of a field
           if source.is_a?(Module) && source <= Alternative::Query
-            return proxy_field(type, source.field)
+            return proxy_field(source.field)
           end
 
           case source
           when Array
             # Import a list of fields
-            source.each { |field| proxy_field(type, field) }
+            source.each { |field| proxy_field(field) }
           when Hash, Concurrent::Map
             # Import a keyed list of fields
-            source.each_value { |field| proxy_field(type, field) }
+            source.each_value { |field| proxy_field(field) }
           when Helpers::WithFields
             # Import a set of fields
-            source.fields.each_value { |field| proxy_field(type, field) }
+            source.fields.each_value { |field| proxy_field(field) }
           else
             return if GraphQL.config.silence_import_warnings
             GraphQL.logger.warn(+"Unable to import #{source.inspect} into #{self.name}.")

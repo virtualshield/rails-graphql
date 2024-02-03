@@ -52,7 +52,7 @@ module Rails
           def define_field(field_name = nil, type = :any, **xargs, &block)
             field_name ||= anonymous? ? '_anonymous' : begin
               type_module = type_field_class.to_s.classify.pluralize
-              user_name = name.split(+"#{type_module}::")[1]
+              user_name = name.split(+"#{type_module}::")&.at(1)
               user_name ||= name.delete_prefix('GraphQL::')
               user_name.tr(':', '')
             end

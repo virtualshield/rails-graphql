@@ -16,6 +16,7 @@ module Rails
 
       autoload_at "#{__dir__}/alternative/field_set" do
         autoload :FieldSet
+        autoload :QuerySet
         autoload :MutationSet
         autoload :SubscriptionSet
       end
