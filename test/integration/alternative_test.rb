@@ -71,7 +71,7 @@ class Integration_AlternativeTest < GraphQL::IntegrationTestCase
   end
 
   class SCHEMA < GraphQL::Schema
-    namespace :authorization
+    namespace :alternatives
 
     configure do |config|
       config.enable_string_collector = false
