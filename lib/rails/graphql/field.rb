@@ -36,6 +36,7 @@ module Rails
       include Helpers::WithDescription
 
       autoload :ScopedConfig
+      autoload :Properties
 
       autoload :AuthorizedField
       autoload :ProxiedField
@@ -46,6 +47,8 @@ module Rails
       autoload :OutputField
       autoload :MutationField
       autoload :SubscriptionField
+
+      include Properties
 
       attr_reader :name, :gql_name, :owner
 

@@ -13,8 +13,13 @@ basics and intermediate of them.
 
 ## Basic Concepts
 
+{: .new }
+> Starting from version *1.1*, type now can be fully descriptive. It means that you can describe
+> the nullability and array as a string representation of the type.
+
 ```ruby
-field :name, :string
+field :name, :string, null: false
+field :name, 'String!'
 ```
 
 A field will always be composed of a `name`, a `type`, and a sequence of settings
@@ -209,6 +214,9 @@ end
 field :user, 'User', arguments: id_argument
 # Which is equivalent to
 field :user, 'User', arguments: argument(:id, :id, null: false)
+# The same as (from v1.1)
+field :user, 'User', arguments: 'id: ID!'
+field :user, 'User', arguments: argument(:id, 'ID!')
 # You can customize the name of the argument and all the other options as well
 id_argument(:pid, null: true, desc: 'ID')
 # Which is equivalent to

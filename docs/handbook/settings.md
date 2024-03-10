@@ -99,6 +99,26 @@ controller.
 
 ----------------------------------------------------------------
 
+#### `field_properties`
+
+The list of properties that can be set on any field with their
+underlying types. This simply restricts the property keys that can be
+used. Set to `nil` if you want to allow any property to be set.
+
+**Default:**
+
+```ruby
+{
+  max_repetition: 'Int',        # Limits array values output
+  max_complexity: 'Int',        # Limits the underlying complexity
+  max_depth:      'Int',        # Limits the underlying depth
+  complexity:     'Int',        # The unit complexity of the field
+  needs:          '[String!]',  # External properties needed for fulfilling this field
+}
+```
+
+----------------------------------------------------------------
+
 #### `filter_parameters`
 
 Identical to the one available on a Rails application, but exclusive for
@@ -196,6 +216,45 @@ console, it will automatically shift to Hash. This can also be set per
 Schema.
 
 **Default:** `:string`
+
+----------------------------------------------------------------
+
+#### `default_request_max_depth`
+
+Set a limit for the depth of a given request. If an operation calculated
+depth is higher than this value, it will be blocked and respond with an
+error.
+
+**Default:** `nil`
+
+----------------------------------------------------------------
+
+#### `default_request_max_complexity`
+
+Set a limit for the complexity of a given request. If a request as a
+whole calculated complexity is higher than this value, it will be
+blocked and respond with an error.
+
+**Default:** `nil`
+
+----------------------------------------------------------------
+
+#### `default_operation_max_complexity`
+
+Set a limit for the complexity of each individual operation. If an
+operation calculated complexity is higher than this value, it will be
+blocked and respond with an error, but the request will proceed.
+
+**Default:** `nil`
+
+----------------------------------------------------------------
+
+#### `default_request_max_repetition`
+
+Set a limit for the number of times a given field can be repeated. Any
+additional attempts to render a field will render an error.
+
+**Default:** `nil`
 
 ----------------------------------------------------------------
 
@@ -342,21 +401,23 @@ and allow users to enable them.
 ```ruby
 {
   scalar: {
-    any:       "#{__dir__}/type/scalar/any_scalar",
-    bigint:    "#{__dir__}/type/scalar/bigint_scalar",
-    binary:    "#{__dir__}/type/scalar/binary_scalar",
-    date_time: "#{__dir__}/type/scalar/date_time_scalar",
-    date:      "#{__dir__}/type/scalar/date_scalar",
-    decimal:   "#{__dir__}/type/scalar/decimal_scalar",
-    time:      "#{__dir__}/type/scalar/time_scalar",
-    json:      "#{__dir__}/type/scalar/json_scalar",
+    any:                 "#{__dir__}/type/scalar/any_scalar",
+    bigint:              "#{__dir__}/type/scalar/bigint_scalar",
+    binary:              "#{__dir__}/type/scalar/binary_scalar",
+    date_time:           "#{__dir__}/type/scalar/date_time_scalar",
+    date:                "#{__dir__}/type/scalar/date_scalar",
+    decimal:             "#{__dir__}/type/scalar/decimal_scalar",
+    time:                "#{__dir__}/type/scalar/time_scalar",
+    json:                "#{__dir__}/type/scalar/json_scalar",
   },
   enum:      {},
   input:     {},
   interface: {},
   object:    {},
   union:     {},
-  directive: {},
+  directive: {
+    paginate:            "#{__dir__}/directive/execution/paginate_directive",
+  },
 }
 ```
 

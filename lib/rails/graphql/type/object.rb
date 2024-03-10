@@ -33,6 +33,8 @@ module Rails
         autoload :SchemaObject
         autoload :TypeObject
 
+        autoload :PageInfoObject
+
         # Define the methods for accessing the interfaces of the object
         inherited_collection :interfaces, instance_reader: false
 

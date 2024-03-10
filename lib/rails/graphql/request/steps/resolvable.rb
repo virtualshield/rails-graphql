@@ -15,8 +15,6 @@ module Rails
         protected
 
           # Normal mode of the resolve step
-          # TODO: Field a way to cache the resolved result, mostly for
-          # performance improvement in recursion
           def resolve
             return if skipped?
             invalid? ? try(:resolve_invalid) : resolve_then
@@ -30,8 +28,8 @@ module Rails
             return if unresolvable?
 
             stacked do
-              block.call if block.present?
-              after_block.call if after_block.present?
+              block&.call
+              after_block&.call
               trigger_event(:finalize)
             end
           end

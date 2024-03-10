@@ -16,9 +16,7 @@ module Rails
         When true, the underlying element will be automatically marked as null.
       DESC
 
-      on(:attach) do |source|
-        source.skip! if args[:if]
-      end
+      on(:attach) { |event| event.source.skip! if args[:if] }
     end
   end
 end

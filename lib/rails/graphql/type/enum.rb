@@ -16,6 +16,8 @@ module Rails
         autoload :DirectiveLocationEnum
         autoload :TypeKindEnum
 
+        autoload :PaginationModeEnum
+
         # Define the methods for accessing the values attribute
         inherited_collection :values
 
@@ -166,6 +168,15 @@ module Rails
 
         def initialize(value)
           @value = value
+        end
+
+        # Allow comparing the current value with another formats
+        def ==(other)
+          case other
+          when Symbol then to_sym == other
+          when Numeric then to_i == other
+          else @value == other
+          end
         end
 
         # Use lower case for symbolized value

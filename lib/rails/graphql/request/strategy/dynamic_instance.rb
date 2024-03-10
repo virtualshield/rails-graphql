@@ -7,7 +7,7 @@ module Rails
       #
       # When an event is call on non-object types, this class allows both
       # finding a method on two different places, the interface or union
-      # definition, or on the currect object type-class.
+      # definition, or on the correct object type-class.
       class Strategy::DynamicInstance < Helpers::AttributeDelegator
         def instance_variable_set(ivar, value)
           __getobj__.instance_variable_set(ivar, value)

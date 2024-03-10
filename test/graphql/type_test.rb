@@ -46,4 +46,33 @@ class GraphQL_TypeTest < GraphQL::TestCase
     assert_respond_to(DESCRIBED_CLASS, :enum?)
     assert_respond_to(DESCRIBED_CLASS, :input?)
   end
+
+  def test_normalize_type
+    # Simple string and symbol
+    assert_equal(:string, DESCRIBED_CLASS.normalize_type(:name, :string, {}))
+    assert_equal('String', DESCRIBED_CLASS.normalize_type(:name, 'String', {}))
+
+    # Not provided type
+    assert_equal('ID', DESCRIBED_CLASS.normalize_type(:id, nil, {}))
+    assert_equal('ID', DESCRIBED_CLASS.normalize_type('id', nil, {}))
+    assert_equal('String', DESCRIBED_CLASS.normalize_type(:name, nil, {}))
+
+    # Typed class and any other class
+    string = GraphQL::Scalar::StringScalar
+    assert_equal(['String', string], DESCRIBED_CLASS.normalize_type(:name, string, {}))
+
+    other = Class.new
+    assert_equal(other, DESCRIBED_CLASS.normalize_type(:name, other, {}))
+
+    # Direct token
+    xargs = {}
+    token = GQLParser.parse_type('[String!]!')
+    assert_equal('String', DESCRIBED_CLASS.normalize_type(:name, token, xargs))
+    assert_equal({ array: true, nullable: false, null: false }, xargs)
+
+    # String that can be parsed into token
+    xargs = {}
+    assert_equal('String', DESCRIBED_CLASS.normalize_type(:name, '[String!]!', xargs))
+    assert_equal({ array: true, nullable: false, null: false }, xargs)
+  end
 end

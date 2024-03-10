@@ -17,7 +17,10 @@ module Rails
       class << self
         delegate :gql_name, :to_sym, :desc, :arguments, :argument, :ref_argument, :id_argument,
           :use, :internal?, :disabled?, :enabled?, :disable!, :enable!, :rename!, :authorize,
-          :on, :description=, :description, to: :field
+          :on, :description=, :description, :configure, to: :field
+
+        # Exposed events
+        delegate :organized, :finalize, :prepared, :prepare, to: :field
 
         # Returns the type of the field class
         def type_field_class
@@ -68,15 +71,13 @@ module Rails
 
           # Change the return type of the field
           def returns(type, **xargs)
-            full     = xargs.fetch(:full, false)
-            null     = full ? false : xargs.fetch(:null, true)
-            array    = full ? true  : xargs.fetch(:array, false)
-            nullable = full ? false : xargs.fetch(:nullable, true)
+            type, type_klass = Type.normalize_type(to_sym, type, xargs)
 
-            field.send(:assign_type, type)
-            field.instance_variable_set(:@null, null)
-            field.instance_variable_set(:@array, array)
-            field.instance_variable_set(:@nullable, nullable)
+            field.instance_variable_set(:@type, type)
+            field.instance_variable_set(:@type_klass, type_klass)
+            field.instance_variable_set(:@null, xargs[:null])
+            field.instance_variable_set(:@array, xargs[:array])
+            field.instance_variable_set(:@nullable, xargs[:nullable])
           end
 
         private

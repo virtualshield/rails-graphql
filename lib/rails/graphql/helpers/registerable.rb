@@ -16,6 +16,9 @@ module Rails
           # Marks if the object is one of those defined on the spec, which
           # marks the object as part of the introspection system
           other.class_attribute :spec_object, instance_accessor: false, default: false
+
+          # Marks if the object is internal and hidden from external access
+          other.class_attribute :hidden, instance_accessor: false, default: false
         end
 
         # Here we wait for the class to be fully loaded so that we can

@@ -14,8 +14,7 @@ module Rails
       delegate :input_type?, :output_type?, :leaf_type?, :kind, to: :type_klass
 
       def initialize(name, type = nil, *args, **xargs, &block)
-        type = (name == :id ? :id : :string) if type.nil?
-        assign_type(type)
+        @type, @type_klass = Type.normalize_type(name, type, xargs)
         super(name, *args, **xargs, &block)
       end
 
@@ -56,7 +55,12 @@ module Rails
       def all_listeners
         inherited = super
         return inherited unless type_klass.listeners?
-        inherited.present? ? inherited + type_klass.all_listeners : type_klass.all_listeners
+        inherited.present? ? inherited + type_listeners : type_listeners
+      end
+
+      # Get the listeners from the associated type
+      def type_listeners
+        type_klass.all_listeners
       end
 
       # Make sure to check the associated type
@@ -68,8 +72,13 @@ module Rails
       def all_events
         inherited = super
         return inherited unless type_klass.events?
-        return type_klass.all_events if inherited.blank?
-        Helpers.merge_hash_array(inherited, type_klass.all_events)
+        return type_events if inherited.blank?
+        Helpers.merge_hash_array(inherited, type_events)
+      end
+
+      # Get the events from the associated type
+      def type_events
+        type_klass.all_events
       end
 
       # Make sure to check the associated type
@@ -126,18 +135,6 @@ module Rails
           result << ']' if array?
           result << '!' unless null?
           result
-        end
-
-        # A little hidden helper to support forcing reassignment of type, which
-        # should only be done with caution
-        def assign_type(type)
-          if type.is_a?(Module) && type < GraphQL::Type
-            @type_klass = type
-            @type = type.to_sym
-          else
-            @type_klass = nil
-            @type = type
-          end
         end
 
         def proxied

@@ -100,6 +100,25 @@ module Rails
           +"#<GraphQL::#{base_type.name.demodulize} #{gql_name}>"
         end
 
+        # Provide a type symbol, and maybe a type class, given a name, a type
+        # (a string, a symbol, a class, or a type token). The set of extras
+        # +xargs+ can enhance the definition if the provided type is a token
+        def normalize_type(name, type, xargs)
+          type = GQLParser.parse_type(type) if String === type && type =~ /\[|\]|!/
+
+          case type
+          when ::GQLParser::Token
+            nullability = type.pop
+            xargs[:array] = type.pop > 0
+            xargs[:nullable] = (nullability & 0b10) == 0
+            xargs[:null] = (nullability & 0b01) == 0
+            type.pop
+          when Module         then type < GraphQL::Type ? [type.gql_name, type] : type
+          when NilClass       then name.to_s == 'id' ? 'ID' : 'String'
+          when String, Symbol then type
+          end
+        end
+
         # Dynamically create a new type using the Creator
         def create!(from, name, superclass = nil, **xargs, &configure)
           Creator.create!(from, name, superclass || self, **xargs, &configure)

@@ -30,9 +30,20 @@ module Rails
           @inline.present?
         end
 
+        # Spread always resolve inline selection unstacked on response,
+        # meaning that its fields will be set in the same level as the parent
+        def stacked_selection?
+          false
+        end
+
         # Check if all the sub fields or the fragment is broadcastable
         def broadcastable?
           inline? ? selection.each_value.all?(&:broadcastable?) : fragment.broadcastable?
+        end
+
+        # Either the inline selection or the fragment selection
+        def selection
+          inline? ? super : fragment.selection
         end
 
         # Redirect to the fragment or check the inline type before resolving
@@ -65,12 +76,6 @@ module Rails
         end
 
         protected
-
-          # Spread always resolve inline selection unstacked on response,
-          # meaning that its fields will be set in the same level as the parent
-          def stacked_selection?
-            false
-          end
 
           # Just provide the correct location for directives
           def parse_directives(nodes)

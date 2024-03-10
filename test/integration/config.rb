@@ -7,7 +7,7 @@ module GraphQL
     SCHEMAS = Pathname.new(__dir__).join('schemas')
     ASSETS = Pathname.new(__dir__).join('../assets')
 
-    I18n.load_path <<  ASSETS.join("en.yml")
+    I18n.load_path << ASSETS.join("en.yml")
 
     BASE_SCHEMA = ::Rails::GraphQL::Schema
 
@@ -45,10 +45,6 @@ module GraphQL
         list.map { |x| extra.reverse_merge(name: x) }
       end
 
-      def gql_file(name)
-        ASSETS.join("#{name}.gql").read
-      end
-
       def text_file(name)
         ASSETS.join("#{name}.txt").read
       end
@@ -71,6 +67,12 @@ module GraphQL
         obj = obj.deep_stringify_keys if obj.is_a?(Hash)
         obj = obj.map(&:deep_stringify_keys) if obj.is_a?(Array)
         obj.nil? ? assert_nil(result) : assert_equal(obj, result)
+      end
+
+      def assert_match_error(matcher, *args, at: 0, **xargs)
+        result = execute(*args, **xargs)
+        yield result if block_given?
+        assert_match(matcher, result.try(:dig, 'errors', at, 'message'))
       end
 
       def all_non_spec_keys

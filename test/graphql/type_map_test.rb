@@ -93,6 +93,12 @@ class GraphQL_TypeMapTest < GraphQL::TestCase
       assert_equal(4, subject.fetch(:boolean, namespaces: :other))
       assert_nil(subject.fetch(:boolean, namespaces: :other, exclusive: true))
     end
+
+    stub_dig(base: { Type: { string: -> { 1 }, boolean: -> { register_hide(2) } } }) do
+      assert_equal(1, subject.fetch(:string))
+      assert_equal(2, subject.fetch(:boolean, allow_hidden: true))
+      assert_nil(subject.fetch(:boolean))
+    end
   end
 
   def test_exist_ask
@@ -203,11 +209,15 @@ class GraphQL_TypeMapTest < GraphQL::TestCase
   end
 
   def test_each_from
-    assert_registered(4) do
+    assert_registered(5) do
       Integer.stub_imethod(:gql_name, -> { to_s }) do
-        subject.stub_ivar(:@index, SAMPLE_INDEX) do
+        idx = SAMPLE_INDEX.dup.deep_merge(base: { Type: { hidden: register_hide(5) } })
+        subject.stub_ivar(:@index, idx) do
           items = [1, 4]
           subject.each_from(:base) { |x| assert_equal(items.shift, x) }
+
+          items = [1, 4, 5]
+          subject.each_from(:base, allow_hidden: true) { |x| assert_equal(items.shift, x) }
 
           assert_equal([2, 3, 1, 4], subject.each_from(:other).entries)
           assert_equal([2, 3], subject.each_from(:other, exclusive: true).entries)
@@ -340,5 +350,9 @@ class GraphQL_TypeMapTest < GraphQL::TestCase
 
     def registered_double
       double(register!: -> { define_singleton_method(:registered?) { true } })
+    end
+
+    def register_hide(value)
+      SimpleDelegator.new(value).tap { |v| v.define_singleton_method(:hidden?) { true } }
     end
 end

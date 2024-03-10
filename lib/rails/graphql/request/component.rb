@@ -73,6 +73,11 @@ module Rails
           false
         end
 
+        # Check if the component can be cached for the response
+        def cacheable?
+          true
+        end
+
         # Get an identifier of the component
         def hash
           @node.hash
@@ -110,30 +115,26 @@ module Rails
 
           # Run a given block and ensure to capture exceptions to set them as
           # errors
-          def report_exception(error)
-            return if request.rescue_with_handler(error, source: self) == false
+          def report_exception(error, **extra)
+            return if request.rescue_with_handler(error, source: self, **extra) == false
 
             Backtrace.print(error, self, request)
 
-            stack_path = request.stack_to_path
-            stack_path << gql_name if respond_to?(:gql_name) && gql_name.present?
-            request.exception_to_error(error, self, path: stack_path, stage: strategy.stage.to_s)
+            extra[:path] = request.stack_to_path
+            extra[:path] << gql_name if respond_to?(:gql_name) && gql_name.present?
+            request.exception_to_error(error, self, stage: strategy.stage, **extra)
           end
 
         private
 
           # Properly transform values to string gid
           def all_to_gid(enum)
-            (enum.is_a?(Enumerable) ? enum : enum.then).each do |item|
-              item.to_gid.to_s
-            end
+            GraphQL.enumerate(enum).each { |item| item.to_gid.to_s }
           end
 
           # Properly recover values from gid string
           def all_from_gid(enum)
-            (enum.is_a?(Enumerable) ? enum : enum.then).each do |item|
-              GraphQL::GlobalID.find(item)
-            end
+            GraphQL.enumerate(enum).each { |item| GraphQL::GlobalID.find(item) }
           end
       end
     end

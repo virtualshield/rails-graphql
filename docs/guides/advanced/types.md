@@ -37,10 +37,6 @@ Same as above, but returning the string value instead.
 
 ## Hidden
 
-{: .warning }
-> **Unavailable**
-> This feature is yet to be published.
-
 The hidden setting allow you to use types and [directives](/guides/directives) that will never
 be exposed to a [request](/guides/request). It enables you to use the GraphQL structure
 to meta-configure itself, like with [authorization](/guides/advanced/authorization).

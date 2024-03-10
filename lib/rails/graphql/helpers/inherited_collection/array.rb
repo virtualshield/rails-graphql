@@ -20,8 +20,15 @@ module Rails
 
         # If any elements appears, the each block will run and return true
         def empty?
-          lazy.each { return true }
-          false
+          lazy.each { return false }
+          true
+        end
+
+        alias blank? empty?
+
+        # Just the opposite of empty?
+        def present?
+          !empty?
         end
 
         # The normal each is the reverse each of the definitions

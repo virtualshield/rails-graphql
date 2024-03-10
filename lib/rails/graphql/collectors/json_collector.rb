@@ -77,7 +77,16 @@ module Rails
 
         # Serialize is a helper to call the correct method on types before add
         def serialize(klass, key, value)
-          add(key, klass.to_json(value))
+          result = klass.to_json(value)
+          add(key, result)
+          result&.object_id
+        end
+
+        # Duplicate the given value given the object id of its cache
+        def dup_from_cache(key, oid)
+          add(key, ObjectSpace._id2ref(oid))
+        rescue RangeError
+          raise CacheUnavailableError, +"The cache ref #{oid} is no longer available"
         end
 
         # Mark the start of a new element on the array.
@@ -133,6 +142,7 @@ module Rails
             @current_array = @stack_array.pop
             @current_keys = @stack_keys.pop
             add(key, result)
+            result.object_id
           end
       end
     end

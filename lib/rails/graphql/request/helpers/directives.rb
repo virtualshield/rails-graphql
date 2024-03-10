@@ -48,7 +48,9 @@ module Rails
         def cache_load(data)
           return super unless data.key?(:directives)
 
-          @directives = all_from_gid(data[:directives].transform_values).freeze
+          @directives = data[:directives].transform_values do |directive|
+            GraphQL::GlobalID.find(directive).assign_owner!(self)
+          end
 
           super
         end

@@ -86,7 +86,7 @@ module Rails
             hash[name] = argument.deserialize(xargs[argument.gql_name] || xargs[name.to_s])
           end
 
-          new(**result)
+          new(**(dynamic? ? xargs : result))
         end
 
         # Return the directive, instantiate if it has params
@@ -94,6 +94,18 @@ module Rails
           options = { namespaces: gid.namespace, base_class: :Directive }
           klass = GraphQL.type_map.fetch!(gid.name, **options)
           gid.instantiate? ? klass.build(**gid.params) : klass
+        end
+
+        # A small override to prevent arguments from being defined when the
+        # directive is set to be dynamic
+        def argument(*, **)
+          dynamic? ? raise_dynamic_attributes : super
+        end
+
+        # A small override to prevent arguments from being defined when the
+        # directive is set to be dynamic
+        def ref_argument(*, **)
+          dynamic? ? raise_dynamic_attributes : super
         end
 
         def inspect
@@ -144,19 +156,53 @@ module Rails
               Invalid locations for @#{gql_name}: #{invalid.force.to_sentence}.
             MSG
           end
+
+          # A small helper to raise an error when trying to define arguments
+          # for a dynamic directive
+          def raise_dynamic_attributes
+            raise ArgumentError, (+<<~MSG).squish
+              #{name} directive is set to be dynamic and can't define arguments.
+            MSG
+          end
+
+          # Check if the method is just a name of a directive
+          def respond_to_missing?(method_name, *)
+            autoload?(method_name) || super
+          end
+
+          # Allow initializing a directive without using +new+
+          def method_missing(method_name, *args, **xargs, &block)
+            return super unless autoload?(method_name)
+            const_get(method_name, true).new(*args, **xargs, &block)
+          end
       end
 
       # Marks if the directive may be used repeatedly at a single location
       class_attribute :repeatable, instance_accessor: false, default: false
 
+      # Marks if the directive accepts a dynamic set of arguments
+      class_attribute :dynamic, instance_accessor: false, default: false
+
       self.abstract = true
 
-      autoload :DeprecatedDirective
-      autoload :IncludeDirective
-      autoload :SkipDirective
-      autoload :SpecifiedByDirective
+      # Directives that are only used during execution
+      autoload_under :execution do
+        autoload :PaginateDirective
+      end
 
-      autoload :CachedDirective
+      # Directives that are only used when importing a schema
+      autoload_under :import do
+        autoload :HiddenDirective
+        autoload :PropertiesDirective
+      end
+
+      # Spec directives
+      autoload_under :spec do
+        autoload :DeprecatedDirective
+        autoload :IncludeDirective
+        autoload :SkipDirective
+        autoload :SpecifiedByDirective
+      end
 
       delegate :locations, :gql_name, :gid_base_class, :repeatable?, to: :class
 
@@ -187,6 +233,7 @@ module Rails
         MSG
 
         @owner = owner
+        self
       end
 
       # Correctly turn all the arguments into their +as_json+ version and return
@@ -207,7 +254,7 @@ module Rails
 
       # When fetching all the events, embed the actual instance as the context
       # of the callback
-      # TODO: Maybe add a soft cached, based on the total number of events
+      # TODO: Maybe add a soft cache, based on the total number of events
       def all_events
         return unless self.class.events?
 

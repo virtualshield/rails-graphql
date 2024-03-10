@@ -75,6 +75,8 @@ module Rails
     autoload :Collectors
     autoload :Alternative
     autoload :Subscription
+    autoload :Shared
+    autoload :Service
 
     autoload :Argument
     autoload :Directive

@@ -30,6 +30,16 @@ module Rails
           super(node)
         end
 
+        # There is no need to cache the typename, as the resolution is simple
+        def cacheable?
+          false
+        end
+
+        # Just to make sure we don't break compatibility with fields
+        def array?
+          false
+        end
+
         # Set the value that the field will be resolved as
         def resolve_with!(object)
           @typename = object.gql_name
@@ -41,6 +51,10 @@ module Rails
         # Return the name of the field to be used on the response
         def gql_name
           alias_name || name
+        end
+
+        # Typename never has properties
+        def properties
         end
 
         # Write the typename information

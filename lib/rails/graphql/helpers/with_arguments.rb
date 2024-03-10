@@ -36,12 +36,13 @@ module Rails
         end
 
         def initialize(*args, arguments: nil, **xargs, &block)
-          @arguments = GraphQL.enumerate(arguments).each_with_object({}) do |item, hash|
-            raise ArgumentError, (+<<~MSG).squish unless item.is_a?(Argument)
-              The given "#{item.inspect}" is not a valid Argument object.
-            MSG
-
-            hash[item.name] = Helpers.dup_with_owner(item, self)
+          arguments = GQLParser.parse_arguments(arguments) if arguments.is_a?(String)
+          GraphQL.enumerate(arguments).each do |item|
+            if item.is_a?(::GQLParser::Token) && item.of_type?(:argument)
+              argument(item[0], item[1], default: item[2])
+            else
+              ref_argument(item, dup: true)
+            end
           end unless arguments.nil?
 
           super(*args, **xargs, &block)
@@ -59,10 +60,10 @@ module Rails
         end
 
         # See {Argument}[rdoc-ref:Rails::GraphQL::Argument] class.
-        def argument(name, type = nil, **xargs)
+        def argument(name, type = nil, replace: false, **xargs)
           object = GraphQL::Argument.new(name, type, **xargs, owner: self)
 
-          raise DuplicatedError, (+<<~MSG).squish if has_argument?(object.name)
+          raise DuplicatedError, (+<<~MSG).squish if has_argument?(object.name) && !replace
             The #{name.inspect} argument is already defined and can't be redefined.
           MSG
 
@@ -74,7 +75,7 @@ module Rails
 
         # Since arguments' owner are more flexible, their instances can be
         # directly associated to objects that have argument
-        def ref_argument(object)
+        def ref_argument(object, dup: false)
           raise ArgumentError, (+<<~MSG).squish unless object.is_a?(GraphQL::Argument)
             The given object #{object.inspect} is not a valid argument.
           MSG
@@ -83,6 +84,7 @@ module Rails
             The #{object.name.inspect} argument is already defined and can't be redefined.
           MSG
 
+          object = Helpers.dup_with_owner(object, self) if dup
           (@arguments ||= {})[object.name] = object
         rescue DefinitionError => e
           raise e.class, +"#{e.message}\n  Defined at: #{caller(2)[0]}"
@@ -92,7 +94,7 @@ module Rails
         def id_argument(*args, **xargs, &block)
           name = args.size >= 1 ? args.shift : :id
           xargs[:null] = false unless xargs.key?(:null)
-          argument(name, :id, *args, **xargs, &block)
+          argument(name, 'ID', *args, **xargs, &block)
         end
 
         # Check if a given +name+ is already defined on the list of arguments

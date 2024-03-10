@@ -160,10 +160,6 @@ more fo these options:
 
 ### Hidden
 
-{: .warning }
-> **Unavailable**
-> This feature is yet to be published.
-
 The hidden setting allow you to use directives and [types](/guides/advanced/types) that will never
 be exposed to a [request](/guides/request). It enables you to use the GraphQL structure
 to meta-configure itself, like with [authorization](/guides/advanced/authorization).
@@ -363,3 +359,62 @@ use :specified_by, url: 'https://www.rfc-editor.org/rfc/rfc3339'
 
 This directive has no effect whatsoever, and its only purpose is to be displayed in
 the [introspection](/guides/introspection) or during a [to_gql](/guides/customizing/controller#describe) output.
+
+### For execution
+
+Directives provided by this gem that adds additional capabilities for a document
+execution.
+
+#### `@paginate`
+
+Read more about [pagination](/guides/pagination).
+
+### For definition
+
+Directives provided by this gem to support defining a schema. They can appear
+during a [to_gql](/guides/customizing/controller#describe) output of a schema,
+but they are not actually attached to elements. Their sole purpose is to allow
+the gem to import specific internal settings when translating a GraphQL Schema
+Document to Ruby objects.
+
+#### `@hidden`
+
+Marks the underlying element as hidden (internal usage only).
+Hidden elements are not available for any request or external usage.
+
+`placed_on:`
+: `:scalar`, `:object`, `:interface`, `:union`, `:enum`, `:input_object`
+
+`repeatable`
+: `false`
+
+```graphql
+type Settings @hidden # ...
+```
+
+#### `@properties`
+
+A list of properties that further defines fields
+
+`placed_on:`
+: `:field_definition`, `:input_field_definition`
+
+`repeatable`
+: `false`
+
+Arguments
+: <span></span>
+
+`*`
+: This directive has a dynamic set of arguments defined by the
+[`config.field_properties`](/handbook/settings#field_properties)
+configuration.
+
+```graphql
+friends: [User!]! @properties(
+  max_depth: 2,
+  max_complexity: 20,
+  max_repetition: 10,
+  needs: ["id"],
+)
+```

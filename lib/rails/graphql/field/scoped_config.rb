@@ -6,7 +6,7 @@ module Rails
     # instance of this class works as proxy for changes to the actual field.
     class Field::ScopedConfig < Struct.new(:field, :receiver)
       delegate :argument, :ref_argument, :id_argument, :use, :internal?, :disabled?,
-        :enabled?, :disable!, :enable!, :authorize, to: :field
+        :enabled?, :disable!, :enable!, :authorize, :event_types, :on, to: :field
 
       delegate_missing_to :receiver
 

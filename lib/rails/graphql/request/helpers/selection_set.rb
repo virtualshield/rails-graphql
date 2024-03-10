@@ -33,6 +33,14 @@ module Rails
           super
         end
 
+        # Check if the selection set has any of the given field names
+        def selects?(*fields, all: false)
+          fields = fields.to_set
+          selection.each_value.public_send(all ? :all? : :any?) do |field|
+            fields.include?(field.field.name) || fields.include?(field.gql_name)
+          end
+        end
+
         protected
 
           # Helper parser for selection fields that also assign the actual
@@ -92,7 +100,7 @@ module Rails
             items = items.each_with_object(object) unless object.nil?
             iterator = object.nil? ? :resolve! : :resolve_with!
 
-            return items.each(&iterator) unless stacked_selection?
+            return items.each(&iterator).then { nil } unless stacked_selection?
             response.with_stack(gql_name) { items.each(&iterator) }
           end
 

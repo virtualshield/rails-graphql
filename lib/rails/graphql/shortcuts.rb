@@ -17,6 +17,8 @@ module GraphQL
     Source:             '::Rails::GraphQL::Source',
     Type:               '::Rails::GraphQL::Type',
 
+    Service:            '::Rails::GraphQL::Service',
+
     Field:              '::Rails::GraphQL::Alternative::Field',
     Query:              '::Rails::GraphQL::Alternative::Query',
     Mutation:           '::Rails::GraphQL::Alternative::Mutation',

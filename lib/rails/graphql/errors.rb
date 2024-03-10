@@ -26,14 +26,23 @@ module Rails
     # Error class related to problems during the execution process
     ExecutionError = Class.new(StandardError)
 
+    # Error class related to problems with garbage collected cache data
+    CacheUnavailableError = Class.new(ExecutionError)
+
     # Error related to the parsing process
     ParseError = Class.new(ExecutionError)
+
+    # Error class related to limiting rating of requests
+    LimitError = Class.new(ExecutionError)
 
     # Error class related to parsing the arguments
     ArgumentsError = Class.new(ParseError)
 
     # Error class related to problems that happened during execution of fields
     FieldError = Class.new(ExecutionError)
+
+    # Error class related to problems that happened during the execution of directives
+    DirectiveError = Class.new(FieldError)
 
     # Error class related to when a field was not found on the requested object
     MissingFieldError = Class.new(FieldError)

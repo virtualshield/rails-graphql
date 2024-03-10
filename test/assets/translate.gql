@@ -150,13 +150,16 @@ type _Query {
   "C"
   sampleC: String
   
+  "D"
   sampleD: String
   
   "E"
   sampleE: String
   
+  "F"
   sampleF: String
   
+  "Field"
   sampleField: String
 }
 

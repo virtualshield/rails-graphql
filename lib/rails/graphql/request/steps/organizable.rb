@@ -70,7 +70,7 @@ module Rails
             stacked do
               block.call
               strategy.add_listeners_from(self)
-              after_block.call if after_block.present?
+              after_block&.call
               trigger_event(:organized)
             end
           end
@@ -93,14 +93,9 @@ module Rails
                 The "#{arg_name}" argument is already defined for this #{kind}.
               MSG
 
-              # TODO: Move this to a better builder of the type
-              type_name, dimensions, nullability = type
-              xargs = { owner: schema, default: value, array: dimensions > 0 }
-              xargs[:nullable] = (nullability & 0b10) == 0
-              xargs[:null] = (nullability & 0b01) == 0
-
               # TODO: Follow up with the support for directives
-              item = arguments[arg_name.to_s] = Argument.new(arg_name, type_name, **xargs)
+              xargs = { owner: schema, default: value }
+              item = arguments[arg_name.to_s] = Argument.new(arg_name, type, **xargs)
               item.node = node
               item.validate!
             end

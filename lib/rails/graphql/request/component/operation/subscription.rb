@@ -93,7 +93,7 @@ module Rails
               super do
                 save_subscription
                 trigger_event(:subscribed, subscription: subscription)
-                block.call if block.present?
+                block&.call
               end
             end
 

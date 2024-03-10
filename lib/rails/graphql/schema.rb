@@ -38,6 +38,8 @@ module Rails
           enable_string_collector default_response_format
           schema_type_names cache
           default_subscription_provider default_subscription_broadcastable
+          default_request_max_depth default_request_max_repetition
+          default_request_max_complexity default_operation_max_complexity
         ].to_set
 
         config.default_proc = proc do |hash, key|
@@ -46,8 +48,8 @@ module Rails
       end
 
       rescue_from(PersistedQueryNotFound) do |error|
-        response = { errors: [{ message: +'PersistedQueryNotFound' }] }
-        error.request.force_response(response, error)
+        response = { errors: [{ message: 'PersistedQueryNotFound' }] }
+        error.request.force_response(response, error: error)
       end
 
       class << self

@@ -23,6 +23,12 @@ module Rails
           check_duplicated_fragment!
         end
 
+        # Fragments always resolve selection unstacked on response, meaning
+        # that its fields will be set in the same level as the parent
+        def stacked_selection?
+          false
+        end
+
         # Check if all the sub fields are broadcastable
         def broadcastable?
           selection.each_value.all?(&:broadcastable?)
@@ -83,12 +89,6 @@ module Rails
         end
 
         protected
-
-          # Fragments always resolve selection unstacked on response, meaning
-          # that its fields will be set in the same level as the parent
-          def stacked_selection?
-            false
-          end
 
           # Wrap the field organization with the collection of variables
           def organize

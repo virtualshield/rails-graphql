@@ -136,6 +136,7 @@ module Rails
           schema.to_gql(
             with_descriptions: !params.key?(:without_descriptions),
             with_spec: !params.key?(:without_spec),
+            with_hidden: params.key?(:with_hidden),
           )
         end
 

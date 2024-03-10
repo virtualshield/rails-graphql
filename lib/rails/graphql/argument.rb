@@ -36,42 +36,24 @@ module Rails
       # TODO: When arguments are attached to output fields they can have
       # directives so add this possibility
 
-      attr_reader :name, :gql_name, :type, :owner, :default
+      attr_reader :name, :gql_name, :type, :owner
       attr_accessor :node
 
       delegate :namespaces, to: :owner
 
-      def initialize(
-        name,
-        type = nil,
-        owner:,
-        null: true,
-        full: false,
-        array: false,
-        nullable: true,
-        default: nil,
-        desc: nil,
-        description: nil
-      )
+      def initialize(name, type = nil, owner:, default: nil, **xargs)
         @owner = owner
         @name = name.to_s.underscore.to_sym
         @gql_name = @name.to_s.camelize(:lower)
+        @type, @type_klass = Type.normalize_type(name, type, xargs)
 
-        type = (name == :id ? :id : :string) if type.nil?
-        if type.is_a?(Module) && type < GraphQL::Type
-          @type_klass = type
-          @type = type.name
-        else
-          @type = type.to_s.underscore.to_sym
-        end
-
-        @null     = full ? false : null
-        @array    = full ? true  : array
-        @nullable = full ? false : nullable
+        full      = xargs.fetch(:full, false)
+        @null     = full ? false : xargs.fetch(:null, true)
+        @array    = full ? true  : xargs.fetch(:array, false)
+        @nullable = full ? false : xargs.fetch(:nullable, true)
 
         @default = default
-        @default = deserialize(@default) if @default.is_a?(::GQLParser::Token)
-        self.description = desc || description
+        self.description = xargs[:desc] || xargs[:description]
       end
 
       def initialize_copy(*)
@@ -128,6 +110,12 @@ module Rails
         !@default.nil?
       end
 
+      # If the default was defined by a GQLParser::Token, then we need to lazy
+      # parse it due to ownership reassignment
+      def default
+        @default.is_a?(::GQLParser::Token) ? (@default = deserialize(@default)) : @default
+      end
+
       # Transforms the given value to its representation in a JSON string
       def to_json(value = nil)
         value = @default if value.nil?
@@ -139,7 +127,7 @@ module Rails
 
       # Turn the given value into a JSON string representation
       def as_json(value = nil)
-        value = @default if value.nil?
+        value = default if value.nil?
 
         return if value.nil?
         return type_klass.as_json(value) unless array?
@@ -198,6 +186,7 @@ module Rails
       alias_method :&, :+
 
       def inspect
+        return super unless @owner
         result = +"#{name}: "
         result << '[' if array?
         result << type_klass.gql_name

@@ -23,12 +23,15 @@ StandardError
     ↳ NotFoundError
   ↳ ValidationError
   ↳ ExecutionError
+    ↳ CacheUnavailableError
     ↳ FieldError
+      ↳ DirectiveError
       ↳ DisabledFieldError
       ↳ InvalidValueError
       ↳ MissingFieldError
       ↳ SubscriptionError
       ↳ UnauthorizedFieldError
+    ↳ LimitError
     ↳ ParseError
       ↳ ArgumentsError
 ```
@@ -50,6 +53,10 @@ Error class related to cached responses, which doesn't need processing.
 
 Error class related to problems during the definition process.
 
+## DirectiveError
+
+Error class related to problems that happened during the execution of directives.
+
 ## DisabledFieldError
 
 Error class related to when a field was found but is marked as disabled.
@@ -61,6 +68,10 @@ Errors related to duplicated objects.
 ## ExecutionError
 
 Error class related to problems during the execution process.
+
+## CacheUnavailableError
+
+Error class related to problems with garbage collected cache data.
 
 ## FieldError
 
@@ -82,6 +93,10 @@ Errors related to the name of the objects.
 ## NotFoundError
 
 Errors that can happen when locking for definition objects, like fields.
+
+## LimitError
+
+Error class related to limiting rating of requests.
 
 ## ParseError
 

@@ -10,7 +10,7 @@ module Rails
       self.abstract = true
 
       class << self
-        delegate :perform, to: :@field, allow_nil: true
+        delegate :perform, to: :field
       end
     end
   end

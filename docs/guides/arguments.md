@@ -23,8 +23,13 @@ However, arguments do not support extended block configuration.
 
 Arguments are a light-weight version of [input fields](/guides/fields#input-fields).
 
+{: .new }
+> Starting from version *1.1*, type now can be fully descriptive. It means that you can describe
+> the nullability and array as a string representation of the type.
+
 ```ruby
 argument :name, :string, null: false
+argument :name, 'String!'
 ```
 
 {: .important }

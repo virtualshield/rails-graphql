@@ -30,7 +30,7 @@ module Rails
 
         # Get a value at the given +index+
         def at(index)
-          @stack[index]
+          @stack.at(index)
         end
 
         # Get all ancestors objects

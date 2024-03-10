@@ -35,6 +35,8 @@ Rails::GraphQL.eager_load!
 
 module GraphQL
   class TestCase < Minitest::Test
+    ASSETS = Pathname.new(__dir__).join('assets')
+
     PASSTHROUGH = ->(x, *) { x }
     PASSALLTHROUGH = ->(*x) { x }
 
@@ -52,6 +54,10 @@ module GraphQL
 
       def passallthrough
         PASSALLTHROUGH
+      end
+
+      def gql_file(name)
+        ASSETS.join("#{name}.gql").read
       end
 
       def double(base = Object.new, **xargs)

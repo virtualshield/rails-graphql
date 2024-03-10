@@ -5,8 +5,14 @@
 #include "shared.h"
 #include "gql_parser.h"
 
+// TYPE [name, dimensions?, nullability]
+VALUE gql_type_parser(VALUE self, VALUE content);
+
+// ARGUMENT [name, TYPE, value?]*
+VALUE gql_arguments_parser(VALUE self, VALUE content);
+
 // EXECUTION DOCUMENT [OPERATION*, FRAGMENT*]
-VALUE gql_parse_execution(VALUE self, VALUE document);
+VALUE gql_execution_parser(VALUE self, VALUE document);
 
 // OPERATION [type?, name?, VARIABLE*, DIRECTIVE*, FIELD*]
 VALUE gql_parse_operation(struct gql_scanner *scanner);
@@ -44,6 +50,9 @@ VALUE gql_parse_spread(struct gql_scanner *scanner);
 // TYPE [name, dimensions?, nullability]
 VALUE gql_parse_type(struct gql_scanner *scanner);
 
+// VARIABLE [name, TYPE, value?]
+VALUE gql_parse_argument_definition(struct gql_scanner *scanner);
+
 // Little helper to simplify returning problems
 VALUE gql_nil_and_unknown(struct gql_scanner *scanner);
 
@@ -52,6 +61,50 @@ VALUE gql_token_start_from_mem(VALUE instance, unsigned long memory[2]);
 
 // Central error method
 NORETURN(void gql_throw_parser_error(struct gql_scanner *scanner));
+
+// Parse a type definition
+VALUE gql_type_parser(VALUE self, VALUE content)
+{
+  if (!RB_TYPE_P(content, T_STRING))
+    rb_raise(rb_eArgError, "%+" PRIsVALUE " is not a string", content);
+
+  // Initialize the scanner and parse the type
+  struct gql_scanner scanner = gql_new_scanner(content);
+  gql_next_lexeme(&scanner);
+  VALUE result = gql_parse_type(&scanner);
+
+  // If the result is nil, then we have a problem
+  if (NIL_P(result))
+    gql_throw_parser_error(&scanner);
+
+  // Return the token
+  return result;
+}
+
+// Parse an argument list definition
+VALUE gql_arguments_parser(VALUE self, VALUE content)
+{
+  if (!RB_TYPE_P(content, T_STRING))
+    rb_raise(rb_eArgError, "%+" PRIsVALUE " is not a string", content);
+
+  // Initialize the scanner and parse the arguments
+  VALUE result = Qnil;
+  struct gql_scanner scanner = gql_new_scanner(content);
+  gql_next_lexeme(&scanner);
+
+  // Go over all the definitions
+  while (scanner.lexeme != gql_i_eof)
+  {
+    GQL_SAFE_PUSH(result, gql_parse_argument_definition(&scanner));
+
+    // If anything made the scanner fall into an unknown, throw an error
+    if (scanner.lexeme == gql_i_unknown)
+      gql_throw_parser_error(&scanner);
+  }
+
+  // Return the token
+  return result;
+}
 
 /* STRUCTURES
  *
@@ -68,7 +121,7 @@ NORETURN(void gql_throw_parser_error(struct gql_scanner *scanner));
 /* ALL THE PARSERS METHODS FOR THE ABOVE STRUCTURES */
 // Parse an execution document
 // EXECUTION DOCUMENT [OPERATION*, FRAGMENT*]
-VALUE gql_parse_execution(VALUE self, VALUE document)
+VALUE gql_execution_parser(VALUE self, VALUE document)
 {
   if (!RB_TYPE_P(document, T_STRING))
     rb_raise(rb_eArgError, "%+" PRIsVALUE " is not a string", document);
@@ -131,7 +184,7 @@ VALUE gql_parse_operation(struct gql_scanner *scanner)
 
     // Save the directives of the operation
     if (scanner->lexeme == gql_i_directive)
-      GQL_ASSIGN_VALUE_AND_NEXT(pieces[3], scanner, gql_parse_directives(scanner));
+      pieces[3] = gql_parse_directives(scanner);
   }
 
   // Collect all the fields for this operation, or return nil for non-typed operation with empty body
@@ -177,7 +230,7 @@ VALUE gql_parse_fragment(struct gql_scanner *scanner)
 
   // Save the directives of the fragment
   if (scanner->lexeme == gql_i_directive)
-    GQL_ASSIGN_VALUE_AND_NEXT(pieces[2], scanner, gql_parse_directives(scanner));
+    pieces[2] = gql_parse_directives(scanner);
 
   // Normally fields would be mandatory, but the gem will accept empty body fragments
   if (scanner->lexeme == gql_is_op_curly)
@@ -259,7 +312,7 @@ VALUE gql_parse_variable(struct gql_scanner *scanner)
 
   // Save the directives of the variable
   if (scanner->lexeme == gql_i_directive)
-    GQL_ASSIGN_VALUE_AND_NEXT(pieces[3], scanner, gql_parse_directives(scanner));
+    pieces[3] = gql_parse_directives(scanner);
 
   // Generate the result array with proper scan location and return
   return GQL_BUILD_PARSE_OUTER_TOKEN("variable", 4, pieces, scanner, mem);
@@ -369,7 +422,7 @@ VALUE gql_parse_field(struct gql_scanner *scanner)
 
   // Save the directives of the field
   if (scanner->lexeme == gql_i_directive)
-    GQL_ASSIGN_VALUE_AND_NEXT(pieces[3], scanner, gql_parse_directives(scanner));
+    pieces[3] = gql_parse_directives(scanner);
 
   // Save the fields of the field
   if (scanner->lexeme == gql_is_op_curly)
@@ -501,7 +554,7 @@ VALUE gql_parse_spread(struct gql_scanner *scanner)
 
   // Save the directives of the field
   if (scanner->lexeme == gql_i_directive)
-    GQL_ASSIGN_VALUE_AND_NEXT(pieces[2], scanner, gql_parse_directives(scanner));
+    pieces[2] = gql_parse_directives(scanner);
 
   // Spread without a name needs fields
   if (NIL_P(pieces[0]))
@@ -578,6 +631,45 @@ VALUE gql_parse_type(struct gql_scanner *scanner)
   return GQL_BUILD_PARSE_TOKEN("type", 3, pieces, scanner);
 }
 
+// VARIABLE [name, TYPE, value?]
+VALUE gql_parse_argument_definition(struct gql_scanner *scanner)
+{
+  // TODO: Add support for directives
+  VALUE pieces[] = {Qnil, Qnil, Qnil};
+
+  // If we don't have a name, we have a problem
+  if (scanner->lexeme != gql_i_name)
+    return gql_nil_and_unknown(scanner);
+
+  // Save the name of the argument
+  GQL_ASSIGN_TOKEN_AND_NEXT(pieces[0], scanner);
+
+  // Next is the colon before the type
+  if (scanner->lexeme != gql_is_colon)
+    return gql_nil_and_unknown(scanner);
+
+
+  // Skip the :
+  GQL_SCAN_NEXT(scanner);
+
+  // Now check for the type, which can be a brack for array or just the type
+  gql_next_lexeme(scanner);
+  if (scanner->lexeme != gql_is_op_brack && scanner->lexeme != gql_i_name)
+    return gql_nil_and_unknown(scanner);
+
+  // Save the type of the argument
+  GQL_ASSIGN_VALUE_AND_NEXT(pieces[1], scanner, gql_parse_type(scanner));
+
+  // If the next lexeme is an equal sign, then we have to capture the value
+  if (scanner->lexeme == gql_is_equal)
+  {
+    GQL_SCAN_NEXT(scanner);
+    GQL_ASSIGN_VALUE_AND_NEXT(pieces[2], scanner, gql_value_to_token(scanner, 0));
+  }
+
+  return GQL_BUILD_PARSE_TOKEN("argument", 3, pieces, scanner);
+}
+
 // Simply set the scanner as unkown and return nil, to simplify validation
 VALUE gql_nil_and_unknown(struct gql_scanner *scanner)
 {
@@ -615,7 +707,9 @@ void gql_throw_parser_error(struct gql_scanner *scanner)
 void Init_gql_parser()
 {
   GQLParser = rb_define_module("GQLParser");
-  rb_define_singleton_method(GQLParser, "parse_execution", gql_parse_execution, 1);
+  rb_define_singleton_method(GQLParser, "parse_type", gql_type_parser, 1);
+  rb_define_singleton_method(GQLParser, "parse_arguments", gql_arguments_parser, 1);
+  rb_define_singleton_method(GQLParser, "parse_execution", gql_execution_parser, 1);
   rb_define_const(GQLParser, "VERSION", rb_str_new2("October 2021"));
 
   QLGParserToken = rb_define_class_under(GQLParser, "Token", rb_path2class("SimpleDelegator"));

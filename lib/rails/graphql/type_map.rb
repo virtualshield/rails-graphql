@@ -227,6 +227,7 @@ module Rails
           possibilities.find do |item|
             next if (result = dig(namespace, base_class, item)).nil?
             next if (result.is_a?(Proc) && (result = result.call).nil?)
+            next if (result.try(:hidden?) && xargs[:allow_hidden] != true)
             return result
           end
         end
@@ -251,20 +252,23 @@ module Rails
 
       # Iterate over the types of the given +base_class+ that are defined on the
       # given +namespaces+.
-      def each_from(namespaces, base_class: nil, exclusive: false, base_classes: nil, &block)
+      def each_from(namespaces, **xargs, &block)
+        exclusive = xargs.fetch(:exclusive, false)
+        allow_hidden = xargs.fetch(:allow_hidden, false)
         namespaces = sanitize_namespaces(namespaces: namespaces, exclusive: exclusive)
         load_dependencies!(_ns: namespaces)
         register_pending!
 
         iterated = Set.new
-        base_classes = GraphQL.enumerate(base_class || base_classes || :Type)
+        base_classes = GraphQL.enumerate(xargs[:base_class] || xargs[:base_classes] || :Type)
         enumerator = Enumerator::Lazy.new(namespaces) do |yielder, namespace|
           next unless @index.key?(namespace)
 
           base_classes.each do |a_base_class|
             @index[namespace][a_base_class]&.each do |key, value|
               value = value.is_a?(Proc) ? value.call : value
-              next if value.blank? || iterated.include?(value.gql_name)
+              next if value.blank? || (value.try(:hidden?) && !allow_hidden) ||
+                iterated.include?(value.gql_name)
 
               iterated << value.gql_name
               yielder << value
@@ -422,10 +426,10 @@ module Rails
             "#{__dir__}/type/scalar/boolean_scalar",
             "#{__dir__}/type/scalar/id_scalar",
 
-            "#{__dir__}/directive/deprecated_directive",
-            "#{__dir__}/directive/include_directive",
-            "#{__dir__}/directive/skip_directive",
-            "#{__dir__}/directive/specified_by_directive",
+            "#{__dir__}/directive/spec/deprecated_directive",
+            "#{__dir__}/directive/spec/include_directive",
+            "#{__dir__}/directive/spec/skip_directive",
+            "#{__dir__}/directive/spec/specified_by_directive",
           ]
         end
 

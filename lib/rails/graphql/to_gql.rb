@@ -24,20 +24,21 @@ module Rails
       end
 
       # Describe the given +node+ as GraphQL
-      def compile(node, collector = nil, with_descriptions: true)
+      def compile(node, collector = nil, **settings)
         collector ||= Collectors::IdentedCollector.new
-        @with_descriptions = with_descriptions
+        @with_descriptions = settings.fetch(:with_descriptions, true)
         accept(node, collector).value
       end
 
       # Describe the given +schema+ as GraphQL, with all types and directives
-      def describe(schema, collector = nil, with_descriptions: true, with_spec: nil)
+      def describe(schema, collector = nil, **settings)
         collector ||= Collectors::IdentedCollector.new
-        @with_descriptions = with_descriptions
-        @with_spec = with_spec.nil? ? schema.introspection? : with_spec
+        @with_descriptions = settings.fetch(:with_descriptions, true)
+        @with_spec = settings.fetch(:with_spec) { schema.introspection? }
         @namespace = schema.namespace
 
-        GraphQL.type_map.each_from(@namespace, base_class: :Type)
+        hidden = settings.fetch(:with_hidden, false)
+        GraphQL.type_map.each_from(@namespace, base_class: :Type, allow_hidden: hidden)
           .group_by(&:kind).values_at(*DESCRIBE_TYPES)
           .prepend([schema]).each do |items|
             items&.sort_by(&:gql_name)&.each do |item|
@@ -50,7 +51,7 @@ module Rails
             end
           end
 
-        GraphQL.type_map.each_from(schema.namespace, base_class: :Directive)
+        GraphQL.type_map.each_from(schema.namespace, base_class: :Directive, allow_hidden: hidden)
           .sort_by(&:gql_name).each do |item|
             next if !@with_spec && item.spec_object
             accept(item, collector).eol
@@ -68,6 +69,7 @@ module Rails
 
           visit_description(o, collector)
           collector << 'directive @' << o.gql_name
+          collector << ' # Hidden' if o.hidden?
           visit_arguments(o.arguments, collector)
           collector << ' on '
           collector << o.locations.map { |l| l.to_s.upcase }.join(' | ')
@@ -86,6 +88,7 @@ module Rails
           collector << ': '
 
           visit_typed_object(o, collector)
+          visit_properties(o.properties, collector) if o.properties?
           visit_directives(o.directives, collector)
           collector.eol if @with_descriptions
           collector.eol
@@ -156,6 +159,8 @@ module Rails
           visit_description(o, collector)
           collector << 'enum '
           collector << o.gql_name
+
+          collector << ' @hidden' if o.hidden?
           visit_directives(o.directives, collector)
 
           collector.indented(' {', '}') do
@@ -168,6 +173,8 @@ module Rails
           visit_assignment(o, collector)
           collector << 'input '
           collector << o.gql_name
+
+          collector << ' @hidden' if o.hidden?
           visit_directives(o.directives, collector)
 
           collector.indented(' {', '}') { visit_fields(o.fields, collector) }
@@ -178,6 +185,8 @@ module Rails
           visit_assignment(o, collector)
           collector << 'interface '
           collector << o.gql_name
+
+          collector << ' @hidden' if o.hidden?
           visit_directives(o.directives, collector)
 
           collector.indented(' {', '}') { visit_fields(o.fields, collector) }
@@ -197,6 +206,7 @@ module Rails
             end
           end
 
+          collector << ' @hidden' if o.hidden?
           visit_directives(o.directives, collector)
 
           collector.indented(' {', '}') { visit_fields(o.fields, collector) }
@@ -206,6 +216,8 @@ module Rails
           visit_description(o, collector)
           collector << 'scalar '
           collector << o.gql_name
+
+          collector << ' @hidden' if o.hidden?
           visit_directives(o.directives, collector)
 
           collector.eol
@@ -215,6 +227,8 @@ module Rails
           visit_description(o, collector)
           collector << 'union '
           collector << o.gql_name
+
+          collector << ' @hidden' if o.hidden?
           visit_directives(o.directives, collector)
 
           collector << ' = '
@@ -226,18 +240,15 @@ module Rails
           collector << '@' << o.gql_name
           return unless o.args.to_h.values.any?
 
-          collector << '('
-          o.arguments.values.each_with_index do |x, i|
+          return collector << '(*)' if o.class.dynamic?
+
+          visit_conditional_list(o.all_arguments.values, collector) do |x|
             value = o.args[x.gql_name]
             value = o.args[x.name] if value.nil?
             next if value.nil?
 
-            collector << ', ' if i.positive?
-            collector << x.gql_name
-            collector << ': '
-            collector << x.as_json(value).inspect
+            "#{x.gql_name}: #{x.as_json(value).inspect}"
           end
-          collector << ')'
         end
 
         def visit_Rails_GraphQL_Argument_Instance(o, collector)
@@ -339,6 +350,41 @@ module Rails
 
           collector << '!' unless o.null?
           collector << ' = ' << o.to_json(o.default) if o.try(:default_value?)
+        end
+
+        def visit_properties(o, collector)
+          klass = Rails::GraphQL::Directive::PropertiesDirective
+          klass.register!
+
+          collector << ' @properties'
+          list = klass.dynamic? ? o.to_h : klass.all_arguments.to_hash
+          visit_conditional_list(list, collector) do |(key, value)|
+            if Argument === value
+              next if (v = o[value.name]).nil?
+
+              v = Array.wrap(v) if value.array?
+              "#{value.gql_name}: #{value.as_json(v).inspect}"
+            elsif Proc === value
+              "#{key}: #{value.source_location.join(':').prepend('Proc ').inspect}"
+            elsif !value.nil?
+              "#{key}: #{value.to_json}"
+            end
+          end
+        end
+
+        def visit_conditional_list(list, collector)
+          state = -1
+          list&.each do |x|
+            content = yield(x, '')
+            next if content.blank?
+
+            state += 1
+            collector << '(' if state == 0
+            collector << ', ' if state > 0
+            collector << content
+          end
+
+          collector << ')' if state >= 0
         end
 
         def visit(object, collector = nil)

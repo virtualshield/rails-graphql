@@ -99,6 +99,7 @@ enum gql_lexeme gql_read_name(struct gql_scanner *scanner)
 {
   // Read all the chars and digits
   GQL_SCAN_WHILE(scanner, GQL_S_CHARACTER(scanner->current) || GQL_S_DIGIT(scanner->current));
+  // TODO: Maybe allow dots when enabled by Ruby::GraphQL.config
   return gql_i_name;
 }
 

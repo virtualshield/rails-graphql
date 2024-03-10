@@ -35,8 +35,8 @@ module Rails
             return if unresolvable?
 
             stacked do
-              block.call if block.present?
-              after_block.call if after_block.present?
+              block&.call
+              after_block&.call
               trigger_event(:prepared)
             end
           end

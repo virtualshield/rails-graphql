@@ -67,6 +67,12 @@ module Rails
           super(node)
 
           check_invalid_operation!
+          strategy.track_complexity_for(self)
+        end
+
+        # In general, operations cannot be cached
+        def cacheable?
+          false
         end
 
         # The list of fields comes from the +fields_for+ of the same type as
@@ -96,6 +102,13 @@ module Rails
         # Add a empty entry if the operation has a name
         def resolve_invalid
           response.safe_add(name, nil) if stacked_selection?
+        end
+
+        # Don't stack over response when the operation doesn't have a name
+        # TODO: As per spec, when an operation has variables, it should not
+        # be stacked
+        def stacked_selection?
+          name.present? && request.operations.size > 1
         end
 
         # Stores all the used variables to report not used ones
@@ -158,13 +171,6 @@ module Rails
           # Resolve all the fields
           def resolve_then(&block)
             super(block) { resolve_fields }
-          end
-
-          # Don't stack over response when the operation doesn't have a name
-          # TODO: As per spec, when an operation has variables, it should not
-          # be stacked
-          def stacked_selection?
-            name.present? && request.operations.size > 1
           end
 
           # Name used for debug purposes

@@ -46,6 +46,17 @@ module Rails
       # logs. When it is nil, it will use the same as the Rails application.
       config.filter_parameters = nil
 
+      # The list of properties that can be set on any field with their
+      # underlying types. This simply restricts the property keys that can be
+      # used. Set to `nil` if you want to allow any property to be set.
+      config.field_properties = {
+        max_repetition: 'Int',        # Limits array values output
+        max_complexity: 'Int',        # Limits the underlying complexity
+        max_depth:      'Int',        # Limits the underlying depth
+        complexity:     'Int',        # The unit complexity of the field
+        needs:          '[String!]',  # External properties needed for fulfilling this field
+      }
+
       # A list of all `ActiveRecord` adapters supported. When an adapter is
       # supported, it will map the database types into GraphQL types using proper
       # aliases. Plus, it will have the method to map models attributes to their
@@ -93,6 +104,25 @@ module Rails
       # console, it will automatically shift to Hash. This can also be set per
       # Schema.
       config.default_response_format = :string
+
+      # Set a limit for the depth of a given request. If an operation calculated
+      # depth is higher than this value, it will be blocked and respond with an
+      # error.
+      config.default_request_max_depth = nil
+
+      # Set a limit for the complexity of a given request. If a request as a
+      # whole calculated complexity is higher than this value, it will be
+      # blocked and respond with an error.
+      config.default_request_max_complexity = nil
+
+      # Set a limit for the complexity of each individual operation. If an
+      # operation calculated complexity is higher than this value, it will be
+      # blocked and respond with an error, but the request will proceed.
+      config.default_operation_max_complexity = nil
+
+      # Set a limit for the number of times a given field can be repeated. Any
+      # additional attempts to render a field will render an error.
+      config.default_request_max_repetition = nil
 
       # Specifies if the results of operations should be encoded with
       # +ActiveSupport::JSON#encode+ instead of the default +JSON#generate+.
@@ -158,14 +188,14 @@ module Rails
       # and allow users to enable them.
       config.known_dependencies = {
         scalar: {
-          any:       "#{__dir__}/type/scalar/any_scalar",
-          bigint:    "#{__dir__}/type/scalar/bigint_scalar",
-          binary:    "#{__dir__}/type/scalar/binary_scalar",
-          date_time: "#{__dir__}/type/scalar/date_time_scalar",
-          date:      "#{__dir__}/type/scalar/date_scalar",
-          decimal:   "#{__dir__}/type/scalar/decimal_scalar",
-          time:      "#{__dir__}/type/scalar/time_scalar",
-          json:      "#{__dir__}/type/scalar/json_scalar",
+          any:                 "#{__dir__}/type/scalar/any_scalar",
+          bigint:              "#{__dir__}/type/scalar/bigint_scalar",
+          binary:              "#{__dir__}/type/scalar/binary_scalar",
+          date_time:           "#{__dir__}/type/scalar/date_time_scalar",
+          date:                "#{__dir__}/type/scalar/date_scalar",
+          decimal:             "#{__dir__}/type/scalar/decimal_scalar",
+          time:                "#{__dir__}/type/scalar/time_scalar",
+          json:                "#{__dir__}/type/scalar/json_scalar",
         },
         enum:      {},
         input:     {},
@@ -173,7 +203,7 @@ module Rails
         object:    {},
         union:     {},
         directive: {
-          # cached:    "#{__dir__}/directive/cached_directive",
+          paginate:            "#{__dir__}/directive/execution/paginate_directive",
         },
       }
 

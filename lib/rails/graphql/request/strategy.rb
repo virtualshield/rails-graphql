@@ -10,10 +10,13 @@ module Rails
         extend ActiveSupport::Autoload
 
         autoload :DynamicInstance
+        autoload :ValidateLimits
 
         autoload :SequencedStrategy
         autoload :MultiQueryStrategy
         autoload :CachedStrategy
+
+        include ValidateLimits
 
         # Configurations for the prepare step
         PREPARE_XARGS = { object?: true, reverse?: true }.freeze
@@ -23,7 +26,7 @@ module Rails
 
         delegate :operations, :errors, :response, :schema, to: :request
 
-        attr_reader :listeners, :request, :context, :stage
+        attr_reader :listeners, :request, :context, :stage, :response_cache
 
         class << self
           # Check if the strategy can resolve the given +request+. By default,
@@ -38,6 +41,7 @@ module Rails
           @request = request
           @objects_pool = {}
           @listeners = Hash.new { |h, k| h[k] = Set.new }
+
           add_listeners_from(request)
         end
 
@@ -45,6 +49,7 @@ module Rails
         def clear
           @listeners.clear
           @objects_pool.clear
+          @response_cache = nil
           @stage = @context = @objects_pool = @data_pool = @listeners = nil
         end
 
@@ -117,11 +122,13 @@ module Rails
           value = args.last
           value = field.decorate(value) if decorate
           context.stacked(value) do |current|
-            if !array
-              block.call(current)
-              field.write_value(current)
-            else
-              field.write_array(current, &block)
+            resolve_with_cache(field, current) do
+              if !array
+                block.call(current)
+                field.write_value(current)
+              else
+                field.write_array(current, &block)
+              end
             end
           end
         end
@@ -131,13 +138,28 @@ module Rails
           return unless args.size.zero?
 
           if field.try(:dynamic_resolver?)
+            block = field.resolver
             prepared = prepared_data_for(field)
-            args << Event.trigger(:resolve, field, self, prepared_data: prepared, &field.resolver)
+            args << Event.trigger(:resolve, field, self, prepared_data: prepared, &block)
           elsif field.prepared_data?
             args << prepared_data_for(field)
           else
             data_for(args, field)
           end
+        end
+
+        # Check if it's possible to resolve from cache. Otherwise, run the block
+        # and store the result in the cache
+        def resolve_with_cache(field, value)
+          return yield if value.nil? || !field.cacheable?
+
+          cache_key = calculate_cache_key(field, value)
+          oid = response_cache[cache_key]
+          raise CacheUnavailableError unless oid
+
+          field.write_cache(oid)
+        rescue CacheUnavailableError
+          response_cache[cache_key] = oid if (oid = yield)
         end
 
         # Check if the given class is in the pool, or add a new instance to the
@@ -211,6 +233,14 @@ module Rails
 
           prepared = request.prepared_data_for(field).next
           prepared unless prepared === PreparedData::NULL
+        end
+
+        # Calculate how many times the object is prepared to be repeated
+        def size_of(field)
+          return 1 unless field.try(:field)&.array?
+
+          # If there is no prepared data, we assume it will be repeated once
+          prepared_data_for(field)&.size || 1
         end
 
         # Simply run the organize step for compilation
@@ -288,6 +318,7 @@ module Rails
 
           # Start collecting results
           def collect_response
+            @response_cache = {}
             @stage = :resolve
             yield
           end
@@ -312,6 +343,11 @@ module Rails
           def check_fragment_multiple_prepare!(field)
             return unless @data_pool.key?(field)
             throw(:fragment_prepared) if request.stack.any?(Component::Fragment)
+          end
+
+          # Generate a unique cache key for a given field and value
+          def calculate_cache_key(field, value)
+            field.field.hash ^ field.all_events.hash ^ field.all_arguments.hash ^ value.hash
           end
       end
     end

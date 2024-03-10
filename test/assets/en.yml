@@ -5,7 +5,7 @@ en:
       sample_b: B
       field:
         sample_c: C
-        schema:
+        query:
           sample_field: Field
           sample_d: D
       argument:
@@ -25,5 +25,5 @@ en:
         scalar_desc: Scalar
     field:
       sample_e: E
-      schema:
+      query:
         sample_f: F

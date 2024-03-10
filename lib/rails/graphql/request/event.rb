@@ -50,6 +50,17 @@ module Rails
 
         alias current current_value
 
+        # Allow access to the prepared data of the underlying field
+        def prepared_data
+          strategy.prepared_data_for(source) if Component::Field === source
+        end
+
+        # Allow changing the prepared data of the underlying field
+        def prepared_data=(value)
+          strategy.store_data(source, value) if Component::Field === source
+        end
+        # event.strategy.store_data(event.source, result)
+
         # Provide a way to set the current value
         def current_value=(value)
           resolver&.override_value(value)
@@ -98,7 +109,7 @@ module Rails
           # parameters of a proc callback will be associated with actual field
           # arguments
           def args_source
-            source.arguments if source.try(:kind) === :field
+            data[:args_source] || (source.try(:kind) === :field && source.arguments)
           end
 
         private

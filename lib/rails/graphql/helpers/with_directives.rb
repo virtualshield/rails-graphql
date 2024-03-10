@@ -49,7 +49,7 @@ module Rails
         # to auto initialize a new instance of that directive.
         def use(item_or_symbol, *list, **xargs)
           if item_or_symbol.is_a?(Symbol)
-            directive = fetch!(item_or_symbol)
+            directive = fetch_directive!(item_or_symbol)
             raise ArgumentError, (+<<~MSG).squish unless directive < GraphQL::Directive
               Unable to find the #{item_or_symbol.inspect} directive.
             MSG
@@ -68,7 +68,7 @@ module Rails
         # Check whether a given directive is being used
         # TODO: This does not work with the instance
         def using?(item)
-          directive = (item.is_a?(Symbol) || item.is_a?(String)) ? fetch!(item) : item
+          directive = (Symbol === item || String === item) ? fetch_directive!(item) : item
           raise ArgumentError, (+<<~MSG).squish unless directive < GraphQL::Directive
             The provided #{item.inspect} is not a valid directive.
           MSG
@@ -141,11 +141,12 @@ module Rails
         private
 
           # Find a directive for its symbolized name
-          def fetch!(name)
+          def fetch_directive!(name)
             GraphQL.type_map.fetch!(name,
               base_class: :Directive,
               namespaces: namespaces,
               prevent_register: try(:owner) || self,
+              allow_hidden: true,
             )
           end
       end

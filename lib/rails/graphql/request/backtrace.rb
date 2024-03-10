@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'active_support/parameter_filter'
+
 module Rails
   module GraphQL
     class Request
@@ -41,7 +43,7 @@ module Rails
             objects = request.strategy.context
             oid = -1
 
-            last_object = suffix = nil
+            suffix = nil
             while (item = stack.shift)
               next suffix = +"[#{item}]" if item.is_a?(Numeric)
               location = request.location_of(item)
@@ -130,7 +132,7 @@ module Rails
             return '{}' if value.blank?
 
             request.cache(:backtrace_arguments_filter) do
-              ActiveSupport::ParameterFilter.new(GraphQL.config.filter_parameters)
+              ActiveSupport::ParameterFilter.new(GraphQL.config.filter_parameters || [])
             end.filter(value)
           end
 

@@ -15,7 +15,7 @@ module Rails
 
         delegate :decorate, to: :type_klass
         delegate :operation, :variables, :request, to: :parent
-        delegate :method_name, :resolver, :performer, :type_klass, :leaf_type?,
+        delegate :method_name, :resolver, :performer, :type_klass, :leaf_type?, :array?,
           :dynamic_resolver?, :mutation?, to: :field
 
         attr_reader :name, :alias_name, :parent, :field, :arguments, :current_object
@@ -29,6 +29,18 @@ module Rails
           @alias_name = node[1]
 
           super(node)
+
+          strategy.track_complexity_for(self)
+        end
+
+        # Return the name of the field to be used on the response
+        def gql_name
+          alias_name || name
+        end
+
+        # A little helper for finding the correct parent type name
+        def typename
+          (try(:current_object) || try(:type_klass))&.gql_name
         end
 
         # Override that considers the requested field directives and also the
@@ -37,11 +49,10 @@ module Rails
           request.nested_cache(:listeners, field) do
             if !field.listeners?
               directive_listeners
-            elsif !directives?
+            elsif !directives? || (local = directive_listeners).empty?
               field.all_listeners
             else
-              local = directive_listeners
-              local.empty? ? field.all_listeners : field.all_listeners + local
+              field.all_listeners + local
             end
           end
         end
@@ -49,6 +60,8 @@ module Rails
         # Override that considers the requested field directives and also the
         # definition field events, both from itself and its directives events
         def all_events
+          return if all_listeners.blank?
+
           request.nested_cache(:events, field) do
             if !field.events?
               directive_events
@@ -71,6 +84,11 @@ module Rails
           end
         end
 
+        # Return the properties of the field if it has any set
+        def properties
+          field.properties if field.properties?
+        end
+
         # Check if the field is using a directive
         def using?(item_or_symbol)
           super || field.using?(item_or_symbol)
@@ -85,16 +103,6 @@ module Rails
           MSG
 
           @field = field
-        end
-
-        # Return the name of the field to be used on the response
-        def gql_name
-          alias_name || name
-        end
-
-        # A little helper for finding the correct parent type name
-        def typename
-          (try(:current_object) || try(:type_klass))&.gql_name
         end
 
         # Check if the field is an entry point, meaning that it is attached to
@@ -128,6 +136,11 @@ module Rails
         # the underlying +field+
         def of_type?(klass)
           super || field.of_type?(klass)
+        end
+
+        # Don't stack over response when it's processing as array
+        def stacked_selection?
+          !array?
         end
 
         # When the field is invalid, there's no much to do
@@ -195,15 +208,11 @@ module Rails
           # Perform the resolve step
           def resolve_then(&block)
             stacked do
-              send((field.array? ? :resolve_many : :resolve_one), &block)
+              resolve_method = array? ? :resolve_many : :resolve_one
+              catch(:limited) { send(resolve_method, &block) }
             rescue StandardError => error
               resolve_invalid(error)
             end
-          end
-
-          # Don't stack over response when it's processing as array
-          def stacked_selection?
-            !field.array?
           end
 
         private

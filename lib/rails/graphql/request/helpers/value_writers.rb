@@ -12,6 +12,11 @@ module Rails
           object:    :write_object,
         }.freeze
 
+        # Write the content base on the cache data
+        def write_cache(oid)
+          response.dup_from_cache(gql_name, oid)
+        end
+
         # Write a value to the response
         def write_value(value)
           return write_leaf(value) if value.nil?

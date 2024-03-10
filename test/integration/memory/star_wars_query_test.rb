@@ -8,7 +8,7 @@ class Integration_Memory_StarWarsQueryTest < GraphQL::IntegrationTestCase
   ALL_EPISODES = %w[NEW_HOPE EMPIRE JEDI]
 
   def test_r2d2_saga_hero
-    assert_result({ data: { hero: { name: 'R2-D2' } } }, <<~GQL)
+    assert_result('R2-D2', <<~GQL, dig: %w[data hero name])
       query HeroNameQuery { hero { name } }
     GQL
   end
@@ -16,7 +16,7 @@ class Integration_Memory_StarWarsQueryTest < GraphQL::IntegrationTestCase
   def test_r2d2_by_id_and_friends
     friends = named_list('Luke Skywalker', 'Han Solo', 'Leia Organa')
     hero = { id: '2001', name: 'R2-D2', friends: friends }
-    assert_result({ data: { hero: hero } }, <<~GQL)
+    assert_result(hero, <<~GQL, dig: %w[data hero])
       query HeroNameAndFriendsQuery {
         hero { id name friends { name } }
       }
@@ -33,8 +33,7 @@ class Integration_Memory_StarWarsQueryTest < GraphQL::IntegrationTestCase
       { name: 'Leia Organa',    appearsIn: ALL_EPISODES, friends: friends3 },
     ]
 
-    hero = { name: 'R2-D2', friends: friends }
-    assert_result({ data: { hero: hero } }, <<~GQL)
+    assert_result({ name: 'R2-D2', friends: friends }, <<~GQL, dig: %w[data hero])
       query NestedQuery {
         hero { name friends { name appearsIn friends { name } } }
       }
@@ -45,7 +44,7 @@ class Integration_Memory_StarWarsQueryTest < GraphQL::IntegrationTestCase
     human = { name: 'Luke Skywalker' }
     droid = { name: 'C-3PO' }
 
-    assert_result({ data: { human: human, droid: droid } }, <<~GQL)
+    assert_result({ human: human, droid: droid }, <<~GQL, dig: 'data')
       query FetchLukeAndC3POQuery {
         human(id: "1000") { name }
         droid(id: "2000") { name }
@@ -54,8 +53,8 @@ class Integration_Memory_StarWarsQueryTest < GraphQL::IntegrationTestCase
   end
 
   def test_generic_query_fetch_by_id_luke
-    xargs = { args: { some_id: '1000' } }
-    assert_result({ data: { human: { name: 'Luke Skywalker' } } }, <<~GQL, **xargs)
+    xargs = { dig: %w[data human name], args: { some_id: '1000' } }
+    assert_result('Luke Skywalker', <<~GQL, **xargs)
       query FetchSomeIDQuery($someId: ID!) {
         human(id: $someId) { name }
       }
@@ -63,8 +62,8 @@ class Integration_Memory_StarWarsQueryTest < GraphQL::IntegrationTestCase
   end
 
   def test_generic_query_fetch_by_id_han
-    xargs = { args: { some_id: '1002' } }
-    assert_result({ data: { human: { name: 'Han Solo' } } }, <<~GQL, **xargs)
+    xargs = { dig: %w[data human name], args: { some_id: '1002' } }
+    assert_result('Han Solo', <<~GQL, **xargs)
       query FetchSomeIDQuery($someId: ID!) {
         human(id: $someId) { name }
       }
@@ -72,8 +71,8 @@ class Integration_Memory_StarWarsQueryTest < GraphQL::IntegrationTestCase
   end
 
   def test_generic_query_fetch_by_id_invalid
-    xargs = { args: { id: 'not a valid id' } }
-    assert_result({ data: { human: nil } }, <<~GQL, **xargs)
+    xargs = { dig: %w[data human], args: { id: 'not a valid id' } }
+    assert_result(nil, <<~GQL, **xargs)
       query FetchSomeIDQuery($id: ID!) {
         human(id: $id) { name }
       }
@@ -81,8 +80,17 @@ class Integration_Memory_StarWarsQueryTest < GraphQL::IntegrationTestCase
   end
 
   def test_using_alias_to_change_key_name
-    assert_result({ data: { luke: { name: 'Luke Skywalker' } } }, <<~GQL)
+    assert_result('Luke Skywalker', <<~GQL, dig: %w[data luke name])
       query FetchLukeAliased { luke: human(id: "1000") { name } }
+    GQL
+
+    luke = { id: '1000', name: 'Luke Skywalker', planet: 'Tatooine' }
+    result = { hero: { name: 'R2-D2' }, luke: luke }
+    assert_result(result, <<~GQL, dig: 'data')
+      query FetchSomeAliased {
+        hero { name }
+        luke: human(id: "1000") { id name planet: homePlanet }
+      }
     GQL
   end
 
@@ -94,7 +102,7 @@ class Integration_Memory_StarWarsQueryTest < GraphQL::IntegrationTestCase
       { name: 'R2-D2' },
     ]
 
-    assert_result({ data: { luke: { name: 'Luke Skywalker', others: friends } } }, <<~GQL)
+    assert_result({ name: 'Luke Skywalker', others: friends }, <<~GQL, dig: %w[data luke])
       query FetchLukeDeepAliased { luke: human(id: "1000") {
         name others: friends { name }
       } }

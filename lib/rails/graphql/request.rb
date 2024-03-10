@@ -27,6 +27,9 @@ module Rails
     # * <tt>:schema</tt> - The schema on which the request should run on. It
     #   has higher precedence than the namespace
     # * <tt>:variables</tt> - The variables of the request
+    # * <tt>:max_repetition</tt> - The max repetition of any rendered field
+    # * <tt>:max_complexity</tt> - The max complexity of any operation
+    # * <tt>:max_depth</tt> - The max depth of any operation
     class Request
       extend ActiveSupport::Autoload
 
@@ -36,6 +39,9 @@ module Rails
         json: :as_json,
         hash: :as_json,
       }.freeze
+
+      Limits = Struct.new(:max_depth, :max_repetition, :max_complexity,
+        :operation_max_complexity)
 
       eager_autoload do
         autoload_under :steps do
@@ -62,8 +68,9 @@ module Rails
         autoload :Subscription
       end
 
-      attr_reader :args, :origin, :errors, :fragments, :operations, :response, :schema,
-        :stack, :strategy, :document, :operation_name, :subscriptions
+
+      attr_reader :args, :origin, :errors, :limits, :fragments, :operations, :response,
+        :schema, :stack, :strategy, :document, :operation_name, :subscriptions
 
       alias arguments args
       alias controller origin
@@ -140,6 +147,7 @@ module Rails
 
         document, cache = nil, document if xargs.delete(:compiled)
         prepared_data = xargs.delete(:data_for)
+        initialize_limit(xargs)
         reset!(**xargs)
 
         @response = initialize_response(output, formatter)
@@ -184,11 +192,13 @@ module Rails
 
       # This is used by cache and static responses to jump from executing to
       # delivery a response right away
-      def force_response(response, error = StaticResponse)
+      def force_response(response = nil, error: StaticResponse)
         return unless defined?(@response)
-        @response = response
+        @response = response unless response.nil?
         raise error
       end
+
+      alias terminate! force_response
 
       # Import prepared data that is formatted as a hash
       def import_prepared_data(prepared_data)
@@ -352,6 +362,7 @@ module Rails
           strategy: @strategy.cache_dump,
           operation_name: @operation_name,
           type_map_version: schema.version,
+          limits: (defined?(@limits) && @limits.to_h),
           document: @document,
           errors: @errors.cache_dump,
           operations: @operations.transform_values(&:cache_dump),
@@ -364,6 +375,7 @@ module Rails
         version = data[:type_map_version]
         @document = data[:document]
         @operation_name = data[:operation_name]
+        @limits = Limits.new(*data[:limits]) if data[:limits].present?
         resolve_from_cache = (version == schema.version)
 
         # Run the document from scratch if TypeMap has changed
@@ -560,6 +572,20 @@ module Rails
           MSG
 
           obj
+        end
+
+        # Initialize limit by checking any configured limit
+        def initialize_limit(xargs)
+          settings = {
+            max_depth: :default_request_max_depth,
+            max_repetition: :default_request_max_repetition,
+            max_complexity: :default_request_max_complexity,
+            operation_max_complexity: :default_operation_max_complexity,
+          }.each_with_object({}) do |(key, config_key), hash|
+            hash[key] = xargs.delete(key) || schema.config[config_key]
+          end.compact
+
+          @limits = Limits.new(**settings).freeze if settings.present?
         end
 
         # Little helper to build an +OpenStruct+ ensure the given +value+ is a
