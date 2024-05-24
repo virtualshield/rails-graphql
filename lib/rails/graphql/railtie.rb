@@ -29,13 +29,9 @@ module Rails
       # Ensure a valid logger
       initializer 'graphql.logger' do |app|
         ActiveSupport.on_load(:graphql) do
-          return if config.logger.present?
-
-          logger = ::Rails.logger
-          if logger.respond_to?(:tagged)
-            config.logger = logger
-          else
-            config.logger = ActiveSupport::TaggedLogging.new(logger)
+          config.logger ||= begin
+            logger = ::Rails.logger
+            logger.respond_to?(:tagged) ? logger : ActiveSupport::TaggedLogging.new(logger)
           end
         end
       end
