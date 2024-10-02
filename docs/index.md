@@ -2,7 +2,7 @@
 layout: default
 banner: true
 toc: false
-image: "/assets/images/release-banner.png"
+image: "/assets/images/banner.png"
 ---
 
 #### License
