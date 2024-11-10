@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 source 'https://rubygems.org'
 
-gemspec
+gemspec path: "../"
 
-gem 'rails', '~> 7.1'
+gem 'rails', '~> 7.0'
 gem 'bootsnap' # required by the Rails apps generated in tests
 gem 'ruby-prof', platform: :ruby
 gem 'pry-byebug'

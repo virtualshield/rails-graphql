@@ -98,7 +98,8 @@ module Rails
           parts = ['  GraphQL', suffix.presence, event.payload[:name]]
           parts << "(#{duration}ms)" unless duration.zero?
 
-          color(parts.compact.join(' '), MAGENTA, true)
+          style = AR710 ? { bold: true } : true
+          color(parts.compact.join(' '), MAGENTA, style)
         end
 
         def debug_variables(vars)
