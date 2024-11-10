@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'uri/generic'
+
 module URI
   # URI::GLQ encodes objects from a GraphQL server as an URI.
   # It has the components:
