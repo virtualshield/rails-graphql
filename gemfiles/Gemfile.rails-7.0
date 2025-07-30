@@ -3,7 +3,7 @@ source 'https://rubygems.org'
 
 gemspec path: "../"
 
-gem 'rails', '~> 7.0'
+gem 'rails', '~> 7.0.0'
 gem 'bootsnap' # required by the Rails apps generated in tests
 gem 'ruby-prof', platform: :ruby
 gem 'pry-byebug'

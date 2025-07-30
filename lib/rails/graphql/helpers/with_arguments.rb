@@ -100,6 +100,11 @@ module Rails
           defined?(@arguments) && @arguments.key?(name)
         end
 
+        # Check if any argument has been defined at all
+        def has_arguments?
+          defined?(@arguments) && !@arguments.empty?
+        end
+
         # Validate all the arguments to make sure the definition is valid
         def validate!(*)
           super if defined? super

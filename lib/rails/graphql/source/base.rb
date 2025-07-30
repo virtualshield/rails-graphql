@@ -41,7 +41,9 @@ module Rails
           # to the +::GraphQL+ namespace with the addition of any namespace of
           # the current class
           def object
-            @object ||= create_type(superclass: object_class, gql_name: object_name)
+            @object ||= create_type(superclass: object_class, gql_name: object_name).tap do |t|
+              t.include(const_get(:ObjectMethods)) if const_defined?(:ObjectMethods, false)
+            end
           end
 
           # Return the GraphQL input type associated with the source. It will
@@ -49,7 +51,9 @@ module Rails
           # to the +::GraphQL+ namespace with the addition of any namespace of
           # the current class
           def input
-            @input ||= create_type(superclass: input_class, gql_name: input_name)
+            @input ||= create_type(superclass: input_class, gql_name: input_name).tap do |t|
+              t.include(const_get(:InputMethods)) if const_defined?(:InputMethods, false)
+            end
           end
 
           protected
@@ -75,6 +79,30 @@ module Rails
 
               name ||= base_name.tr('_', '')
               GraphQL::Type.create!(self, name, superclass, **xargs, &block)
+            end
+
+            # Allow setting methods on the source object via a proper module
+            def object_methods(&block)
+              type_extend_with_module(:object, &block)
+            end
+
+            # Allow setting methods on the source input via a proper module
+            def input_methods(&block)
+              type_extend_with_module(:input, &block)
+            end
+
+          private
+
+            # Allows adding methods to a type by properly providing a module
+            # and adding it to the type
+            def type_extend_with_module(type, &block)
+              mod_name = :"#{type.to_s.classify}Methods"
+              mod = const_get(mod_name) if const_defined?(mod_name, false)
+              mod ||= const_set(mod_name, Module.new).tap do |m|
+                instance_variable_get("@#{type}")&.include(m)
+              end
+
+              mod.module_eval(&block)
             end
 
         end

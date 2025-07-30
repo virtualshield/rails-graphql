@@ -81,4 +81,11 @@ class Integration_SQLite_StarWarsQueryTest < GraphQL::IntegrationTestCase
       query AllBases($order: String!) { liteBases(order: $order) { name } }
     GQL
   end
+
+  def test_query_methods_precedence
+    faction = { greeting: 'Hi you!' }
+    assert_result({ data: { liteFaction: faction } }, <<~GQL)
+      query EmpireFleet { liteFaction(id: "2") { greeting } }
+    GQL
+  end
 end

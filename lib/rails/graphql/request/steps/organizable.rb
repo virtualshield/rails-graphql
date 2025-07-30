@@ -118,9 +118,9 @@ module Rails
           # Helper parser for arguments that also collect necessary variables
           # Default values forces this method to run even without nodes
           def parse_arguments(nodes)
-            return @arguments = EMPTY_HASH if nodes.blank?
+            return @arguments = EMPTY_HASH if nodes.blank? && !self.has_arguments?
 
-            args = nodes.each.with_object({}) do |(name, value, var_name), hash|
+            args = nodes&.each_with_object({}) do |(name, value, var_name), hash|
               hash[name.to_s] = var_name.nil? ? value : var_name
             end
 

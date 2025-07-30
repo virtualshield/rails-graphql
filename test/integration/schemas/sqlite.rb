@@ -14,6 +14,7 @@ end
 SQLiteRecord.connection.instance_eval do
   create_table 'lite_factions', force: :cascade do |t|
     t.string 'name'
+    t.string 'greeting'
   end
 
   create_table 'lite_bases', force: :cascade do |t|
@@ -35,8 +36,8 @@ class LiteFaction < SQLiteRecord
   accepts_nested_attributes_for :bases
   accepts_nested_attributes_for :ships
 
-  REBELS = create!(name: 'Alliance to Restore the Republic')
-  EMPIRE = create!(name: 'Galactic Empire')
+  REBELS = create!(name: 'Alliance to Restore the Republic', greeting: 'Hello %s!')
+  EMPIRE = create!(name: 'Galactic Empire', greeting: 'Hi %s!')
 end
 
 class LiteBase < SQLiteRecord
@@ -78,6 +79,12 @@ class StartWarsSqliteSchema < GraphQL::Schema
   source LiteFaction do
     with_options on: 'liteFactions' do
       scoped_argument(:order) { |o| order(name: o) }
+    end
+
+    object_methods do
+      def greeting
+        format(current.greeting, 'you')
+      end
     end
   end
 

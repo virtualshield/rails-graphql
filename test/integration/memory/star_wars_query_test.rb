@@ -132,6 +132,20 @@ class Integration_Memory_StarWarsQueryTest < GraphQL::IntegrationTestCase
     GQL
   end
 
+  def test_query_with_field_argument_and_default_value
+    argument = SCHEMA.find_type('Human')[:greeting].arguments[:name]
+    argument.stub_ivar(:@default, 'You') do
+      assert(argument.inspect, "name: String! = 'You'")
+
+      vader = { name: 'Han Solo', greeting: 'Hello You!' }
+      assert_result({ data: { human: vader } }, <<~GQL)
+        query WithFieldArgument {
+          human(id: "1002") { name greeting }
+        }
+      GQL
+    end
+  end
+
   def test_query_with_fragment
     luke = { name: 'Luke Skywalker', homePlanet: 'Tatooine' }
     leia = { name: 'Leia Organa', homePlanet: 'Alderaan' }

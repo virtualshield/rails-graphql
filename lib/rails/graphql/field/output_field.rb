@@ -41,6 +41,10 @@ module Rails
           super || field.has_argument?(name)
         end
 
+        def has_arguments?
+          super || field.has_arguments?
+        end
+
         def arguments?
           super || field.arguments?
         end

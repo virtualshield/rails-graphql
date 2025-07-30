@@ -16,7 +16,7 @@ module Rails
         delegate :decorate, to: :type_klass
         delegate :operation, :variables, :request, to: :parent
         delegate :method_name, :resolver, :performer, :type_klass, :leaf_type?,
-          :dynamic_resolver?, :mutation?, to: :field
+          :dynamic_resolver?, :has_arguments?, :mutation?, to: :field
 
         attr_reader :name, :alias_name, :parent, :field, :arguments, :current_object
 

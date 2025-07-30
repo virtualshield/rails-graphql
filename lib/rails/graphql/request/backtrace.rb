@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'active_support/parameter_filter'
+
 module Rails
   module GraphQL
     class Request
@@ -130,7 +132,8 @@ module Rails
             return '{}' if value.blank?
 
             request.cache(:backtrace_arguments_filter) do
-              ActiveSupport::ParameterFilter.new(GraphQL.config.filter_parameters)
+              filters = GraphQL.config.filter_parameters || EMPTY_ARRAY
+              ActiveSupport::ParameterFilter.new(filters)
             end.filter(value)
           end
 

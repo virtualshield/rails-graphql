@@ -5,11 +5,18 @@ module Rails
     module Helpers
       # This is an extra magic on top of the delegator class from the standard
       # lib that allows fetching a specific property of the delegated object
-      class AttributeDelegator < ActiveSupport::ProxyObject
+      class AttributeDelegator < ::BasicObject
+        undef_method :==
+        undef_method :equal?
+
         def initialize(obj = nil, attribute = nil, cache: true, &block)
           @delegate_sd_attr = attribute
           @delegate_sd_obj = block.presence || obj
           @delegate_cache = cache
+        end
+
+        def raise(*args)
+          ::Object.send(:raise, *args)
         end
 
         private

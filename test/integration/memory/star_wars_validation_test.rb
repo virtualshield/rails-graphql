@@ -27,8 +27,21 @@ class Integration_Memory_StarWarsValidationTest < GraphQL::IntegrationTestCase
       locations: [{ line: 2, column: 1 }],
     }]
 
-    assert_result(errors, <<~GQL, dig: 'errors')
+    assert_result(errors, <<~QUERY, dig: 'errors')
       query DroidFieldInFragment { hero { name ... on Droid { primaryFunction
+    QUERY
+  end
+
+  def test_fields_with_required_arguments
+    errors = [{
+      message: 'Invalid arguments for human field: the "id" argument can not be null.',
+      locations: [{ line: 1, column: 19 }, { line: 1, column: 33 }],
+      path: %w[HumanName human],
+      extensions: { stage: 'organize', exception: 'Rails::GraphQL::ArgumentsError' },
+    }]
+
+    assert_result(errors, <<~GQL, dig: 'errors')
+      query HumanName { human { name } }
     GQL
   end
 
