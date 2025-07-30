@@ -129,6 +129,9 @@ class GraphQL_SourceTest < GraphQL::TestCase
   end
 
   def test_disable
+    # class_attribute changed and the stub does not work as expected
+    return skip if rails8?
+
     described_class.stub(:hook_names, Set[:start]) do
       assert_includes(described_class.hook_names, :start)
       described_class.send(:disable, 'starts')
@@ -137,6 +140,9 @@ class GraphQL_SourceTest < GraphQL::TestCase
   end
 
   def test_enable
+    # class_attribute changed and the stub does not work as expected
+    return skip if rails8?
+
     described_class.stub(:hook_names, Set[]) do
       refute_includes(described_class.hook_names, :start)
       described_class.send(:enable, 'starts')
@@ -156,5 +162,9 @@ class GraphQL_SourceTest < GraphQL::TestCase
 
     def source_const
       Rails::GraphQL::Source
+    end
+
+    def rails8?
+      ActiveSupport.gem_version >= Gem::Version.new('8')
     end
 end
