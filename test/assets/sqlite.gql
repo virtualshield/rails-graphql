@@ -171,6 +171,8 @@ input LiteFactionInput {
   
   basesAttributes: [LiteBaseInput!]
   
+  greeting: String
+  
   name: String
   
   shipsAttributes: [LiteShipInput!]
@@ -205,6 +207,8 @@ type LiteFaction {
   id: ID!
   
   bases: [LiteBase!]!
+  
+  greeting: String
   
   name: String
   

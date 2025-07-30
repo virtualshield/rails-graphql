@@ -13,6 +13,7 @@ SimpleCov.start do
   add_group 'Source', ['/graphql/adapters', '/graphql/source']
 end
 
+require 'logger'
 require 'minitest/autorun'
 require 'minitest/reporters'
 require 'active_record'

@@ -2,6 +2,7 @@
 
 require 'i18n'
 require 'zlib'
+require 'ostruct'
 require 'active_model'
 require 'active_support'
 
