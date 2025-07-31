@@ -95,4 +95,16 @@ class StartWarsSqliteSchema < GraphQL::Schema
   end
 
   source LiteShip
+
+  object 'Sample' do
+    field :faction, 'LiteFaction', null: false
+  end
+
+  query_fields do
+    field :sample, 'Sample', null: false
+  end
+
+  def sample
+    { faction: LiteFaction.last }
+  end
 end

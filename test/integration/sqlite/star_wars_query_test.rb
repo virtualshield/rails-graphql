@@ -88,4 +88,13 @@ class Integration_SQLite_StarWarsQueryTest < GraphQL::IntegrationTestCase
       query EmpireFleet { liteFaction(id: "2") { greeting } }
     GQL
   end
+
+  def test_nested_non_prepared_source
+    bases = named_list('Death Star', 'Shield Generator', 'Headquarters')
+    sample = { sample: { faction: { name: 'Galactic Empire', bases: bases } } }
+
+    assert_result({ data: sample }, <<~GQL)
+      query SampleFaction { sample { faction { name bases { name } } } }
+    GQL
+  end
 end

@@ -226,6 +226,10 @@ type LiteShip {
   name: String
 }
 
+type Sample {
+  faction: LiteFaction!
+}
+
 type _Mutation {
   createLiteBase(liteBase: LiteBaseInput!): LiteBase!
   
@@ -262,6 +266,8 @@ type _Query {
   liteShip(id: ID!): LiteShip!
   
   liteShips: [LiteShip!]!
+  
+  sample: Sample!
 }
 
 """

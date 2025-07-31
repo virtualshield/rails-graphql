@@ -256,6 +256,12 @@ module Rails
       # Once the records are pre-loaded due to +preload_association+, use the
       # parent value and the preloader result to get the records
       def parent_owned_records(collection_result = false)
+        # The absence of the prepared data key means we got to a point that we
+        # don't know the result of the association, so we simply call it
+        unless event.data.key?(:prepared_data)
+          return current_value.public_send(field.method_name)
+        end
+
         data = event.data[:prepared_data]
         return collection_result ? [] : nil unless data
 

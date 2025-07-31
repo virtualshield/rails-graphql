@@ -131,8 +131,8 @@ module Rails
           return unless args.size.zero?
 
           if field.try(:dynamic_resolver?)
-            prepared = prepared_data_for(field)
-            args << Event.trigger(:resolve, field, self, prepared_data: prepared, &field.resolver)
+            extra = prepared_data_for(field) { |data| { prepared: data } } || EMPTY_HASH
+            args << Event.trigger(:resolve, field, self, **extra, &field.resolver)
           elsif field.prepared_data?
             args << prepared_data_for(field)
           else
@@ -207,10 +207,15 @@ module Rails
         # Get the prepared data for the given +field+, getting ready for
         # resolve, while ensuring to check prepared data on request
         def prepared_data_for(field)
-          return @data_pool[field] unless field.prepared_data?
-
-          prepared = request.prepared_data_for(field).next
-          prepared unless prepared === PreparedData::NULL
+          if field.prepared_data?
+            prepared = request.prepared_data_for(field).next
+            prepared = nil if prepared === PreparedData::NULL
+            block_given? ? yield(prepared) : prepared
+          elsif !block_given?
+            @data_pool[field]
+          elsif @data_pool.key?(field)
+            yield(@data_pool[field])
+          end
         end
 
         # Simply run the organize step for compilation
