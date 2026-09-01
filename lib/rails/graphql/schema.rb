@@ -21,9 +21,9 @@ module Rails
       extend Helpers::WithDirectives
       extend Helpers::WithGlobalID
       extend Helpers::Registerable
+      extend GraphQL::Configurable
       extend GraphQL::Introspection
 
-      include ActiveSupport::Configurable
       include ActiveSupport::Rescuable
       include Helpers::Instantiable
 
@@ -308,6 +308,7 @@ module Rails
             super if defined? super
 
             # The only way to actually get the namespace into the cache prefix
+            subclass.config = config.deep_dup
             subclass.config.define_singleton_method(:cache_prefix) do
               self[:cache_prefix] ||= "#{GraphQL.config.cache_prefix}#{subclass.namespace}/"
             end

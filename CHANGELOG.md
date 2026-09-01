@@ -1,5 +1,8 @@
 ### Unreleased
 
+* Fix GraphiQL HTML template asset URLs to use versioned jsDelivr packages
+  instead of stale unversioned unpkg URLs that now return 404
+
 ### 1.0.0
 
 * Allow ENUM inputs to receive string (needs to be enabled through config)
