@@ -10,6 +10,7 @@ require 'active_support/core_ext/module/attribute_accessors_per_thread'
 require 'active_support/core_ext/string/strip'
 require 'active_support/core_ext/enumerable'
 
+require 'rails/graphql/configurable'
 require 'rails/graphql/version'
 require 'rails/graphql/uri'
 
@@ -47,8 +48,7 @@ module Rails
   #   differently.
   module GraphQL
     extend ActiveSupport::Autoload
-
-    include ActiveSupport::Configurable
+    extend Configurable
 
     # Stores the version of the GraphQL spec used for this implementation
     SPEC_VERSION = ::GQLParser::VERSION
