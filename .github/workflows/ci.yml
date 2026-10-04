@@ -7,19 +7,20 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - master
       - v*.*.x
     tags:
       - v*.*.*
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, reopened]
     branches:
       - '*'
 
 jobs:
   test:
     name: "Run tests (${{ matrix.ruby }})"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     env:
       MYSQL_HOST: '127.0.0.1'
       BUNDLE_GEMFILE: 'gemfiles/Gemfile.rails-${{ matrix.rails }}'
@@ -58,7 +59,7 @@ jobs:
             rails: '8.0'
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
@@ -76,9 +77,10 @@ jobs:
 
   mac_compile:
     name: "Compile for MacOS"
-    runs-on: macos-13
+    runs-on: macos-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.1'
