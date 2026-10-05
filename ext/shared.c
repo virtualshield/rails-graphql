@@ -387,6 +387,7 @@ VALUE gql_array_to_rb(struct gql_scanner *scanner)
   // Start the array and the temporary element
   VALUE result = rb_ary_new();
   VALUE element;
+  unsigned long pass_start;
 
   // Save the scan and grab the next char
   GQL_SCAN_NEXT(scanner);
@@ -402,11 +403,16 @@ VALUE gql_array_to_rb(struct gql_scanner *scanner)
     }
 
     // Save the element as an rb token, because we may need the type of each element afterwards
+    pass_start = scanner->current_pos;
     element = gql_value_to_token(scanner, 0);
 
-    // If it found an unknown, then we bubble the problem up
-    if (scanner->lexeme == gql_i_unknown)
+    // If it found an unknown, or an element that read nothing, which the next pass
+    // would read again, then we bubble the problem up
+    if (scanner->lexeme == gql_i_unknown || scanner->current_pos == pass_start)
+    {
+      scanner->lexeme = gql_i_unknown;
       return Qnil;
+    }
 
     // Add the value to the array and scan through everything ignorable
     rb_ary_push(result, element);
