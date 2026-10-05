@@ -1,4 +1,5 @@
 require 'config'
+require 'timeout'
 
 class GQLParserTest < GraphQL::TestCase
   DESCRIBED_CLASS = GQLParser
@@ -40,6 +41,16 @@ class GQLParserTest < GraphQL::TestCase
     assert_parser_error('{c: "d"', document)
   end
 
+  def test_parse_execution_list_with_an_element_that_cannot_be_read
+    [
+      '{ a(b: [0]) }',
+      '{ a(b: [-0]) }',
+      '{ a(b: [1, 0]) }',
+      '{ a(b: [[0]]) }',
+      'query($v: [Int] = [0]) { a }',
+    ].each { |document| assert_parse_returns_in_time(document) }
+  end
+
   protected
 
     def parse_execution(document)
@@ -49,6 +60,18 @@ class GQLParserTest < GraphQL::TestCase
     def assert_parser_error(token, document)
       error = assert_raises(DESCRIBED_CLASS::ParserError) { parse_execution(document) }
       assert_match(/\AParser error: unexpected "#{Regexp.escape(token)}" at \[\d+, \d+\]\z/, error.message)
+    end
+
+    def assert_parse_returns_in_time(document)
+      Timeout.timeout(1) do
+        parse_execution(document)
+      rescue DESCRIBED_CLASS::ParserError
+        nil
+      end
+
+      pass
+    rescue Timeout::Error
+      flunk("#{document.inspect} did not return within 1 second")
     end
 
     # Shortening a String in place keeps its old bytes after the new end (true of the Rubies the

@@ -1,6 +1,7 @@
 ### Unreleased
 
 * Stricter handling of the end of a document in the parser
+* A list value that cannot be read is now a parser error
 
 ### 1.0.0
 
