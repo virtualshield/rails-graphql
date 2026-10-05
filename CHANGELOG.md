@@ -3,6 +3,8 @@
 * Stricter handling of the end of a document in the parser
 * A list value that cannot be read is now a parser error
 * A comment no longer moves the end position of the token before it
+* Fix the token after a list of directives being skipped (the next field, its alias or arguments, or the next definition); a stray token there is now a parser error
+* A token that ends with directives no longer extends past them
 
 ### 1.0.0
 

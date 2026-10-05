@@ -51,8 +51,60 @@ class GQLParserTest < GraphQL::TestCase
     ].each { |document| assert_parse_returns_in_time(document) }
   end
 
+  def test_parse_execution_operation_with_directives
+    assert_equal(%w[a b], item_names(operation_fields('query Q @x { a b }')))
+    assert_equal(%w[a], item_names(operation_fields('query Q @x @y(z: 1) { a }')))
+    assert_parser_error('b', 'query Q @x b { a }')
+
+    operations, fragments = parse_execution('query Q @x fragment F on T { a }')
+    assert_equal([1, 1], [operations.size, fragments.size])
+
+    operations, = parse_execution('query @x mutation { a }')
+    assert_equal(%i[query mutation], operations.map(&:type))
+  end
+
+  def test_parse_execution_fragment_with_directives
+    assert_equal(%w[d e], item_names(fragment_fields('fragment F on Q @x { d e }')))
+    assert_parser_error('d', 'fragment F on Q @x d { e }')
+  end
+
+  def test_parse_execution_variable_with_directives
+    assert_equal(%w[a b], item_names(operation_variables('query($a: Int @x $b: Int @y) { c }')))
+    assert_equal(%w[a], item_names(operation_variables('query($a: Int @x) { c }')))
+    assert_parser_error('b', 'query($a: Int @x b) { c }')
+  end
+
+  def test_parse_execution_field_with_directives
+    assert_equal(%w[a b c], item_names(operation_fields('{ a @skip(if: false) b c }')))
+    assert_equal(%w[a b c], item_names(operation_fields('{ a(x: 1) @skip(if: false) b c }')))
+    assert_equal(%w[a b c], item_names(operation_fields('{ a @x @y b c }')))
+    assert_equal(%w[a b c], item_names(operation_fields('{ a @skip(if: false) { x } b c }')))
+    assert_equal(%w[b a], item_names(operation_fields('{ b a @x }')))
+    assert_equal(%w[a c], item_names(operation_fields('{ a @x b: c }')))
+    assert_equal(%w[a b], item_names(operation_fields('{ a @x b(c: 1) }')))
+    assert_equal(%w[a b], item_names(operation_fields("{ a @x # c\n b }")))
+    assert_parser_error('1', '{ a @include(if: true) 1 b }')
+
+    assert_equal([1, 7], end_of(operation_fields('{ a @x }').first))
+    assert_equal([1, 7], end_of(operation_fields("{ a @x\n}").first))
+  end
+
+  def test_parse_execution_spread_with_directives
+    fragment = ' fragment F on Q { d }'
+    assert_equal(%w[...F b c], item_names(operation_fields('{ ...F @include(if: true) b c }' + fragment)))
+    assert_equal(%w[b ...F], item_names(operation_fields('{ b ...F @x }' + fragment)))
+    assert_parser_error('1', '{ ...F @x 1 }' + fragment)
+  end
+
+  def test_parse_execution_inline_spread_with_directives
+    assert_equal(['... on Q', 'b'], item_names(operation_fields('{ ... on Q @x { a } b }')))
+    assert_equal(%w[a], item_names(spread_fields(operation_fields('{ ... @x { a } }').first)))
+    assert_parser_error('b', '{ ... on Q @x b }')
+  end
+
   def test_parse_execution_token_followed_by_a_comment
     assert_equal([1, 4], end_of(operation_fields("{ a # c\n}").first))
+    assert_equal([1, 7], end_of(operation_fields("{ a @x # c\n}").first))
     assert_equal([1, 10], end_of(operation_fields("{ a(b: 1) # c\n b }").first))
     assert_equal([1, 4], end_of(operation_fields("{ a\n# c\n# d\n b }").first))
     assert_equal([1, 7], end_of(operation_fields("{ ...F # c\n b } fragment F on Q { d }").first))
@@ -77,6 +129,22 @@ class GQLParserTest < GraphQL::TestCase
 
     def operation_variables(document)
       parse_execution(document).dig(0, 0, 2)
+    end
+
+    def fragment_fields(document)
+      parse_execution(document).dig(1, 0, 3)
+    end
+
+    def spread_fields(spread)
+      spread[3]
+    end
+
+    def item_names(items)
+      items.map do |item|
+        next item[0].to_s unless item.of_type?(:spread)
+
+        item[0] ? "...#{item[0]}" : "... on #{item[1]}"
+      end
     end
 
     def end_of(token)

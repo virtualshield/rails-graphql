@@ -131,11 +131,11 @@ VALUE gql_parse_operation(struct gql_scanner *scanner)
 
     // Save the directives of the operation
     if (scanner->lexeme == gql_i_directive)
-      GQL_ASSIGN_VALUE_AND_NEXT(pieces[3], scanner, gql_parse_directives(scanner));
+      pieces[3] = gql_parse_directives(scanner);
   }
 
-  // Collect all the fields for this operation, or return nil for non-typed operation with empty body
-  // With empty body operation, make sure to move to the next token
+  // Collect all the fields for this operation, or return nil for an operation with neither a type nor a body;
+  // without a body, the token that follows the operation is left for gql_parse_execution
   if (scanner->lexeme == gql_is_op_curly)
     GQL_ASSIGN_VALUE_AND_NEXT(pieces[4], scanner, gql_parse_fields(scanner));
   else if (NIL_P(pieces[0]))
@@ -177,7 +177,7 @@ VALUE gql_parse_fragment(struct gql_scanner *scanner)
 
   // Save the directives of the fragment
   if (scanner->lexeme == gql_i_directive)
-    GQL_ASSIGN_VALUE_AND_NEXT(pieces[2], scanner, gql_parse_directives(scanner));
+    pieces[2] = gql_parse_directives(scanner);
 
   // Normally fields would be mandatory, but the gem will accept empty body fragments
   if (scanner->lexeme == gql_is_op_curly)
@@ -259,7 +259,7 @@ VALUE gql_parse_variable(struct gql_scanner *scanner)
 
   // Save the directives of the variable
   if (scanner->lexeme == gql_i_directive)
-    GQL_ASSIGN_VALUE_AND_NEXT(pieces[3], scanner, gql_parse_directives(scanner));
+    pieces[3] = gql_parse_directives(scanner);
 
   // Generate the result array with proper scan location and return
   return GQL_BUILD_PARSE_OUTER_TOKEN("variable", 4, pieces, scanner, mem);
@@ -369,7 +369,7 @@ VALUE gql_parse_field(struct gql_scanner *scanner)
 
   // Save the directives of the field
   if (scanner->lexeme == gql_i_directive)
-    GQL_ASSIGN_VALUE_AND_NEXT(pieces[3], scanner, gql_parse_directives(scanner));
+    pieces[3] = gql_parse_directives(scanner);
 
   // Save the fields of the field
   if (scanner->lexeme == gql_is_op_curly)
@@ -502,7 +502,7 @@ VALUE gql_parse_spread(struct gql_scanner *scanner)
 
   // Save the directives of the field
   if (scanner->lexeme == gql_i_directive)
-    GQL_ASSIGN_VALUE_AND_NEXT(pieces[2], scanner, gql_parse_directives(scanner));
+    pieces[2] = gql_parse_directives(scanner);
 
   // Spread without a name needs fields
   if (NIL_P(pieces[0]))
