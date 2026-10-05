@@ -118,7 +118,7 @@ VALUE gql_parse_operation(struct gql_scanner *scanner)
   if (QGL_I_OPERATION(scanner->lexeme))
   {
     // Save the operation type
-    type = RSTRING_PTR(gql_scanner_to_s(scanner));
+    type = GQL_EXECUTION_KEYWORDS[scanner->lexeme - gql_ie_query];
     GQL_ASSIGN_TOKEN_AND_NEXT(pieces[0], scanner);
 
     // Save the name of the operation

@@ -112,6 +112,14 @@ class GQLParserTest < GraphQL::TestCase
     assert_equal([1, 18], end_of(operation_variables("query($a: Int = 1 # c\n) { b }").first))
   end
 
+  def test_parse_execution_operation_type
+    types = { 'query' => :query, 'mutation' => :mutation, 'subscription' => :subscription, '' => :query }
+    types.each do |keyword, type|
+      operations, = parse_execution("#{keyword} { a }")
+      assert_equal([type], operations.map(&:type), keyword)
+    end
+  end
+
   protected
 
     def parse_execution(document)
