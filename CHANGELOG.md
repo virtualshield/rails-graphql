@@ -2,6 +2,7 @@
 
 * Stricter handling of the end of a document in the parser
 * A list value that cannot be read is now a parser error
+* A comment no longer moves the end position of the token before it
 
 ### 1.0.0
 
