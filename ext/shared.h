@@ -35,25 +35,36 @@
 
 #define GQL_SCAN_ERROR(scanner) (scanner->lexeme == gql_i_eof || scanner->lexeme == gql_i_unknown)
 #define GQL_SCAN_SIZE(scanner) (scanner->current_pos - scanner->start_pos)
-#define GQL_SCAN_CHAR(scanner) (scanner->doc[scanner->current_pos])
-#define GQL_SCAN_LOOK(scanner, bytes) (scanner->doc[scanner->current_pos + bytes])
-#define GQL_SCAN_NEXT(scanner) ({            \
-  scanner->current_pos++;                    \
-  scanner->current = GQL_SCAN_CHAR(scanner); \
+// Positions at or past doc_len read as '\0' and the cursor never moves past
+// doc_len. GQL_SCAN_WHILE stops there; any other loop that keeps going on '\0'
+// must check the length itself. This holds while bytes at or after the cursor
+// are read only through GQL_SCAN_LOOK, GQL_SCAN_CHAR, or current, and the cursor
+// moves only through GQL_SCAN_NEXT
+#define GQL_SCAN_LOOK(scanner, bytes)                    \
+  ((scanner)->current_pos + (bytes) < (scanner)->doc_len \
+     ? (scanner)->doc[(scanner)->current_pos + (bytes)]  \
+     : '\0')
+#define GQL_SCAN_CHAR(scanner) (GQL_SCAN_LOOK(scanner, 0))
+#define GQL_SCAN_NEXT(scanner) ({                  \
+  if ((scanner)->current_pos < (scanner)->doc_len) \
+  {                                                \
+    (scanner)->current_pos++;                      \
+    (scanner)->current = GQL_SCAN_CHAR(scanner);   \
+  }                                                \
 })
 #define GQL_SCAN_NEW_LINE(scanner) ({         \
   scanner->last_ln_at = scanner->current_pos; \
   scanner->current_line++;                    \
 })
-#define GQL_SCAN_WHILE(scanner, check) ({ \
-  while (check)                           \
-  {                                       \
-    if (GQL_SCAN_CHAR(scanner) == '\n')   \
-    {                                     \
-      GQL_SCAN_NEW_LINE(scanner);         \
-    }                                     \
-    GQL_SCAN_NEXT(scanner);               \
-  }                                       \
+#define GQL_SCAN_WHILE(scanner, check) ({                        \
+  while ((scanner)->current_pos < (scanner)->doc_len && (check)) \
+  {                                                              \
+    if (GQL_SCAN_CHAR(scanner) == '\n')                          \
+    {                                                            \
+      GQL_SCAN_NEW_LINE(scanner);                                \
+    }                                                            \
+    GQL_SCAN_NEXT(scanner);                                      \
+  }                                                              \
 })
 #define GQL_SCAN_SET_END(scanner, offset) ({                                 \
   scanner->end_line = scanner->begin_line;                                   \
@@ -141,6 +152,7 @@ struct gql_scanner
   unsigned long end_line;
   unsigned long end_column;
   char *doc;
+  unsigned long doc_len;
   char current;
   enum gql_lexeme lexeme;
 };

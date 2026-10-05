@@ -473,8 +473,9 @@ VALUE gql_parse_spread(struct gql_scanner *scanner)
     return gql_nil_and_unknown(scanner);
 
   // Move after the periods and get the next lexeme
-  scanner->current_pos += 3;
-  scanner->current = GQL_SCAN_CHAR(scanner);
+  GQL_SCAN_NEXT(scanner);
+  GQL_SCAN_NEXT(scanner);
+  GQL_SCAN_NEXT(scanner);
   gql_next_lexeme_no_comments(scanner);
 
   // According to the spec, the type condition or the name are optional
