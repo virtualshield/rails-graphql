@@ -51,6 +51,15 @@ class GQLParserTest < GraphQL::TestCase
     ].each { |document| assert_parse_returns_in_time(document) }
   end
 
+  def test_parse_execution_token_followed_by_a_comment
+    assert_equal([1, 4], end_of(operation_fields("{ a # c\n}").first))
+    assert_equal([1, 10], end_of(operation_fields("{ a(b: 1) # c\n b }").first))
+    assert_equal([1, 4], end_of(operation_fields("{ a\n# c\n# d\n b }").first))
+    assert_equal([1, 7], end_of(operation_fields("{ ...F # c\n b } fragment F on Q { d }").first))
+    assert_equal([1, 17], end_of(operation_fields("{ ... on Q { a } # c\n b }").first))
+    assert_equal([1, 18], end_of(operation_variables("query($a: Int = 1 # c\n) { b }").first))
+  end
+
   protected
 
     def parse_execution(document)
@@ -60,6 +69,18 @@ class GQLParserTest < GraphQL::TestCase
     def assert_parser_error(token, document)
       error = assert_raises(DESCRIBED_CLASS::ParserError) { parse_execution(document) }
       assert_match(/\AParser error: unexpected "#{Regexp.escape(token)}" at \[\d+, \d+\]\z/, error.message)
+    end
+
+    def operation_fields(document)
+      parse_execution(document).dig(0, 0, 4)
+    end
+
+    def operation_variables(document)
+      parse_execution(document).dig(0, 0, 2)
+    end
+
+    def end_of(token)
+      [token.end_line, token.end_column]
     end
 
     def assert_parse_returns_in_time(document)

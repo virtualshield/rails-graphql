@@ -243,8 +243,9 @@ void gql_next_lexeme(struct gql_scanner *scanner)
   if (scanner->lexeme == gql_i_unknown)
     return;
 
-  // Temporary save the end line and end column
-  GQL_SCAN_SET_END(scanner, 0);
+  // Save the end line and end column of the token just read, unless it was a comment
+  if (scanner->lexeme != gql_i_comment)
+    GQL_SCAN_SET_END(scanner, 0);
 
   // Skip everything that can be ignored
   GQL_SCAN_WHILE(scanner, GQL_S_IGNORE(scanner->current));
