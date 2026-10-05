@@ -27,7 +27,7 @@
 * Base controller and base channel
 * An easy to use [GraphiQL](https://github.com/graphql/graphiql) view
 * A brand new inline type creator
-* Organized several method names to follow one single patter
+* Organized several method names to follow one single pattern
 * Several fixes to events and callbacks
 * Fixes for source hooks
 * Fixes for scoped arguments
@@ -45,7 +45,7 @@
 * Support for persisted queries and several caching features
 * Support to ActiveRecord running MySQL
 * Fields description can now be defined on I18n
-* Way better integration with Zeitwrek. Now the `graphql` folder is 100% compliant with reloader, even though it has its particular structure
+* Way better integration with Zeitwerk. Now the `graphql` folder is 100% compliant with reloader, even though it has its particular structure
 * Everything now is compliant with GlobalID, which means that GraphQL objects like fields and directives can be sent to ActiveJob and other places in a serializable way
 * TypeMap versioning, so that the application can be updated without tearing down GraphQL
 * Lots of performance improvements

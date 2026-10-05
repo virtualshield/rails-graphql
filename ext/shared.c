@@ -74,11 +74,11 @@ enum gql_lexeme gql_name_to_keyword(struct gql_scanner *scanner, const char *key
   // Check until it finds the end of the array
   for (size_t i = 0; i < size; ++i)
   {
-    // Move ot the next item and check the current for different size
+    // Move to the next item and check the current for different size
     keyword = keywords[i];
     if(strlen(keyword) == len)
     {
-      // We cannot use the normal strcomp because we are comparing a mid part of the string
+      // We cannot use the normal strcmp because we are comparing a mid part of the string
       for (pos = 0, valid = 1; valid == 1 && pos < len; pos++)
       {
         if (keyword[pos] != scanner->doc[scanner->start_pos + pos])
@@ -140,7 +140,7 @@ enum gql_lexeme gql_read_hash(struct gql_scanner *scanner)
 
 enum gql_lexeme gql_read_float(struct gql_scanner *scanner)
 {
-  // If what made it get in here was an '.', then it can recurse to the exponent of a fraction
+  // If what made it get in here was a '.', then it can recurse to the exponent of a fraction
   int at_fraction = scanner->current == '.';
 
   // Skip the float mark and maybe
@@ -205,7 +205,7 @@ enum gql_lexeme gql_read_string(struct gql_scanner *scanner, int allow_heredoc)
   // Read until the start and end number of quotes matches
   while (start_size != end_size)
   {
-    // If it is a quote, add to end and move ot the next
+    // If it is a quote, add to end and move to the next
     if (scanner->current == '"')
     {
       end_size++;
@@ -440,7 +440,7 @@ VALUE gql_value_to_rb(struct gql_scanner *scanner, int accept_var)
   // Make sure to save the end position of the value
   GQL_SCAN_SET_END(scanner, 0);
 
-  // If it's a name, then it can be a keyword or a enum value
+  // If it's a name, then it can be a keyword or an enum value
   if (scanner->lexeme == gql_i_name)
   {
     scanner->lexeme = GQL_SAFE_NAME_TO_KEYWORD(scanner, GQL_VALUE_KEYWORDS);

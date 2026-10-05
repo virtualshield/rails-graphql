@@ -219,7 +219,7 @@ VALUE gql_parse_variable(struct gql_scanner *scanner)
   GQL_SCAN_SAVE(scanner, mem);
   VALUE pieces[] = {Qnil, Qnil, Qnil, Qnil};
 
-  // Make sure that it starts with an "$" sign
+  // Make sure that it starts with a "$" sign
   if (scanner->lexeme != gql_i_variable)
     return gql_nil_and_unknown(scanner);
 
@@ -242,7 +242,7 @@ VALUE gql_parse_variable(struct gql_scanner *scanner)
   // Skip the :
   GQL_SCAN_NEXT(scanner);
 
-  // Now check for the type, which can be a brack for array or just the type
+  // Now check for the type, which can be a bracket for an array or just the type
   gql_next_lexeme_no_comments(scanner);
   if (scanner->lexeme != gql_is_op_brack && scanner->lexeme != gql_i_name)
     return gql_nil_and_unknown(scanner);
@@ -275,7 +275,7 @@ VALUE gql_parse_directives(struct gql_scanner *scanner)
   while (scanner->lexeme == gql_i_directive)
     rb_ary_push(result, gql_parse_directive(scanner));
 
-  // Just return the array filled with variables, no need to make it as a token
+  // Just return the array filled with directives, no need to make it as a token
   return result;
 }
 
@@ -500,7 +500,7 @@ VALUE gql_parse_spread(struct gql_scanner *scanner)
       GQL_ASSIGN_TOKEN_AND_NEXT(pieces[0], scanner);
   }
 
-  // Save the directives of the field
+  // Save the directives of the spread
   if (scanner->lexeme == gql_i_directive)
     pieces[2] = gql_parse_directives(scanner);
 
@@ -543,7 +543,7 @@ VALUE gql_parse_type(struct gql_scanner *scanner)
     GQL_SCAN_NEXT(scanner);
   }
 
-  // If any dimensions where identified, then get the next lexeme for the name
+  // If any dimensions were identified, then get the next lexeme for the name
   if (dimensions > 0)
     gql_next_lexeme(scanner);
 
@@ -579,7 +579,7 @@ VALUE gql_parse_type(struct gql_scanner *scanner)
   return GQL_BUILD_PARSE_TOKEN("type", 3, pieces, scanner);
 }
 
-// Simply set the scanner as unkown and return nil, to simplify validation
+// Simply set the scanner as unknown and return nil, to simplify validation
 VALUE gql_nil_and_unknown(struct gql_scanner *scanner)
 {
   scanner->lexeme = gql_i_unknown;
