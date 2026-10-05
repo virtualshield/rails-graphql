@@ -1,5 +1,7 @@
 ### Unreleased
 
+* Stricter handling of the end of a document in the parser
+
 ### 1.0.0
 
 * Allow ENUM inputs to receive string (needs to be enabled through config)

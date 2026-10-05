@@ -39,15 +39,15 @@ void gql_debug_print(const char *message)
 // Initialize a new scanner
 struct gql_scanner gql_new_scanner(VALUE source)
 {
-  char *doc = RSTRING_PTR(source);
   struct gql_scanner scanner = {
       .start_pos = 1, // Set to 1 just to begin different from the current position
       .current_pos = 0,
       .current_line = 1,
       .last_ln_at = 0,
-      .current = doc[0],
-      .doc = doc};
+      .doc = RSTRING_PTR(source),
+      .doc_len = (unsigned long)RSTRING_LEN(source)};
 
+  scanner.current = GQL_SCAN_CHAR(&scanner);
   return scanner;
 }
 
@@ -104,7 +104,7 @@ enum gql_lexeme gql_read_name(struct gql_scanner *scanner)
 
 enum gql_lexeme gql_read_comment(struct gql_scanner *scanner)
 {
-  // Move forward until it finds a new line, change the line indicator and return
+  // Move forward until it finds a new line or the end of the document, change the line indicator and return
   GQL_SCAN_WHILE(scanner, scanner->current != '\n');
   GQL_SCAN_NEW_LINE(scanner);
   return gql_i_comment;
