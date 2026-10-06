@@ -174,6 +174,16 @@ or the [`gql_query_cache_key`](/guides/customizing/channel#gql_query_cache_key) 
 set up the incoming cache key and version and leave the request to do the rest.
 
 Everything cached by a request will be saved using the [schema `cache` configuration](/guides/schemas#configuring).
+A document is only cached under a persisted query key when the key is the SHA-256 digest of the
+document, as in Apollo's persisted queries (a plain string key given to the request directly is
+trusted), and when it was fully organized, so not when a component was invalid or refused, or the
+request did not complete; the next request with the document caches it. When a request only
+provides a persisted query key that is not in the cache, it gets the `PersistedQueryNotFound` response.
+
+{: .important }
+> All the operations of a cached document are loaded, and their listeners triggered, before any
+> of them is executed, which differs from a regular request with a mutation or a subscription,
+> where operations are organized and executed one at a time.
 
 {: .important }
 > If the [Type Map](/guides/type-map) version changed, then the document will be reorganized.

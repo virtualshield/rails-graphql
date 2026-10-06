@@ -127,18 +127,21 @@ module Rails
           super.merge(type: self.class)
         end
 
-        # Organize from cache data
+        # Organize from cache data, which still triggers the event with the
+        # +type+ of the operation, and stops there if it raised, the same as
+        # the organize step does
         def cache_load(data)
-          @name = data[:node][1]
+          @node = data[:node]
+          @name = @node[1]
 
-          super
+          super if organize_from_cache { trigger_event(type) }
         end
 
         protected
 
           # Trigger an specific event with the +type+ of the operation
           def organize
-            trigger_event(type)
+            stacked { trigger_event(type) }
             organize_then do
               yield if block_given?
               organize_fields

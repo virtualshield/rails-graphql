@@ -168,8 +168,6 @@ module Rails
           @alias_name = data[:node][1]
           @field = all_from_gid(data[:field])
           super
-
-          check_authorization! unless unresolvable?
         end
 
         protected
@@ -185,6 +183,13 @@ module Rails
 
               check_authorization!
             end
+          end
+
+          # Check the authorization before the selection and the organized
+          # event, the same as the organize step does
+          def organized_from_cache(*)
+            check_authorization!
+            super
           end
 
           # Perform the prepare step

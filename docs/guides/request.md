@@ -389,13 +389,13 @@ be triggered:
 : When a `Strategy` is initiated to resolve a request.
 
 `query`
-: When a `query` operation started to be organized.
+: When a `query` operation started to be organized or was loaded from the cache.
 
 `mutation`
-: When a `mutation` operation started to be organized.
+: When a `mutation` operation started to be organized or was loaded from the cache.
 
 `subscription`
-: When a `subscription` operation started to be organized.
+: When a `subscription` operation started to be organized or was loaded from the cache.
 
 `attach`
 : When a [directive](/guides/directives) has been attached to a component.
@@ -404,7 +404,7 @@ be triggered:
 : When a field is being organized, to check for [authorization](/guides/advanced/authorization).
 
 `organized`
-: When a component has been successfully organized.
+: When a component has been successfully organized or was loaded from the cache.
 
 `prepare` / `before_resolve`
 : When a field is preparing data.<br/>**Runs in reverse order**{: .text-yellow-200 }.

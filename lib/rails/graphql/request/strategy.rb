@@ -38,7 +38,7 @@ module Rails
           @request = request
           @objects_pool = {}
           @listeners = Hash.new { |h, k| h[k] = Set.new }
-          add_listeners_from(request)
+          add_listeners_from(schema)
         end
 
         # Clear all strategy information
@@ -232,29 +232,27 @@ module Rails
           data, operations, fragments = data.values_at(:strategy, :operations, :fragments)
 
           collect_listeners do
-            # Load all operations
             operations = operations.transform_values do |operation|
-              request.build_from_cache(operation.delete(:type)).tap do |instance|
-                instance.instance_variable_set(:@request, request)
-                instance.cache_load(operation)
-              end
+              [request.build_from_cache(operation.delete(:type)), operation]
             end
 
-            # Load all fragments
             fragments = fragments&.transform_values do |fragment|
-              request.build_from_cache(Component::Fragment).tap do |instance|
-                instance.instance_variable_set(:@request, request)
-                instance.cache_load(fragment)
-              end
+              [request.build_from_cache(Component::Fragment), fragment]
+            end
+
+            # Save operations and fragments into the request before loading
+            # them, since they are referenced while loading
+            request.instance_variable_set(:@operations, operations.transform_values(&:first))
+            request.instance_variable_set(:@fragments, fragments&.transform_values(&:first))
+
+            [*operations.each_value, *fragments&.each_value].each do |instance, data|
+              instance.instance_variable_set(:@request, request)
+              instance.cache_load(data)
             end
           end
 
           # Mark itself as already organized
           @organized = true
-
-          # Save operations and fragments into the request
-          request.instance_variable_set(:@operations, operations)
-          request.instance_variable_set(:@fragments, fragments)
         end
 
         protected

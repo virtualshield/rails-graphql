@@ -363,15 +363,16 @@ module Rails
             end
           end
 
-          # Make sure to prefix the cache key
+          # Make sure to prefix the cache key, without changing the given one,
+          # since it is used more than once during a request
           def expand_cache_key(name)
             if name.is_a?(String)
-              name = +"#{config.cache_prefix}#{name}"
+              +"#{config.cache_prefix}#{name}"
             elsif name.respond_to?(:cache_key=)
-              name.cache_key = +"#{config.cache_prefix}#{name.cache_key}"
+              name.dup.tap { |key| key.cache_key = +"#{config.cache_prefix}#{name.cache_key}" }
+            else
+              name
             end
-
-            name
           end
 
           # Generate the helper methods to easily create types within the

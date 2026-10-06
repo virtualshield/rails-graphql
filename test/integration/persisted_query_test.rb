@@ -56,12 +56,17 @@ class Integration_PersistedQueryTest < GraphQL::IntegrationTestCase
   end
 
   def test_persist_query
-    assert_result('One!', :one, hash: (key = cache_key))
+    assert_result('One!', :one, hash: (key = persisted_key(:one)))
     assert_operator(SCHEMA, :cached?, key)
   end
 
-  def test_subsequent_query
+  def test_persist_query_with_another_key
     assert_result('One!', :one, hash: (key = cache_key))
+    refute_operator(SCHEMA, :cached?, key)
+  end
+
+  def test_subsequent_query
+    assert_result('One!', :one, hash: (key = persisted_key(:one)))
     assert_result('One!', :one, hash: key, cache_only: true)
   end
 
@@ -77,6 +82,10 @@ class Integration_PersistedQueryTest < GraphQL::IntegrationTestCase
     def cache_key(key = nil, version = nil)
       key ||= SCHEMA.config.cache_prefix + SecureRandom.uuid
       Rails::GraphQL::CacheKey.new(key, version)
+    end
+
+    def persisted_key(field)
+      cache_key(Digest::SHA256.hexdigest("{ #{field} }"))
     end
 
     def assert_result(value, field, **options)

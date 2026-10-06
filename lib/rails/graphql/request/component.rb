@@ -58,9 +58,12 @@ module Rails
           invalid? || skipped?
         end
 
-        # Mark the component as invalid
+        # Mark the component as invalid, which also means that the request
+        # cannot be written to the cache, since the component was not fully
+        # organized or its error is for the current request only
         def invalidate!(type = true)
           @invalid = type
+          request.uncacheable!
         end
 
         # Skip the component
