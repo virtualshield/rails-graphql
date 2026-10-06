@@ -2,7 +2,7 @@
 
 module Rails
   module GraphQL
-    # Error class tha wraps all the other error classes
+    # Error class that wraps all the other error classes
     StandardError = Class.new(::StandardError)
 
     # Error class related to problems during the definition process
@@ -58,7 +58,7 @@ module Rails
     # Error class related to cached responses, which doesn't need processing
     CachedResponse = Class.new(StaticResponse)
 
-    # Error class related to a persisted query that has't been persisted yet
+    # Error class related to a persisted query that hasn't been persisted yet
     PersistedQueryNotFound = Class.new(StaticResponse)
 
     # A simple module and way to extend errors with extra information

@@ -117,7 +117,7 @@ Arguments:
 : `nil` - The name of the operation for logging purposes.
 
 `args` / `variables`
-: `{}` - The list of [varaibles](#variables) of the request.
+: `{}` - The list of [variables](#variables) of the request.
 
 `origin`
 : `nil` - An optional object from where the request originated. Usually mapped

@@ -73,7 +73,7 @@ module Rails
           listeners? && listeners.key?(event_name.to_sym)
         end
 
-        # When running an stacked operation, make sure that the object was added
+        # When running a stacked operation, make sure that the object was added
         # to the list of the listeners
         def stacked(object, &block)
           request.stacked(object, &block)
