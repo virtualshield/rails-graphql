@@ -18,7 +18,7 @@ module Rails
         # Build the cache object
         def cache_dump
           arguments =
-            if @arguments === EMPTY_HASH
+            if !defined?(@arguments) || @arguments === EMPTY_HASH
               nil
             elsif is_a?(Component::Operation)
               all_to_gid(@arguments.transform_values)
@@ -43,10 +43,12 @@ module Rails
             @arguments = request.build(Request::Arguments, args).freeze
           end
 
-          # Always trigger the organized event
-          unless unresolvable?
+          # Always trigger the organized event, unless the component was stored
+          # as invalid, which a request entry from an older version or a
+          # subscription entry can carry
+          unless data.key?(:invalid)
             strategy.add_listeners_from(self)
-            trigger_event(:organized)
+            organize_from_cache { organized_from_cache(data) }
           end
 
           # Mark component as organized
@@ -54,6 +56,24 @@ module Rails
         end
 
         protected
+
+          # Run a step of the organize process for a component loaded from the
+          # cache the same way +organize!+ does, with the component stacked
+          # and an exception turned into an error, returning if it succeeded
+          def organize_from_cache
+            stacked { yield }
+            true
+          rescue => error
+            invalidate!
+            report_exception(error)
+            false
+          end
+
+          # The last step of the organize process of a component loaded from
+          # the cache, which is the same as the end of the organize step
+          def organized_from_cache(*)
+            trigger_event(:organized)
+          end
 
           # Normally, fields come from the +type_klass+
           def fields_source

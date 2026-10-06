@@ -103,8 +103,12 @@ module Rails
 
         private
 
-          # Check for object based readers
+          # Check for object based readers, never pretending to be a hash,
+          # since the event would be turned into keyword arguments when given
+          # to a callback
           def respond_to_missing?(method_name, include_private = false)
+            return false if method_name == :to_hash
+
             OBJECT_BASED_READERS.include?(method_name) ||
               current_value&.respond_to?(method_name, include_private) ||
               super

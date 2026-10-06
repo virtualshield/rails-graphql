@@ -5,6 +5,13 @@
 * A comment no longer moves the end position of the token before it
 * Fix the token after a list of directives being skipped (the next field, its alias or arguments, or the next definition); a stray token there is now a parser error
 * A token that ends with directives no longer extends past them
+* Listeners of directives attached to a schema are now triggered during a request (those declared with `exclusive_callback: false`, for an event whose source is not the schema)
+* The `query`, `mutation`, and `subscription` events now have the operation as their source, and are also triggered for an operation loaded from the cache
+* A component loaded from the cache now goes through the same steps, under the same stack, as when it is organized, so the listeners of its `organized` event run, its authorization is checked before its selection, and the errors have the same path
+* An exception from a listener or from an authorization check is now reported as an error of the component when it is loaded from the cache
+* A request in which a component was invalid or refused, or that could not be parsed, or that did not complete, is no longer written to the request cache, since a component was left unorganized or its error was for that request only; such a document cannot be compiled either
+* A request with a persisted query key that is not in the cache now gets the `PersistedQueryNotFound` response, and a document is only persisted under a persisted query key that is its SHA-256 digest
+* Fix a cache key object being changed by the schema when it is used, which made a persisted query never be found again through a cache store
 
 ### 1.0.0
 

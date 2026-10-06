@@ -19,21 +19,23 @@ module Rails
           super.merge(selection: selection)
         end
 
-        # Organize from cache data
-        def cache_load(data)
-          return super unless data.key?(:selection)
-
-          @selection = data[:selection].transform_values do |data|
-            component = request.build_from_cache(data[:type])
-            component.instance_variable_set(:@parent, self)
-            component.cache_load(data)
-            component
-          end.freeze
-
-          super
-        end
-
         protected
+
+          # Load the selection from cache data right before the organized
+          # event, unless the component was refused, the same as the organize
+          # step does
+          def organized_from_cache(data)
+            if data.key?(:selection) && !unresolvable?
+              @selection = data[:selection].transform_values do |data|
+                component = request.build_from_cache(data[:type])
+                component.instance_variable_set(:@parent, self)
+                component.cache_load(data)
+                component
+              end.freeze
+            end
+
+            super
+          end
 
           # Helper parser for selection fields that also assign the actual
           # field defined under the schema structure

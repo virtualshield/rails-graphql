@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'digest'
+
 module Rails
   module GraphQL
     # = GraphQL Request
@@ -138,13 +140,14 @@ module Rails
         cache = xargs.delete(:hash)
         formatter = RESPONSE_FORMATS[output]
 
-        document, cache = nil, document if xargs.delete(:compiled)
+        compiled = xargs.delete(:compiled)
+        document, cache = nil, document if compiled
         prepared_data = xargs.delete(:data_for)
         reset!(**xargs)
 
         @response = initialize_response(output, formatter)
         import_prepared_data(prepared_data)
-        execute!(document, cache)
+        execute!(document, cache, compiled)
 
         response.public_send(formatter)
       rescue StaticResponse
@@ -161,6 +164,10 @@ module Rails
         log_execution(document, event: 'compile.graphql') do
           @document = initialize_document(document)
           run_document(with: :compile)
+          unless cacheable?
+            reasons = errors.to_a.pluck('message').map { |message| message.chomp('.') }.to_sentence
+            raise ExecutionError, +"Unable to compile the document: #{reasons.presence || 'not fully organized'}."
+          end
 
           result = Marshal.dump(cache_dump)
           result = Zlib.deflate(result) if compress
@@ -329,6 +336,27 @@ module Rails
         defined?(@valid_cache) && @valid_cache
       end
 
+      # Check if the request can be written to the cache
+      def cacheable?
+        !defined?(@cacheable) || @cacheable
+      end
+
+      # Check if the request can be written to the cache under the given
+      # +key+. A persisted query key must be the digest of its +document+, so
+      # that a key sent by a client cannot store another document under it.
+      # Without a document, the content came from the cache under that key
+      def cacheable_as?(key, document)
+        return false if key.blank? || valid_cache? || !cacheable?
+        return true unless key.is_a?(CacheKey) && document.present?
+
+        key.cache_key == Digest::SHA256.hexdigest(document)
+      end
+
+      # Mark that the request cannot be written to the cache
+      def uncacheable!
+        @cacheable = false
+      end
+
       # Write the request into the cache so it can run again faster
       def write_cache_request(hash, data = cache_dump)
         schema.write_on_cache(hash, Marshal.dump(data))
@@ -369,7 +397,7 @@ module Rails
         # Run the document from scratch if TypeMap has changed
         # TODO: We need to save the new organized document
         return run_document unless resolve_from_cache
-        @valid_cache = true unless defined?(@valid_cache)
+        @valid_cache = true
 
         # Run the document as a cached operation
         errors.cache_load(data[:errors])
@@ -410,6 +438,8 @@ module Rails
 
           @stack      = [schema]
           @cache      = {}
+          @cacheable  = true
+          @valid_cache = false
           @log_extra  = {}
           @subscriptions = {}
           @used_variables = Set.new
@@ -420,14 +450,16 @@ module Rails
 
         # This executes the whole process capturing any exceptions and handling
         # them as defined by the schema
-        def execute!(document, cache = nil)
+        def execute!(document, cache = nil, compiled = false)
           log_execution(document, cache) do
-            @document = initialize_document(document, cache)
+            @document = initialize_document(document, cache, compiled)
             @document.is_a?(String) ? read_cache_request : run_document
           end
+
+          completed = true
         ensure
           report_unused_variables
-          write_cache_request(cache) if cache.present? && !valid_cache?
+          write_cache_request(cache) if completed && cacheable_as?(cache, document)
           @response.try(:append_errors, errors)
 
           if defined?(@extensions)
@@ -521,18 +553,26 @@ module Rails
         end
 
         # When document is empty and the hash has been provided, then
-        def initialize_document(document, cache = nil)
+        def initialize_document(document, cache = nil, compiled = false)
           if document.present?
             ::GQLParser.parse_execution(document)
           elsif cache.nil?
             raise ::ArgumentError, +'Unable to execute an empty document.'
-          elsif schema.cached?(cache)
-            schema.read_from_cache(cache)
-          else
+          elsif compiled
             @valid_cache = true
             cache
+          elsif !(cached = schema.read_from_cache(cache)).nil?
+            cached
+          elsif !cache.is_a?(CacheKey)
+            raise ::ArgumentError, +'Unable to find the cached request.'
+          else
+            uncacheable!
+            rescue_with_handler(PersistedQueryNotFound.new)
+            errors.add(+'PersistedQueryNotFound')
+            nil
           end
         rescue ::GQLParser::ParserError => err
+          uncacheable!
           parts = err.message.match(/\A(Parser error: .*) at \[(\d+), (\d+)\]\z/m)
           errors.add(parts[1], line: parts[2].to_i, col: parts[3].to_i)
           nil

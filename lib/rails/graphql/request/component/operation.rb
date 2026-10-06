@@ -75,7 +75,7 @@ module Rails
           schema.fields_for(type)
         end
 
-        # Allow accessing the fake type form the schema. It's used for
+        # Allow accessing the fake type from the schema. It's used for
         # inline spreads without a specified type
         def type_klass
           return @type_klass if defined?(@type_klass)
@@ -93,7 +93,7 @@ module Rails
           @memo ||= OpenStruct.new
         end
 
-        # Add a empty entry if the operation has a name
+        # Add an empty entry if the operation has a name
         def resolve_invalid
           response.safe_add(name, nil) if stacked_selection?
         end
@@ -127,18 +127,21 @@ module Rails
           super.merge(type: self.class)
         end
 
-        # Organize from cache data
+        # Organize from cache data, which still triggers the event with the
+        # +type+ of the operation, and stops there if it raised, the same as
+        # the organize step does
         def cache_load(data)
-          @name = data[:node][1]
+          @node = data[:node]
+          @name = @node[1]
 
-          super
+          super if organize_from_cache { trigger_event(type) }
         end
 
         protected
 
-          # Trigger an specific event with the +type+ of the operation
+          # Trigger a specific event with the +type+ of the operation
           def organize
-            trigger_event(type)
+            stacked { trigger_event(type) }
             organize_then do
               yield if block_given?
               organize_fields
