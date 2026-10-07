@@ -4,14 +4,14 @@ module Rails
   module GraphQL
     # = GraphQL Directive
     #
-    # This is the base object for directives definition.
+    # This is the base object for directive definitions.
     # See: http://spec.graphql.org/June2018/#DirectiveDefinition
     #
     # Whenever you want to use a directive, you can use the ClassName(...)
     # shortcut (which is the same as ClassName.new(...)).
     #
-    # Directives works as event listener and trigger, which means that some
-    # actions will trigger directives events, and the directive can listen to
+    # Directives work as event listeners and triggers, which means that some
+    # actions will trigger directive events, and the directive can listen to
     # these events and perform an action
     #
     # ==== Examples
@@ -58,12 +58,12 @@ module Rails
           @gql_name = super.camelize(:lower)
         end
 
-        # Get the list of locations of a the directive
+        # Get the list of locations of the directive
         def locations
           @locations ||= Set.new
         end
 
-        # A secure way to specify the locations of a the directive
+        # A secure way to specify the locations of the directive
         def placed_on(*list)
           validate_locations!(list)
           @locations = (superclass.try(:locations)&.dup || Set.new) \
@@ -72,7 +72,7 @@ module Rails
           @locations.merge(list)
         end
 
-        # This method overrides the locations of a the directive
+        # This method overrides the locations of the directive
         def placed_on!(*list)
           validate_locations!(list)
           @locations = list.to_set
@@ -83,7 +83,9 @@ module Rails
         def build(**xargs)
           xargs = xargs.stringify_keys
           result = all_arguments&.each&.each_with_object({}) do |(name, argument), hash|
-            hash[name] = argument.deserialize(xargs[argument.gql_name] || xargs[name.to_s])
+            value = xargs[argument.gql_name]
+            value = xargs[name.to_s] if value.nil?
+            hash[name] = argument.deserialize(value)
           end
 
           new(**result)
@@ -133,7 +135,7 @@ module Rails
             end
           end
 
-          # Check if the given list the locations are valid
+          # Check if the given list of locations is valid
           def validate_locations!(list)
             invalid = list.flatten.lazy.reject do |item|
               item = item.to_s.underscore.to_sym unless item.is_a?(Symbol)
@@ -160,7 +162,7 @@ module Rails
 
       delegate :locations, :gql_name, :gid_base_class, :repeatable?, to: :class
 
-      # TODO: This filters are a bit confusing now, but `for` is working for @deprecated
+      # TODO: These filters are a bit confusing now, but `for` is working for @deprecated
       event_filter(:for) do |options, event|
         sanitize_objects(options).any?(&event.source.method(:of_type?))
       end
@@ -207,7 +209,7 @@ module Rails
 
       # When fetching all the events, embed the actual instance as the context
       # of the callback
-      # TODO: Maybe add a soft cached, based on the total number of events
+      # TODO: Maybe add a soft cache, based on the total number of events
       def all_events
         return unless self.class.events?
 
@@ -219,7 +221,7 @@ module Rails
       # Checks if all the arguments provided to the directive instance are valid
       def validate!(*)
         raise ArgumentError, (+<<~MSG).squish unless defined?(@owner)
-          The @#{gql_name} directive is unbounded.
+          The @#{gql_name} directive is unbound.
         MSG
 
         invalid = all_arguments&.reject { |name, arg| arg.valid?(@args[name]) }

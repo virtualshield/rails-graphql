@@ -67,6 +67,10 @@ class GraphQL_Type_InputTest < GraphQL::TestCase
       assert_instance_of(DESCRIBED_CLASS, result)
       assert_equal('atest', result[:b])
 
+      assert_equal(false, DESCRIBED_CLASS.deserialize([['a', false]])[:b])
+      assert_equal(false, DESCRIBED_CLASS.deserialize([['b', false]])[:b])
+      assert_equal('btest', DESCRIBED_CLASS.deserialize([['a', nil], ['b', 'btest']])[:b])
+
       assert(DESCRIBED_CLASS.deserialize(value2).to_h.blank?)
       assert(DESCRIBED_CLASS.deserialize('test').to_h.blank?)
       assert(DESCRIBED_CLASS.deserialize(1).to_h.blank?)
