@@ -1,5 +1,6 @@
 ### Unreleased
 
+* Fix an input object field, or a directive argument given to `build`, being read as `null` (so its default applied) when `false` is given under its GraphQL name and that name differs from its Ruby name
 * Stricter handling of the end of a document in the parser
 * A list value that cannot be read is now a parser error
 * A comment no longer moves the end position of the token before it
@@ -15,8 +16,8 @@
 
 ### 1.0.0
 
-* Allow ENUM inputs to receive string (needs to be enabled through config)
-* Setup project's CI
+* Allow ENUM inputs to receive strings (needs to be enabled through config)
+* Set up the project's CI
 
 ### 1.0.0.rc2 - 2023-02-28
 
@@ -24,7 +25,7 @@
 * Fixes for callbacks and field ownership
 * Fixes for the inline type creator and sources
 * Fixes to folder structure and constant management
-* Provide a better URL for ISO 8601 specification
+* Provide a better URL for the ISO 8601 specification
 * Make some constants private
 
 ### 1.0.0.rc1 - 2023-02-06
@@ -32,7 +33,7 @@
 * Added the `@specifiedBy` directive
 * Added request extensions
 * Base controller and base channel
-* An easy to use [GraphiQL](https://github.com/graphql/graphiql) view
+* An easy-to-use [GraphiQL](https://github.com/graphql/graphiql) view
 * A brand new inline type creator
 * Organized several method names to follow one single pattern
 * Several fixes to events and callbacks
@@ -50,9 +51,9 @@
 * Simple way to provide data to requests for both testing and reuse
 * Alternatives are now available: fields can be defined in a standalone class, or in groups, apart from where they will actually live
 * Support for persisted queries and several caching features
-* Support to ActiveRecord running MySQL
-* Fields description can now be defined on I18n
-* Way better integration with Zeitwerk. Now the `graphql` folder is 100% compliant with reloader, even though it has its particular structure
+* Support for ActiveRecord running MySQL
+* Field descriptions can now be defined on I18n
+* Way better integration with Zeitwerk. Now the `graphql` folder is 100% compliant with the reloader, even though it has its particular structure
 * Everything now is compliant with GlobalID, which means that GraphQL objects like fields and directives can be sent to ActiveJob and other places in a serializable way
 * TypeMap versioning, so that the application can be updated without tearing down GraphQL
 * Lots of performance improvements

@@ -34,12 +34,12 @@ module Rails
             @gql_name = result
           end
 
-          # Transforms the given value to its representation in a JSON string
+          # Transforms the given value to its representation in a Hash object
           def as_json(value)
             parse_arguments(value, using: :as_json, key: :gql_name)
           end
 
-          # Transforms the given value to its representation in a Hash object
+          # Transforms the given value to its representation in a JSON string
           def to_json(value)
             as_json(value).to_json
           end
@@ -99,7 +99,8 @@ module Rails
 
               enabled_fields.each.with_object({}) do |field, hash|
                 next unless value.key?(field.gql_name) || value.key?(field.name.to_s)
-                result = value[field.gql_name] || value[field.name.to_s]
+                result = value[field.gql_name]
+                result = value[field.name.to_s] if result.nil?
                 hash[field.public_send(key)] = field.public_send(using, result)
               end.compact
             end
@@ -133,7 +134,7 @@ module Rails
           end
         end
 
-        # Just return the arguments as an hash
+        # Just return the arguments as a hash
         def params
           parametrize(@args.to_h)
         end
@@ -147,7 +148,7 @@ module Rails
         alias as_json args_as_json
 
         # Correctly turn all the arguments into their +to_json+ version and
-        # return a hash of them
+        # return a JSON string of them
         def args_to_json
           self.class.to_json(@args.to_h)
         end
@@ -186,7 +187,7 @@ module Rails
 
         protected
 
-          # A helper to turn a hash into a proper Open Struct instance
+          # A helper to turn a hash into a proper OpenStruct instance
           def build_ostruct(hash)
             OpenStruct.new(hash.transform_keys { |key| key.to_s.underscore })
           end
