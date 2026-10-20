@@ -224,20 +224,15 @@ module Rails
 
         def visit_Rails_GraphQL_Directive_Instance(o, collector)
           collector << '@' << o.gql_name
-          return unless o.args.to_h.values.any?
 
-          collector << '('
-          o.arguments.values.each_with_index do |x, i|
+          printed = o.arguments.values.filter_map do |x|
             value = o.args[x.gql_name]
             value = o.args[x.name] if value.nil?
-            next if value.nil?
-
-            collector << ', ' if i.positive?
-            collector << x.gql_name
-            collector << ': '
-            collector << x.as_json(value).inspect
+            +"#{x.gql_name}: #{x.as_json(value).inspect}" unless value.nil?
           end
-          collector << ')'
+
+          collector << '(' << printed.join(', ') << ')' if printed.any?
+          collector
         end
 
         def visit_Rails_GraphQL_Argument_Instance(o, collector)
