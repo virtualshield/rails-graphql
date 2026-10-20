@@ -54,8 +54,14 @@ module Rails
             return false unless value.is_a?(::Hash)
 
             fields = enabled_fields
-            value = value.transform_keys { |key| key.to_s.camelize(:lower) }
-            value = build_defaults.merge(value)
+            names = fields&.each&.with_object({}) do |field, hash|
+              hash[field.gql_name] = hash[field.name.to_s] = field.gql_name
+            end
+
+            converted = value.transform_keys { |key| names&.fetch(key.to_s, key) || key }
+            return false unless converted.size.eql?(value.size)
+
+            value = build_defaults.merge(converted)
 
             return false unless value.size.eql?(fields&.count || 0)
 

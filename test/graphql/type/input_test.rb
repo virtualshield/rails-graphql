@@ -41,12 +41,16 @@ class GraphQL_Type_InputTest < GraphQL::TestCase
     refute(DESCRIBED_CLASS.valid_input?(1))
     refute(DESCRIBED_CLASS.valid_input?('abc'))
 
-    field = double(gql_name: 'a', valid_input?: ->(value) { value != 'c' })
+    field = double(gql_name: 'a', name: :b, valid_input?: ->(value) { value != 'c' })
     DESCRIBED_CLASS.stub(:enabled_fields, [field]) do
       DESCRIBED_CLASS.stub(:build_defaults, { 'a' => nil }) do
         assert(DESCRIBED_CLASS.valid_input?({}))
         assert(DESCRIBED_CLASS.valid_input?({ 'a' => 'a' }))
-        refute(DESCRIBED_CLASS.valid_input?({ 'b' => 'b' }))
+        assert(DESCRIBED_CLASS.valid_input?({ 'b' => 'a' }))
+        assert(DESCRIBED_CLASS.valid_input?({ b: 'a' }))
+        refute(DESCRIBED_CLASS.valid_input?({ 'A' => 'a' }))
+        refute(DESCRIBED_CLASS.valid_input?({ 'c' => 'b' }))
+        refute(DESCRIBED_CLASS.valid_input?({ 'a' => 'a', 'b' => 'a' }))
       end
 
       DESCRIBED_CLASS.stub(:build_defaults, { 'a' => 'a' }) do
