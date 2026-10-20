@@ -173,6 +173,7 @@ enum gql_lexeme gql_name_to_keyword(struct gql_scanner *scanner, const char *key
 
 enum gql_lexeme gql_read_name(struct gql_scanner *scanner);
 enum gql_lexeme gql_read_comment(struct gql_scanner *scanner);
+void gql_array_skip(struct gql_scanner *scanner);
 enum gql_lexeme gql_read_hash(struct gql_scanner *scanner);
 enum gql_lexeme gql_read_float(struct gql_scanner *scanner);
 enum gql_lexeme gql_read_number(struct gql_scanner *scanner);

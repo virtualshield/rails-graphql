@@ -41,7 +41,52 @@ class GQLParserTest < GraphQL::TestCase
     assert_parser_error('{c: "d"', document)
   end
 
-  def test_parse_execution_list_with_an_element_that_cannot_be_read
+  def test_parse_execution_list_value
+    assert_equal([], list_argument('{ a(b: []) }').to_a)
+    assert_equal([], list_argument('{ a(b: [ ]) }').to_a)
+    assert_equal(%w[1], list_argument('{ a(b: [1]) }').map(&:to_s))
+    assert_equal(%w[1 0], list_argument('{ a(b: [1, 0]) }').map(&:to_s))
+    assert_equal(%w[1 2], list_argument("{ a(b: [\n  1\n  2\n]) }").map(&:to_s))
+    assert_equal(%i[int string boolean enum], list_argument('{ a(b: [1, "x", true, Y]) }').map(&:type))
+    assert_equal([%w[1], %w[2 3]], list_argument('{ a(b: [[1], [2, 3]]) }').map { |item| item.map(&:to_s) })
+    assert_equal(['{c: 1}'], list_argument('{ a(b: [{c: 1}]) }').map(&:to_s))
+    assert_equal(%w[1], operation_variables('query($v: [Int] = [1]) { a }').first[2].map(&:to_s))
+
+    assert_equal([1, 14], end_of(list_argument('{ a(b: [1, 0]) }')))
+    assert_equal([1, 8], begin_of(list_argument('{ a(b: [1, 0]) }')))
+    assert_equal([[1, 9], [1, 14]], list_argument('{ a(b: [[1], [2]]) }').map { |item| begin_of(item) })
+    assert_equal([[1, 8], [4, 2]], list_argument("{ a(b: [\n 1\n 2\n]) }").then { |v| [begin_of(v), end_of(v)] })
+    assert_equal(%w[a c], operation_fields('{ a(b: [1]) c }').map { |item| item[0].to_s })
+
+    assert_equal(%w[1], list_argument("{ a(b: [1 # c\n]) }").map(&:to_s))
+    assert_equal([], list_argument("{ a(b: [ # c\n ]) }").to_a)
+    assert_equal(%w[1 2], list_argument("{ a(b: [\n  1 # one\n  2 # two\n]) }").map(&:to_s))
+    assert_equal(['1', nil, '"x"'], list_argument('{ a(b: [1, null, "x"]) }').map { |item| item&.to_s })
+  end
+
+  def test_parse_execution_negative_sign_alone
+    ['{ a(b: -) }', '{ a(b: [-]) }', '{ a(b: -.5) }', '{ a(b: -e5) }'].each do |document|
+      assert_raises(DESCRIBED_CLASS::ParserError, document) { parse_execution(document) }
+    end
+
+    assert_equal(%w[-1 int], value_argument('{ a(b: -1) }').then { |v| [v.to_s, v.type.to_s] })
+  end
+
+  def test_parse_execution_zero_value
+    assert_equal(%w[0 int], value_argument('{ a(b: 0) c }').then { |v| [v.to_s, v.type.to_s] })
+    assert_equal(%w[-0 int], value_argument('{ a(b: -0) c }').then { |v| [v.to_s, v.type.to_s] })
+    assert_equal(%w[0.5 float], value_argument('{ a(b: 0.5) c }').then { |v| [v.to_s, v.type.to_s] })
+    assert_equal(%w[0e1 float], value_argument('{ a(b: 0e1) c }').then { |v| [v.to_s, v.type.to_s] })
+    assert_equal([1, 9], end_of(value_argument('{ a(b: 0) c }')))
+    assert_equal(%w[a c], operation_fields('{ a(b: 0, d: 1) c }').map { |item| item[0].to_s })
+    assert_equal('0', operation_variables('query($v: Int = 0) { a }').first[2].to_s)
+    assert_raises(DESCRIBED_CLASS::ParserError) { parse_execution('{ a(b: 00) }') }
+  end
+
+  def test_parse_execution_list_that_is_cut_off_or_unreadable
+    ['{ a(b: [', '{ a(b: [1', '{ a(b: [1,', '{ a(b: [1 2'].each do |document|
+      assert_raises(DESCRIBED_CLASS::ParserError, document) { parse_execution(document) }
+    end
     [
       '{ a(b: [0]) }',
       '{ a(b: [-0]) }',
@@ -135,6 +180,14 @@ class GQLParserTest < GraphQL::TestCase
       parse_execution(document).dig(0, 0, 4)
     end
 
+    def value_argument(document)
+      operation_fields(document).first[2].first[1]
+    end
+
+    def list_argument(document)
+      operation_fields(document).first[2].first[1].tap { |value| assert(value.of_type?(:array), document) }
+    end
+
     def operation_variables(document)
       parse_execution(document).dig(0, 0, 2)
     end
@@ -153,6 +206,10 @@ class GQLParserTest < GraphQL::TestCase
 
         item[0] ? "...#{item[0]}" : "... on #{item[1]}"
       end
+    end
+
+    def begin_of(token)
+      [token.begin_line, token.begin_column]
     end
 
     def end_of(token)

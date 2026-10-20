@@ -88,7 +88,7 @@ module Rails
       def as_json(value)
         return if value.nil?
         return type_klass.as_json(value) unless array?
-        value.map { |part| type_klass.as_json(part) }
+        value.map { |part| type_klass.as_json(part) unless part.nil? }
       end
 
       # Turn a user input of this given type into an ruby object
