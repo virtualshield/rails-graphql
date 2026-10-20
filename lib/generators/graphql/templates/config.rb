@@ -42,6 +42,12 @@ Rails::GraphQL.configure do |config|
   # the documents (heredoc won't be accepted).
   # config.allow_string_as_enum_input = false
 
+  # The maximum depth of nested field selections an operation may have,
+  # counted from its root fields. An operation deeper than this is refused
+  # with an error. Introspection fields count, and a full introspection query
+  # is about 13 deep. Nil means no limit. This can also be set per schema.
+  # config.max_depth = nil
+
   # Introspection is enabled by default. It is recommended to only use
   # introspection during development and tests, never in production.
   # This can also be set per schema level.

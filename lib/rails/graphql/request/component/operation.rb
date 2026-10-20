@@ -137,6 +137,12 @@ module Rails
           super if organize_from_cache { trigger_event(type) }
         end
 
+        # Check the depth of an operation loaded from the cache, once every
+        # fragment of the request is loaded as well
+        def check_cached_depth!
+          organize_from_cache { check_depth! } unless unresolvable?
+        end
+
         protected
 
           # Trigger a specific event with the +type+ of the operation
@@ -144,9 +150,54 @@ module Rails
             stacked { trigger_event(type) }
             organize_then do
               yield if block_given?
+              check_depth!
               organize_fields
               report_unused_variables
             end
+          end
+
+          # Refuse the operation when the document selects fields deeper than
+          # the maximum depth configured for the schema. The depth is read from
+          # the document itself, before any field is organized, so it is the
+          # same whether the operation is fresh or loaded from the cache
+          def check_depth!
+            limit = schema.config.max_depth
+            return if limit.nil?
+
+            limit = Integer(limit)
+            current = depth_of(@node[4], Set.new, {})
+            return if current <= limit
+
+            # The variables were used by the document, even though it is refused
+            request.instance_variable_get(:@used_variables).merge(arguments.keys) unless arguments.nil?
+
+            raise MaxDepthError, (+<<~MSG).squish
+              Query has depth of #{current}, which exceeds max depth of #{limit}
+            MSG
+          end
+
+          # The deepest nesting of fields in a list of selection nodes, counting
+          # a fragment where it is spread. Each fragment is measured once, so
+          # the walk is linear in the size of the document, and a fragment
+          # cycle is not followed
+          def depth_of(nodes, spreading, depths)
+            return 0 if nodes.nil?
+
+            nodes.map do |node|
+              next 1 + depth_of(node[4], spreading, depths) unless node.of_type?(:spread)
+              next depth_of(node[3], spreading, depths) if node[0].nil?
+
+              name = node[0].to_s
+              next depths[name] if depths.key?(name)
+
+              fragment = request.fragments&.[](node[0])
+              next 0 if fragment.nil? || !spreading.add?(name)
+
+              fragment = fragment.instance_variable_get(:@node) if fragment.is_a?(Component::Fragment)
+              depths[name] = depth_of(fragment[3], spreading, depths)
+              spreading.delete(name)
+              depths[name]
+            end.max || 0
           end
 
           # Perform the organization step

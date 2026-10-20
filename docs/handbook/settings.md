@@ -148,6 +148,22 @@ the documents.
 
 ----------------------------------------------------------------
 
+#### `max_depth`
+
+The maximum depth of nested field selections an operation may have, counted from
+its root fields (a root field is depth 1, a field selected inside it is depth 2,
+and so on; a fragment counts where it is spread). An operation deeper than this is
+refused with an error before anything is resolved. Introspection fields count as
+well, and a full introspection query, as the one GraphiQL sends, is about 13 deep.
+A stored subscription is checked against the current limit on every update, so
+lowering the limit below the depth of a subscription makes each of its updates
+answer with that error until the client unsubscribes. This can also be set per
+Schema.
+
+**Default:** `nil` (no limit)
+
+----------------------------------------------------------------
+
 #### `enable_introspection`
 
 Introspection is enabled by default. It is recommended to only use

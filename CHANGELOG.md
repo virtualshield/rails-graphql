@@ -1,5 +1,7 @@
 ### Unreleased
 
+* Add the `max_depth` setting, global or per schema and off by default, which refuses an operation whose field selections nest deeper than the given number
+* A document loaded from the cache that spreads a named fragment now resolves the fragment's fields again
 * An input object is validated with the same key matching its parsing uses: a field named more than once (under its GraphQL name and its Ruby name) or under a different casing is now invalid, and a field whose name starts with an underscore now accepts its value
 * A source built before the schema of its namespace is loaded now attaches its query, mutation, and subscription fields to that schema when the schema registers
 * Importing a field that a schema already holds as a proxy of that same field is now a no-op instead of an error, and a field name taken by both a schema and a source loaded later is reported by the schema's validation, on every request, after the other fields of that source are attached

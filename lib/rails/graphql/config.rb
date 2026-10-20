@@ -73,6 +73,15 @@ module Rails
       # This can also be set per schema level.
       config.enable_introspection = false
 
+      # The maximum depth of nested field selections an operation may have,
+      # counted from its root fields (a root field is depth 1, a field selected
+      # inside it is depth 2, and so on; a fragment counts where it is spread).
+      # An operation deeper than this is refused with an error before anything
+      # is resolved. Introspection fields count as well, and a full
+      # introspection query, as the one GraphiQL sends, is about 13 deep. When
+      # nil, there is no limit. This can also be set per schema.
+      config.max_depth = nil
+
       # Define the names of the schema/operations types. The single "_" is a
       # suggestion. In an application that has a Subscription object, it will
       # prevent the conflict. Plus, it is easy to spot that it is something

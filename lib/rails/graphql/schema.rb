@@ -34,7 +34,7 @@ module Rails
       # Imports schema specific configurations
       configure do |config|
         inherited_keys = %i[
-          enable_introspection request_strategies
+          enable_introspection request_strategies max_depth
           enable_string_collector default_response_format
           schema_type_names cache
           default_subscription_provider default_subscription_broadcastable
