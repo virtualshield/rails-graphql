@@ -161,6 +161,9 @@ enum gql_lexeme gql_read_float(struct gql_scanner *scanner)
   if (at_fraction && (scanner->current == 'e' || scanner->current == 'E'))
     return gql_read_float(scanner);
 
+  // A number cannot be followed by a name character or another dot
+  if (GQL_S_CHARACTER(scanner->current) || scanner->current == '.') return gql_i_unknown;
+
   // Otherwise save the last position and just finish the float
   return gql_iv_float;
 }
@@ -186,8 +189,10 @@ enum gql_lexeme gql_read_number(struct gql_scanner *scanner)
     GQL_SCAN_WHILE(scanner, GQL_S_DIGIT(scanner->current));
   }
 
-  // Save the last position and halt the process if it's not a float marker
-  return (GQL_S_FLOAT_MARK(scanner->current)) ? gql_read_float(scanner) : gql_iv_integer;
+  // Continue as a float on a float marker, otherwise finish the integer,
+  // which cannot be followed by a name character
+  if (GQL_S_FLOAT_MARK(scanner->current)) return gql_read_float(scanner);
+  return GQL_S_CHARACTER(scanner->current) ? gql_i_unknown : gql_iv_integer;
 }
 
 enum gql_lexeme gql_read_string(struct gql_scanner *scanner, int allow_heredoc)

@@ -225,8 +225,10 @@ module Rails
 
           # Show a value as the document wrote it, including the items of a list
           def readable_value(value)
+            return 'null' if value.nil?
+            return value.inspect if value.is_a?(::String)
             return value.to_s unless value.respond_to?(:to_ary)
-            value.to_ary.map { |item| readable_value(item) }.to_s
+            "[#{value.to_ary.map { |item| readable_value(item) }.join(', ')}]"
           end
       end
     end

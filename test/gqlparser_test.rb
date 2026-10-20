@@ -83,6 +83,17 @@ class GQLParserTest < GraphQL::TestCase
     assert_raises(DESCRIBED_CLASS::ParserError) { parse_execution('{ a(b: 00) }') }
   end
 
+  def test_parse_execution_number_followed_by_a_name_character
+    ['[0X]', '[12X]', '[1.5X]', '[1e5X]', '[1.5.3]', '0X: 1', '12X: 1', '1.5X: 1', '12c: 1'].each do |value|
+      document = value.start_with?('[') ? "{ a(b: #{value}) }" : "{ a(#{value}) }"
+      assert_raises(DESCRIBED_CLASS::ParserError, document) { parse_execution(document) }
+    end
+
+    assert_equal(%i[string enum], list_argument('{ a(b: ["a"X]) }').map(&:type))
+    assert_equal(%i[int string], list_argument('{ a(b: [1"x"]) }').map(&:type))
+    assert_equal(%i[int int], list_argument('{ a(b: [1 2]) }').map(&:type))
+  end
+
   def test_parse_execution_list_that_is_cut_off_or_unreadable
     ['{ a(b: [', '{ a(b: [1', '{ a(b: [1,', '{ a(b: [1 2'].each do |document|
       assert_raises(DESCRIBED_CLASS::ParserError, document) { parse_execution(document) }

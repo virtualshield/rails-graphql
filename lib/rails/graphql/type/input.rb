@@ -49,6 +49,7 @@ module Rails
             value = GraphQL.config.literal_input_parser.call(value) \
               if valid_token?(value, :hash)
 
+            return false if value.is_a?(::Array) || valid_token?(value, :array)
             value = value.to_h if value.respond_to?(:to_h)
             return false unless value.is_a?(::Hash)
 

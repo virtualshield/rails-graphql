@@ -70,7 +70,8 @@ module Rails
         @nullable = full ? false : nullable
 
         @default = default
-        @default = deserialize(@default) if @default.is_a?(::GQLParser::Token) && valid_input?(@default)
+        @default = deserialize(@default) if @default.is_a?(::GQLParser::Token) &&
+          !(@default.of_type?(:array) && !valid_input?(@default))
         self.description = desc || description
       end
 
@@ -152,7 +153,7 @@ module Rails
 
         return if value.nil?
         return type_klass.deserialize(value) unless array?
-        value.map { |part| type_klass.deserialize(part) }
+        value.map { |part| type_klass.deserialize(part) unless part.nil? }
       end
 
       # This checks if a given serialized value is valid for this field
@@ -213,7 +214,7 @@ module Rails
 
         def valid_input_array?(value)
           return false unless value.is_a?(Enumerable) || (value.is_a?(::GQLParser::Token) && value.of_type?(:array))
-          value.all? { |val| (val.nil? && nullable?) || type_klass.valid_input?(val) }
+          value.all? { |val| val.nil? ? nullable? : type_klass.valid_input?(val) }
         end
     end
   end
