@@ -62,6 +62,35 @@ class Integration_SourceOrderTest < GraphQL::IntegrationTestCase
     end
   end
 
+  class TwoFieldsSource < GraphQL::Source::Base
+    namespace :source_order_two_fields
+
+    step(:query) do
+      field(:greeting, :string, null: false)
+      field(:farewell, :string, null: false)
+    end
+
+    def farewell
+      'Bye!'
+    end
+  end
+
+  class BlastSource < GraphQL::Source::Base
+    namespace :source_order_blast
+
+    step(:query) { field(:greeting, :string, null: false) }
+  end
+
+  class OtherBlastSource < GraphQL::Source::Base
+    namespace :source_order_blast
+
+    step(:query) { field(:farewell, :string, null: false) }
+
+    def farewell
+      'Bye!'
+    end
+  end
+
   class ChildSource < GraphQL::Source::Base
     namespace :source_order_child
 
@@ -98,7 +127,34 @@ class Integration_SourceOrderTest < GraphQL::IntegrationTestCase
     end
 
     assert_raises(Rails::GraphQL::DuplicatedError) { execute('{ greeting }', schema: schema) }
-    assert_result({ data: { farewell: 'Bye!', __typename: '_Query' } }, '{ farewell __typename }', schema: schema)
+    assert_raises(Rails::GraphQL::DuplicatedError) { execute('{ farewell }', schema: schema) }
+    assert(schema.query_field?(:farewell))
+  end
+
+  def test_the_other_fields_of_a_late_source_with_a_conflict_are_attached
+    TwoFieldsSource.build_query
+    schema = Class.new(GraphQL::Schema) do
+      namespace :source_order_two_fields
+      query_fields { field(:greeting, :string).resolve { 'Mine!' } }
+    end
+
+    first = assert_raises(Rails::GraphQL::DuplicatedError) { execute('{ farewell }', schema: schema) }
+    second = assert_raises(Rails::GraphQL::DuplicatedError) { execute('{ farewell }', schema: schema) }
+    refute_same(first, second)
+    assert_match(/greeting.*TwoFieldsSource/m, first.message)
+    assert(schema.query_field?(:farewell))
+  end
+
+  def test_a_conflict_in_one_late_source_does_not_interrupt_another
+    BlastSource.build_query
+    schema = Class.new(GraphQL::Schema) do
+      namespace :source_order_blast
+      query_fields { field(:greeting, :string).resolve { 'Mine!' } }
+    end
+
+    OtherBlastSource.build_query
+    assert(schema.query_field?(:farewell))
+    assert_raises(Rails::GraphQL::DuplicatedError) { execute('{ farewell }', schema: schema) }
   end
 
   def test_child_schema_inheriting_an_imported_source_field
