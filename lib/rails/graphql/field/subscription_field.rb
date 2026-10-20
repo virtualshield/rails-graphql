@@ -82,9 +82,10 @@ module Rails
         def extract_args_from(object, iterate = true)
           return unless arguments?
 
-          # If can iterate and the provided object is an enumerable, then
-          # call itself with each item
-          if iterate && object.is_a?(Enumerable)
+          # If can iterate and the provided object is a list of objects, then
+          # call itself with each item. A hash-like object or a struct is one
+          # object, although enumerable
+          if iterate && object.is_a?(Enumerable) && !object.respond_to?(:key?) && !object.is_a?(Struct)
             return object.each_with_object([]) do |item, result|
               result.concat(extract_args_from(item, false))
             end
@@ -92,7 +93,7 @@ module Rails
 
           # Prepare all the possibilities
           keys = []
-          hash_like = object.respond_to?(:[])
+          hash_like = object.respond_to?(:[]) && object.respond_to?(:key?)
           possibilities = all_arguments.each_value.with_object([]) do |arg, list|
             keys << arg.name
             list << []
@@ -100,8 +101,10 @@ module Rails
             value =
               if object.respond_to?(arg.name)
                 object.public_send(arg.name)
-              elsif hash_like && (object.key?(arg.name) || object.key?(arg.name.to_s))
-                object[arg.name] || arg.name[arg.name.to_s]
+              elsif hash_like && object.key?(arg.name)
+                object[arg.name]
+              elsif hash_like && object.key?(arg.name.to_s)
+                object[arg.name.to_s]
               end
 
             list.last << value unless value.nil?
