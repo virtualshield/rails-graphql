@@ -27,6 +27,13 @@ class Integration_MaxDepthTest < GraphQL::IntegrationTestCase
     end
   end
 
+  class GlobalLimitSchema < GraphQL::Schema
+    namespace :max_depth_global
+
+    object('Leaf') { field(:name, :string, null: false) }
+    query_fields { field(:leaf, 'Leaf', null: false).resolve { { name: 'n' } } }
+  end
+
   def setup
     super
     SCHEMA.config.max_depth = 3
@@ -55,15 +62,9 @@ class Integration_MaxDepthTest < GraphQL::IntegrationTestCase
   end
 
   def test_a_global_limit_applies_to_a_schema_without_its_own
-    schema = Class.new(GraphQL::Schema) do
-      namespace :max_depth_global
-      object('Leaf') { field(:name, :string, null: false) }
-      query_fields { field(:leaf, 'Leaf', null: false).resolve { { name: 'n' } } }
-    end
-
     GraphQL.config.max_depth = 1
     GraphQL::Schema.config.delete(:max_depth)
-    result = execute('{ leaf { name } }', schema: schema)
+    result = execute('{ leaf { name } }', schema: GlobalLimitSchema)
     assert_equal('Query has depth of 2, which exceeds max depth of 1', result['errors'].first['message'])
   ensure
     GraphQL.config.max_depth = nil
