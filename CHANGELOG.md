@@ -1,5 +1,7 @@
 ### Unreleased
 
+* A source built before the schema of its namespace is loaded now attaches its query, mutation, and subscription fields to that schema when the schema registers
+* Importing a field that a schema already holds as a proxy of that same field is now a no-op instead of an error, and a field name taken by both a schema and a source loaded later is now reported when the schema registers
 * `trigger_for` and `unsubscribe_from` on a subscription field now read an argument's value from a hash or hash-like object under a string key, and read a `false` or `null` value under a symbol key as that value, instead of yielding the argument's name; a hash or a struct given directly is read as one object instead of being iterated, and a hash-like object (one that answers `[]`, `key?`, and `each_pair`) is read only by its keys, never through a method of the same name
 * A directive argument whose value is `false` is now printed by `to_gql`, a `null` argument before a printed one no longer leaves a leading comma, a directive with nothing to print no longer prints empty parentheses, and a directive instance can be compiled on its own
 * A `null` written in a document for an argument, a directive argument, or a variable default is now the value `null`, and an argument that does not accept `null` still refuses it

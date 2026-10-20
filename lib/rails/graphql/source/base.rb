@@ -33,6 +33,7 @@ module Rails
           # Unregister all objects that this source was providing
           def unregister!
             @object = @input = nil
+            @unregistered = true
             super
           end
 

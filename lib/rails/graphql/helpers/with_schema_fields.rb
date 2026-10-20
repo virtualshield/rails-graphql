@@ -83,7 +83,7 @@ module Rails
           name.nil? ? fields_for(type) : find_field(type, name)
         end
 
-        # Check if there are fields set fot he given type
+        # Check if there are fields set for the given type
         def fields_for?(type)
           public_send("#{type}_fields?")
         end
@@ -102,7 +102,7 @@ module Rails
           # Do not do anything if it is duplicated
         end
 
-        # Add a new field of the give +type+
+        # Add a new field of the given +type+
         # See {OutputField}[rdoc-ref:Rails::GraphQL::OutputField] class.
         def add_field(type, *args, **xargs, &block)
           klass = Field.const_get(TYPE_FIELD_CLASS[type], false)
@@ -131,9 +131,13 @@ module Rails
             The #{field.class.name} is not a valid field for #{type} fields.
           MSG
 
+          plain = args.empty? && xargs.empty? && block.nil?
           xargs[:owner] = self
           object = field.to_proxy(*args, **xargs, &block)
-          raise DuplicatedError, (+<<~MSG).squish if has_field?(type, object.name)
+          existing = find_field(type, object.name)
+          return existing if plain && existing.try(:proxy?) && existing == field
+
+          raise DuplicatedError, (+<<~MSG).squish unless existing.nil?
             The #{field.name.inspect} field is already defined on #{type} fields
             and cannot be replaced.
           MSG

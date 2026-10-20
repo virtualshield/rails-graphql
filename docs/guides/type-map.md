@@ -98,7 +98,8 @@ The Type Map allows you to add a hook for when an expected key is created. This 
 conditionally add fields and other components to objects requiring another to exist first.
 The block will only be called when the `namespace` and the `base_class` match the ones
 provided to the hook setup. The block will be called immediately if a key matching
-this criteria already exists.
+this criteria already exists. An object registered on the `:base` namespace also matches,
+unless `exclusive: true` is given.
 
 ```ruby
 # This will be added as a hook

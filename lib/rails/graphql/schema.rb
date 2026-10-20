@@ -163,7 +163,7 @@ module Rails
         # The process to register a class and it's name on the index
         def register!
           return if self == GraphQL::Schema
-          return super unless registered?
+          return super.tap { import_pending! } unless registered?
 
           current = type_map.fetch(:schema,
             namespaces: namespace,
@@ -175,6 +175,12 @@ module Rails
             The #{namespace.inspect} namespace is already assigned to "#{current.name}".
             Please change the namespace for "#{klass.name}" class.
           MSG
+        end
+
+        # Keep an import of schema fields for right after the registration of
+        # the schema completes, since the registration itself triggers it
+        def import_once_registered(type, source)
+          (@pending_imports ||= []) << [type, source]
         end
 
         # Hook into the unregister process to reset the subscription provider
@@ -350,6 +356,23 @@ module Rails
           def load_sources(*list, build: false)
             load_dependencies(:source, *list)
             build_all_sources if build
+          end
+
+          # Run every import kept for after the registration, all of them even
+          # when one fails, and then raise the first failure
+          def import_pending!
+            return unless defined?(@pending_imports) && @pending_imports
+
+            pending, @pending_imports = @pending_imports, nil
+            failure = nil
+
+            pending.each do |type, source|
+              import_into(type, source)
+            rescue DefinitionError => error
+              failure ||= error
+            end
+
+            raise failure unless failure.nil?
           end
 
           # Build all sources that has the belongs to the current namespace
