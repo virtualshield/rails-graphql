@@ -1,5 +1,8 @@
 ### Unreleased
 
+* A list value written inline in a document (an argument, or a variable default) now parses
+* The integer `0`, and a float starting with `0`, now parse as a value in a document
+* A `null` inside a list, written in a document or given as a variable, is now the value `null` for every item type, and is refused by an argument whose list items cannot be null; a lone `-` or a number followed by a name character is no longer read as a number; a list given to an input object argument, or an invalid list given as a variable default, is refused; and the error for an invalid value shows a list as written and a string quoted
 * Fix an input object field, or a directive argument given to `build`, being read as `null` (so its default applied) when `false` is given under its GraphQL name and that name differs from its Ruby name
 * Stricter handling of the end of a document in the parser
 * A list value that cannot be read is now a parser error

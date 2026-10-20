@@ -161,24 +161,38 @@ enum gql_lexeme gql_read_float(struct gql_scanner *scanner)
   if (at_fraction && (scanner->current == 'e' || scanner->current == 'E'))
     return gql_read_float(scanner);
 
+  // A number cannot be followed by a name character or another dot
+  if (GQL_S_CHARACTER(scanner->current) || scanner->current == '.') return gql_i_unknown;
+
   // Otherwise save the last position and just finish the float
   return gql_iv_float;
 }
 
 enum gql_lexeme gql_read_number(struct gql_scanner *scanner)
 {
-  // Pass over the negative sign
-  if (scanner->current == '-') GQL_SCAN_NEXT(scanner);
+  // Pass over the negative sign, which must be followed by a digit
+  if (scanner->current == '-')
+  {
+    GQL_SCAN_NEXT(scanner);
+    if (!GQL_S_DIGIT(scanner->current)) return gql_i_unknown;
+  }
 
   // If begins with zero, it can only be 0 or error
   if (scanner->current == '0')
-    return (GQL_S_DIGIT(GQL_SCAN_LOOK(scanner, 1))) ? gql_i_unknown : gql_iv_integer;
+  {
+    if (GQL_S_DIGIT(GQL_SCAN_LOOK(scanner, 1))) return gql_i_unknown;
+    GQL_SCAN_NEXT(scanner);
+  }
+  else
+  {
+    // Read all the numbers
+    GQL_SCAN_WHILE(scanner, GQL_S_DIGIT(scanner->current));
+  }
 
-  // Read all the numbers
-  GQL_SCAN_WHILE(scanner, GQL_S_DIGIT(scanner->current));
-
-  // Save the last position and halt the process if it's not a float marker
-  return (GQL_S_FLOAT_MARK(scanner->current)) ? gql_read_float(scanner) : gql_iv_integer;
+  // Continue as a float on a float marker, otherwise finish the integer,
+  // which cannot be followed by a name character
+  if (GQL_S_FLOAT_MARK(scanner->current)) return gql_read_float(scanner);
+  return GQL_S_CHARACTER(scanner->current) ? gql_i_unknown : gql_iv_integer;
 }
 
 enum gql_lexeme gql_read_string(struct gql_scanner *scanner, int allow_heredoc)
@@ -382,6 +396,19 @@ VALUE gql_scanner_to_token(struct gql_scanner *scanner)
   return gql_as_token(gql_scanner_to_s(scanner), scanner, 0);
 }
 
+// Scan through everything ignorable and any comment inside an array
+void gql_array_skip(struct gql_scanner *scanner)
+{
+  GQL_SCAN_WHILE(scanner, GQL_S_IGNORE(scanner->current));
+
+  while (scanner->current == '#')
+  {
+    gql_read_comment(scanner);
+    if (scanner->current == '\n') GQL_SCAN_NEXT(scanner);
+    GQL_SCAN_WHILE(scanner, GQL_S_IGNORE(scanner->current));
+  }
+}
+
 // Goes over an array and grab all the elements
 VALUE gql_array_to_rb(struct gql_scanner *scanner)
 {
@@ -390,8 +417,14 @@ VALUE gql_array_to_rb(struct gql_scanner *scanner)
   VALUE element;
   unsigned long pass_start;
 
-  // Save the scan and grab the next char
+  // Save where the array begins, since reading the elements moves it
+  unsigned long start_pos = scanner->start_pos;
+  unsigned long begin_line = scanner->begin_line;
+  unsigned long begin_column = scanner->begin_column;
+
+  // Grab the next char and scan through everything ignorable
   GQL_SCAN_NEXT(scanner);
+  gql_array_skip(scanner);
 
   // Iterate until it finds the end of the array
   while (scanner->current != ']')
@@ -415,13 +448,20 @@ VALUE gql_array_to_rb(struct gql_scanner *scanner)
       return Qnil;
     }
 
-    // Add the value to the array and scan through everything ignorable
-    rb_ary_push(result, element);
-    GQL_SCAN_WHILE(scanner, GQL_S_IGNORE(scanner->current));
+    // Add the value to the array, as nil when it is null, and scan through
+    // everything ignorable
+    rb_ary_push(result, scanner->lexeme == gql_iv_null ? Qnil : element);
+    gql_array_skip(scanner);
   }
 
-  // Save where the array has actually ended, change the lexeme and return
+  // Consume the closing bracket, restore where the array begins, save where
+  // it has actually ended, change the lexeme and return
+  GQL_SCAN_NEXT(scanner);
+  scanner->start_pos = start_pos;
+  scanner->begin_line = begin_line;
+  scanner->begin_column = begin_column;
   GQL_SCAN_SET_END(scanner, 0);
+  scanner->end_line = scanner->current_line;
   scanner->lexeme = gql_iv_array;
   return result;
 }

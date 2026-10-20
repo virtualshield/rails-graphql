@@ -70,7 +70,8 @@ module Rails
         @nullable = full ? false : nullable
 
         @default = default
-        @default = deserialize(@default) if @default.is_a?(::GQLParser::Token)
+        @default = deserialize(@default) if @default.is_a?(::GQLParser::Token) &&
+          !(@default.of_type?(:array) && !valid_input?(@default))
         self.description = desc || description
       end
 
@@ -134,7 +135,7 @@ module Rails
 
         return 'null' if value.nil?
         return type_klass.to_json(value) unless array?
-        value.map { |part| type_klass.to_json(part) }
+        value.map { |part| part.nil? ? 'null' : type_klass.to_json(part) }
       end
 
       # Turn the given value into a JSON string representation
@@ -143,7 +144,7 @@ module Rails
 
         return if value.nil?
         return type_klass.as_json(value) unless array?
-        value.map { |part| type_klass.as_json(part) }
+        value.map { |part| type_klass.as_json(part) unless part.nil? }
       end
 
       # Turn the given value into a ruby object through deserialization
@@ -152,7 +153,7 @@ module Rails
 
         return if value.nil?
         return type_klass.deserialize(value) unless array?
-        value.map { |part| type_klass.deserialize(part) }
+        value.map { |part| type_klass.deserialize(part) unless part.nil? }
       end
 
       # This checks if a given serialized value is valid for this field
@@ -185,7 +186,8 @@ module Rails
           The "#{type_klass.gql_name}" is not a valid input type.
         MSG
 
-        raise ArgumentError, (+<<~MSG).squish unless default.nil? || valid?(as_json(default))
+        valid_default = default.nil? || valid?(default.is_a?(::GQLParser::Token) ? default : as_json(default))
+        raise ArgumentError, (+<<~MSG).squish unless valid_default
           The given default value "#{default.inspect}" is not valid for this argument.
         MSG
       end
@@ -211,8 +213,8 @@ module Rails
       private
 
         def valid_input_array?(value)
-          return false unless value.is_a?(Enumerable)
-          value.all? { |val| (val.nil? && nullable?) || type_klass.valid_input?(val) }
+          return false unless value.is_a?(Enumerable) || (value.is_a?(::GQLParser::Token) && value.of_type?(:array))
+          value.all? { |val| val.nil? ? nullable? : type_klass.valid_input?(val) }
         end
     end
   end
