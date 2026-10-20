@@ -286,13 +286,16 @@ module Rails
 
       # Add a callback that will trigger when a type is registered under the
       # given set of settings of this method
+      # With +exclusive: true+, only the given namespaces satisfy the hook, so
+      # an object registered on the +:base+ namespace does not
       def after_register(name_or_key, base_class: :Type, **xargs, &block)
         item = fetch(name_or_key, prevent_register: true, base_class: base_class, **xargs)
         return block.call(item) unless item.nil?
 
         namespaces = sanitize_namespaces(**xargs)
+        exclusive = xargs.fetch(:exclusive, false)
         callback = ->(n, b, result) do
-          return unless b === base_class && (n === :base || namespaces.include?(n))
+          return unless b === base_class && ((n === :base && !exclusive) || namespaces.include?(n))
           block.call(result)
           true
         end

@@ -128,9 +128,22 @@ module Rails
         end
 
         # Attach all defined schema fields into the schemas using the namespaces
-        # configured for the source
+        # configured for the source. A namespace whose schema has not been
+        # registered yet gets the fields as soon as that schema registers
         def attach_fields!(type = :all, from = self)
-          schemas.each { |schema| schema.import_into(type, from) }
+          GraphQL.enumerate(namespaces.presence || :base).each do |ns|
+            schema = Schema.find(ns)
+            next schema.import_into(type, from) unless schema.nil?
+
+            GraphQL.type_map.after_register(:schema, namespaces: ns, base_class: :Schema, exclusive: true) do |late|
+              late.import_once_registered(type, from) unless unregistered?
+            end
+          end
+        end
+
+        # Check if the source was removed from the type map, as during a reload
+        def unregistered?
+          defined?(@unregistered) && @unregistered
         end
 
         # Find all the schemas associated with the configured namespaces

@@ -233,11 +233,15 @@ class GraphQL_TypeMapTest < GraphQL::TestCase
         subject.after_register(:a, base_class: :Other, &checker)
         subject.after_register(:a, namespaces: :other, &checker)
         subject.after_register(:a, namespaces: Set[:other], &checker)
+        subject.after_register(:a, namespaces: :other, exclusive: true, &checker)
       end
     end
 
     assert_equal(1, register.size)
-    assert_equal(4, register[:a].size)
+    assert_equal(5, register[:a].size)
+
+    assert_nil(register[:a][0].call(:base, :Type, :non_called))
+    assert(register[:a][0].call(:other, :Type, :called))
 
     [
       [:base, :Type],
@@ -245,9 +249,9 @@ class GraphQL_TypeMapTest < GraphQL::TestCase
       [:other, :Type],
       [:other, :Type],
     ].each_with_index do |(ns, bc), idx|
-      assert_nil(register[:a][3 - idx].call(:x, bc, :non_called))
-      assert_nil(register[:a][3 - idx].call(ns, :y, :non_called))
-      assert(register[:a][3 - idx].call(ns, bc, :called))
+      assert_nil(register[:a][4 - idx].call(:x, bc, :non_called))
+      assert_nil(register[:a][4 - idx].call(ns, :y, :non_called))
+      assert(register[:a][4 - idx].call(ns, bc, :called))
     end
   end
 
