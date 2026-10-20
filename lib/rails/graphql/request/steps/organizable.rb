@@ -189,6 +189,9 @@ module Rails
                 # Mark the variable as used and grab the value
                 operation.used_variables << var_name
                 value = variables[op_var.name]
+              elsif value.is_a?(::GQLParser::Token) && value.of_type?(:null)
+                # An explicit null is the value null, not a missing argument
+                value = nil
               elsif !value.nil?
                 # Only when the given value is an actual value that we check if
                 # it is valid
@@ -213,9 +216,10 @@ module Rails
               errors << error.message
             end
 
-            # Checks for any required argument that was not provided
+            # Checks for any required argument that was not provided or was
+            # given as null
             source.each_value do |argument|
-              next if result.key?(argument.name) || argument.null?
+              next if argument.null? || !result[argument.name].nil?
               errors << +"the \"#{argument.gql_name}\" argument can not be null"
             end
 

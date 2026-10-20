@@ -70,8 +70,9 @@ module Rails
         @nullable = full ? false : nullable
 
         @default = default
-        @default = deserialize(@default) if @default.is_a?(::GQLParser::Token) &&
-          !(@default.of_type?(:array) && !valid_input?(@default))
+        if @default.is_a?(::GQLParser::Token) && !(@default.of_type?(:array) && !valid_input?(@default))
+          @default = @default.of_type?(:null) ? nil : deserialize(@default)
+        end
         self.description = desc || description
       end
 

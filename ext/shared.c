@@ -369,6 +369,8 @@ VALUE gql_as_token(VALUE self, struct gql_scanner *scanner, int save_type)
       gql_set_token_type(instance, "boolean");
     else if (scanner->lexeme == gql_iv_false)
       gql_set_token_type(instance, "boolean");
+    else if (scanner->lexeme == gql_iv_null)
+      gql_set_token_type(instance, "null");
     else if (scanner->lexeme == gql_iv_enum)
       gql_set_token_type(instance, "enum");
     else if (scanner->lexeme == gql_iv_array)

@@ -1,5 +1,6 @@
 ### Unreleased
 
+* A `null` written in a document for an argument, a directive argument, or a variable default is now the value `null`, and is refused only when the argument does not accept `null`
 * A list value written inline in a document (an argument, or a variable default) now parses
 * The integer `0`, and a float starting with `0`, now parse as a value in a document
 * A `null` inside a list, written in a document or given as a variable, is now the value `null` for every item type, and is refused by an argument whose list items cannot be null; a lone `-` or a number followed by a name character is no longer read as a number; a list given to an input object argument, or an invalid list given as a variable default, is refused; and the error for an invalid value shows a list as written and a string quoted
