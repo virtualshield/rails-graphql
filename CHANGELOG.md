@@ -1,5 +1,6 @@
 ### Unreleased
 
+* A directive argument whose value is `false` is now printed by `to_gql`, a `null` argument before a printed one no longer leaves a leading comma, a directive with nothing to print no longer prints empty parentheses, and a directive instance can be compiled on its own
 * A `null` written in a document for an argument, a directive argument, or a variable default is now the value `null`, and an argument that does not accept `null` still refuses it
 * A list value written inline in a document (an argument, or a variable default) now parses
 * The integer `0`, and a float starting with `0`, now parse as a value in a document
