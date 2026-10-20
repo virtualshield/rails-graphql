@@ -85,7 +85,7 @@ module Rails
           # If can iterate and the provided object is a list of objects, then
           # call itself with each item. A hash-like object or a struct is one
           # object, although enumerable
-          if iterate && object.is_a?(Enumerable) && !object.respond_to?(:key?) && !object.is_a?(Struct)
+          if iterate && object.is_a?(Enumerable) && !object.respond_to?(:each_pair)
             return object.each_with_object([]) do |item, result|
               result.concat(extract_args_from(item, false))
             end
@@ -93,18 +93,17 @@ module Rails
 
           # Prepare all the possibilities
           keys = []
-          hash_like = object.respond_to?(:[]) && object.respond_to?(:key?)
+          hash_like = %i[[] key? each_pair].all? { |method| object.respond_to?(method) }
           possibilities = all_arguments.each_value.with_object([]) do |arg, list|
             keys << arg.name
             list << []
 
             value =
-              if object.respond_to?(arg.name)
+              if hash_like
+                key = [arg.name, arg.name.to_s].find { |name| object.key?(name) }
+                object[key] unless key.nil?
+              elsif object.respond_to?(arg.name)
                 object.public_send(arg.name)
-              elsif hash_like && object.key?(arg.name)
-                object[arg.name]
-              elsif hash_like && object.key?(arg.name.to_s)
-                object[arg.name.to_s]
               end
 
             list.last << value unless value.nil?
