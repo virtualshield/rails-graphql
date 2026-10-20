@@ -249,6 +249,8 @@ module Rails
               instance.instance_variable_set(:@request, request)
               instance.cache_load(data)
             end
+
+            operations.each_value { |instance, _| instance.check_cached_depth! }
           end
 
           # Mark itself as already organized

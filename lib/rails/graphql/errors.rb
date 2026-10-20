@@ -32,6 +32,10 @@ module Rails
     # Error class related to parsing the arguments
     ArgumentsError = Class.new(ParseError)
 
+    # Error class related to an operation that selects fields deeper than the
+    # configured maximum depth
+    MaxDepthError = Class.new(ExecutionError)
+
     # Error class related to problems that happened during execution of fields
     FieldError = Class.new(ExecutionError)
 

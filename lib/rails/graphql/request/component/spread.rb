@@ -58,7 +58,7 @@ module Rails
           if inline?
             @type_klass = all_from_gid(data[:type_klass])
           else
-            collect_fragment
+            @fragment = collect_fragment
           end
 
           super
