@@ -107,6 +107,13 @@ class GQLParserTest < GraphQL::TestCase
     ].each { |document| assert_parse_returns_in_time(document) }
   end
 
+  def test_parse_execution_null_value
+    value = operation_fields('{ a(b: null) }').first[2].first[1]
+    assert(value.of_type?(:null))
+    assert_nil(value.__getobj__)
+    assert_equal([1, 12], end_of(value))
+  end
+
   def test_parse_execution_operation_with_directives
     assert_equal(%w[a b], item_names(operation_fields('query Q @x { a b }')))
     assert_equal(%w[a], item_names(operation_fields('query Q @x @y(z: 1) { a }')))
