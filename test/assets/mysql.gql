@@ -154,7 +154,7 @@ enum __TypeKind {
 input JediInput {
   id: ID
   
-  _delete: Boolean = false
+  _delete: Boolean
   
   jediTypeId: ID
   
@@ -165,7 +165,7 @@ input JediInput {
 input JediTypeInput {
   id: ID
   
-  _delete: Boolean = false
+  _delete: Boolean
   
   jediAttributes: [JediInput!]
   

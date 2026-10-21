@@ -14,6 +14,7 @@ module Rails
     #
     # * <tt>:default</tt> - Sets a default value for the argument (defaults to nil).
     class Field::InputField < Field
+      include Helpers::WithValidator
       include Field::TypedField
 
       attr_reader :default
@@ -49,9 +50,9 @@ module Rails
         type_klass.valid_input?(value)
       end
 
-      # Return the default value if the given +value+ is nil
-      def deserialize(value = nil)
-        value.nil? ? default : super
+      # Trigger the exception based value validator
+      def validate_output!(value, **xargs)
+        super(value, :field, **xargs)
       end
 
       # A little override to use the default value

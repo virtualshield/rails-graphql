@@ -121,8 +121,9 @@ Read more about [inputs](/guides/inputs).
 #### `default:` `Object` = `nil`
 
 Sets the default value of the field.
-The field will use its default value if no external value is provided.
-**Beware**, the default value will also be used when the provided external value is `nil`.
+The field will use its default value if no external value is provided when the input is parsed or
+built; an instance created directly with `new` takes its values as given. An explicit `null` stays
+`null` and does not take the default value.
 
 ## Output Fields
 

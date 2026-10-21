@@ -14,6 +14,7 @@ module Rails
       include Source::ScopedArguments
 
       require_relative 'active_record/builders'
+      require_relative 'active_record/input_params'
       extend Builders
 
       validate_assignment('ActiveRecord::Base') do |value|
@@ -67,13 +68,7 @@ module Rails
         build_reflection_inputs(self)
 
         safe_field(model.inheritance_column, :string, null: false) if interface?
-        safe_field(:_delete, :boolean, default: false)
-
-        reference = model.new
-        model.columns_hash.each_value do |column|
-          change_field(column.name, default: reference[column.name]) \
-            if column.default.present? && has_field?(column.name)
-        end
+        safe_field(:_delete, :boolean)
       end
 
       step(:query) do
@@ -194,6 +189,10 @@ module Rails
           def presence_validator
             ::ActiveRecord::Validations::PresenceValidator
           end
+
+          def configure_input(type)
+            type.include(InputParams)
+          end
       end
 
       # Prepare to load multiple records from the underlying model
@@ -219,7 +218,7 @@ module Rails
 
       # The perform step for the +update+ based mutation
       def update_record
-        current_value.tap { |record| record.update!(**input_argument.params) }
+        current_value.tap { |record| record.update!(input_argument.params) }
       rescue ::ActiveRecord::RecordInvalid => error
         errors_to_extensions(error.record.errors)
         raise

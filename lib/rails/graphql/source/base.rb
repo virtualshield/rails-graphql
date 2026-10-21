@@ -53,6 +53,7 @@ module Rails
           # the current class
           def input
             @input ||= create_type(superclass: input_class, gql_name: input_name).tap do |t|
+              configure_input(t)
               t.include(const_get(:InputMethods)) if const_defined?(:InputMethods, false)
             end
           end
@@ -93,6 +94,11 @@ module Rails
             end
 
           private
+
+            # Allow a source to add its own behavior to the input it builds,
+            # beneath whatever +input_methods+ provides
+            def configure_input(type)
+            end
 
             # Allows adding methods to a type by properly providing a module
             # and adding it to the type

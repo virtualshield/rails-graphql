@@ -142,6 +142,20 @@ module Rails
         (value.is_a?(Enumerable) || value.respond_to?(:to_ary)) ? value : value.then
       end
 
+      # Remove nil entries at every level of a serialized value, which a global
+      # id cannot carry
+      def deep_compact(value)
+        case value
+        when Hash
+          value.each_with_object({}) do |(key, item), hash|
+            item = deep_compact(item)
+            hash[key] = item unless item.nil?
+          end
+        when Array then value.map { |item| deep_compact(item) }.compact
+        else value
+        end
+      end
+
       # Load a given +list+ of dependencies from the given +type+
       def add_dependencies(type, *list, to: :base)
         ref = config.known_dependencies
