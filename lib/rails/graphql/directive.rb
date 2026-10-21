@@ -257,7 +257,7 @@ module Rails
       %i[to_global_id to_gid to_gid_param].each do |method_name|
         define_method(method_name) do
           # TODO: The option is kind of broken, because they should always be a Hash
-          self.class.public_send(method_name, args_as_json&.compact || '')
+          self.class.public_send(method_name, GraphQL.deep_compact(args_as_json) || '')
         end
       end
 

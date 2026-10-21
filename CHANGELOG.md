@@ -1,5 +1,8 @@
 ### Unreleased
 
+* An input object field's default value now applies when the field is not provided, and an explicit `null` stays `null`, as the specification describes: `to_h` and `[]` hold every value with the defaults applied, `params` holds the provided fields with an explicit `null` as a `nil` entry, `defaulted_fields` names the fields that took their default, and `as_json` gives the provided fields so a round trip through `as_json` keeps both; `resource` builds the assigned class from the provided fields plus the declared defaults of the input's own fields, through `params`, so an override of `params` decides them
+* The input object of an ActiveRecord source no longer declares a column's database default, nor `false` for `_delete`, as the field's default value; the update mutation applies only the provided attributes; an explicit `null` reaches the model when its column can hold it and is left out for a key that is not a column, the primary key, the inheritance column, a column that cannot be null, or the foreign key of a `belongs_to` that the input's own model requires; a nested record never takes a declared default
+* Building an input object instance directly from keyword values now validates them
 * Add the `max_depth` setting, global or per schema and off by default, which refuses an operation whose field selections nest deeper than the given number
 * A document loaded from the cache that spreads a named fragment now resolves the fragment's fields again
 * An input object is validated with the same key matching its parsing uses: a field named more than once (under its GraphQL name and its Ruby name) or under a different casing is now invalid, and a field whose name starts with an underscore now accepts its value

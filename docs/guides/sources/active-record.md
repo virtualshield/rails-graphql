@@ -47,7 +47,7 @@ input UserInput {
   id: ID
   email: String!
   # ... any other attributes and associations with accepts nested attributes
-  _delete: Boolean = false # For the inverted reason of the above
+  _delete: Boolean # For the inverted reason of the above
 }
 
 type _Mutation {
@@ -178,26 +178,26 @@ type Address {
   line1: String!
   userId: ID!
   user: User!
-  _delete: Boolean = false
 }
 
 type User {
   id: ID!
   email: String!
   addresses: [Address!]
-  _delete: Boolean = false
 }
 
-type AddressInput {
+input AddressInput {
   id: ID
   line1: String!
   userId: ID!
+  _delete: Boolean
 }
 
-type UserInput {
+input UserInput {
   id: ID
   email: String!
   addressesAttributes: [AddressInput!]
+  _delete: Boolean
 }
 ```
 
@@ -309,13 +309,17 @@ If `find_by` is not provided, it assumes `{ primary_key => argument(primary_key)
 {: title="create_record" id="create_record" }
 ### `create_record`
 
-It will call `save!` from [`input_argument`](#input_argument).
-Read more about [inputs assignment](/guides/inputs#type-assignment).
+It will call `save!` from [`input_argument`](#input_argument), whose `resource` receives the
+provided fields plus the declared defaults of the fields that were not provided, through
+`params`, so an override of `params` in `input_methods` sees them and decides what the record
+receives. Read more about [inputs assignment](/guides/inputs#type-assignment).
 
 {: title="update_record" id="update_record" }
 ### `update_record`
 
-It will call `update!` from the current record with params from [`input_argument`](#input_argument).
+It will call `update!` from the current record with the `params` from
+[`input_argument`](#input_argument), so a field that was not provided keeps its value and a
+declared default never applies.
 
 {: title="destroy_record" id="destroy_record" }
 ### `destroy_record`
@@ -354,6 +358,19 @@ You can also override the `path` to which the errors will be added to.
 This method gets the proper [input](/guides/inputs) associated with the attributes
 of the record from the list of arguments of the field. You can use it to manipulate the
 attributes that will be saved.
+
+Its `params` holds the provided fields and follows the model's columns: an explicit `null`
+reaches the model when its column can hold it (the foreign key of an optional `belongs_to`
+included), and is left out when its key is not a column (a nested attributes field of any type,
+`_delete`, a virtual attribute or a custom writer), names the primary key, the inheritance
+column, a column that cannot be null, or the foreign key (and type column) of a `belongs_to` the
+model requires. The rules read the input's own model, so an association declared only on a
+subclass is not seen through the base source's input and its `null` reaches the model. A nested
+record built by a source contributes its own provided fields under the same rules, never a
+declared default; a hand-written input wired under the generated one passes every value as given.
+A `params` override in `input_methods` may put a `null` back for a writer that should receive it
+(`self[:key]` and `to_h` keep every value), and an override built on `to_h` instead of `super`
+carries the declared defaults. Do not memoize `params`.
 
 ## Adapters
 

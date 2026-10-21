@@ -154,7 +154,7 @@ enum __TypeKind {
 input LiteBaseInput {
   id: ID
   
-  _delete: Boolean = false
+  _delete: Boolean
   
   factionId: ID
   
@@ -167,7 +167,7 @@ input LiteBaseInput {
 input LiteFactionInput {
   id: ID
   
-  _delete: Boolean = false
+  _delete: Boolean
   
   basesAttributes: [LiteBaseInput!]
   
@@ -182,7 +182,7 @@ input LiteFactionInput {
 input LiteShipInput {
   id: ID
   
-  _delete: Boolean = false
+  _delete: Boolean
   
   factionId: ID
   

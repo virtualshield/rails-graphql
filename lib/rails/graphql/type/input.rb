@@ -46,6 +46,7 @@ module Rails
 
           # Check if a given value is a valid non-deserialized input
           def valid_input?(value)
+            value = as_json(value) if value.is_a?(Type::Input)
             value = GraphQL.config.literal_input_parser.call(value) \
               if valid_token?(value, :hash)
 
@@ -68,10 +69,16 @@ module Rails
             fields&.all? { |item| item.valid_input?(value[item.gql_name]) }
           end
 
-          # Turn the given value into an instance of the input object
+          # Turn the given value into an instance of the input object. A field
+          # missing from the value takes its default and is listed in the
+          # instance's +defaulted_fields+; an explicit null stays null
           def deserialize(value = nil, **value_as_hash)
             value = value_as_hash if value.nil?
-            new(OpenStruct.new(parse_arguments(value, using: :deserialize)))
+            defaulted = []
+            args = parse_arguments(value, using: :deserialize) { |field| defaulted << field.name.to_sym }
+            new(OpenStruct.new(args)).tap do |input|
+              input.instance_variable_set(:@defaulted_fields, defaulted.freeze)
+            end
           end
 
           alias build deserialize
@@ -96,24 +103,46 @@ module Rails
 
           private
 
+            # An instance is read by its provided fields only, and deserializing
+            # one copies those values as they are
             def parse_arguments(value, using:, key: :name)
+              copy = value.is_a?(Type::Input) && using == :deserialize
+              value = input_values(value)
+
+              enabled_fields.each.with_object({}) do |field, hash|
+                if value.key?(field.gql_name) || value.key?(field.name.to_s)
+                  result = value[field.gql_name]
+                  result = value[field.name.to_s] if result.nil?
+                  result = field.public_send(using, result) unless result.nil? || copy
+                  hash[field.public_send(key)] = result
+                elsif using == :deserialize && field.default_value?
+                  hash[field.public_send(key)] = default_value_for(field)
+                  yield field if block_given?
+                end
+              end
+            end
+
+            def input_values(value)
+              return value.provided_values.stringify_keys if value.is_a?(Type::Input)
+
               value = GraphQL.config.literal_input_parser.call(value) \
                 if valid_token?(value, :hash)
 
               value = value.to_h if value.respond_to?(:to_h)
               value = {} unless value.is_a?(::Hash)
-              value = value.stringify_keys
+              value.stringify_keys
+            end
 
-              enabled_fields.each.with_object({}) do |field, hash|
-                next unless value.key?(field.gql_name) || value.key?(field.name.to_s)
-                result = value[field.gql_name]
-                result = value[field.name.to_s] if result.nil?
-                hash[field.public_send(key)] = field.public_send(using, result)
-              end.compact
+            # The declared default in its deserialized form, never the schema's
+            # own object
+            def default_value_for(field)
+              field.deserialize(field.default).deep_dup
             end
         end
 
-        attr_reader :args, :assignment_error
+        # +defaulted_fields+ lists the fields that took their declared default
+        # instead of a given value
+        attr_reader :args, :assignment_error, :defaulted_fields
         attr_writer :resource
 
         delegate :fields, to: :class
@@ -122,6 +151,7 @@ module Rails
         delegate_missing_to :resource
 
         def initialize(args = nil, **xargs)
+          @defaulted_fields = EMPTY_ARRAY
           @args = args || build_ostruct(xargs)
           @args.freeze
 
@@ -130,34 +160,40 @@ module Rails
 
         # If the input is assigned to a class, then initialize it with the
         # received arguments. It also accepts extra arguments for inheritance
-        # purposes
+        # purposes. The attributes come from the +params+ of a copy of this
+        # instance that counts every value as provided, so the declared
+        # defaults go through any +params+ override while this instance's own
+        # +params+ keeps answering the provided fields
         def resource(*args, **xargs, &block)
           return @resource if defined?(@resource)
           return if (klass = safe_assigned_class).nil?
 
           @resource = begin
-            xargs = xargs.reverse_merge(params)
+            companion = dup
+            companion.instance_variable_set(:@defaulted_fields, EMPTY_ARRAY)
+            xargs = xargs.reverse_merge(companion.params)
             klass.new(*args, **xargs, &block)
           end
         end
 
-        # Just return the arguments as a hash
+        # Return the provided arguments as a hash, without the fields that took
+        # their declared default
         def params
-          parametrize(@args.to_h)
+          parametrize(provided_values)
         end
 
-        # Correctly turn all the arguments into their +as_json+ version and
-        # return a hash of them
+        # Correctly turn all the provided arguments into their +as_json+
+        # version and return a hash of them
         def args_as_json
-          self.class.as_json(@args.to_h)
+          self.class.as_json(self)
         end
 
         alias as_json args_as_json
 
-        # Correctly turn all the arguments into their +to_json+ version and
-        # return a JSON string of them
+        # Correctly turn all the provided arguments into their +to_json+
+        # version and return a JSON string of them
         def args_to_json
-          self.class.to_json(@args.to_h)
+          self.class.to_json(self)
         end
 
         alias to_json args_to_json
@@ -172,8 +208,9 @@ module Rails
           end
 
           return if errors.empty?
+          errors = errors.map { |message| message.delete_suffix('.') }.to_sentence
           raise InvalidValueError, (+<<~MSG).squish
-            Invalid value provided to #{gql_name} field: #{errors.to_sentence}.
+            Invalid value provided to #{self.class.gql_name} field: #{errors}.
           MSG
         end
 
@@ -188,8 +225,13 @@ module Rails
 
         %i[to_global_id to_gid to_gid_param].each do |method_name|
           define_method(method_name) do
-            self.class.public_send(method_name, args_as_json.compact)
+            self.class.public_send(method_name, GraphQL.deep_compact(args_as_json))
           end
+        end
+
+        # The values the input was given, explicit nulls included
+        def provided_values
+          @args.to_h.except(*defaulted_fields)
         end
 
         protected

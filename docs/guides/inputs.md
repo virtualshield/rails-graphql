@@ -104,7 +104,10 @@ mutation {
 
 ### Params
 
-You can collect a sanitized Hash by calling the `params` method.
+You can collect a sanitized Hash by calling the `params` method. It holds the fields that were
+provided: an explicit `null` is a `nil` entry, and a field that was not provided is absent even
+when it has a default value. The values with the defaults applied are available through `to_h`
+and `[]`, and `defaulted_fields` names the fields that took their default.
 
 ```ruby
 # app/graphql/app_schema.rb
@@ -134,6 +137,15 @@ def create_user(user:)
   # #<User id: 1, first_name: "John", ...>
 end
 ```
+
+The attributes given to the instance are the provided fields plus the default values of the
+fields that were not provided, passed through `params`, so an override of `params` sees the
+defaults and decides what the instance receives; inside that computation `defaulted_fields` is
+empty, and a nested input contributes only its provided fields. The extra parameters given to
+`resource` take precedence. Outside `resource`, `params` keeps answering the provided fields. Do
+not memoize `params`: an override that memoizes its result and is read before `resource` keeps
+the defaults out. An override of `resource` that builds the instance from `params` instead of
+calling `super` receives no defaults.
 
 The `resource` is the method delegated to receive any method that the input doesn't have.
 This is a syntax sugar for dealing with the inputs as

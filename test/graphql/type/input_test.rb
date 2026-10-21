@@ -62,7 +62,7 @@ class GraphQL_Type_InputTest < GraphQL::TestCase
   end
 
   def test_deserialize
-    field = double(gql_name: 'a', name: 'b', deserialize: passthrough)
+    field = double(gql_name: 'a', name: 'b', deserialize: passthrough, default_value?: false)
     value = [['a', 'atest'], ['b', 'btest']]
     value2 = [['c', 'atest']]
 
@@ -135,10 +135,8 @@ class GraphQL_Type_InputTest < GraphQL::TestCase
 
     validate = ->(*) { raise Rails::GraphQL::InvalidValueError }
     field = { 'a' => double(validate_output!: validate) }
-    object.stub(:resource, double(gql_name: 'B')) do
-      object.stub(:fields, field) do
-        assert_raises(Rails::GraphQL::InvalidValueError) { object.validate! }
-      end
+    object.stub(:fields, field) do
+      assert_raises(Rails::GraphQL::InvalidValueError) { object.validate! }
     end
 
     counter = 0
