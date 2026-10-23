@@ -1,5 +1,6 @@
 ### Unreleased
 
+* An operation is now refused with an error when it follows more than 10,000 fragment spreads, counting a fragment's own spreads once per spread of it
 * An operation is now refused with an error when a fragment it spreads spreads itself, directly or through other fragments, or when it spreads fragments more than 64 levels deep
 * A spread of a fragment that the document does not define is now reported as an error naming the fragment
 * A spread that is skipped, or that could not be organized, no longer prepares its fragment

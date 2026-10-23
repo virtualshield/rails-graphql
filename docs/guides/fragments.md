@@ -24,11 +24,12 @@ You can use fragments in any part of your selection set, regardless of the type 
 is:
 
 1. Ensure it has a unique name within the document of the request.
-2. Has a type, and the fields selected are all present in that type.
-3. Never spread it within itself, directly or through other fragments, and keep a chain of
+2. Give it a type, and select only fields that type has.
+3. Never spread it within itself, directly or through other fragments. Keep a chain of
    fragments spreading other fragments at most 64 levels deep, counting a fragment spread in
-   the operation as level 1. An operation that breaks either rule is refused with an error
-   before anything is resolved.
+   the operation as level 1, and keep the number of fragment spreads an operation follows at
+   10,000 or fewer, counting a fragment's own spreads once per spread of it. An operation that
+   breaks any of these rules is refused with an error before anything is resolved.
 
 The fragment type can be either an [Object](/guides/objects), an [Interface](/guides/interfaces),
 or a [Union](/guides/unions) type.
@@ -41,7 +42,7 @@ query {
 fragment Profile on User { picture name }
 ```
 
-The above quite the same as:
+The above is quite the same as:
 
 ```graphql
 query {

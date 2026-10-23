@@ -18,6 +18,10 @@ module Rails
         # operation is level 1)
         MAX_FRAGMENT_NESTING = 64
 
+        # How many fragment spreads an operation may follow, counting a
+        # fragment's own spreads once per spread of it
+        MAX_FRAGMENT_SPREADS = 10_000
+
         class << self
           alias type kind
 
@@ -216,46 +220,60 @@ module Rails
 
           # Refuse the operation when a fragment it spreads, directly or through
           # other fragments, spreads itself, which the specification treats as
-          # an invalid document, or when fragments spread more than
-          # MAX_FRAGMENT_NESTING levels deep. Both are read from the document
-          # before any spread is organized
+          # an invalid document, when fragments spread more than
+          # MAX_FRAGMENT_NESTING levels deep, or when it follows more than
+          # MAX_FRAGMENT_SPREADS fragment spreads. All are read from the
+          # document before any spread is organized
           def check_fragments!
-            nesting_of(@node[4], Set.new, request.cache(:fragment_chains))
+            _, spreads = measure_fragments(@node[4], Set.new, request.cache(:fragment_measures))
+            refuse!(ExecutionError, (+<<~MSG).squish) if spreads > MAX_FRAGMENT_SPREADS
+              Query follows more than #{MAX_FRAGMENT_SPREADS} fragment spreads
+            MSG
           end
 
-          # The deepest chain of fragment spreads in a list of selection nodes.
-          # Each fragment is measured once per request, as the longest chain
-          # below it, and the chain through every path to it is checked against
-          # the limit
-          def nesting_of(nodes, spreading, chains)
-            return 0 if nodes.nil?
+          # The deepest chain of fragment spreads in a list of selection nodes
+          # and the number of fragment spreads followed through them, counting
+          # a fragment's own spreads once per spread of it. Each fragment is
+          # measured once per request, and the chain through every path to it
+          # is checked against the limit
+          def measure_fragments(nodes, spreading, measures)
+            chain = spreads = 0
 
-            nodes.map do |node|
-              next nesting_of(node[4], spreading, chains) unless node.of_type?(:spread)
-              next nesting_of(node[3], spreading, chains) if node[0].nil?
+            nodes&.each do |node|
+              if !node.of_type?(:spread)
+                depth, count = measure_fragments(node[4], spreading, measures)
+              elsif node[0].nil?
+                depth, count = measure_fragments(node[3], spreading, measures)
+              else
+                name = node[0].to_s
+                if spreading.include?(name)
+                  via = spreading.to_a.drop_while { |other| other != name }.drop(1)
+                  refuse!(ExecutionError, (+<<~MSG).squish)
+                    Cannot spread fragment "#{name}" within itself
+                    #{"via #{via.map(&:inspect).join(', ')}" if via.present?}
+                  MSG
+                end
 
-              name = node[0].to_s
-              if spreading.include?(name)
-                via = spreading.to_a.drop_while { |other| other != name }.drop(1)
-                refuse!(ExecutionError, (+<<~MSG).squish)
-                  Cannot spread fragment "#{name}" within itself
-                  #{"via #{via.map(&:inspect).join(', ')}" if via.present?}
-                MSG
+                unless measures.key?(name)
+                  fragment = fragment_node(node[0])
+                  next if fragment.nil?
+
+                  spreading.add(name)
+                  check_fragment_nesting!(spreading.size)
+                  depth, count = measure_fragments(fragment[3], spreading, measures)
+                  measures[name] = [depth + 1, count + 1]
+                  spreading.delete(name)
+                end
+
+                depth, count = measures[name]
+                check_fragment_nesting!(spreading.size + depth)
               end
 
-              unless chains.key?(name)
-                fragment = fragment_node(node[0])
-                next 0 if fragment.nil?
+              chain = depth if depth > chain
+              spreads += count
+            end
 
-                spreading.add(name)
-                check_fragment_nesting!(spreading.size)
-                chains[name] = 1 + nesting_of(fragment[3], spreading, chains)
-                spreading.delete(name)
-              end
-
-              check_fragment_nesting!(spreading.size + chains[name])
-              chains[name]
-            end.max || 0
+            [chain, spreads]
           end
 
           # Refuse the operation when fragments spread deeper than the limit
