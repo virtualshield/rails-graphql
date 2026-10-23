@@ -58,7 +58,7 @@ module Rails
           if inline?
             @type_klass = all_from_gid(data[:type_klass])
           else
-            @fragment = collect_fragment
+            collect_fragment!
           end
 
           super
@@ -100,16 +100,15 @@ module Rails
                 parse_selection(@node[3])
               else
                 parse_directives(@node[2])
-                @fragment = collect_fragment
-                raise ArgumentError, (+<<~MSG).squish if @fragment.nil?
-                  The "#{name}" fragment is not defined in this request.
-                MSG
+                collect_fragment!
+                operation.used_fragments << name
               end
             end
           end
 
           # Spread has a special behavior when using a fragment
           def prepare
+            return if unresolvable?
             return super if inline?
             catch(:fragment_prepared) do
               return fragment.prepare!
@@ -144,11 +143,20 @@ module Rails
             Arguments.scoped(operation) { fragment.public_send(method_name, *args) }
           end
 
+          # Collect the fragment and raise when the document does not define it
+          def collect_fragment!
+            @fragment = collect_fragment
+            raise ArgumentError, (+<<~MSG).squish if @fragment.nil?
+              The "#{name}" fragment is not defined in this request.
+            MSG
+          end
+
           # Only initialize the fragment once and only when requested for the
           # first time. It also reports to the operation the used variables
-          # within the fragment
+          # and fragments within the fragment
           def collect_fragment
-            node = request.fragments[name]
+            node = request.fragments&.[](name)
+            return if node.nil?
 
             if node.is_a?(Component::Fragment)
               unless (used_variables = node.used_variables).nil?
@@ -161,7 +169,6 @@ module Rails
 
               node
             else
-              operation.used_fragments << name
               request.fragments[name] = request.build(Component::Fragment, request, node)
             end
           end

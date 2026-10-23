@@ -105,7 +105,7 @@ module Rails
         end
 
         # Fields are assignable because they are actually the selection, so they
-        # need to be assigned to a filed
+        # need to be assigned to a field
         def assignable?
           true
         end
@@ -130,8 +130,8 @@ module Rails
           super || field.of_type?(klass)
         end
 
-        # When the field is invalid, there's no much to do
-        # TODO: Maybe add a invalid event trigger here
+        # When the field is invalid, there's not much to do
+        # TODO: Maybe add an invalid event trigger here
         def resolve_invalid(error = nil)
           request.exception_to_error(error, self) if error.present?
 
@@ -141,14 +141,15 @@ module Rails
           raise unless entry_point?
         end
 
-        # When the +type_klass+ of an object is an interface or a union, the
-        # field needs to be redirected to the one from the actual resolved
-        # +object+ type
+        # Resolve the field for the given +object+, redirected to the field of
+        # the actual resolved object's type when the +type_klass+ is an
+        # interface or a union
         def resolve_with!(object)
+          old_field = field
           return if skipped?
           return resolve! if invalid?
 
-          old_field, @field = @field, object[@field.name]
+          @field = object[@field.name]
           request.nested_cache(:listeners, field) { strategy.add_listeners_from(self) }
           @current_object = object
           resolve!

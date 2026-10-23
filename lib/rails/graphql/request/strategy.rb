@@ -250,7 +250,7 @@ module Rails
               instance.cache_load(data)
             end
 
-            operations.each_value { |instance, _| instance.check_cached_depth! }
+            operations.each_value { |instance, _| instance.check_cached_document! }
           end
 
           # Mark itself as already organized
