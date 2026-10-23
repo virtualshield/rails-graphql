@@ -13,6 +13,11 @@ module Rails
         include SelectionSet
         include Directives
 
+        # The deepest chain of fragments spreading other fragments an operation
+        # may have, counted from the operation (a fragment spread in the
+        # operation is level 1)
+        MAX_FRAGMENT_NESTING = 64
+
         class << self
           alias type kind
 
@@ -137,10 +142,15 @@ module Rails
           super if organize_from_cache { trigger_event(type) }
         end
 
-        # Check the depth of an operation loaded from the cache, once every
-        # fragment of the request is loaded as well
-        def check_cached_depth!
-          organize_from_cache { check_depth! } unless unresolvable?
+        # Check the fragments and the depth of an operation loaded from the
+        # cache, once every fragment of the request is loaded as well
+        def check_cached_document!
+          return if unresolvable?
+
+          organize_from_cache do
+            check_fragments!
+            check_depth!
+          end
         end
 
         protected
@@ -150,6 +160,7 @@ module Rails
             stacked { trigger_event(type) }
             organize_then do
               yield if block_given?
+              check_fragments!
               check_depth!
               organize_fields
               report_unused_variables
@@ -168,12 +179,16 @@ module Rails
             current = depth_of(@node[4], Set.new, {})
             return if current <= limit
 
-            # The variables were used by the document, even though it is refused
-            request.instance_variable_get(:@used_variables).merge(arguments.keys) unless arguments.nil?
-
-            raise MaxDepthError, (+<<~MSG).squish
+            refuse!(MaxDepthError, (+<<~MSG).squish)
               Query has depth of #{current}, which exceeds max depth of #{limit}
             MSG
+          end
+
+          # Raise the given error for the operation, counting its variables as
+          # used, since the document used them even though it is refused
+          def refuse!(error, message)
+            request.instance_variable_get(:@used_variables).merge(arguments.keys) unless arguments.nil?
+            raise error, message
           end
 
           # The deepest nesting of fields in a list of selection nodes, counting
@@ -190,14 +205,70 @@ module Rails
               name = node[0].to_s
               next depths[name] if depths.key?(name)
 
-              fragment = request.fragments&.[](node[0])
+              fragment = fragment_node(node[0])
               next 0 if fragment.nil? || !spreading.add?(name)
 
-              fragment = fragment.instance_variable_get(:@node) if fragment.is_a?(Component::Fragment)
               depths[name] = depth_of(fragment[3], spreading, depths)
               spreading.delete(name)
               depths[name]
             end.max || 0
+          end
+
+          # Refuse the operation when a fragment it spreads, directly or through
+          # other fragments, spreads itself, which the specification treats as
+          # an invalid document, or when fragments spread more than
+          # MAX_FRAGMENT_NESTING levels deep. Both are read from the document
+          # before any spread is organized
+          def check_fragments!
+            nesting_of(@node[4], Set.new, {})
+          end
+
+          # The deepest chain of fragment spreads in a list of selection nodes.
+          # Each fragment is measured once, as the longest chain below it, and
+          # the chain through every path to it is checked against the limit
+          def nesting_of(nodes, spreading, chains)
+            return 0 if nodes.nil?
+
+            nodes.map do |node|
+              next nesting_of(node[4], spreading, chains) unless node.of_type?(:spread)
+              next nesting_of(node[3], spreading, chains) if node[0].nil?
+
+              name = node[0].to_s
+              if spreading.include?(name)
+                via = spreading.to_a.drop_while { |other| other != name }.drop(1)
+                refuse!(ExecutionError, (+<<~MSG).squish)
+                  Cannot spread fragment "#{name}" within itself
+                  #{"via #{via.map(&:inspect).join(', ')}" if via.present?}
+                MSG
+              end
+
+              unless chains.key?(name)
+                fragment = fragment_node(node[0])
+                next 0 if fragment.nil?
+
+                spreading.add(name)
+                check_fragment_nesting!(spreading.size)
+                chains[name] = 1 + nesting_of(fragment[3], spreading, chains)
+                spreading.delete(name)
+              end
+
+              check_fragment_nesting!(spreading.size + chains[name])
+              chains[name]
+            end.max || 0
+          end
+
+          # Refuse the operation when fragments spread deeper than the limit
+          def check_fragment_nesting!(levels)
+            refuse!(ExecutionError, (+<<~MSG).squish) if levels > MAX_FRAGMENT_NESTING
+              Query spreads fragments more than #{MAX_FRAGMENT_NESTING} levels deep
+            MSG
+          end
+
+          # The document node of the fragment with the given name, which the
+          # request holds as a component once a spread has built it
+          def fragment_node(name)
+            fragment = request.fragments&.[](name)
+            fragment.is_a?(Component::Fragment) ? fragment.instance_variable_get(:@node) : fragment
           end
 
           # Perform the organization step

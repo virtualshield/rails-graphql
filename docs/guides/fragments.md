@@ -25,6 +25,10 @@ is:
 
 1. Ensure it has a unique name within the document of the request.
 2. Has a type, and the fields selected are all present in that type.
+3. Never spread it within itself, directly or through other fragments, and keep a chain of
+   fragments spreading other fragments at most 64 levels deep, counting a fragment spread in
+   the operation as level 1. An operation that breaks either rule is refused with an error
+   before anything is resolved.
 
 The fragment type can be either an [Object](/guides/objects), an [Interface](/guides/interfaces),
 or a [Union](/guides/unions) type.
