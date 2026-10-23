@@ -4,6 +4,7 @@ class Integration_FragmentsTest < GraphQL::IntegrationTestCase
   NODE = { name: 'n' }
   NODE[:child] = NODE
   NODE[:loaded] = NODE
+  NODE[:total] = 1
 
   class Provider
     attr_reader :items
@@ -47,6 +48,7 @@ class Integration_FragmentsTest < GraphQL::IntegrationTestCase
       field(:name, :string, null: false)
       field(:child, 'Node', null: false)
       field(:loaded, 'Node', null: false).prepare { PREPARES << true; NODE }
+      field(:total, :int, null: false, arguments: argument(:n, :int))
     end
 
     query_fields do
@@ -88,6 +90,19 @@ class Integration_FragmentsTest < GraphQL::IntegrationTestCase
     assert_nil(result['errors'])
     assert_equal({ 'loaded' => { 'name' => 'n' } }, result['data']['child'])
     assert_equal(1, PREPARES.size)
+  end
+
+  def test_a_fragment_field_left_out_as_a_duplicate_still_resolves_elsewhere
+    assert_result({ data: { node: { name: 'n' }, child: { name: 'n' } } }, <<~GQL)
+      { node { name ...b } child: node { ...b } } fragment b on Node { name }
+    GQL
+  end
+
+  def test_a_fragment_field_left_out_as_invalid_reports_at_every_spread
+    result = execute('{ node { ...b } child: node { ...b } } fragment b on Node { total(n: "x") }')
+    assert_equal({ 'node' => {}, 'child' => {} }, result['data'])
+    assert_equal([%w[node total], %w[node total], %w[child total]], result['errors'].map { |error| error['path'] })
+    assert_equal(['The total field value can not be null.'] * 2, messages(result).last(2))
   end
 
   def test_a_fragment_that_spreads_itself_is_refused
