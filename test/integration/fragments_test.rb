@@ -180,6 +180,40 @@ class Integration_FragmentsTest < GraphQL::IntegrationTestCase
     SCHEMA.config.max_depth = nil
   end
 
+  def test_fragment_spreads_followed_up_to_the_limit
+    assert_result({ data: { node: { name: 'n' } } }, "{ node { #{'...leaf ' * 10_000} } } fragment leaf on Node { name }")
+    assert_refused('Query follows more than 10000 fragment spreads', "{ node { #{'...leaf ' * 10_001} } } fragment leaf on Node { name }")
+    assert_result({ data: { node: { name: 'n' } } }, "{ node { ...f1 } } #{fanout(13)}")
+    assert_refused('Query follows more than 10000 fragment spreads', "{ node { ...f1 } } #{fanout(14)}")
+  end
+
+  def test_each_operation_gets_its_own_count_when_fragments_are_shared
+    [
+      "query A { node { ...f2 } } query B { node { ...f1 } } #{fanout(14)}",
+      "query B { node { ...f1 } } query A { node { ...f2 } } #{fanout(14)}",
+    ].each do |document|
+      result = execute(document)
+      assert_equal({ 'A' => { 'node' => { 'name' => 'n' } }, 'B' => nil }, result['data'])
+      assert_equal(['Query follows more than 10000 fragment spreads'], messages(result))
+      assert_equal(['B'], result['errors'].first['path'])
+    end
+  end
+
+  def test_an_operation_refused_for_its_spreads_reports_only_that_error
+    result = execute("query($n: Int) { count(n: $n) node { ...f1 } } #{fanout(14)}", args: { n: 1 })
+    assert_equal(['Query follows more than 10000 fragment spreads'], messages(result))
+  end
+
+  def test_a_cached_document_is_checked_against_the_spreads_limit
+    key = 'stored-fanout'
+    with_fragment_limit(:MAX_FRAGMENT_SPREADS, 100_000) do
+      assert_result({ data: { node: { name: 'n' } } }, "{ node { ...f1 } } #{fanout(14)}", hash: key)
+    end
+
+    assert(SCHEMA.cached?(key))
+    assert_refused('Query follows more than 10000 fragment spreads', nil, hash: key)
+  end
+
   def test_other_operations_in_the_request_still_run
     result = execute(<<~GQL)
       query A { node { name } }
@@ -199,7 +233,7 @@ class Integration_FragmentsTest < GraphQL::IntegrationTestCase
 
   def test_a_cached_document_is_checked_against_the_limit
     key = 'stored-chain'
-    with_fragment_nesting(100) do
+    with_fragment_limit(:MAX_FRAGMENT_NESTING, 100) do
       assert_result({ data: { node: { name: 'n' } } }, "{ node { ...f1 } } #{chain(65)}", hash: key)
     end
 
@@ -235,16 +269,22 @@ class Integration_FragmentsTest < GraphQL::IntegrationTestCase
       assert_equal({}, result['data'])
     end
 
-    # Run the block with another nesting limit, as a request from a release
-    # with a different limit would write the cache
-    def with_fragment_nesting(limit)
+    # Fragments spreading the next one twice, the last one selecting a field,
+    # so the spreads followed double with each level
+    def fanout(levels)
+      (1...levels).map { |i| "fragment f#{i} on Node { ...f#{i + 1} ...f#{i + 1} }" }.push("fragment f#{levels} on Node { name }").join(' ')
+    end
+
+    # Run the block with another value for one of the fragment limits, as a
+    # request from a release with a different limit would write the cache
+    def with_fragment_limit(name, value)
       operation = GraphQL::Request::Component::Operation
-      original = operation::MAX_FRAGMENT_NESTING
-      operation.send(:remove_const, :MAX_FRAGMENT_NESTING)
-      operation.const_set(:MAX_FRAGMENT_NESTING, limit)
+      original = operation.const_get(name)
+      operation.send(:remove_const, name)
+      operation.const_set(name, value)
       yield
     ensure
-      operation.send(:remove_const, :MAX_FRAGMENT_NESTING)
-      operation.const_set(:MAX_FRAGMENT_NESTING, original)
+      operation.send(:remove_const, name)
+      operation.const_set(name, original)
     end
 end
