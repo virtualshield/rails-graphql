@@ -21,6 +21,11 @@ module Rails
 
         class << self
           delegate :serialize?, :serialize, :deserialize, to: :instance
+
+          # The class of the object that will be serialized.
+          def klass
+            GlobalID
+          end
         end
 
         # Determines if an argument should be serialized by this serializer.
@@ -37,12 +42,6 @@ module Rails
         def deserialize(argument)
           GlobalID.find argument[GlobalID::SERIALIZER_KEY]
         end
-
-        private
-          # The class of the object that will be serialized.
-          def klass
-            GlobalID
-          end
       end
 
       class << self
