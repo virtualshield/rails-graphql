@@ -153,6 +153,33 @@ class Integration_FragmentsTest < GraphQL::IntegrationTestCase
     assert_refused('Query spreads fragments more than 64 levels deep', "{ node { ...f3 ...f1 } } #{chain(66)}")
   end
 
+  def test_a_chain_measured_by_one_operation_is_checked_in_full_by_another
+    [
+      "query A { node { ...f3 } } query B { node { ...f1 } } #{chain(66)}",
+      "query B { node { ...f1 } } query A { node { ...f3 } } #{chain(66)}",
+    ].each do |document|
+      result = execute(document)
+      assert_equal({ 'A' => { 'node' => { 'name' => 'n' } }, 'B' => nil }, result['data'])
+      assert_equal(['Query spreads fragments more than 64 levels deep'], messages(result))
+      assert_equal(['B'], result['errors'].first['path'])
+    end
+  end
+
+  def test_a_fragment_depth_measured_by_one_operation_counts_where_another_spreads_it
+    SCHEMA.config.max_depth = 3
+    [
+      'query A { node { ...a } } query B { node { child { ...a } } } fragment a on Node { child { name } }',
+      'query B { node { child { ...a } } } query A { node { ...a } } fragment a on Node { child { name } }',
+    ].each do |document|
+      result = execute(document)
+      assert_equal({ 'A' => { 'node' => { 'child' => { 'name' => 'n' } } }, 'B' => nil }, result['data'])
+      assert_equal(['Query has depth of 4, which exceeds max depth of 3'], messages(result))
+      assert_equal(['B'], result['errors'].first['path'])
+    end
+  ensure
+    SCHEMA.config.max_depth = nil
+  end
+
   def test_other_operations_in_the_request_still_run
     result = execute(<<~GQL)
       query A { node { name } }

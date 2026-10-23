@@ -176,7 +176,7 @@ module Rails
             return if limit.nil?
 
             limit = Integer(limit)
-            current = depth_of(@node[4], Set.new, {})
+            current = depth_of(@node[4], Set.new, request.cache(:fragment_depths))
             return if current <= limit
 
             refuse!(MaxDepthError, (+<<~MSG).squish)
@@ -192,9 +192,9 @@ module Rails
           end
 
           # The deepest nesting of fields in a list of selection nodes, counting
-          # a fragment where it is spread. Each fragment is measured once, so
-          # the walk is linear in the size of the document, and a fragment
-          # cycle is not followed
+          # a fragment where it is spread. Each fragment is measured once per
+          # request, so the walk is linear in the size of the document, and a
+          # fragment cycle is not followed
           def depth_of(nodes, spreading, depths)
             return 0 if nodes.nil?
 
@@ -220,12 +220,13 @@ module Rails
           # MAX_FRAGMENT_NESTING levels deep. Both are read from the document
           # before any spread is organized
           def check_fragments!
-            nesting_of(@node[4], Set.new, {})
+            nesting_of(@node[4], Set.new, request.cache(:fragment_chains))
           end
 
           # The deepest chain of fragment spreads in a list of selection nodes.
-          # Each fragment is measured once, as the longest chain below it, and
-          # the chain through every path to it is checked against the limit
+          # Each fragment is measured once per request, as the longest chain
+          # below it, and the chain through every path to it is checked against
+          # the limit
           def nesting_of(nodes, spreading, chains)
             return 0 if nodes.nil?
 
